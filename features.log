@@ -1,0 +1,48 @@
+Feature summary:
+Documentation ................... Pod2HTML
+gpm ............................. no
+zlib ............................ yes
+bzlib ........................... yes
+idn ............................. no
+Bookmarks ....................... yes
+XBEL bookmarks .................. no
+ECMAScript (JavaScript) ......... no
+Browser scripting ............... no
+SSL ............................. OpenSSL
+Native Language Support ......... yes
+Cookies ......................... yes
+Form history .................... yes
+Global history .................. yes
+Mailcap ......................... yes
+Mimetypes files ................. yes
+IPv6 ............................ yes
+BitTorrent protocol ............. no
+Data protocol ................... yes
+URI rewriting ................... yes
+Local CGI ....................... no
+Finger protocol ................. no
+FSP protocol .................... no
+FTP protocol .................... yes
+Gopher protocol ................. no
+NNTP protocol ................... no
+SMB protocol .................... no
+Mouse handling .................. yes
+BSD sysmouse .................... no
+88 colors ....................... no
+256 colors ...................... no
+Exmode interface ................ no
+LEDs ............................ yes
+Marks ........................... yes
+Cascading Style Sheets .......... yes
+HTML highlighting ............... no
+DOM engine ...................... no
+Backtrace ....................... yes
+No root exec .................... no
+Debug mode ...................... no
+Fast mode ....................... no
+Own libc stubs .................. no
+Small binary .................... no
+System configuration directory .. /usr/local/etc/elinks
+Locale catalogs directory ....... /usr/local/share/locale
+Compiler options (CFLAGS) ....... -g -O2 -Wall 
+Linker options (LIBS) ........... -lssl -lcrypto -ldl  -lz -lbz2 
