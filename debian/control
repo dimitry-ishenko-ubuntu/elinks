@@ -3,12 +3,14 @@ Section: web
 Priority: optional
 Maintainer: Peter Gervai <grin@tolna.net>
 Standards-Version: 3.6.1
-Build-Depends: debhelper (>= 4.0.0), m4, bison, libgnutls11-dev, libgpmg1-dev [alpha arm hppa i386 ia64 m68k mips mipsel powerpc s390 s390x sh3 sh3eb sh4 sh4eb sparc sparc64 amd64], liblua50-dev, liblualib50-dev, libbz2-dev, libexpat1-dev (>= 1.95.6), type-handling (>= 0.2.1), libperl-dev
+Build-Depends: debhelper (>= 4.0.0), m4, bison, libgnutls-dev, libgpmg1-dev [!hurd-i386 !kfreebsd-i386 !kfreebsd-amd64], liblua50-dev, liblualib50-dev, libbz2-dev, libexpat1-dev (>= 1.95.6), libperl-dev, smbclient, autotools-dev
 
 Package: elinks
 Architecture: any
 Depends: ${shlibs:Depends}, debconf
+Suggests: smbclient
 Provides: links, www-browser
+Conflicts: elinks-lite
 Description: advanced text-mode WWW browser
  ELinks (Enhanced Links) is a lynx-like character mode browser,
  created from the Links browser with many patches and enhancements.
@@ -16,5 +18,20 @@ Description: advanced text-mode WWW browser
  background downloads, can display colors, supports the Lua scripting
  language, IPV6 and has many other features. ELinks is linked against
  GNUTLS to prevent license issues.
+ .
+ Homepage: http://elinks.or.cz/
+
+Package: elinks-lite
+Architecture: any
+Depends: ${shlibs:Depends}, debconf
+Provides: links, www-browser
+Conflicts: elinks
+Description: advanced text-mode WWW browser (lite version)
+ ELinks (Enhanced Links) is a lynx-like character mode browser,
+ created from the Links browser with many patches and enhancements.
+ It includes support for rendering tables and frames, features 
+ background downloads, can display colors. This lite version
+ contains no scripting or extra features but doesn't depend on
+ other libraries either, so it's useful for small systems.
  .
  Homepage: http://elinks.or.cz/

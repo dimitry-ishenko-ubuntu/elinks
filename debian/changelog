@@ -1,9 +1,99 @@
-elinks (0.11-0.0upstream) unstable; urgency=low
+elinks (0.11.1-1.5) unstable; urgency=high
 
-  * NMU
-  * Really fix endless refreshing of documents (#293298)
+  * Non-maintainer upload by testing security team.
+  * Fixed bug in http.c which could lead to secret information disclosure
+    via POST requests for https URLs (CVE-2007-5034) (Closes: #443914, #443891).
 
- -- Jonas Fonseca <fonseca@diku.dk>  Tue,  3 May 2005 19:44:01 +0200
+ -- Nico Golde <nion@debian.org>  Tue, 25 Sep 2007 13:31:18 +0200
+
+elinks (0.11.1-1.4) unstable; urgency=high
+
+  * Non-maintainer security upload.
+  * Don't look for gettext message catalogs in ../po/ (closes: #417789).
+    Thanks, Arnaud Giersch! Reference: CVE-2007-2027.
+
+ -- Julien Cristau <jcristau@debian.org>  Sun, 29 Apr 2007 00:18:54 +0200
+
+elinks (0.11.1-1.3) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix FTBFS on GNU/kFreeBSD, patch by Petr Salinger (closes: #400872).
+  * Don't regenerate control at build-time, this is now forbidden by the
+    policy. 
+
+ -- Aurelien Jarno <aurel32@debian.org>  Sun,  4 Mar 2007 12:36:59 +0100
+
+elinks (0.11.1-1.2) unstable; urgency=high
+
+  * Non-maintainer upload.
+  * High-urgency upload for security bug fix.
+  * Configure with --disable-smb to fix security issue (CVE-2006-5925),
+    closes: #399188.
+
+ -- Julien Cristau <julien.cristau@ens-lyon.org>  Mon, 27 Nov 2006 02:32:47 +0100
+
+elinks (0.11.1-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Clean up properly in the clean target; patch from Bart Martens.
+    (Closes: #397859)
+
+ -- Steinar H. Gunderson <sesse@debian.org>  Fri, 17 Nov 2006 02:18:38 +0100
+
+elinks (0.11.1-1) unstable; urgency=low
+
+  * New upstream version 
+
+ -- Peter Gervai <grin@grin.hu>  Wed, 24 May 2006 18:50:52 +0200
+
+elinks (0.10.6-2) unstable; urgency=low
+
+  * Depends on debconf | debconf-2.0 
+
+ -- Peter Gervai <grin@tolna.net>  Wed, 28 Sep 2005 20:41:49 +0200
+
+elinks (0.10.6-1) unstable; urgency=low
+
+  * New upstream release
+  * Really fix endless refreshing of documents (closes: #293298)
+
+ -- Peter Gervai <grin@tolna.net>  Sat, 17 Sep 2005 17:49:52 +0200
+
+elinks (0.10.4-7) unstable; urgency=low
+
+  * Enabled gnutls in elinks-lite per 3rd party psychological 
+    pressure (Closes: #326855)
+
+ -- Peter Gervai <grin@tolna.net>  Wed,  7 Sep 2005 10:41:32 +0200
+
+elinks (0.10.4-6) unstable; urgency=high
+
+  * Recompile w/libc6 in sid (closes: #308869)
+  * Added autotools-dev in build-deps and try to update
+    basic autoconf files to support other archs
+
+ -- Peter Gervai <grin@tolna.net>  Fri, 13 May 2005 01:12:46 +0200
+
+elinks (0.10.4-5) unstable; urgency=low
+
+  * Removed smb config option from sample config file, not
+    necessary anyway (Closes: #307455)
+  * Added build-dep on smbclient, suggests smbclient
+  * Normal and lite both conflicts each other
+  * Enable html-highlighting
+  * Drop lite's big config (not strictly required)
+  * More elinks-lite optimalisation - less size
+  * Change user-agent string to debian specific
+  * Mess up debian/rules (almost called it "cleaning up") 
+    (Closes: #308179)
+
+ -- Peter Gervai <grin@tolna.net>  Thu, 12 May 2005 00:46:26 +0200
+
+elinks (0.10.4-4) unstable; urgency=low
+
+  * Added elinks-lite: no extra dependencies (Closes: #178038, #218453)
+
+ -- Peter Gervai <grin@tolna.net>  Thu, 28 Apr 2005 17:50:23 +0200
 
 elinks (0.10.4-3) unstable; urgency=low
 

@@ -247,7 +247,7 @@ _nl_load_domain(struct loaded_l10nfile *domain_file,
 	{
 		struct string filename;
 
-		if (init_string(&filename)
+		if (init_string(&filename) && 0
 		    && add_filename_to_string(&filename, domain_file)) {
 			fd = open(filename.source, O_RDONLY | O_BINARY);
 		}

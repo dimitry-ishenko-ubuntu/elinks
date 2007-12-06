@@ -8,6 +8,8 @@
 #include <time.h>
 #endif
 
+#include <sys/types.h>  /* off_t */
+
 typedef long milliseconds_T;
 #define MILLISECONDS_MAX ((milliseconds_T) (LONG_MAX / 1000L))
 #define ms_max(a, b) ((a) < (b) ? (b) : (a))

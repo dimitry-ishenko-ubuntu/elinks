@@ -3,6 +3,7 @@
 # ELinks debian/rules that uses debhelper.
 # GNU copyright 1997 to 1999 by Joey Hess.
 #
+# $Id: rules,v 1.15.2.1 2005/01/29 02:17:07 jonas Exp $
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
@@ -17,6 +18,17 @@ export DH_COMPAT=4
 # XXX: The last _has_ to be `Makefil', since find chokes on `Makefile'
 export DH_ALWAYS_EXCLUDE=CVS:.cvsignore:.vimrc:MT:.mt-attrs:Makefil
 
+# autotools-dev (re bug #262350)
+export DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+export DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+# FOR AUTOCONF 2.52 AND NEWER ONLY
+CONFFLAGS =
+ifeq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
+  CONFFLAGS += --build $(DEB_HOST_GNU_TYPE)
+else
+  CONFFLAGS += --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
+endif
 
 ## Handling of DEB_BUILD_OPTIONS
 #
@@ -38,6 +50,8 @@ endif
 endif
 
 
+dhbuildpackages=-pelinks -pelinks-lite
+
 ## Compile Configuration
 #
 # with GNUTLS	- due to license restictions
@@ -47,95 +61,172 @@ CONFIGURE_OPTIONS = \
  --prefix=/usr \
  --mandir=\$${prefix}/share/man \
  --sysconfdir=/etc/elinks \
- --with-xterm="x-terminal-emulator -e" \
  --without-openssl \
  --without-x \
  --with-gnutls=/usr \
  --with-perl --enable-nntp --enable-256-colors --enable-leds  \
- --without-spidermonkey
+ --without-spidermonkey --enable-html-highlight --disable-smb
 # spidermonkey: libsmjs-dev
 # perl libperl-dev
 
+CONFIGURE_OPTIONS_LITE = \
+ --prefix=/usr \
+ --mandir=\$${prefix}/share/man \
+ --sysconfdir=/etc/elinks \
+ --without-openssl \
+ --without-x \
+ --with-gnutls \
+ --without-perl --disable-nntp --disable-256-colors --disable-leds  \
+ --without-spidermonkey \
+ --without-gpm --without-zlib --without-bzlib --without-idn --without-lua \
+ --disable-nls --disable-formhist --disable-xbel \
+ --disable-data --disable-uri-rewrite --disable-smb --disable-mouse --disable-marks --disable-css \
+ --disable-backtrace --enable-fastmem --enable-small
+
+# remove -fno-incline for Cygwin if compile dies
+# (-nostdinc kills build, removed)
+CFLAGS_LITE := $(CFLAGS) -s -fno-inline -fomit-frame-pointer -O2 
+
 
 # The .deb file packaging root directory
-DEB_ROOT = `pwd`/debian/elinks
+DEB_ROOT = `pwd`/debian
 
+#useragent todo:
+DEBVERSION=`head -n1 debian/changelog|sed -e 's/.*elinks (\(.\+\)) .*/\1/'`
 
-build: debian/build-stamp
-debian/build-stamp:
+build: debian/build-heavy debian/build-lite
+
+install: build debian/install-heavy debian/install-lite
+
+debian/build-heavy:
 	dh_testdir
-	./configure $(CONFIGURE_MODE) $(CONFIGURE_OPTIONS)
-	$(MAKE)
-	touch debian/build-stamp
+	dh_clean -k
+	dh_installdirs -pelinks
+
+	##
+	## create elinks-heavy
+	##
+	ln -sf /usr/share/misc/config.sub .
+	ln -sf /usr/share/misc/config.guess .
+
+	[ -f config.h.in_DEBIANORIG ] || cp -p config.h.in config.h.in_DEBIANORIG
+
+	mkdir build-main && cd build-main && ../configure $(CONFFLAGS) $(CONFIGURE_MODE) $(CONFIGURE_OPTIONS)
+	$(MAKE) -C build-main
+	touch debian/build-heavy
+
+debian/install-heavy:
+	dh_testroot
+	#
+	# install elinks-heavy
+	#
+	$(MAKE) -C build-main install DESTDIR=$(DEB_ROOT)/elinks
+	mkdir -p debian/elinks/etc/elinks/
+	cat debian/elinks.conf | sed -e "s/ELinks\/%v-debian/ELinks\/$(DEBVERSION)-debian/g" > debian/elinks.conf.temp
+	install -o root -g root -m 644 debian/elinks.conf.temp debian/elinks/etc/elinks/elinks.conf
+	# KDE and Gnome menu integration (freedesktop.org)
+	mkdir -p debian/elinks/usr/share/applications/
+	install -o root -g root -m 644 debian/elinks.desktop debian/elinks/usr/share/applications/
+	# upstream CVS bug hack: remove double contrib dirs
+	-rm -rf contrib/lua/lua contrib/conv/conv contrib/guile/guile
+	# locale.alias causes conflicts and I believe it's not necessary
+	-rm -f debian/elinks/usr/share/locale/locale.alias
+
+
+debian/build-lite:
+	dh_testdir
+	dh_clean -k 
+	dh_installdirs -pelinks
+	
+	##
+	## create elinks-lite
+	##
+	ln -sf /usr/share/misc/config.sub .
+	ln -sf /usr/share/misc/config.guess .
+
+	[ -f config.h.in_DEBIANORIG ] || cp -p config.h.in config.h.in_DEBIANORIG
+
+	mkdir build-lite && cd build-lite && ../configure CFLAGS="$(CFLAGS_LITE)" $(CONFFLAGS) $(CONFIGURE_MODE) $(CONFIGURE_OPTIONS_LITE)
+	$(MAKE) -C build-lite
+	touch debian/build-lite
+
+debian/install-lite:
+	dh_testroot
+	#
+	# install elinks-lite
+	#
+	$(MAKE) -C build-lite install DESTDIR=$(DEB_ROOT)/elinks-lite
+	mkdir -p debian/elinks-lite/etc/elinks/
+	cat debian/elinks-lite.conf | sed -e "s/ELinks\/%v-debian/ELinks\/$(DEBVERSION)-lite-debian/g" > debian/elinks-lite.conf.temp
+	install -o root -g root -m 644 debian/elinks-lite.conf.temp debian/elinks-lite/etc/elinks/elinks.conf
+	# KDE and Gnome menu integration (freedesktop.org)
+	mkdir -p debian/elinks-lite/usr/share/applications/
+	install -o root -g root -m 644 debian/elinks.desktop debian/elinks-lite/usr/share/applications/
+	# locale.alias causes conflicts and I believe it's not necessary
+	-rm -f debian/elinks-lite/usr/share/locale/locale.alias
+	
 
 clean:
 	dh_testdir
 	dh_testroot
 	
+	rm -rf debian/elinks{,-lite} 
+	rm -rf debian/build-{main,lite}
+	
+	rm -f debian/build-{heavy,lite}
+
 	# Add here commands to clean up after the build process.
 	-$(MAKE) distclean
 	
-	# handle non-linux archs, patch by Robert Millan <rmh@debian.org>, bug#262350
-	cat debian/control.in \
-	| sed "s/@linux-gnu@/`type-handling any linux-gnu`/g" \
-	> debian/control
-	
 #	-find . -name ".#*" -exec rm -rf "{}" \;
+#
+	rm -rf build-main
+	rm -rf build-lite
+	rm -f debian/elinks.conf.temp
+	rm -f debian/elinks-lite.conf.temp
+	rm -f config.guess
+	rm -f config.sub
+	rm -f stamp-h.in
+	[ ! -f config.h.in_DEBIANORIG ] || mv config.h.in_DEBIANORIG config.h.in
+
 	dh_clean
 
-install: build
-	dh_testdir
-	dh_testroot
-	dh_clean -k
-	dh_installdirs
-	
-	# Add here commands to install the package into debian/elinks.
-	$(MAKE) install DESTDIR=$(DEB_ROOT)
-	
-	mkdir -p $(DEB_ROOT)/etc/elinks
-	install -o root -g root -m 644 contrib/elinks.conf $(DEB_ROOT)/etc/elinks/elinks.conf
-	# KDE and Gnome menu integration (freedesktop.org)
-	dh_install debian/elinks.desktop usr/share/applications/
-	# upstream CVS bug hack: remove double contrib dirs
-	-rm -rf contrib/lua/lua contrib/conv/conv contrib/guile/guile
-	# locale.alias causes conflicts and I believe it's not necessary
-	-rm -f $(DEB_ROOT)/usr/share/locale/locale.alias
 
 # Build architecture-independent files here.
-binary-indep: build install
+binary-indep: build 
 # We have nothing to do by default.
 
 # Build architecture-dependent files here.
 binary-arch: build install
 	dh_testdir
 	dh_testroot
-	dh_installdebconf	
-	dh_installdocs
-	dh_installexamples \
+	dh_installdebconf 
+	dh_installdocs 
+	dh_installexamples   \
 		-X colws.diff -X elinks.spec -X hooks.lua.in -X links_wps.zip \
 		-X wipe-out-ssl -X LinksOS2Icon.zip -X js-1.5-rc6a contrib/
-	dh_installmime
-	dh_installmenu
-	dh_installman
+	dh_installmime  
+	dh_installmenu  
+	dh_installman   
 	
 # comment out for slink:
 ##	dh_installinfo
 	
-	dh_installchangelogs ChangeLog
+	dh_installchangelogs   ChangeLog
 	
 # comment out for slink:
 ##	dh_link
 	
-	dh_strip
-	dh_compress
-	dh_fixperms
+	dh_strip  
+	dh_compress  
+	dh_fixperms  
 #	dh_makeshlibs
-	dh_installdeb
+	dh_installdeb  
 #	dh_perl
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
+	dh_shlibdeps   
+	dh_gencontrol  
+	dh_md5sums     
+	dh_builddeb    
 
 binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install
+.PHONY: build clean binary-indep binary-arch binary 
