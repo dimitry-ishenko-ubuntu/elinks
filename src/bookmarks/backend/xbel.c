@@ -183,9 +183,9 @@ print_xml_entities(struct secure_save_info *ssi, const unsigned char *str)
 				 || (x) == '{' || (x) == '%' \
 				 || (x) == '+')
 
-	static int cp = 0;
+	static int cp = -1;
 
-	if (!cp) get_cp_index("us-ascii");
+	if (cp == -1) cp = get_cp_index("us-ascii");
 
 	for (; *str; str++) {
 		if (accept_char(*str))
@@ -386,7 +386,7 @@ xbeltree_to_bookmarks_list(struct tree_node *node,
 
 			tmp = add_bookmark(current_parent, 0,
 					   /* The <title> element is optional */
-					   title ? title->text
+					   title && title->text ? title->text
 						 : (unsigned char *) gettext("No title"),
 					   /* XXX: The href attribute isn't optional but
 					    * we don't validate the source XML yet, so
@@ -407,7 +407,7 @@ xbeltree_to_bookmarks_list(struct tree_node *node,
 			title = get_child(node, "title");
 
 			tmp = add_bookmark(current_parent, 0,
-					   title ? title->text
+					   title && title->text ? title->text
 						 : (unsigned char *) gettext("No title"),
 					   NULL);
 

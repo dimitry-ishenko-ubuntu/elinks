@@ -23,6 +23,7 @@
 #include "document/view.h"
 #include "ecmascript/ecmascript.h"
 #include "ecmascript/spidermonkey/location.h"
+#include "ecmascript/spidermonkey/window.h"
 #include "intl/gettext/libintl.h"
 #include "main/select.h"
 #include "osdep/newwin.h"
@@ -63,6 +64,7 @@ const JSFunctionSpec history_funcs[] = {
 	{ NULL }
 };
 
+/* @history_funcs{"back"} */
 static JSBool
 history_back(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -79,6 +81,7 @@ history_back(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	return 2;
 }
 
+/* @history_funcs{"forward"} */
 static JSBool
 history_forward(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -91,6 +94,7 @@ history_forward(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	return 2;
 }
 
+/* @history_funcs{"go"} */
 static JSBool
 history_go(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -123,6 +127,7 @@ history_go(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 static JSBool location_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp);
 static JSBool location_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp);
 
+/* Each @location_class object must have a @window_class parent.  */
 const JSClass location_class = {
 	"location",
 	JSCLASS_HAS_PRIVATE,
@@ -137,11 +142,23 @@ const JSPropertySpec location_props[] = {
 	{ NULL }
 };
 
+/* @location_class.getProperty */
 static JSBool
 location_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	JSObject *parent = JS_GetParent(ctx, obj);
-	struct view_state *vs = JS_GetPrivate(ctx, parent);
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &location_class, NULL))
+		return JS_FALSE;
+	parent_win = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
 
 	if (!JSVAL_IS_INT(id))
 		return JS_TRUE;
@@ -153,19 +170,37 @@ location_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		astring_to_jsval(ctx, vp, get_uri_string(vs->uri, URI_ORIGINAL));
 		break;
 	default:
-		INTERNAL("Invalid ID %d in location_get_property().", JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case
+		 * and leave *@vp unchanged.  Do the same here.
+		 * (Actually not quite the same, as we already used
+		 * @undef_to_jsval.)  */
 		break;
 	}
 
 	return JS_TRUE;
 }
 
+/* @location_class.setProperty */
 static JSBool
 location_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	JSObject *parent = JS_GetParent(ctx, obj);
-	struct view_state *vs = JS_GetPrivate(ctx, parent);
-	struct document_view *doc_view = vs->doc_view;
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &location_class, NULL))
+		return JS_FALSE;
+	parent_win = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
 
 	if (!JSVAL_IS_INT(id))
 		return JS_TRUE;
@@ -187,6 +222,7 @@ const JSFunctionSpec location_funcs[] = {
 	{ NULL }
 };
 
+/* @location_funcs{"toString"}, @location_funcs{"toLocaleString"} */
 static JSBool
 location_toString(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {

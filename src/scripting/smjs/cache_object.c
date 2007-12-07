@@ -14,6 +14,8 @@
 #include "util/error.h"
 #include "util/memory.h"
 
+static const JSClass cache_entry_class; /* defined below */
+
 enum cache_entry_prop {
 	CACHE_ENTRY_CONTENT,
 	CACHE_ENTRY_TYPE,
@@ -31,10 +33,19 @@ static const JSPropertySpec cache_entry_props[] = {
 	{ NULL }
 };
 
+/* @cache_entry_class.getProperty */
 static JSBool
 cache_entry_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	struct cache_entry *cached = JS_GetPrivate(ctx, obj);
+	struct cache_entry *cached;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &cache_entry_class, NULL))
+		return JS_FALSE;
+
+	cached = JS_GetPrivate(ctx, obj); /* from @cache_entry_class */
 
 	if (!cache_entry_is_valid(cached)) return JS_FALSE;
 
@@ -75,17 +86,29 @@ cache_entry_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 		return JS_TRUE;
 	default:
-		INTERNAL("Invalid ID %d in cache_entry_get_property().",
-		         JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case
+		 * and leave *@vp unchanged.  Do the same here.
+		 * (Actually not quite the same, as we already used
+		 * @undef_to_jsval.)  */
+		return JS_TRUE;
 	}
-
-	return JS_FALSE;
 }
 
+/* @cache_entry_class.setProperty */
 static JSBool
 cache_entry_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	struct cache_entry *cached = JS_GetPrivate(ctx, obj);
+	struct cache_entry *cached;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &cache_entry_class, NULL))
+		return JS_FALSE;
+
+	cached = JS_GetPrivate(ctx, obj); /* from @cache_entry_class */
 
 	if (!cache_entry_is_valid(cached)) return JS_FALSE;
 
@@ -120,19 +143,24 @@ cache_entry_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		return JS_TRUE;
 	}
 	default:
-		INTERNAL("Invalid ID %d in cache_entry_set_property().",
-		         JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case.
+		 * Do the same here.  */
+		return JS_TRUE;
 	}
-
-
-
-	return JS_FALSE;
 }
 
+/* @cache_entry_class.finalize */
 static void
 cache_entry_finalize(JSContext *ctx, JSObject *obj)
 {
-	struct cache_entry *cached = JS_GetPrivate(ctx, obj);
+	struct cache_entry *cached;
+
+	assert(JS_InstanceOf(ctx, obj, (JSClass *) &cache_entry_class, NULL));
+	if_assert_failed return;
+
+	cached = JS_GetPrivate(ctx, obj); /* from @cache_entry_class */
 
 	if (!cached) return;
 
@@ -141,7 +169,7 @@ cache_entry_finalize(JSContext *ctx, JSObject *obj)
 	
 static const JSClass cache_entry_class = {
 	"cache_entry",
-	JSCLASS_HAS_PRIVATE,
+	JSCLASS_HAS_PRIVATE,	/* struct cache_entry * */
 	JS_PropertyStub, JS_PropertyStub,
 	cache_entry_get_property, cache_entry_set_property,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, cache_entry_finalize
@@ -160,7 +188,7 @@ smjs_get_cache_entry_object(struct cache_entry *cached)
 
 	if (!cache_entry_object) return NULL;
 
-	if (JS_FALSE == JS_SetPrivate(smjs_ctx, cache_entry_object, cached))
+	if (JS_FALSE == JS_SetPrivate(smjs_ctx, cache_entry_object, cached)) /* to @cache_entry_class */
 		return NULL;
 
 	object_lock(cached);

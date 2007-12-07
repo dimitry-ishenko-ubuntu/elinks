@@ -4,6 +4,9 @@
 #define _GNU_SOURCE /* Needed for asprintf() */
 #endif
 
+#error SMB protocol support is vulnerable to CVE-2006-5925.  Do not use.
+#error If you want to use SMB, please wait for ELinks 0.12.0 or see bug 844.
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif

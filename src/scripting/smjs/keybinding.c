@@ -13,18 +13,29 @@
 #include "scripting/smjs/elinks_object.h"
 #include "util/memory.h"
 
+static const JSClass keymap_class; /* defined below */
+
+/* @keymap_class.getProperty */
 static JSBool
 keymap_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
 	unsigned char *action_str;
 	unsigned char *keystroke_str;
-	int *data = JS_GetPrivate(ctx, obj);
-	enum keymap_id keymap_id = *data;
+	int *data;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &keymap_class, NULL))
+		return JS_FALSE;
+
+	data = JS_GetPrivate(ctx, obj); /* from @keymap_class */
 
 	keystroke_str = JS_GetStringBytes(JS_ValueToString(ctx, id));
 	if (!keystroke_str) goto ret_null;
 
-	action_str = get_action_name_from_keystroke(keymap_id, keystroke_str);
+	action_str = get_action_name_from_keystroke((enum keymap_id) *data,
+						    keystroke_str);
 	if (!action_str) goto ret_null;
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(ctx, action_str));
@@ -58,17 +69,25 @@ smjs_keybinding_action_callback(va_list ap, void *data)
 	return EVENT_HOOK_STATUS_LAST;
 }
 
+/* @keymap_class.setProperty */
 static JSBool
 keymap_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	int *data = JS_GetPrivate(ctx, obj);
-	enum keymap_id keymap_id = *data;
+	int *data;
 	unsigned char *keymap_str;
 	unsigned char *keystroke_str;
 
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &keymap_class, NULL))
+		return JS_FALSE;
+
+	data = JS_GetPrivate(ctx, obj); /* from @keymap_class */
+
 	/* Ugly fact: we need to get the string from the id to give to bind_do,
 	 * which will of course then convert the string back to an id... */
-	keymap_str = get_keymap_name(keymap_id);
+	keymap_str = get_keymap_name((enum keymap_id) *data);
 	if (!keymap_str) return JS_FALSE;
 
 	keystroke_str = JS_GetStringBytes(JS_ValueToString(ctx, id));
@@ -127,17 +146,23 @@ keymap_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	return JS_TRUE;
 }
 
+/* @keymap_class.finalize */
 static void
 keymap_finalize(JSContext *ctx, JSObject *obj)
 {
-	void *data = JS_GetPrivate(ctx, obj);
+	void *data;
+
+	assert(JS_InstanceOf(ctx, obj, (JSClass *) &keymap_class, NULL));
+	if_assert_failed return;
+
+	data = JS_GetPrivate(ctx, obj); /* from @keymap_class */
 
 	mem_free(data);
 }
 
 static const JSClass keymap_class = {
 	"keymap",
-	JSCLASS_HAS_PRIVATE,
+	JSCLASS_HAS_PRIVATE,	/* int * */
 	JS_PropertyStub, JS_PropertyStub,
 	keymap_get_property, keymap_set_property,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, keymap_finalize,
@@ -159,7 +184,7 @@ smjs_get_keymap_object(enum keymap_id keymap_id)
 	data = intdup(keymap_id);
 	if (!data) return NULL;
 
-	if (JS_TRUE == JS_SetPrivate(smjs_ctx, keymap_object, data))
+	if (JS_TRUE == JS_SetPrivate(smjs_ctx, keymap_object, data)) /* to @keymap_class */
 		return keymap_object;
 
 	mem_free(data);

@@ -16,6 +16,8 @@
 #include "util/memory.h"
 #include "viewer/text/vs.h"
 
+static const JSClass view_state_class; /* defined below */
+
 enum view_state_prop {
 	VIEW_STATE_PLAIN,
 	VIEW_STATE_URI,
@@ -27,10 +29,19 @@ static const JSPropertySpec view_state_props[] = {
 	{ NULL }
 };
 
+/* @view_state_class.getProperty */
 static JSBool
 view_state_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	struct view_state *vs = JS_GetPrivate(ctx, obj);
+	struct view_state *vs;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &view_state_class, NULL))
+		return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, obj); /* from @view_state_class */
 
 	undef_to_jsval(ctx, vp);
 
@@ -48,17 +59,29 @@ view_state_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 		return JS_TRUE;
 	default:
-		INTERNAL("Invalid ID %d in view_state_get_property().",
-		         JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case
+		 * and leave *@vp unchanged.  Do the same here.
+		 * (Actually not quite the same, as we already used
+		 * @undef_to_jsval.)  */
+		return JS_TRUE;
 	}
-
-	return JS_FALSE;
 }
 
+/* @view_state_class.setProperty */
 static JSBool
 view_state_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	struct view_state *vs = JS_GetPrivate(ctx, obj);
+	struct view_state *vs;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &view_state_class, NULL))
+		return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, obj); /* from @view_state_class */
 
 	if (!JSVAL_IS_INT(id))
 		return JS_FALSE;
@@ -70,16 +93,17 @@ view_state_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		return JS_TRUE;
 	}
 	default:
-		INTERNAL("Invalid ID %d in view_state_set_property().",
-		         JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case.
+		 * Do the same here.  */
+		return JS_TRUE;
 	}
-
-	return JS_FALSE;
 }
 
 static const JSClass view_state_class = {
 	"view_state",
-	JSCLASS_HAS_PRIVATE,
+	JSCLASS_HAS_PRIVATE,	/* struct view_state * */
 	JS_PropertyStub, JS_PropertyStub,
 	view_state_get_property, view_state_set_property,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
@@ -98,7 +122,7 @@ smjs_get_view_state_object(struct view_state *vs)
 
 	if (!view_state_object) return NULL;
 
-	if (JS_FALSE == JS_SetPrivate(smjs_ctx, view_state_object, vs))
+	if (JS_FALSE == JS_SetPrivate(smjs_ctx, view_state_object, vs))	/* to @view_state_class */
 		return NULL;
 
 	if (JS_FALSE == JS_DefineProperties(smjs_ctx, view_state_object,

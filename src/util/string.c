@@ -34,7 +34,7 @@
 #define string_assert(f, l, x, o) \
 	if ((assert_failed = !(x))) { \
 		errfile = f, errline = l, \
-		elinks_internal("[" o "] assertion " #x " failed!"); \
+		elinks_internal("[%s] assertion %s failed!", o, #x); \
 	}
 
 #ifdef DEBUG_MEMLEAK
@@ -325,7 +325,7 @@ add_string_to_string(struct string *string, struct string *from)
 	check_string_magic(string);
 	check_string_magic(from);
 
-	if (!*from->source) return NULL;
+	if (!from->length) return string; /* optimization only */
 
 	return add_bytes_to_string(string, from->source, from->length);
 }
