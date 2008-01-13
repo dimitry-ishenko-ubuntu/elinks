@@ -1,3 +1,49 @@
+elinks (0.11.3-1) unstable; urgency=low
+
+  * Adopted by Y Giridhar Appaji Nag <giridhar@appaji.net> (Closes: #451088)
+    + Add Co-maintainer Moritz Muehlenhoff <jmm@inutil.org> to Uploaders
+  * Documentation is now built using sources, depends on the features
+    configured while building elinks.
+  * Remove superfluous m4 and bison Build-Depends.
+  * Arch indep part of elinks is large, moved it to elinks-data package
+    + Add lintian/linda overrides for elinks.1 man-page (installed by the
+      elinks-data package).
+  * New upstream release 0.11.3 (Closes: #429311)
+    + Don't crash while sorting thru bookmarks (Closes: #315886)
+    + German PO file corrections (Closes: #313696)
+    + Use off_t for file size in FTP listing (Closes: #403139)
+  * Add get-orig-source target that gets orig source and removes debian
+    directory, translation files and config.{log,status} etc.
+  * Change from DH_COMPAT 4 to debian/compat (5)
+  * Move debian/watch file to version 3
+  * Bump up Standards-Version to 3.7.3
+    + Updated menu files for the latest menu policy.
+    + debian/copyright: include all the major authors and copyright holders
+      listed in source files.  ELinks is GPL2 only (Closes: #431211)
+  * Add Homepage: and Vcs-*: fields to debian/control
+  * maint-scripts: Remove debconf dependency and moving of elinks.conf.  Old
+    transition code, not necessary anymore.
+  * DH_ALWAYS_EXCLUDE=.gitignore in debian/rules (Closes: #413911)
+  * Add debian/patches, but not using dpatch
+    + Patch 01_asciidoc-escape-FTBFS.diff: Escape characters for asciidoc
+      conversion (prevents FTBFS in make all-docs)
+    + Patch 02_setup-bugs-FSSTND.diff: Point bugs URL to debian.org and
+      remove FSSTND dir in setup.h etc.
+    + Patch 03_417789-CVE-2007-2027.diff: Patch for #417789 from Julien
+      Cristau <jcristau@debian.org> made a diff.
+    + Patch 04_380347-entity_cache-overflow.diff: Prevent a buffer overflow
+      in entity_cache.  Thanks Kalle Olavi Niemitalo <kon@iki.fi> for the fix
+      (Closes: #380347)
+    + Patch 05_257762-transparency-off.diff: Turn terminal transparency off
+      by default.  Thanks Petr Baudis for the fix and Kalle Olavi Niemitalo
+      <kon@iki.fi> for a pointer to the fix (Closes: #257762)
+    + Patch 06_elinks.conf-parse-error.diff: create elinks-lite.conf, set
+      config.saving_style=3 and comment options that are not valid.
+    + Patch 07_local-CGI-query-fix.diff: Fix broken query parsing of file:
+      URIs for local CGI.
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Mon, 07 Jan 2008 00:10:17 +0530
+
 elinks (0.11.1-1.5) unstable; urgency=high
 
   * Non-maintainer upload by testing security team.
@@ -460,3 +506,4 @@ links-ssl (0.94-0pre9) unstable; urgency=low
 Local variables:
 mode: debian-changelog
 End:
+

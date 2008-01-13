@@ -1,232 +1,231 @@
 #!/usr/bin/make -f
-#
-# ELinks debian/rules that uses debhelper.
-# GNU copyright 1997 to 1999 by Joey Hess.
-#
-# $Id: rules,v 1.15.2.1 2005/01/29 02:17:07 jonas Exp $
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# This is the debhelper compatibility version to use.
-#export DH_COMPAT=2   # this should work if your debhelper is older!
-export DH_COMPAT=4
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
 
+export DH_ALWAYS_EXCLUDE=.gitignore
 
-# This adds the values the variable is set to to the -X options of all commands
-# that support the -X option
-# XXX: The last _has_ to be `Makefil', since find chokes on `Makefile'
-export DH_ALWAYS_EXCLUDE=CVS:.cvsignore:.vimrc:MT:.mt-attrs:Makefil
+PKG_NAME=elinks
+PKG_VERS=0.11.3
+UPSTR_SITE=http://$(PKG_NAME).or.cz
+UPSTR_DIR=$(PKG_NAME)-$(PKG_VERS)
+UPSTR_FILE=$(UPSTR_DIR).tar.bz2
+ORIG_DIR=$(UPSTR_DIR).orig
+ORIG_TAR=$(PKG_NAME)_$(PKG_VERS).orig.tar
 
-# autotools-dev (re bug #262350)
-export DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
-export DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+# These are used for cross-compiling and for saving the configure script
+# from having to guess our platform (since we know it already)
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
-# FOR AUTOCONF 2.52 AND NEWER ONLY
-CONFFLAGS =
-ifeq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
-  CONFFLAGS += --build $(DEB_HOST_GNU_TYPE)
+CFLAGS_COMMON=-Wall -g
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS_COMMON += -O0
+	CFLAGS_LITE=
 else
-  CONFFLAGS += --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
+	CFLAGS_COMMON += -O2
+	CFLAGS_LITE=-s -fno-inline -fomit-frame-pointer
 endif
 
-## Handling of DEB_BUILD_OPTIONS
-#
-# debug		- turn on all the built-in debugging
-# nostrip	- dh_strip will take care of this
-# noopt		- compiled with a minimum of optimization
+confopts = --prefix=/usr \
+	--mandir=\$${prefix}/share/man \
+	--infodir=\$${prefix}/share/info \
+	--sysconfdir=/etc/elinks \
+	--without-openssl \
+	--without-x \
+	--with-gnutls=/usr
 
-ifneq (,$(findstring debug, $(DEB_BUILD_OPTIONS)))
-CONFIGURE_MODE	= --enable-debug
-endif
+confopts_main = $(confopts) \
+	--enable-nntp \
+	--enable-256-colors \
+	--enable-leds \
+	--enable-html-highlight \
+	--disable-smb \
+	--with-perl \
+	--without-spidermonkey
 
-ifneq (,$(findstring noopt, $(DEB_BUILD_OPTIONS)))
-# Export it so configure can grab it
-export CFLAGS  += -O0 -Wall
-else
-ifeq (,$(CONFIGURE_MODE))
-CONFIGURE_MODE	= --enable-fastmem
-endif
-endif
+confopts_lite = $(confopts) \
+	--disable-nntp \
+	--disable-256-colors \
+	--disable-leds \
+	--disable-nls \
+	--disable-formhist \
+	--disable-xbel \
+	--disable-data \
+	--disable-uri-rewrite \
+	--disable-smb \
+	--disable-mouse \
+	--disable-marks \
+	--disable-css \
+	--disable-backtrace \
+	--enable-fastmem \
+	--enable-small \
+	--without-gpm \
+	--without-perl \
+	--without-spidermonkey \
+	--without-zlib \
+	--without-bzlib \
+	--without-idn \
+	--without-lua \
 
+save-upstream: patch save-stamp
+patch: patch-stamp
+patch-stamp:
+	mkdir -p debian/patched
+	for pfile in debian/patches/*.diff; do \
+		[ -f "$$pfile" ] || continue; \
+		pname="$$(basename $$pfile .diff)"; \
+		[ ! -f "debian/patched/$$pname.patched" ] || continue; \
+		echo "### Applying patch $$pname"; \
+		patch -p1 -N -b -B debian/patched/ < $$pfile; \
+		cp -f "$$pfile" "debian/patched/$$pname.patched"; \
+	done
+	touch $@
 
-dhbuildpackages=-pelinks -pelinks-lite
-
-## Compile Configuration
-#
-# with GNUTLS	- due to license restictions
-# without X	- since it only needed for RESETTING the xterm title and
-#		  resizing xterm windows
-CONFIGURE_OPTIONS = \
- --prefix=/usr \
- --mandir=\$${prefix}/share/man \
- --sysconfdir=/etc/elinks \
- --without-openssl \
- --without-x \
- --with-gnutls=/usr \
- --with-perl --enable-nntp --enable-256-colors --enable-leds  \
- --without-spidermonkey --enable-html-highlight --disable-smb
-# spidermonkey: libsmjs-dev
-# perl libperl-dev
-
-CONFIGURE_OPTIONS_LITE = \
- --prefix=/usr \
- --mandir=\$${prefix}/share/man \
- --sysconfdir=/etc/elinks \
- --without-openssl \
- --without-x \
- --with-gnutls \
- --without-perl --disable-nntp --disable-256-colors --disable-leds  \
- --without-spidermonkey \
- --without-gpm --without-zlib --without-bzlib --without-idn --without-lua \
- --disable-nls --disable-formhist --disable-xbel \
- --disable-data --disable-uri-rewrite --disable-smb --disable-mouse --disable-marks --disable-css \
- --disable-backtrace --enable-fastmem --enable-small
-
-# remove -fno-incline for Cygwin if compile dies
-# (-nostdinc kills build, removed)
-CFLAGS_LITE := $(CFLAGS) -s -fno-inline -fomit-frame-pointer -O2 
-
-
-# The .deb file packaging root directory
-DEB_ROOT = `pwd`/debian
-
-#useragent todo:
-DEBVERSION=`head -n1 debian/changelog|sed -e 's/.*elinks (\(.\+\)) .*/\1/'`
-
-build: debian/build-heavy debian/build-lite
-
-install: build debian/install-heavy debian/install-lite
-
-debian/build-heavy:
+save-stamp:
 	dh_testdir
-	dh_clean -k
-	dh_installdirs -pelinks
+	# Add here commands to configure the package.
+ifneq "$(wildcard /usr/share/misc/config.sub)" ""
+	[ ! -f config/config.sub ] || mv -f config/config.sub config/config.sub.ups
+	cp -f /usr/share/misc/config.sub config/config.sub
+endif
+ifneq "$(wildcard /usr/share/misc/config.guess)" ""
+	[ ! -f config/config.guess ] || mv -f config/config.guess config/config.guess.ups
+	cp -f /usr/share/misc/config.guess config/config.guess
+endif
+	[ ! -f config.h ] || mv -f config.h config.h.ups
+	[ ! -f Makefile.config ] || mv -f Makefile.config Makefile.config.ups
+	touch $@
 
-	##
-	## create elinks-heavy
-	##
-	ln -sf /usr/share/misc/config.sub .
-	ln -sf /usr/share/misc/config.guess .
+#Architecture 
+build: build-arch build-indep
 
-	[ -f config.h.in_DEBIANORIG ] || cp -p config.h.in config.h.in_DEBIANORIG
+build-arch: build-arch-stamp
+build-arch-stamp: patch-stamp save-stamp
+	mkdir $(CURDIR)/build-main && cd $(CURDIR)/build-main && \
+		$(CURDIR)/configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+		$(confopts_main) CFLAGS="$(CFLAGS_COMMON)" LDFLAGS="-Wl,-z,defs"
+	$(MAKE) -C $(CURDIR)/build-main
+	mkdir $(CURDIR)/build-lite && cd $(CURDIR)/build-lite && \
+		$(CURDIR)/configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+		$(confopts_lite) CFLAGS="$(CFLAGS_COMMON) $(CFLAGS_LITE)" LDFLAGS="-Wl,-z,defs"
+	$(MAKE) -C $(CURDIR)/build-lite
+	touch $@
 
-	mkdir build-main && cd build-main && ../configure $(CONFFLAGS) $(CONFIGURE_MODE) $(CONFIGURE_OPTIONS)
-	$(MAKE) -C build-main
-	touch debian/build-heavy
+build-indep: build-indep-stamp
+build-indep-stamp: patch-stamp save-stamp
+	$(MAKE) -C $(CURDIR)/build-main/doc all-docs
+	touch $@
 
-debian/install-heavy:
-	dh_testroot
-	#
-	# install elinks-heavy
-	#
-	$(MAKE) -C build-main install DESTDIR=$(DEB_ROOT)/elinks
-	mkdir -p debian/elinks/etc/elinks/
-	cat debian/elinks.conf | sed -e "s/ELinks\/%v-debian/ELinks\/$(DEBVERSION)-debian/g" > debian/elinks.conf.temp
-	install -o root -g root -m 644 debian/elinks.conf.temp debian/elinks/etc/elinks/elinks.conf
-	# KDE and Gnome menu integration (freedesktop.org)
-	mkdir -p debian/elinks/usr/share/applications/
-	install -o root -g root -m 644 debian/elinks.desktop debian/elinks/usr/share/applications/
-	# upstream CVS bug hack: remove double contrib dirs
-	-rm -rf contrib/lua/lua contrib/conv/conv contrib/guile/guile
-	# locale.alias causes conflicts and I believe it's not necessary
-	-rm -f debian/elinks/usr/share/locale/locale.alias
-
-
-debian/build-lite:
-	dh_testdir
-	dh_clean -k 
-	dh_installdirs -pelinks
-	
-	##
-	## create elinks-lite
-	##
-	ln -sf /usr/share/misc/config.sub .
-	ln -sf /usr/share/misc/config.guess .
-
-	[ -f config.h.in_DEBIANORIG ] || cp -p config.h.in config.h.in_DEBIANORIG
-
-	mkdir build-lite && cd build-lite && ../configure CFLAGS="$(CFLAGS_LITE)" $(CONFFLAGS) $(CONFIGURE_MODE) $(CONFIGURE_OPTIONS_LITE)
-	$(MAKE) -C build-lite
-	touch debian/build-lite
-
-debian/install-lite:
-	dh_testroot
-	#
-	# install elinks-lite
-	#
-	$(MAKE) -C build-lite install DESTDIR=$(DEB_ROOT)/elinks-lite
-	mkdir -p debian/elinks-lite/etc/elinks/
-	cat debian/elinks-lite.conf | sed -e "s/ELinks\/%v-debian/ELinks\/$(DEBVERSION)-lite-debian/g" > debian/elinks-lite.conf.temp
-	install -o root -g root -m 644 debian/elinks-lite.conf.temp debian/elinks-lite/etc/elinks/elinks.conf
-	# KDE and Gnome menu integration (freedesktop.org)
-	mkdir -p debian/elinks-lite/usr/share/applications/
-	install -o root -g root -m 644 debian/elinks.desktop debian/elinks-lite/usr/share/applications/
-	# locale.alias causes conflicts and I believe it's not necessary
-	-rm -f debian/elinks-lite/usr/share/locale/locale.alias
-	
-
-clean:
+clean: clean-patched unpatch
+clean-patched:
 	dh_testdir
 	dh_testroot
-	
-	rm -rf debian/elinks{,-lite} 
-	rm -rf debian/build-{main,lite}
-	
-	rm -f debian/build-{heavy,lite}
-
-	# Add here commands to clean up after the build process.
-	-$(MAKE) distclean
-	
-#	-find . -name ".#*" -exec rm -rf "{}" \;
-#
-	rm -rf build-main
-	rm -rf build-lite
-	rm -f debian/elinks.conf.temp
-	rm -f debian/elinks-lite.conf.temp
-	rm -f config.guess
-	rm -f config.sub
 	rm -f stamp-h.in
-	[ ! -f config.h.in_DEBIANORIG ] || mv config.h.in_DEBIANORIG config.h.in
+	rm -f build-arch-stamp build-indep-stamp save-stamp
+	rm -rf build-lite build-main
+	[ ! -f Makefile.config.ups ] || mv -f Makefile.config.ups Makefile.config
+	[ ! -f config.h.ups ] || mv -f config.h.ups config.h
+	[ ! -f config/config.guess.ups ] || mv -f config/config.guess.ups config/config.guess
+	[ ! -f config/config.sub.ups ] || mv -f config/config.sub.ups config/config.sub
+	rm -rf debian/tmp.elinks-data
+	dh_clean 
 
-	dh_clean
+unpatch:
+	for pfile in debian/patched/*.patched ; do \
+		[ -f "$$pfile" ] || continue; \
+		pname="$$(basename $$pfile .patched)"; \
+		[ -f "debian/patches/$$pname.diff" ] || continue; \
+		echo "### Reverting patch $$pname"; \
+		patch -p1 -N -R < $$pfile; \
+		rm -f "debian/patched/$$pname.patched"; \
+	done
+	rm -rf debian/patched patch-stamp
 
-
-# Build architecture-independent files here.
-binary-indep: build 
-# We have nothing to do by default.
-
-# Build architecture-dependent files here.
-binary-arch: build install
+install: install-indep install-arch
+install-indep:
 	dh_testdir
 	dh_testroot
-	dh_installdebconf 
-	dh_installdocs 
-	dh_installexamples   \
-		-X colws.diff -X elinks.spec -X hooks.lua.in -X links_wps.zip \
-		-X wipe-out-ssl -X LinksOS2Icon.zip -X js-1.5-rc6a contrib/
-	dh_installmime  
-	dh_installmenu  
-	dh_installman   
-	
-# comment out for slink:
-##	dh_installinfo
-	
-	dh_installchangelogs   ChangeLog
-	
-# comment out for slink:
-##	dh_link
-	
-	dh_strip  
-	dh_compress  
-	dh_fixperms  
-#	dh_makeshlibs
-	dh_installdeb  
-#	dh_perl
-	dh_shlibdeps   
-	dh_gencontrol  
-	dh_md5sums     
-	dh_builddeb    
+	dh_clean -k -i 
+	dh_installdirs -i
+	# Move elinks arch-indep from temp location to elinks-data
+	mv -f $(CURDIR)/debian/tmp.elinks-data/usr $(CURDIR)/debian/elinks-data/
+	# Install elinks documentation, remove manpages (already installed in
+	# elinks-data)
+	$(MAKE) -C build-main/doc DESTDIR=$(CURDIR)/debian/elinks-doc install-doc
+	mv -f $(CURDIR)/debian/elinks-doc/usr/share/doc/elinks $(CURDIR)/debian/elinks-doc/usr/share/doc/elinks-doc
+	rm -rf $(CURDIR)/debian/elinks-doc/usr/share/man
+	dh_install -i
 
-binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary 
+install-arch:
+	dh_testdir
+	dh_testroot
+	dh_clean -k -s 
+	dh_installdirs -s
+	# Install elinks binaries and contrib/elinks.conf
+	$(MAKE) -C build-main DESTDIR=$(CURDIR)/debian/elinks install
+	install -o root -g root -p -D -m 0644 $(CURDIR)/contrib/elinks.conf \
+		$(CURDIR)/debian/elinks/etc/elinks/elinks.conf
+	# Install elinks-lite binaries and contrib/elinks.conf
+	$(MAKE) -C build-lite DESTDIR=$(CURDIR)/debian/elinks-lite install
+	install -o root -g root -p -D -m 0644 $(CURDIR)/contrib/elinks-lite.conf \
+		$(CURDIR)/debian/elinks-lite/etc/elinks/elinks.conf
+	# Move elinks arch-indep parts to temp location for elinks-data
+	mkdir -p $(CURDIR)/debian/tmp.elinks-data/usr/
+	mv -f $(CURDIR)/debian/elinks/usr/share $(CURDIR)/debian/tmp.elinks-data/usr/
+	rm -f $(CURDIR)/debian/tmp.elinks-data/usr/share/locale/locale.alias
+	# Install lintian and linda over-rides for elinks.1
+	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.lintian \
+		$(CURDIR)/debian/elinks/usr/share/lintian/overrides/elinks
+	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.linda \
+		$(CURDIR)/debian/elinks/usr/share/linda/overrides/elinks
+	dh_link -pelinks usr/share/doc/elinks-data usr/share/doc/elinks
+	dh_install -s
+
+# Must not depend on anything. This is to be called by
+# binary-arch/binary-indep
+# in another 'make' thread.
+binary-common:
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs -Nelinks NEWS
+	dh_installdocs
+	dh_installexamples
+	dh_installmenu
+	dh_desktop
+	dh_installmime
+	dh_strip
+	dh_compress 
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+# Build architecture independant packages using the common target.
+binary-indep: build-indep install-indep
+	$(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
+
+# Build architecture dependant packages using the common target.
+binary-arch: build-arch install-arch
+	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
+
+get-orig-source:
+	wget -q $(UPSTR_SITE)/download/$(UPSTR_FILE)
+	tar -jxf $(UPSTR_FILE)
+	mv $(UPSTR_DIR) $(ORIG_DIR)
+	rm -f $(ORIG_DIR)/{po/*.gmo,config.log,config.status,features.log}
+	rm -rf $(ORIG_DIR)/{debian,po/.deps}
+	tar -cf $(ORIG_TAR) $(ORIG_DIR)
+	gzip --best $(ORIG_TAR)
+	rm -rf $(UPSTR_FILE) $(ORIG_DIR)
+	@echo "Re-packaged source file: $(ORIG_TAR).gz"
+	@ls -l $(ORIG_TAR).gz
+
+binary: binary-arch binary-indep
+.PHONY: build clean binary-indep binary-arch binary install install-indep install-arch patch unpatch get-orig-source save-upstream get-orig-source

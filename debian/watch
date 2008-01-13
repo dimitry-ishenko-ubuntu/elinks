@@ -1,0 +1,3 @@
+version=3
+
+http://elinks.or.cz/download/elinks-([\d]+.*)\.tar\.bz2

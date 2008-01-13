@@ -1,37 +1,66 @@
 Source: elinks
 Section: web
 Priority: optional
-Maintainer: Peter Gervai <grin@tolna.net>
-Standards-Version: 3.6.1
-Build-Depends: debhelper (>= 4.0.0), m4, bison, libgnutls-dev, libgpmg1-dev [!hurd-i386 !kfreebsd-i386 !kfreebsd-amd64], liblua50-dev, liblualib50-dev, libbz2-dev, libexpat1-dev (>= 1.95.6), libperl-dev, smbclient, autotools-dev
+Maintainer: Y Giridhar Appaji Nag <giridhar@appaji.net>
+Uploaders: Moritz Muehlenhoff <jmm@inutil.org>
+Build-Depends: debhelper (>= 5), libgnutls-dev, libgpmg1-dev [!hurd-i386 !kfreebsd-i386 !kfreebsd-amd64], liblua50-dev, liblualib50-dev, libbz2-dev, libexpat1-dev (>= 1.95.6), libperl-dev, autotools-dev, gettext, asciidoc, xmlto, docbook-utils, perl
+Standards-Version: 3.7.3
+Homepage: http://elinks.or.cz/
+Vcs-Svn: git://git.debian.org/git/collab-maint/elinks.git
+Vcs-Browser: http://git.debian.org/git/collab-maint/elinks.git
 
 Package: elinks
 Architecture: any
-Depends: ${shlibs:Depends}, debconf
-Suggests: smbclient
+Depends: ${shlibs:Depends}, elinks-data (= ${source:Version})
+Suggests: elinks-doc
 Provides: links, www-browser
 Conflicts: elinks-lite
-Description: advanced text-mode WWW browser
- ELinks (Enhanced Links) is a lynx-like character mode browser,
- created from the Links browser with many patches and enhancements.
- It includes support for rendering tables and frames, features 
- background downloads, can display colors, supports the Lua scripting
- language, IPV6 and has many other features. ELinks is linked against
- GNUTLS to prevent license issues.
+Description: Advanced text-mode WWW browser
+ ELinks (Enhanced Links) is a lynx-like character mode browser, created
+ from the Links browser with many patches and enhancements.  It includes
+ support for rendering tables and frames, features background downloads,
+ can display colors, supports the Lua scripting language, IPV6 and has
+ many other features.
+
+Package: elinks-data
+Architecture: all
+Recommends: elinks (= ${source:Version})
+Conflicts: elinks (<= 0.11.1-1.5), elinks-lite
+Replaces: elinks (<= 0.11.1-1.5)
+Description: Data files for ELinks - An advanced text-mode WWW browser
+ ELinks (Enhanced Links) is a lynx-like character mode browser, created
+ from the Links browser with many patches and enhancements.  It includes
+ support for rendering tables and frames, features background downloads,
+ can display colors, supports the Lua scripting language, IPV6 and has
+ many other features.
  .
- Homepage: http://elinks.or.cz/
+ This package contains the data files that are necessary to use elinks.
+
+Package: elinks-doc
+Section: doc
+Architecture: all
+Suggests: elinks
+Conflicts: elinks (<= 0.11.1-1.5), elinks-lite (<= 0.11.1-1.5)
+Description: Documentation for ELinks - An advanced text-mode WWW browser
+ ELinks (Enhanced Links) is a lynx-like character mode browser, created
+ from the Links browser with many patches and enhancements.  It includes
+ support for rendering tables and frames, features background downloads,
+ can display colors, supports the Lua scripting language, IPV6 and has
+ many other features.
+ .
+ This package contains the documentation and manuals for ELinks.
 
 Package: elinks-lite
 Architecture: any
-Depends: ${shlibs:Depends}, debconf
+Depends: ${shlibs:Depends}
+Suggests: elinks-doc
 Provides: links, www-browser
 Conflicts: elinks
-Description: advanced text-mode WWW browser (lite version)
- ELinks (Enhanced Links) is a lynx-like character mode browser,
- created from the Links browser with many patches and enhancements.
- It includes support for rendering tables and frames, features 
- background downloads, can display colors. This lite version
- contains no scripting or extra features but doesn't depend on
- other libraries either, so it's useful for small systems.
+Description: Lightweight version of Elinks - An advanced text-mode WWW browser
+ ELinks (Enhanced Links) is a lynx-like character mode browser, created
+ from the Links browser with many patches and enhancements.  It includes
+ support for rendering tables and frames, features background downloads
+ and can display colors.
  .
- Homepage: http://elinks.or.cz/
+ This lite version contains no scripting or extra features but doesn't
+ depend on other libraries either, so it's useful for small systems.
