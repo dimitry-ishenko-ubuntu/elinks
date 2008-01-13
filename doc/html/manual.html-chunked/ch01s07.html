@@ -1,13 +1,13 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Feature configuration file (features.conf)</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"><link rel="start" href="index.html" title="The ELinks Manual"><link rel="up" href="ch01.html" title="Chapter 1. Getting ELinks up and running"><link rel="prev" href="ch01s06.html" title="ECMAScript support?!"><link rel="next" href="ch02.html" title="Chapter 2. Frequently Asked Questions"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Feature configuration file (<code class="literal">features.conf</code>)</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch01s06.html">Prev</a> </td><th width="60%" align="center">Chapter 1. Getting ELinks up and running</th><td width="20%" align="right"> <a accesskey="n" href="ch02.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id2513777"></a>Feature configuration file (<code class="literal">features.conf</code>)</h2></div></div></div><p>This file contains various compile-time configuration settings, which you can
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Feature configuration file (features.conf)</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"><link rel="start" href="index.html" title="The ELinks Manual"><link rel="up" href="ch01.html" title="Chapter 1. Getting ELinks up and running"><link rel="prev" href="ch01s06.html" title="ECMAScript support?!"><link rel="next" href="ch02.html" title="Chapter 2. Frequently Asked Questions"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Feature configuration file (<code class="literal">features.conf</code>)</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch01s06.html">Prev</a> </td><th width="60%" align="center">Chapter 1. Getting ELinks up and running</th><td width="20%" align="right"> <a accesskey="n" href="ch02.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id2514262"></a>Feature configuration file (<code class="literal">features.conf</code>)</h2></div></div></div><p>This file contains various compile-time configuration settings, which you can
 adjust below. You can fine-tune the ELinks binary to include really only what
 you want it to. It acts as a front-end to the configure script in the sense
 that it is possible to control any features in this file by passing arguments
 to the configure script. In fact any arguments given to the script will
 overrule the values set in this file.</p><p>There are still some things which are to be adjusted only directly through the
-configure script arguments though, so check ./configure —help out as well!</p><p>All dependency checking is done by the configure script so even though a
+configure script arguments though, so check ./configure --help out as well!</p><p>All dependency checking is done by the configure script so even though a
 feature is enabled here it is possible that it will be disabled at compile
 time if the dependencies are not met. Check the features.log file generated
-by the configure script to make sure.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2513822"></a>Notes for users</h3></div></div></div><p>All features that can be controlled using this file are already set to their
+by the configure script to make sure.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2514308"></a>Notes for users</h3></div></div></div><p>All features that can be controlled using this file are already set to their
 default values. The syntax used is hopefully familiar to most people.</p><p><span class="emphasis"><em>#</em></span> chars start a comment that runs until the end of the line.</p><p>The features are controlled by setting the various CONFIG_&lt;FEATURE&gt; variables
 to either <span class="emphasis"><em>yes</em></span> or <span class="emphasis"><em>no</em></span> depending on whether it should be enabled or disabled.
 So in order to disable bookmark support a line in this file should say:</p><pre class="literallayout">CONFIG_BOOKMARKS=no</pre><p>It is also possible to simply comment out the line in order to disable it.
@@ -16,11 +16,11 @@ set it to the value you desire.</p></div><div class="section" lang="en"><div cla
 by pressing <span class="emphasis"><em>s</em></span>. When bookmarks are enabled, also support for the internal
 ELinks bookmarks format is always compiled in.</p><p>This is a favourite target for disabling in various embedded applications.
 It all depends on your requirements.</p><p>Also read the “The Ultimate Bookmarks Guide” in doc/bookmarks.txt</p><p><span class="strong"><strong>Default:</strong></span>  enabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-XBEL-BOOKMARKS"></a>XBEL Bookmarks (<code class="literal">CONFIG_XBEL_BOOKMARKS</code>)</h3></div></div></div><p>ELinks also supports universal XML bookmarks format called XBEL, also
-supported by ie. Galeon, various "always-have-my-bookmarks" websites and
+supported by e.g. Galeon, various "always-have-my-bookmarks" websites and
 number of universal bookmark converters.</p><p>Frequently, you know you will not need it, then you can of course happily
 forcibly remove support for it and save few bytes.</p><p><span class="strong"><strong>Default:</strong></span>  enabled if libexpat is found and bookmarks are enabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-COOKIES"></a>Cookies (<code class="literal">CONFIG_COOKIES</code>)</h3></div></div></div><p>Support for HTTP cookies --- a data token which the server sends the client
 once and then the client sends it back along each request to the server.  This
-mechanism is crucial for ie. keeping HTTP sessions (you "log in" to a site,
+mechanism is crucial e.g. for keeping HTTP sessions (you "log in" to a site,
 and from then on the site recognizes you usually because of the cookie), but
 also for various banner systems, remembering values filled to various forms,
 and so on. You can further tune the ELinks behaviour at runtime (whether to
@@ -41,7 +41,7 @@ records that you visited it, when did you do that and the title of the page.
 Then, you can see when did you visit a link last time (and what was the title
 of the target document at that time), links can be coloured as visited etc.</p><p>If you disable this feature, you will not lose any crucial functionality, just
 some relatively minor convenience features, which can nevertheless prove
-sometimes very practical.</p><p><span class="strong"><strong>Default:</strong></span>  enabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2514131"></a>MIME</h3></div></div></div><p>ELinks uses a MIME system for determining the content type of documents and
+sometimes very practical.</p><p><span class="strong"><strong>Default:</strong></span>  enabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2514617"></a>MIME</h3></div></div></div><p>ELinks uses a MIME system for determining the content type of documents and
 configuring programs for external handling. By default the option system can
 be used to configure how media types are handled. More info about how to set
 up the MIME handling using the option system can be found in the doc/mime.html
@@ -114,10 +114,12 @@ and various file types that can be downloaded and viewed.</p><p>It is still very
 implemented.</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-NNTP"></a>NNTP Protocol Support (<code class="literal">CONFIG_NNTP</code>)</h3></div></div></div><p>Network news transport protocol support makes it possible to access nntp
 and news servers and read postings. It is still very experimental and is
 far from being considered a “news reader”.</p><p>It is possible to list news groups on a server, articles in a news group
-and retrieve articles by their number or message-id.</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-SMB"></a>SMB Protocol Support (<code class="literal">CONFIG_SMB</code>)</h3></div></div></div><p>ELinks supports browsing over the SMB protocol (URI <span class="emphasis"><em>smb</em></span> scheme), using the
-smbclient program as back-end. Therefore, in order to have this enabled, you
-will need to install Samba (or at least just the smbclient part, if you can
-install it separately).</p><p><span class="strong"><strong>Default:</strong></span>  enabled if smbclient will be found</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-CSS"></a>Cascading Style Sheets (<code class="literal">CONFIG_CSS</code>)</h3></div></div></div><p>Simplistic CSS support. It is still very much in it's infancy so don't expect
+and retrieve articles by their number or message-id.</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-SMB"></a>SMB Protocol Support (<code class="literal">CONFIG_SMB</code>)</h3></div></div></div><p>ELinks supports browsing over the SMB protocol (URI <span class="emphasis"><em>smb</em></span> scheme),
+using the libsmbclient library as back-end.  Therefore, in order to
+have this enabled, you will need to install Samba (or at least just
+the libsmbclient part, if you can install it separately).</p><p>This use of libsmbclient is believed to be immune to the command
+injection attacks (CVE-2006-5925, bug 841) from which earlier ELinks
+releases (0.9.0 to 0.11.1) suffered.</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-CSS"></a>Cascading Style Sheets (<code class="literal">CONFIG_CSS</code>)</h3></div></div></div><p>Simplistic CSS support. It is still very much in it's infancy so don't expect
 too much. If you have use of background colors enabled more pages will have
 the intended background color. Also quite a few additional text attributes are
 applied. One example is highlighting of search words on Google's cached pages.</p><p>There are options to disable both imported style sheets to minimize network
@@ -141,9 +143,9 @@ mouse reporting takes control over the terminal so that copy and pasting text
 from and to ELinks has to be done by holding down the Shift key.</p><p><span class="strong"><strong>Default:</strong></span>  enabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-88-COLORS"></a>88 Colors in Terminals (<code class="literal">CONFIG_88_COLORS</code>)</h3></div></div></div><p>Define to add support for using 88 colors in terminals. Note that this
 requires a capable terminal emulator, such as:</p><div class="itemizedlist"><ul type="disc"><li>
 Thomas Dickey's XTerm, version 111 or later (check which version you have
-with xterm -version) compiled with —enable-88-color.
+with xterm -version) compiled with --enable-88-color.
 </li><li>
-Rxvt, version 2.7.9 or later compiled with —enable-88-color.
+Rxvt, version 2.7.9 or later compiled with --enable-88-color.
 </li></ul></div><p>You will still need to enable this at runtime for a given terminal in terminal
 options, or set your $TERM variable to xterm-88color - then, ELinks will
 automatically configure itself to make use of all the available terminal
@@ -155,9 +157,9 @@ when you actually run it in the suitable terminal, it looks really impressive,
 I'd say marvelous!</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-256-COLORS"></a>256 Colors in Terminals (<code class="literal">CONFIG_256_COLORS</code>)</h3></div></div></div><p>Define to add support for using 256 colors in terminals. Note that this
 requires a capable terminal emulator, such as:</p><div class="itemizedlist"><ul type="disc"><li>
 Thomas Dickey's XTerm, version 111 or later (check which version you have
-with xterm -version) compiled with —enable-256-color.
+with xterm -version) compiled with --enable-256-color.
 </li><li>
-Rxvt, version 2.7.9 or later compiled with —enable-256-color.
+Rxvt, version 2.7.9 or later compiled with --enable-256-color.
 </li><li>
 Recent versions of PuTTY also have some support for 256 colors.
 </li></ul></div><p>You will still need to enable this at runtime for a given terminal in terminal
@@ -168,11 +170,12 @@ w/o the 256 colors support.</p><p>When enabled, the memory usage is somewhat inc
 and 16 colors mode (the memory consumption can be especially remarkable when
 rendering very large documents and/or using very large terminals).  However,
 when you actually run it in the suitable terminal, it looks really impressive,
-I'd say marvelous!</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-EXMODE"></a>Ex-mode Interface (<code class="literal">CONFIG_EXMODE</code>)</h3></div></div></div><p>The ex-mode interface makes a prompt available when pressing <span class="emphasis"><em>:</em></span>. The prompt
+I'd say marvelous!</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-TRUE-COLOR"></a>True color (<code class="literal">CONFIG_TRUE_COLOR</code>)</h3></div></div></div><p>Define to add support for True color. Note that only terminal capable to show
+it is konsole from kdebase-3.5.4. This mode eats a lot of memory.</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-EXMODE"></a>Ex-mode Interface (<code class="literal">CONFIG_EXMODE</code>)</h3></div></div></div><p>The ex-mode interface makes a prompt available when pressing <span class="emphasis"><em>:</em></span>. The prompt
 can be used for entering actions like <span class="emphasis"><em>:goto-url</em></span> and configuration file
 commands.</p><p>The code is still very experimental and lacks much work such as tab
 completion.</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-LEDS"></a>LEDs (<code class="literal">CONFIG_LEDS</code>)</h3></div></div></div><p>These are the tiny LED-like indicators, shown at the bottom-right of the
-screen as [-----]. They are used for indication of various states, ie.
+screen as [-----]. They are used for indication of various states, e.g.
 whether you are currently talking through a SSL-secured connection,
 what is the current input mode (normal or insert), JavaScript errors etc.</p><p><span class="strong"><strong>Default:</strong></span>  enabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-MARKS"></a>Document Marks (<code class="literal">CONFIG_MARKS</code>)</h3></div></div></div><p>Makes it possible to set marks in a document and then later jump to them kind
 of like how fragments in URIs work. It is currently only possible to jump to
@@ -196,7 +199,14 @@ portability layer instead of those available in the C library on the system.</p>
 the portability layer.</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-SMALL"></a>Small binary (<code class="literal">CONFIG_SMALL</code>)</h3></div></div></div><p>Reduces the size of the binary but also disables a few memory consuming
 optimizations to make the program much lighter when running.</p><p>Part of the size reduction is due to various help text not being compiled in
 which will affect usability. Also the disabled optimization will make ELinks
-run slower.</p><p>See doc/small.txt for more information about how to reduce the size of ELinks.</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-BACKTRACE"></a>Back-trace Printing (<code class="literal">CONFIG_BACKTRACE</code>)</h3></div></div></div><p>Once upon a time, a disaster happens and ELinks crashes. That is a very sad
+run slower.</p><p>See doc/small.txt for more information about how to reduce the size of ELinks.</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-UTF8"></a>Unicode UTF-8 support (<code class="literal">CONFIG_UTF8</code>)</h3></div></div></div><p>By enabling this option you get better Unicode support. At present only some
+parts of ELinks are influenced with this. It includes DOM, plain, HTML
+renderer and user interface. Beside normal Unicode characters there is
+support for double-width characters (like Japanese, etc.).</p><p>Some features of Unicode are not handled at all. Combining characters is
+most visible absence.
+Some features are partially supported. Like line breaking between
+double-width characters. There is no other detection for determining when to
+break or not.</p><p>Note: This UTF-8 support is experimental.</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-BACKTRACE"></a>Back-trace Printing (<code class="literal">CONFIG_BACKTRACE</code>)</h3></div></div></div><p>Once upon a time, a disaster happens and ELinks crashes. That is a very sad
 event and it would be very nice to have some means how to diagnose it. In the
 crash handler, ELinks prints out various helpful things, however the truly
 important information is _where_ did it crash. Usually, users do not have gdb

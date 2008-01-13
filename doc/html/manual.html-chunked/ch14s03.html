@@ -1,5 +1,6 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Using ELinks with Lua</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"><link rel="start" href="index.html" title="The ELinks Manual"><link rel="up" href="ch14.html" title="Chapter 14. Scripting ELinks with Lua"><link rel="prev" href="ch14s02.html" title="Installing"><link rel="next" href="ch14s04.html" title="Example recipes"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Using ELinks with Lua</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch14s02.html">Prev</a> </td><th width="60%" align="center">Chapter 14. Scripting ELinks with Lua</th><td width="20%" align="right"> <a accesskey="n" href="ch14s04.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id2521902"></a>Using ELinks with Lua</h2></div></div></div><p>Out of the box, ELinks with Lua will do nothing different from regular ELinks.
-You need to write some scripts.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2521915"></a>ELinks Lua additions</h3></div></div></div><p>gets called at a particular point during the execution of ELinks.  To make
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Using ELinks with Lua</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"><link rel="start" href="index.html" title="The ELinks Manual"><link rel="up" href="ch14.html" title="Chapter 14. Scripting ELinks with Lua"><link rel="prev" href="ch14s02.html" title="Installing"><link rel="next" href="ch14s04.html" title="Example recipes"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Using ELinks with Lua</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch14s02.html">Prev</a> </td><th width="60%" align="center">Chapter 14. Scripting ELinks with Lua</th><td width="20%" align="right"> <a accesskey="n" href="ch14s04.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id2522438"></a>Using ELinks with Lua</h2></div></div></div><p>Out of the box, ELinks with Lua will do nothing different from regular ELinks.
+You need to write some scripts.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2522452"></a>ELinks Lua additions</h3></div></div></div><p>The Lua support is based on the idea of <span class="strong"><strong>hooks</strong></span>.  A hook is a function that
+gets called at a particular point during the execution of ELinks.  To make
 ELinks do what you want, you can add and edit such hooks.</p><p>The Lua support also adds an extra dialog box, which you can open while in
 ELinks with the comma (<code class="literal">,</code>) key.  Here you can enter Lua expressions for
 evaluation, or override it to do something different.</p><p>And finally, you can bind keystrokes to Lua functions.  These keystrokes
@@ -8,11 +9,11 @@ they're more convenient.</p><p>Note that this document assumes you have some kno
 For that, you should refer to the Lua reference manual
 (<a href="http://www.lua.org/docs.html" target="_top">http://www.lua.org/docs.html</a>). In fact, the language is relatively
 trivial, though. You could already do wonders with simply refactoring the
-example scripts.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2521973"></a>Config file</h3></div></div></div><p>On startup, ELinks reads in two Lua scripts.  Firstly, a system-wide
+example scripts.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2522515"></a>Config file</h3></div></div></div><p>On startup, ELinks reads in two Lua scripts.  Firstly, a system-wide
 configuration file called <code class="literal">/etc/elinks/hooks.lua</code>, then a file in your home
 directory called <code class="literal">~/.elinks/hooks.lua</code>.  From these files, you can include
 other Lua files with <code class="literal">dofile</code>, if necessary.</p><p>To see what kind of things you should put in here, look at
-<code class="literal">contrib/lua/hooks.lua</code>.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2522020"></a>Hooks</h3></div></div></div><p>The following hooks are available.</p><div class="variablelist"><dl><dt><span class="term">
+<code class="literal">contrib/lua/hooks.lua</code>.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2522561"></a>Hooks</h3></div></div></div><p>The following hooks are available.</p><div class="variablelist"><dl><dt><span class="term">
 goto_url_hook (url, current_url)
 </span></dt><dd>
         This hook is called when the user enters a string into the "Go to URL"
@@ -57,17 +58,16 @@ quit_hook ()
 </span></dt><dd>
         This hook is run just before ELinks quits.  It is useful for cleaning
         up things, such as temporary files you have created.
-</dd></dl></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2522258"></a>Functions</h3></div></div></div><p>As well as providing hooks, ELinks provides some functions in addition to the
+</dd></dl></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2522800"></a>Functions</h3></div></div></div><p>As well as providing hooks, ELinks provides some functions in addition to the
 standard Lua functions.</p><div class="variablelist"><dl><dt><span class="term">
 enable_systems_functions ()
-</span></dt><dd>
+</span></dt><dd><p>
 Enable some potentially dangerous functions, as well as some other
 functions which were unfortunate enough to be lumped in the same group.
-</dd></dl></div><p>The functions are: <code class="literal">openfile</code>, <code class="literal">closefile</code>, <code class="literal">readfrom</code>, <code class="literal">writeto</code>, <code class="literal">appendto</code>,
+</p><p>The functions are: <code class="literal">openfile</code>, <code class="literal">closefile</code>, <code class="literal">readfrom</code>, <code class="literal">writeto</code>, <code class="literal">appendto</code>,
 <code class="literal">pipe_read</code>, <code class="literal">remove</code>, <code class="literal">rename</code>, <code class="literal">flush</code>, <code class="literal">seek</code>, <code class="literal">tmpname</code>, <code class="literal">read</code>, <code class="literal">write</code>
 <code class="literal">execute</code>, <code class="literal">exit</code>, <code class="literal">clock</code>, <code class="literal">date</code>, <code class="literal">getenv</code>, <code class="literal">setlocale</code>.</p><p>Note: <code class="literal">setlocale</code> is a standard Lua function and will not affect
-the current ELinks locale.
-@end deffn</p><div class="variablelist"><dl><dt><span class="term">
+the current ELinks locale.</p></dd><dt><span class="term">
 current_url ()
 </span></dt><dd>
         Returns the URL of the current page being shown (in the ELinks session
@@ -114,7 +114,7 @@ bind_key (keymap, keystroke, function)
         keystroke as you would write it in the ELinks config file
         <code class="literal">~/.elinks/elinks.conf</code>.  The function <code class="literal">function</code> should take no
         arguments, and should return the same values as <code class="literal">lua_console_hook</code>.
-</dd></dl></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2522638"></a>User protocol</h3></div></div></div><p>There is one more little thing which Links-Lua adds, which will not be
+</dd></dl></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2523177"></a>User protocol</h3></div></div></div><p>There is one more little thing which Links-Lua adds, which will not be
 described in detail here.  It is the fake "user:" protocol, which can be used
 when writing your own addons.  It allows you to generate web pages containing
 links to "user://blahblah", which can be intercepted by the <code class="literal">follow_url_hook</code>

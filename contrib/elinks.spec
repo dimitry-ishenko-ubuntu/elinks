@@ -31,7 +31,7 @@
 
 Summary:	Enhanced version of Links (Lynx-like text WWW browser)
 Name:		elinks
-Version:	0.11.1
+Version:	0.11.3
 Release:	1
 License:	GPL
 Vendor:		ELinks project <elinks-users@linuxfromscratch.org>
@@ -104,7 +104,7 @@ install \
 	contrib/elinks.vim contrib/elinks-vim.diff contrib/keybind*.conf \
 	$RPM_BUILD_ROOT/%{_defaultdocdir}/%{name}/contrib/
 install \
-	contrib/conv/w3m2links.gawk contrib/conv/conf-links2elinks.pl \
+	contrib/conv/w3m2links.awk contrib/conv/conf-links2elinks.pl \
 	contrib/conv/mailcap.pl contrib/conv/old_to_new_bookmarks.sh \
 	$RPM_BUILD_ROOT/%{_defaultdocdir}/%{name}/conv/
 install \
@@ -117,7 +117,7 @@ install \
 	contrib/perl/hooks.pl \
 	$RPM_BUILD_ROOT/%{_defaultdocdir}/%{name}/perl
 install \
-	doc/*.txt doc/*.html \
+	doc/*.txt \
 	$RPM_BUILD_ROOT/%{_defaultdocdir}/%{name}/
 
 %find_lang %{name}
@@ -133,14 +133,17 @@ rm -rf $RPM_BUILD_ROOT
 
 # date +"%a %b %d %Y"
 %changelog
+* Fri Feb 17 2006 Witold Filipczyk <witekfl@pld-linux.org>
+- typo
+
 * Thu Dec 29 2005 Miciah Dashiel Butler Masters <mdm0304@ecu.edu>
 - elinks.or.cz -> elinks.cz
 
-*Tue Jun 14 2005 Witold Filipczyk <witekfl@pld-linux.org>
+* Tue Jun 14 2005 Witold Filipczyk <witekfl@pld-linux.org>
 - removed unused texi2html dependency
 - removed unused libdir directory
 
-*Mon Sep 27 2004 Witold Filipczyk <witekfl@pld-linux.org>
+* Mon Sep 27 2004 Witold Filipczyk <witekfl@pld-linux.org>
 - by default build feature rich ELinks
 
 * Thu Mar 25 2004 Witold Filipczyk <witekfl@pld-linux.org>
@@ -150,7 +153,7 @@ rm -rf $RPM_BUILD_ROOT
 * Wed Dec 10 2003 Witold Filipczyk <witekfl@pld-linux.org>
 - enabled leds and local-cgi
 
-* Sun 0ct 26 2003 Witold Filipczyk <witekfl@pld-linux.org>
+* Sun Oct 26 2003 Witold Filipczyk <witekfl@pld-linux.org>
 - revert to version from 5 October
 
 * Sat Oct 25 2003 Witold Filipczyk <witekfl@pld-linux.org>

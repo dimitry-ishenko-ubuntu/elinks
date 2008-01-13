@@ -14,19 +14,25 @@
 #include "util/memory.h"
 
 
+static const JSClass bookmark_class, bookmark_folder_class; /* defined below */
+
+
 /*** common code ***/
 
 static JSObject *
 smjs_get_bookmark_generic_object(struct bookmark *bookmark, JSClass *clasp)
 {
 	JSObject *jsobj;
-	
+
+	assert(clasp == &bookmark_class || clasp == &bookmark_folder_class);
+	if_assert_failed return NULL;
+
 	jsobj = JS_NewObject(smjs_ctx, clasp, NULL, NULL);
 	if (!jsobj) return NULL;
 
 	if (!bookmark) return jsobj;
 
-	if (JS_TRUE == JS_SetPrivate(smjs_ctx, jsobj, bookmark)) {
+	if (JS_TRUE == JS_SetPrivate(smjs_ctx, jsobj, bookmark)) { /* to @bookmark_class or @bookmark_folder_class */
 		object_lock(bookmark);
 
 		return jsobj;
@@ -35,10 +41,17 @@ smjs_get_bookmark_generic_object(struct bookmark *bookmark, JSClass *clasp)
 	return NULL;
 };
 
+/* @bookmark_class.finalize, @bookmark_folder_class.finalize */
 static void
 bookmark_finalize(JSContext *ctx, JSObject *obj)
 {
-	struct bookmark *bookmark = JS_GetPrivate(ctx, obj);
+	struct bookmark *bookmark;
+
+	assert(JS_InstanceOf(ctx, obj, (JSClass *) &bookmark_class, NULL)
+	    || JS_InstanceOf(ctx, obj, (JSClass *) &bookmark_folder_class, NULL));
+	if_assert_failed return;
+
+	bookmark = JS_GetPrivate(ctx, obj); /* from @bookmark_class or @bookmark_folder_class */
 
 	if (bookmark) object_unlock(bookmark);
 }
@@ -61,10 +74,19 @@ static const JSPropertySpec bookmark_props[] = {
 
 static JSObject *smjs_get_bookmark_folder_object(struct bookmark *bookmark);
 
+/* @bookmark_class.getProperty */
 static JSBool
 bookmark_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	struct bookmark *bookmark = JS_GetPrivate(ctx, obj);
+	struct bookmark *bookmark;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &bookmark_class, NULL))
+		return JS_FALSE;
+
+	bookmark = JS_GetPrivate(ctx, obj); /* from @bookmark_class */
 
 	if (!bookmark) return JS_FALSE;
 
@@ -89,17 +111,29 @@ bookmark_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 		return JS_TRUE;
 	default:
-		INTERNAL("Invalid ID %d in bookmark_get_property().",
-		         JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case
+		 * and leave *@vp unchanged.  Do the same here.
+		 * (Actually not quite the same, as we already used
+		 * @undef_to_jsval.)  */
+		return JS_TRUE;
 	}
-
-	return JS_FALSE;
 }
 
+/* @bookmark_class.setProperty */
 static JSBool
 bookmark_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	struct bookmark *bookmark = JS_GetPrivate(ctx, obj);
+	struct bookmark *bookmark;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &bookmark_class, NULL))
+		return JS_FALSE;
+
+	bookmark = JS_GetPrivate(ctx, obj); /* from @bookmark_class */
 
 	if (!bookmark) return JS_FALSE;
 
@@ -124,16 +158,17 @@ bookmark_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		return JS_TRUE;
 	}
 	default:
-		INTERNAL("Invalid ID %d in bookmark_set_property().",
-		         JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case.
+		 * Do the same here.  */
+		return JS_TRUE;
 	}
-
-	return JS_FALSE;
 }
 
 static const JSClass bookmark_class = {
 	"bookmark",
-	JSCLASS_HAS_PRIVATE,
+	JSCLASS_HAS_PRIVATE,	/* struct bookmark * */
 	JS_PropertyStub, JS_PropertyStub,
 	bookmark_get_property, bookmark_set_property,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, bookmark_finalize,
@@ -158,12 +193,21 @@ smjs_get_bookmark_object(struct bookmark *bookmark)
 
 /*** bookmark folder object ***/
 
+/* @bookmark_folder_class.getProperty */
 static JSBool
 bookmark_folder_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
 	struct bookmark *bookmark;
-	struct bookmark *folder = JS_GetPrivate(ctx, obj);
+	struct bookmark *folder;
 	unsigned char *title;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &bookmark_folder_class, NULL))
+		return JS_FALSE;
+
+	folder = JS_GetPrivate(ctx, obj); /* from @bookmark_folder_class */
 
 	title = JS_GetStringBytes(JS_ValueToString(ctx, id));
 	if (!title) {
@@ -186,7 +230,7 @@ bookmark_folder_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 static const JSClass bookmark_folder_class = {
 	"bookmark_folder",
-	JSCLASS_HAS_PRIVATE,
+	JSCLASS_HAS_PRIVATE,	/* struct bookmark * */
 	JS_PropertyStub, JS_PropertyStub,
 	bookmark_folder_get_property, JS_PropertyStub,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, bookmark_finalize,

@@ -351,47 +351,48 @@ update_depths(struct listbox_item *parent)
 }
 
 /* Traverse all bookmarks and move all marked items
- * _into_ destb or, if destb is NULL, _after_ dest. */
+ * _into_ dest or, if insert_as_child is 0, _after_ dest. */
 static void
-do_move_bookmark(struct bookmark *dest, struct list_head *destb,
-		 struct list_head *desti, struct list_head *src,
-		 struct listbox_data *box)
+do_move_bookmark(struct bookmark *dest, int insert_as_child,
+		 struct list_head *src, struct listbox_data *box)
 {
 	static int move_bookmark_event_id = EVENT_NONE;
 	struct bookmark *bm, *next;
-
-	assert((destb && desti) || (!destb && !desti));
 
 	set_event_id(move_bookmark_event_id, "bookmark-move");
 
 	foreachsafe (bm, next, *src) {
 		if (bm != dest /* prevent moving a folder into itself */
 		    && bm->box_item->marked && bm != move_cache_root_avoid) {
+			struct hierbox_dialog_list_item *item;
+
 			bm->box_item->marked = 0;
 
-			trigger_event(move_bookmark_event_id, bm,
-				      destb ? (struct bookmark *) destb
-					    : dest);
+			trigger_event(move_bookmark_event_id, bm, dest);
 
-			if (box->top == bm->box_item) {
-				/* It's theoretically impossible that bm->next
-				 * would be invalid (point to list_head), as it
-				 * would be case only when there would be only
-				 * one item in the list, and then bm != dest
-				 * will save us already. */
-				box->top = bm->box_item->next;
+			foreach (item, bookmark_browser.dialogs) {
+				struct widget_data *widget_data;
+				struct listbox_data *box2;
+
+				widget_data = item->dlg_data->widgets_data;
+				box2 = get_listbox_widget_data(widget_data);
+
+				if (box2->top == bm->box_item)
+					listbox_sel_move(widget_data, 1);
 			}
-
+				
 			del_from_list(bm->box_item);
 			del_from_list(bm);
-			add_at_pos(destb ? (struct bookmark *) destb
-					 : dest,
-				   bm);
-			add_at_pos(desti ? (struct listbox_item *) desti
-					 : dest->box_item,
-				   bm->box_item);
-
-			bm->root = destb ? dest : dest->root;
+			if (insert_as_child) {
+				add_to_list(dest->child, bm);
+				add_to_list(dest->box_item->child, bm->box_item);
+				bm->root = dest;
+				insert_as_child = 0;
+			} else {
+				add_at_pos(dest, bm);
+				add_at_pos(dest->box_item, bm->box_item);
+				bm->root = dest->root;
+			}
 
 			bm->box_item->depth = bm->root
 						? bm->root->box_item->depth + 1
@@ -401,7 +402,6 @@ do_move_bookmark(struct bookmark *dest, struct list_head *destb,
 				update_depths(bm->box_item);
 
 			dest = bm;
-			desti = destb = NULL;
 
 			/* We don't want to care about anything marked inside
 			 * of the marked folder, let's move it as a whole
@@ -411,7 +411,8 @@ do_move_bookmark(struct bookmark *dest, struct list_head *destb,
 		}
 
 		if (bm->box_item->type == BI_FOLDER) {
-			do_move_bookmark(dest, destb, desti, &bm->child, box);
+			do_move_bookmark(dest, insert_as_child,
+					 &bm->child, box);
 		}
 	}
 }
@@ -422,15 +423,13 @@ push_move_button(struct dialog_data *dlg_data,
 {
 	struct listbox_data *box = get_dlg_listbox_data(dlg_data);
 	struct bookmark *dest = NULL;
-	struct list_head *destb = NULL, *desti = NULL;
-	struct widget_data *widget_data = dlg_data->widgets_data;
+	int insert_as_child = 0;
 
 	if (!box->sel) return EVENT_PROCESSED; /* nowhere to move to */
 
 	dest = box->sel->udata;
 	if (box->sel->type == BI_FOLDER && box->sel->expanded) {
-		destb = &((struct bookmark *) box->sel->udata)->child;
-		desti = &box->sel->child;
+		insert_as_child = 1;
 	}
 	/* Avoid recursion headaches (prevents moving a folder into itself). */
 	move_cache_root_avoid = NULL;
@@ -444,14 +443,14 @@ push_move_button(struct dialog_data *dlg_data,
 		}
 	}
 
-	do_move_bookmark(dest, destb, desti, &bookmarks, box);
+	do_move_bookmark(dest, insert_as_child, &bookmarks, box);
 
 	bookmarks_set_dirty();
 
 #ifdef BOOKMARKS_RESAVE
 	write_bookmarks();
 #endif
-	display_widget(dlg_data, widget_data);
+	update_hierbox_browser(&bookmark_browser);
 	return EVENT_PROCESSED;
 }
 

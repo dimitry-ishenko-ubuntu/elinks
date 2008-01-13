@@ -5,10 +5,88 @@ You can see the complete list of recent changes, bugfixes and new features in
 the link:http://pasky.or.cz/gitweb.cgi[gitweb interface]. See the ChangeLog
 file for details.
 
-ELinks now:
------------
+ELinks 0.11.3:
+--------------
 
-* Native FSP protocol support (replaces CGI program in contrib/cgi/)
+* critical bugs 846, 870: fix crashes in web ECMAScripts and SMJS user
+  scripting
+* critical bug 927: fix null pointer crash if META Refresh is in a
+  table cell
+* critical bug 941: fix assertion failure or memory corruption if FTP
+  server responds to PASV with status 200
+* critical bug 729 in experimental BitTorrent: fix crashes with
+  various bogus BitTorrent URLs
+* critical bug 868: fix segfault in check_timers
+* critical bugs 897, 919: fix crashes on operating systems lacking
+  mremap()
+* critical: fix null pointer crash if XBEL bookmark has no title
+* critical bug 760: fix crash when moving bookmarks out of a folder
+* critical: fix crash in an empty file-extensions menu
+* critical bug 715: fix null pointer crash caused by malformed proxy
+  setting
+* critical: fix SMJS null pointer crash on exit
+* critical bug 880 in experimental Python scripting: fix null pointer
+  crash with -no-home
+* major Gentoo 121247: fix segfaults in Ruby user scripting
+* major bug 908: don't write to freed memory when the user pushes a
+  radio button
+* major bug 937: don't send the entire HTTPS request to a CONNECT
+  proxy
+* bug 899, Debian 403139: recognize >2GB files in FTP directory
+  listing, if off_t is large enough
+* bug 942: encode/decode file names in FTP URLs, so they can contain
+  spaces
+* bug 741: don't recognize HTML comments inside STYLE elements
+* bug 769: fix MD5 computation/formatting in HTTP digest
+  authentication
+* fix POST to local CGI
+* remove a garbage character from the end of the authentication prompt
+* bugs 872, 886: editing or deleting cookies in the cookie manager
+  should cause a save
+* secure file saving: restore umask after _all_ failure conditions
+* decode the fragment identifier extracted from the URI when looking
+  it up
+* bug 768 in experimental Python scripting: link with e.g. -lpython2.4
+  rather than -lpython
+* minor bugs 830, 831: changes in parsing of -remote arguments
+* minor Debian 313696 and other translation updates
+* enhancement 24: fix searching past unselectable elements in menus
+* enhancement: recognize function keys and backspace/delete on FreeBSD
+* enhancement 772: recognize Shift-Tab on XTerm
+* enhancement: place cursor on listbox rather than button, to help
+  screen readers
+* enhancements in text wrapping
+* enhancement 767: recognize URL in META Refresh even without "URL="
+* enhancement 396: search for "<html>" if the server doesn't specify a
+  Content-Type
+
+ELinks 0.11.2:
+--------------
+
+* critical bug 841, CVE-2006-5925: prevent enabling the SMB protocol
+* critical bug 786: fix crash when following a link in frames
+* print off_t with custom OFF_T_FORMAT instead of PRId64
+* build: Minix3 compatibility
+
+ELinks 0.11.1:
+--------------
+
+* work around null pointer crashes in HTTP digest authentication
+* fix assertion failure with document.plain.display_links and
+  uppercase URIs
+* fix Gopher crashes
+* enhancement 630: native FSP protocol support (replaces CGI program
+  in contrib/cgi/)
+* SMJS user scripting: check for hooks.js before trying to load it
+* SMJS user scripting: the elinks.preformat_html hook gets a second
+  argument: a view_state object with .uri and .plain properties
+* bug 921 in Lua scripting: fix current_document_formatted
+* if given "a?b" in the command line, try to guess whether the
+  question mark is part of the file name or indicates a query part
+* updated character entity list from unicode.org
+* build: use asciidoc -unsafe for AsciiDoc 7.0.4 compatibility
+* build bug 738: fix "/config.charset" error triggered by building in
+  the source directory
 
 ELinks 0.11.0 (Elated):
 -----------------------
@@ -24,7 +102,7 @@ ELinks 0.11.0 (Elated):
   history-move-back, and history-move-forward
 * BitTorrent protocol (experimental)
 * FSP protocol via a CGI script (see contrib/cgi/README.FSP) (experimental)
-* sysmouse support on the BSD console
+* enhancement 694: sysmouse support on the BSD console
 * new GNU make based build system (aclocal from automake is still required)
 * move from CVS to GIT
 

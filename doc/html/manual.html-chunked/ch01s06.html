@@ -9,14 +9,13 @@ documentation; is not actively developed; and generally looks broken and
 extremely clumsy to work with. So we instead went the way of the SpiderMonkey
 (SM) engine (property of Mozilla), which is hard to install, bigger (mind you,
 it comes from Mozilla ;), has ugly naming scheme but nice calling conventions,
-acceptable documentation, is actively developed and ought to work.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2466749"></a>Ok, so how to get the ECMAScript support working?</h3></div></div></div><p>Some systems come with either the SpiderMonkey installed or as an option. It
+acceptable documentation, is actively developed and ought to work.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2467197"></a>Ok, so how to get the ECMAScript support working?</h3></div></div></div><p>Some systems come with either the SpiderMonkey installed or as an option. It
 would be good to test if you can take the easy path and let the system take
 care of installation through a package system. Below are listed instructions
 on what package you need to install on various systems (please help improve
-the list). If all goes well you can proceed to rebuilding ELinks.</p><p>On Debian testing or unstable, install the packages <span class="emphasis"><em>libsmjs1</em></span> and
-<span class="emphasis"><em>libsmjs-dev</em></span> by running:</p><pre class="literallayout">$ apt-get install libsmjs1 libsmjs-dev</pre><p>So, you need to get (and install) SpiderMonkey and then recompile your ELinks
-(if you installed SM properly, ELinks should autodetect it during the
-configure phase) and you are ready to fly.</p><p>Note that this procedure enables you to install SpiderMonkey, but in such a
+the list). If all goes well you can proceed to rebuilding ELinks.</p><p>On Debian testing (Etch) or unstable (SID), run the following:</p><pre class="literallayout">$ apt-get install libmozjs-dev</pre><p>On Debian stable (Sarge), run the following:</p><pre class="literallayout">$ apt-get install libsmjs-dev</pre><p>Installing the -dev package will automatically pull in the library package.</p><p>Once this is done, rebuild ELinks. The configure script should detect
+the SpiderMonkey library—check for this line in the features summary:</p><pre class="literallayout">ECMAScript (JavaScript) ......... SpiderMonkey document scripting</pre><p>After following these instructions on a Debian system, you are done and should
+ignore the following directions.</p><p>The rest is only for non-Debian system.</p><p>Note that this procedure enables you to install SpiderMonkey, but in such a
 way that it might not work with anything else but ELinks. It is unlikely that
 anything else is ever going to use SpiderMonkey on your system, but if you
 want to take the safe way, get SM and follow the instructions in
@@ -35,18 +34,18 @@ $ cd src</pre><p>Now, edit config.mk and adjust the <code class="literal">$PREFI
 like the default value - ELinks will find it there, but your dynamic linker
 likely won't.</p><p>E.g., for /usr/local installation:</p><pre class="literallayout">$ sed 's#^PREFIX = /opt/spidermonkey#PREFIX = /usr/local#' &lt; config.mk &gt; config.mk.t
 $ mv -f config.mk.t config.mk</pre><p>Now you can finally go for it:</p><pre class="literallayout">$ make -f Makefile.ref
-$ make -f Makefile.ref export</pre><p>Now install it:</p><pre class="literallayout">$ su -c 'make -f Makefile.ref install &amp;&amp; (ldconfig -v | grep libjs)'</pre><p>Check for:</p><pre class="literallayout">libjs.so -&gt; libjs.so</pre><p>If all went well, you can proceed to rebuild ELinks now. If something broke,
+$ make -f Makefile.ref export</pre><p>Now install it:</p><pre class="literallayout">$ su -c 'make -f Makefile.ref install &amp;&amp; (ldconfig -v | grep libjs)'</pre><p>Check for:</p><pre class="literallayout">libjs.so -&gt; libjs.so</pre><p>If you don't get such result, check that the library's installation path
+(e.g. /usr/local/lib) is present in /etc/ld.so.conf (man 8 ldconfig).</p><p>If all went well, you can proceed to rebuild ELinks now. If something broke,
 see you on #elinks @ FreeNode or in the mailing list.
 You may add your options to <code class="literal">./configure</code> as usual; SpiderMonkey should be
 autodetected.</p><pre class="literallayout">$ cd ../..
-$ ./configure</pre><p>Check for "<code class="literal">Ecmascript ……………….. SpiderMonkey</code>" in Feature summary.</p><pre class="literallayout">$ make
-$ su -c 'make install'</pre><p>Enjoy.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2513714"></a>The ECMAScript support is buggy! Shall I blame Mozilla people?</h3></div></div></div><p>Likely not. The ECMAScript engine provides only the language compiler and some
+$ ./configure</pre><p>Check for the following line in the features summary:</p><pre class="literallayout">ECMAScript (JavaScript) ......... SpiderMonkey document scripting</pre><p>Then run:</p><pre class="literallayout">$ make
+$ su -c 'make install'</pre><p>Enjoy.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2514198"></a>The ECMAScript support is buggy! Shall I blame Mozilla people?</h3></div></div></div><p>Likely not. The ECMAScript engine provides only the language compiler and some
 basic built-in objects, and it's more than likely that the problem is on our
 side in the implementation of some of the HTML/DOM objects (perhaps we just
 haven't bothered to implement it at all yet). So better tell us first, and if
 we think it's not our fault we will tell you to go complain to Mozilla (better
-yet if it does not work in the Mozilla browsers neither ;-).</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2513739"></a>Now, I would still like NJS or a new JS engine from scratch…</h3></div></div></div><p>…and you don't fear some coding? That's fine then! ELinks is in no way tied
-to SpiderMonkey, in fact the ECMAScript support was carefully implemented so
+yet if it does not work in the Mozilla browsers neither ;-).</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2514222"></a>Now, I would still like NJS or a new JS engine from scratch…</h3></div></div></div><p><b>..and you don't fear some coding? That's fine then! ELinks is in no way tied. </b>to SpiderMonkey, in fact the ECMAScript support was carefully implemented so
 that there are no SpiderMonkey references outside of
 <code class="literal">src/ecmascript/spidermonkey.*</code>. If you want to implement an alternative
 ECMAScript backend, go ahead - you will just need to write an autoconf

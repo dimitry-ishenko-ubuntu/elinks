@@ -49,7 +49,7 @@ static JSBool window_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval
 
 const JSClass window_class = {
 	"window",
-	JSCLASS_HAS_PRIVATE,
+	JSCLASS_HAS_PRIVATE,	/* struct view_state * */
 	JS_PropertyStub, JS_PropertyStub,
 	window_get_property, window_set_property,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
@@ -114,10 +114,19 @@ find_child_frame(struct document_view *doc_view, struct frame_desc *tframe)
 }
 #endif
 
+/* @window_class.getProperty */
 static JSBool
 window_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	struct view_state *vs = JS_GetPrivate(ctx, obj);
+	struct view_state *vs;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &window_class, NULL))
+		return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, obj); /* from @window_class */
 
 	/* No need for special window.location measurements - when
 	 * location is then evaluated in string context, toString()
@@ -221,7 +230,12 @@ found_parent:
 		break;
 	}
 	default:
-		INTERNAL("Invalid ID %d in window_get_property().", JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case
+		 * and leave *@vp unchanged.  Do the same here.
+		 * (Actually not quite the same, as we already used
+		 * @undef_to_jsval.)  */
 		break;
 	}
 
@@ -230,10 +244,19 @@ found_parent:
 
 void location_goto(struct document_view *doc_view, unsigned char *url);
 
+/* @window_class.setProperty */
 static JSBool
 window_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	struct view_state *vs = JS_GetPrivate(ctx, obj);
+	struct view_state *vs;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &window_class, NULL))
+		return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, obj); /* from @window_class */
 
 	if (JSVAL_IS_STRING(id)) {
 		if (!strcmp(jsval_to_string(ctx, &id), "location")) {
@@ -252,7 +275,10 @@ window_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 	switch (JSVAL_TO_INT(id)) {
 	default:
-		INTERNAL("Invalid ID %d in window_set_property().", JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case.
+		 * Do the same here.  */
 		return JS_TRUE;
 	}
 
@@ -269,11 +295,16 @@ const JSFunctionSpec window_funcs[] = {
 	{ NULL }
 };
 
+/* @window_funcs{"alert"} */
 static JSBool
 window_alert(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	struct view_state *vs = JS_GetPrivate(ctx, obj);
+	struct view_state *vs;
 	unsigned char *string;
+
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &window_class, argv)) return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, obj); /* from @window_class */
 
 	if (argc != 1)
 		return JS_TRUE;
@@ -317,17 +348,24 @@ delayed_goto_uri_frame(void *data)
 	mem_free(deo);
 }
 
+/* @window_funcs{"open"} */
 static JSBool
 window_open(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	struct view_state *vs = JS_GetPrivate(ctx, obj);
-	struct document_view *doc_view = vs->doc_view;
-	struct session *ses = doc_view->session;
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct session *ses;
 	unsigned char *target = "";
 	unsigned char *url;
 	struct uri *uri;
 	static time_t ratelimit_start;
 	static int ratelimit_count;
+
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &window_class, argv)) return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, obj); /* from @window_class */
+	doc_view = vs->doc_view;
+	ses = doc_view->session;
 
 	if (get_opt_bool("ecmascript.block_window_opening")) {
 #ifdef CONFIG_LEDS

@@ -22,7 +22,9 @@
 #include "document/forms.h"
 #include "document/view.h"
 #include "ecmascript/ecmascript.h"
+#include "ecmascript/spidermonkey/document.h"
 #include "ecmascript/spidermonkey/form.h"
+#include "ecmascript/spidermonkey/window.h"
 #include "intl/gettext/libintl.h"
 #include "main/select.h"
 #include "osdep/newwin.h"
@@ -44,6 +46,9 @@
 #include "viewer/text/vs.h"
 
 
+static const JSClass form_class;	     /* defined below */
+
+
 /* Accordingly to the JS specs, each input type should own object. That'd be a
  * huge PITA though, however DOM comes to the rescue and defines just a single
  * HTMLInputElement. The difference could be spotted only by some clever tricky
@@ -52,9 +57,10 @@
 static JSBool input_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp);
 static JSBool input_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp);
 
+/* Each @input_class object must have a @form_class parent.  */
 static const JSClass input_class = {
 	"input", /* here, we unleash ourselves */
-	JSCLASS_HAS_PRIVATE,
+	JSCLASS_HAS_PRIVATE,	/* struct form_state * */
 	JS_PropertyStub, JS_PropertyStub,
 	input_get_property, input_set_property,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
@@ -115,19 +121,41 @@ static const JSFunctionSpec input_funcs[] = {
 	{ NULL }
 };
 
+/* @input_class.getProperty */
 static JSBool
 input_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	JSObject *parent_form = JS_GetParent(ctx, obj);
-	JSObject *parent_doc = JS_GetParent(ctx, parent_form);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct document *document = doc_view->document;
-	struct form_state *fs = JS_GetPrivate(ctx, obj);
-	struct form_control *fc = find_form_control(document, fs);
+	JSObject *parent_form;	/* instance of @form_class */
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct document *document;
+	struct form_state *fs;
+	struct form_control *fc;
 	int linknum;
 	struct link *link = NULL;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &input_class, NULL))
+		return JS_FALSE;
+	parent_form = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_form, (JSClass *) &form_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, parent_form);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	document = doc_view->document;
+	fs = JS_GetPrivate(ctx, obj); /* from @input_class */
+	fc = find_form_control(document, fs);
 
 	assert(fc);
 	assert(fc->form && fs);
@@ -220,26 +248,53 @@ input_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		break;
 
 	default:
-		INTERNAL("Invalid ID %d in input_get_property().", JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case
+		 * and leave *@vp unchanged.  Do the same here.
+		 * (Actually not quite the same, as we already used
+		 * @undef_to_jsval.)  */
 		break;
 	}
 
 	return JS_TRUE;
 }
 
+/* @input_class.setProperty */
 static JSBool
 input_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	JSObject *parent_form = JS_GetParent(ctx, obj);
-	JSObject *parent_doc = JS_GetParent(ctx, parent_form);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct document *document = doc_view->document;
-	struct form_state *fs = JS_GetPrivate(ctx, obj);
-	struct form_control *fc = find_form_control(document, fs);
+	JSObject *parent_form;	/* instance of @form_class */
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct document *document;
+	struct form_state *fs;
+	struct form_control *fc;
 	int linknum;
 	struct link *link = NULL;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &input_class, NULL))
+		return JS_FALSE;
+	parent_form = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_form, (JSClass *) &form_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, parent_form);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	document = doc_view->document;
+	fs = JS_GetPrivate(ctx, obj); /* from @input_class */
+	fc = find_form_control(document, fs);
 
 	assert(fc);
 	assert(fc->form && fs);
@@ -296,13 +351,17 @@ input_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		break;
 
 	default:
-		INTERNAL("Invalid ID %d in input_set_property().", JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case.
+		 * Do the same here.  */
 		return JS_TRUE;
 	}
 
 	return JS_TRUE;
 }
 
+/* @input_funcs{"blur"} */
 static JSBool
 input_blur(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -311,19 +370,37 @@ input_blur(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 	return JS_TRUE;
 }
 
+/* @input_funcs{"click"} */
 static JSBool
 input_click(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	JSObject *parent_form = JS_GetParent(ctx, obj);
-	JSObject *parent_doc = JS_GetParent(ctx, parent_form);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct document *document = doc_view->document;
-	struct session *ses = doc_view->session;
-	struct form_state *fs = JS_GetPrivate(ctx, obj);
+	JSObject *parent_form;	/* instance of @form_class */
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct document *document;
+	struct session *ses;
+	struct form_state *fs;
 	struct form_control *fc;
 	int linknum;
+
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &input_class, argv)) return JS_FALSE;
+	parent_form = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_form, (JSClass *) &form_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, parent_form);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	document = doc_view->document;
+	ses = doc_view->session;
+	fs = JS_GetPrivate(ctx, obj); /* from @input_class */
 
 	assert(fs);
 	fc = find_form_control(document, fs);
@@ -345,19 +422,37 @@ input_click(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 	return JS_TRUE;
 }
 
+/* @input_funcs{"focus"} */
 static JSBool
 input_focus(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	JSObject *parent_form = JS_GetParent(ctx, obj);
-	JSObject *parent_doc = JS_GetParent(ctx, parent_form);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct document *document = doc_view->document;
-	struct session *ses = doc_view->session;
-	struct form_state *fs = JS_GetPrivate(ctx, obj);
+	JSObject *parent_form;	/* instance of @form_class */
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct document *document;
+	struct session *ses;
+	struct form_state *fs;
 	struct form_control *fc;
 	int linknum;
+
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &input_class, argv)) return JS_FALSE;
+	parent_form = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_form, (JSClass *) &form_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, parent_form);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	document = doc_view->document;
+	ses = doc_view->session;
+	fs = JS_GetPrivate(ctx, obj); /* from @input_class */
 
 	assert(fs);
 	fc = find_form_control(document, fs);
@@ -374,6 +469,7 @@ input_focus(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 	return JS_TRUE;
 }
 
+/* @input_funcs{"select"} */
 static JSBool
 input_select(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -393,7 +489,7 @@ get_input_object(JSContext *ctx, JSObject *jsform, struct form_state *fs)
 
 		JS_DefineProperties(ctx, jsinput, (JSPropertySpec *) input_props);
 		JS_DefineFunctions(ctx, jsinput, (JSFunctionSpec *) input_funcs);
-		JS_SetPrivate(ctx, jsinput, fs);
+		JS_SetPrivate(ctx, jsinput, fs); /* to @input_class */
 		fs->ecmascript_obj = jsinput;
 	}
 	return fs->ecmascript_obj;
@@ -431,6 +527,7 @@ get_form_control_object(JSContext *ctx, JSObject *jsform, enum form_type type, s
 
 static JSBool form_elements_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp);
 
+/* Each @form_elements_class object must have a @form_class parent.  */
 static const JSClass form_elements_class = {
 	"elements",
 	JSCLASS_HAS_PRIVATE,
@@ -456,17 +553,39 @@ static const JSPropertySpec form_elements_props[] = {
 	{ NULL }
 };
 
+/* @form_elements_class.getProperty */
 static JSBool
 form_elements_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	JSObject *parent_form = JS_GetParent(ctx, obj);
-	JSObject *parent_doc = JS_GetParent(ctx, parent_form);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct document *document = doc_view->document;
-	struct form_view *form_view = JS_GetPrivate(ctx, parent_form);
-	struct form *form = find_form_by_form_view(document, form_view);
+	JSObject *parent_form;	/* instance of @form_class */
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct document *document;
+	struct form_view *form_view;
+	struct form *form;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &form_elements_class, NULL))
+		return JS_FALSE;
+	parent_form = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_form, (JSClass *) &form_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, parent_form);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	document = doc_view->document;
+	form_view = JS_GetPrivate(ctx, parent_form); /* from @form_class */
+	form = find_form_by_form_view(document, form_view);
 
 	if (JSVAL_IS_STRING(id)) {
 		form_elements_namedItem(ctx, obj, 1, &id, vp);
@@ -491,20 +610,38 @@ form_elements_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	return JS_TRUE;
 }
 
+/* @form_elements_funcs{"item"} */
 static JSBool
 form_elements_item(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	JSObject *parent_form = JS_GetParent(ctx, obj);
-	JSObject *parent_doc = JS_GetParent(ctx, parent_form);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct document *document = doc_view->document;
-	struct form_view *form_view = JS_GetPrivate(ctx, parent_form);
-	struct form *form = find_form_by_form_view(document, form_view);
+	JSObject *parent_form;	/* instance of @form_class */
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct document *document;
+	struct form_view *form_view;
+	struct form *form;
 	struct form_control *fc;
 	int counter = -1;
 	int index;
+
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &form_elements_class, argv)) return JS_FALSE;
+	parent_form = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_form, (JSClass *) &form_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, parent_form);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	document = doc_view->document;
+	form_view = JS_GetPrivate(ctx, parent_form); /* from @form_class */
+	form = find_form_by_form_view(document, form_view);
 
 	if (argc != 1)
 		return JS_TRUE;
@@ -528,19 +665,37 @@ form_elements_item(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval
 	return JS_TRUE;
 }
 
+/* @form_elements_funcs{"namedItem"} */
 static JSBool
 form_elements_namedItem(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	JSObject *parent_form = JS_GetParent(ctx, obj);
-	JSObject *parent_doc = JS_GetParent(ctx, parent_form);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct document *document = doc_view->document;
-	struct form_view *form_view = JS_GetPrivate(ctx, parent_form);
-	struct form *form = find_form_by_form_view(document, form_view);
+	JSObject *parent_form;	/* instance of @form_class */
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct document *document;
+	struct form_view *form_view;
+	struct form *form;
 	struct form_control *fc;
 	unsigned char *string;
+
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &form_elements_class, argv)) return JS_FALSE;
+	parent_form = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_form, (JSClass *) &form_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, parent_form);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	document = doc_view->document;
+	form_view = JS_GetPrivate(ctx, parent_form); /* from @form_class */
+	form = find_form_by_form_view(document, form_view);
 
 	if (argc != 1)
 		return JS_TRUE;
@@ -570,9 +725,10 @@ form_elements_namedItem(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, 
 static JSBool form_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp);
 static JSBool form_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp);
 
+/* Each @form_class object must have a @document_class parent.  */
 static const JSClass form_class = {
 	"form",
-	JSCLASS_HAS_PRIVATE,
+	JSCLASS_HAS_PRIVATE,	/* struct form_view * */
 	JS_PropertyStub, JS_PropertyStub,
 	form_get_property, form_set_property,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
@@ -608,16 +764,34 @@ static const JSFunctionSpec form_funcs[] = {
 	{ NULL }
 };
 
+/* @form_class.getProperty */
 static JSBool
 form_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
 	/* DBG("doc %p %s\n", parent_doc, JS_GetStringBytes(JS_ValueToString(ctx, OBJECT_TO_JSVAL(parent_doc)))); */
-	JSObject *parent_doc = JS_GetParent(ctx, obj);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct form_view *fv = JS_GetPrivate(ctx, obj);
-	struct form *form = find_form_by_form_view(doc_view->document, fv);
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct form_view *fv;
+	struct form *form;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &form_class, NULL))
+		return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	fv = JS_GetPrivate(ctx, obj); /* from @form_class */
+	form = find_form_by_form_view(doc_view->document, fv);
 
 	assert(form);
 
@@ -708,23 +882,46 @@ form_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		break;
 
 	default:
-		INTERNAL("Invalid ID %d in form_get_property().", JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case
+		 * and leave *@vp unchanged.  Do the same here.
+		 * (Actually not quite the same, as we already used
+		 * @undef_to_jsval.)  */
 		break;
 	}
 
 	return JS_TRUE;
 }
 
+/* @form_class.setProperty */
 static JSBool
 form_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	JSObject *parent_doc = JS_GetParent(ctx, obj);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct form_view *fv = JS_GetPrivate(ctx, obj);
-	struct form *form = find_form_by_form_view(doc_view->document, fv);
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct form_view *fv;
+	struct form *form;
 	unsigned char *string;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &form_class, NULL))
+		return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	fv = JS_GetPrivate(ctx, obj); /* from @form_class */
+	form = find_form_by_form_view(doc_view->document, fv);
 
 	assert(form);
 
@@ -766,22 +963,39 @@ form_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		break;
 
 	default:
-		INTERNAL("Invalid ID %d in form_set_property().", JSVAL_TO_INT(id));
+		/* Unrecognized property ID; someone is using the
+		 * object as an array.  SMJS builtin classes (e.g.
+		 * js_RegExpClass) just return JS_TRUE in this case.
+		 * Do the same here.  */
 		break;
 	}
 
 	return JS_TRUE;
 }
 
+/* @form_funcs{"reset"} */
 static JSBool
 form_reset(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	JSObject *parent_doc = JS_GetParent(ctx, obj);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct form_view *fv = JS_GetPrivate(ctx, obj);
-	struct form *form = find_form_by_form_view(doc_view->document, fv);
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct form_view *fv;
+	struct form *form;
+
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &form_class, argv)) return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	fv = JS_GetPrivate(ctx, obj); /* from @form_class */
+	form = find_form_by_form_view(doc_view->document, fv);
 
 	assert(form);
 
@@ -793,16 +1007,31 @@ form_reset(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 	return JS_TRUE;
 }
 
+/* @form_funcs{"submit"} */
 static JSBool
 form_submit(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	JSObject *parent_doc = JS_GetParent(ctx, obj);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct session *ses = doc_view->session;
-	struct form_view *fv = JS_GetPrivate(ctx, obj);
-	struct form *form = find_form_by_form_view(doc_view->document, fv);
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct session *ses;
+	struct form_view *fv;
+	struct form *form;
+
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &form_class, argv)) return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	ses = doc_view->session;
+	fv = JS_GetPrivate(ctx, obj); /* from @form_class */
+	form = find_form_by_form_view(doc_view->document, fv);
 
 	assert(form);
 	submit_given_form(ses, doc_view, form);
@@ -823,15 +1052,14 @@ get_form_object(JSContext *ctx, JSObject *jsdoc, struct form_view *fv)
 
 		JS_DefineProperties(ctx, jsform, (JSPropertySpec *) form_props);
 		JS_DefineFunctions(ctx, jsform, (JSFunctionSpec *) form_funcs);
-		JS_SetPrivate(ctx, jsform, fv);
+		JS_SetPrivate(ctx, jsform, fv); /* to @form_class */
 		fv->ecmascript_obj = jsform;
 	}
 	return fv->ecmascript_obj;
 }
-
-
 static JSBool forms_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp);
 
+/* Each @forms_class object must have a @document_class parent.  */
 const JSClass forms_class = {
 	"forms",
 	JSCLASS_HAS_PRIVATE,
@@ -857,14 +1085,31 @@ const JSPropertySpec forms_props[] = {
 	{ NULL }
 };
 
+/* @forms_class.getProperty */
 static JSBool
 forms_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
-	JSObject *parent_doc = JS_GetParent(ctx, obj);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct document *document = doc_view->document;
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct document *document;
+
+	/* This can be called if @obj if not itself an instance of the
+	 * appropriate class but has one in its prototype chain.  Fail
+	 * such calls.  */
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &forms_class, NULL))
+		return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	document = doc_view->document;
 
 	if (JSVAL_IS_STRING(id)) {
 		forms_namedItem(ctx, obj, 1, &id, vp);
@@ -887,15 +1132,26 @@ forms_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	return JS_TRUE;
 }
 
+/* @forms_funcs{"item"} */
 static JSBool
 forms_item(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	JSObject *parent_doc = JS_GetParent(ctx, obj);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
 	struct form_view *fv;
 	int counter = -1;
 	int index;
+
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &forms_class, argv)) return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
 
 	if (argc != 1)
 		return JS_TRUE;
@@ -915,16 +1171,29 @@ forms_item(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 	return JS_TRUE;
 }
 
+/* @forms_funcs{"namedItem"} */
 static JSBool
 forms_namedItem(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	JSObject *parent_doc = JS_GetParent(ctx, obj);
-	JSObject *parent_win = JS_GetParent(ctx, parent_doc);
-	struct view_state *vs = JS_GetPrivate(ctx, parent_win);
-	struct document_view *doc_view = vs->doc_view;
-	struct document *document = doc_view->document;
+	JSObject *parent_doc;	/* instance of @document_class */
+	JSObject *parent_win;	/* instance of @window_class */
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct document *document;
 	struct form *form;
 	unsigned char *string;
+
+	if (!JS_InstanceOf(ctx, obj, (JSClass *) &forms_class, argv)) return JS_FALSE;
+	parent_doc = JS_GetParent(ctx, obj);
+	assert(JS_InstanceOf(ctx, parent_doc, (JSClass *) &document_class, NULL));
+	if_assert_failed return JS_FALSE;
+	parent_win = JS_GetParent(ctx, parent_doc);
+	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
+	if_assert_failed return JS_FALSE;
+
+	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	doc_view = vs->doc_view;
+	document = doc_view->document;
 
 	if (argc != 1)
 		return JS_TRUE;

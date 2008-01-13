@@ -1,9 +1,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
     "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" >
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
-<meta name="generator" content="AsciiDoc 7.0.0"/>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 7.1.2" />
 <style type="text/css">
 /* Debug borders */
 p, li, dt, dd, div, pre, h1, h2, h3, h4, h5, h6 {
@@ -16,19 +16,23 @@ body {
   margin: 1em 5% 1em 5%;
 }
 
-a { color: blue; }
-a:visited { color: fuchsia; }
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
 
-span.emphasis {
+em {
   font-style: italic;
 }
 
-span.strong {
+strong {
   font-weight: bold;
 }
 
-span.monospaced {
-  font-family: monospace;
+tt {
   color: navy;
 }
 
@@ -113,9 +117,10 @@ div.content { /* Block element content. */
 }
 
 /* Block element titles. */
-div.title {
+div.title, caption.title {
   font-family: sans-serif;
   font-weight: bold;
+  text-align: left;
   margin-top: 1.0em;
   margin-bottom: 0.5em;
 }
@@ -148,8 +153,12 @@ div.listingblock > div.content {
 div.quoteblock > div.content {
   padding-left: 2.0em;
 }
-div.quoteblock .attribution {
+
+div.attribution {
   text-align: right;
+}
+div.verseblock + div.attribution {
+  text-align: left;
 }
 
 div.admonitionblock .icon {
@@ -199,8 +208,7 @@ ol.olist2 {
 }
 
 div.tableblock > table {
-  border-color: #527bbd;
-  border-width: 3px;
+  border: 3px solid #527bbd;
 }
 thead {
   font-family: sans-serif;
@@ -226,6 +234,7 @@ td.hlist2 {
 @media print {
   div#footer-badges { display: none; }
 }
+include1::./stylesheets/xhtml11-manpage.css[]
 /* Workarounds for IE6's broken and incomplete CSS2. */
 
 div.sidebar-content {
@@ -254,21 +263,8 @@ div.exampleblock-content {
   border-left: 2px solid silver;
   padding-left: 0.5em;
 }
-/* Overrides for manpage documents */
-h1 {
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
-  border-top: 2px solid silver;
-  border-bottom: 2px solid silver;
-}
-h2 {
-  border-style: none;
-}
-div.sectionbody {
-  margin-left: 5%;
-}
 </style>
-<title>elinkskeys</title>
+<title>elinkskeys(5)</title>
 </head>
 <body>
 <div id="header">
@@ -289,13 +285,13 @@ keybindings.</p>
 </div>
 <h2>DESCRIPTION</h2>
 <div class="sectionbody">
-<p>Key binding for elinks should be placed in the file <span class="monospaced">~/.elinks/elinks.conf</span>.
+<p>Key binding for elinks should be placed in the file <tt>~/.elinks/elinks.conf</tt>.
 Note that any information regarding their format/structure may not be
 up-to-date. If you will discover that, please feed us with a patch.</p>
 <p>Key binding statements are of the form:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">bind &lt;keymap&gt; &lt;keystroke&gt; = &lt;action&gt;</span></pre>
+<pre><tt>bind &lt;keymap&gt; &lt;keystroke&gt; = &lt;action&gt;</tt></pre>
 </div></div>
 <p>where:</p>
 <dl>
@@ -304,7 +300,7 @@ up-to-date. If you will discover that, please feed us with a patch.</p>
 </dt>
 <dd>
 <p>
-        is <span class="emphasis">main</span>, <span class="emphasis">edit</span>, or <span class="emphasis">menu</span>.  The main keymap is used for general
+        is <em>main</em>, <em>edit</em>, or <em>menu</em>.  The main keymap is used for general
         browsing.  The edit keymap is used for editing text fields.  The menu
         keymap is used for navigating menus.
 </p>
@@ -314,9 +310,9 @@ up-to-date. If you will discover that, please feed us with a patch.</p>
 </dt>
 <dd>
 <p>
-        is a case sensitive key, which you can prefix with <span class="emphasis">Ctrl-</span> or <span class="emphasis">Alt-</span>.
-        <span class="emphasis">Ctrl-</span> must be followed by an uppercase key. See below for a list of
-        valid keys.
+        is a case sensitive key, which you can prefix with <em>Ctrl-</em>, <em>Alt-</em>,
+        or both.  <em>Ctrl-</em> must be followed by an uppercase key. See below for
+        a list of valid keys.
 </p>
 </dd>
 <dt>
@@ -331,8 +327,8 @@ up-to-date. If you will discover that, please feed us with a patch.</p>
 </dl>
 <p>All words/strings may all be quoted "like so". Backslashes are escape
 characters, even if not between quotes. Lines beginning with a hash character
-(<span class="monospaced">#</span>) are comments.</p>
-<p>Keys can be unbound just by binding them to the special <span class="emphasis">none</span> action. It may
+(<tt>#</tt>) are comments.</p>
+<p>Keys can be unbound just by binding them to the special <em>none</em> action. It may
 be of use if you accidentally type a key often.</p>
 </div>
 <h2>EXAMPLE BINDINGS</h2>
@@ -340,7 +336,7 @@ be of use if you accidentally type a key often.</p>
 <p>Some sample keybindings:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">bind "main" "v" = "view-image"
+<pre><tt>bind "main" "v" = "view-image"
 bind "main" "l" = "jump-to-link"
 bind "main" "L" = "link-menu"
 bind "main" "F10" = "file-menu"
@@ -354,17 +350,17 @@ bind "menu" "PageUp" = "page-up"
 bind "menu" "Ctrl-F" = "page-down"
 bind "menu" "PageDown" = "page-down"
 # ELinks with Lua support
-bind "main" "," = "lua-console"</span></pre>
+bind "main" "," = "lua-console"</tt></pre>
 </div></div>
 </div>
 <h2>KEYS</h2>
 <div class="sectionbody">
-<p>Valid keys are: alphanumeric characters, punctuation, <span class="emphasis">Enter</span>, <span class="emphasis">Backspace</span>,
-<span class="emphasis">Tab</span>, <span class="emphasis">Escape</span>, <span class="emphasis">Left</span>, <span class="emphasis">Right</span>, <span class="emphasis">Up</span>, <span class="emphasis">Down</span>, <span class="emphasis">Insert</span>, <span class="emphasis">Delete</span>, <span class="emphasis">Home</span>,
-<span class="emphasis">End</span>, <span class="emphasis">PageUp</span>, <span class="emphasis">PageDown</span>, <span class="emphasis">F1</span> to <span class="emphasis">F12</span>.</p>
+<p>Valid keys are: alphanumeric characters, punctuation, <em>Enter</em>, <em>Backspace</em>,
+<em>Tab</em>, <em>Escape</em>, <em>Left</em>, <em>Right</em>, <em>Up</em>, <em>Down</em>, <em>Insert</em>, <em>Delete</em>, <em>Home</em>,
+<em>End</em>, <em>PageUp</em>, <em>PageDown</em>, <em>F1</em> to <em>F12</em>.</p>
 <p>Some keys will need to be quoted or escaped. For example, space can be written
-as  <span class="monospaced">" "</span> (quote space quote), and the quote itself as <span class="monospaced">\"</span> (backslash quote).
-Backslash can be written as <span class="monospaced">\\</span> (double backslash).</p>
+as  <tt>" "</tt> (quote space quote), and the quote itself as <tt>\"</tt> (backslash quote).
+Backslash can be written as <tt>\\</tt> (double backslash).</p>
 </div>
 <h2>KEYMAP ACTIONS</h2>
 <div class="sectionbody">
@@ -424,6 +420,14 @@ cellspacing="0" cellpadding="4">
     </td>
     <td align="left">
     Open authentication manager
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    backspace-prefix
+    </td>
+    <td align="left">
+    Backspace the last entered digit of the current prefix
     </td>
   </tr>
   <tr>
@@ -1356,7 +1360,7 @@ cellspacing="0" cellpadding="4">
     cut-clipboard
     </td>
     <td align="left">
-    Delete text from clipboard
+    Cut text to clipboard
     </td>
   </tr>
   <tr>
@@ -1425,10 +1429,34 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
+    kill-word-back
+    </td>
+    <td align="left">
+    Delete backwards to start of word
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
     left
     </td>
     <td align="left">
     Move the cursor left
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    move-backward-word
+    </td>
+    <td align="left">
+    Move cursor before current word
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    move-forward-word
+    </td>
+    <td align="left">
+    Move cursor after current word
     </td>
   </tr>
   <tr>
@@ -1674,7 +1702,7 @@ cellspacing="0" cellpadding="4">
 </div>
 <h2>DEFAULT BINDINGS</h2>
 <div class="sectionbody">
-<p>The default bindings are shown below. Any bindings in <span class="monospaced">~/.elinks/elinks.conf</span>
+<p>The default bindings are shown below. Any bindings in <tt>~/.elinks/elinks.conf</tt>
 will override these.</p>
 <h3>MAIN KEYS</h3>
 <div class="tableblock">
@@ -1699,7 +1727,7 @@ cellspacing="0" cellpadding="4">
     Space
     </td>
     <td align="left">
-    Move downwards by a page (<span class="emphasis">move-page-down</span>)
+    Move downwards by a page (<em>move-page-down</em>)
     </td>
   </tr>
   <tr>
@@ -1707,7 +1735,7 @@ cellspacing="0" cellpadding="4">
     #
     </td>
     <td align="left">
-    Search link text by typing ahead (<span class="emphasis">search-typeahead</span>)
+    Search link text by typing ahead (<em>search-typeahead</em>)
     </td>
   </tr>
   <tr>
@@ -1715,7 +1743,7 @@ cellspacing="0" cellpadding="4">
     %
     </td>
     <td align="left">
-    Toggle usage of document specific colors (<span class="emphasis">toggle-document-colors</span>)
+    Toggle usage of document specific colors (<em>toggle-document-colors</em>)
     </td>
   </tr>
   <tr>
@@ -1723,7 +1751,7 @@ cellspacing="0" cellpadding="4">
     *
     </td>
     <td align="left">
-    Toggle displaying of links to images (<span class="emphasis">toggle-display-images</span>)
+    Toggle displaying of links to images (<em>toggle-display-images</em>)
     </td>
   </tr>
   <tr>
@@ -1731,7 +1759,7 @@ cellspacing="0" cellpadding="4">
     ,
     </td>
     <td align="left">
-    Open a Lua console (<span class="emphasis">lua-console</span>)
+    Open a Lua console (<em>lua-console</em>)
     </td>
   </tr>
   <tr>
@@ -1739,7 +1767,7 @@ cellspacing="0" cellpadding="4">
     .
     </td>
     <td align="left">
-    Toggle displaying of links numbers (<span class="emphasis">toggle-numbered-links</span>)
+    Toggle displaying of links numbers (<em>toggle-numbered-links</em>)
     </td>
   </tr>
   <tr>
@@ -1747,7 +1775,7 @@ cellspacing="0" cellpadding="4">
     /
     </td>
     <td align="left">
-    Search for a text pattern (<span class="emphasis">search</span>)
+    Search for a text pattern (<em>search</em>)
     </td>
   </tr>
   <tr>
@@ -1755,7 +1783,7 @@ cellspacing="0" cellpadding="4">
     :
     </td>
     <td align="left">
-    Enter ex-mode (command line) (<span class="emphasis">exmode</span>)
+    Enter ex-mode (command line) (<em>exmode</em>)
     </td>
   </tr>
   <tr>
@@ -1763,7 +1791,7 @@ cellspacing="0" cellpadding="4">
     &lt;
     </td>
     <td align="left">
-    Previous tab (<span class="emphasis">tab-prev</span>)
+    Previous tab (<em>tab-prev</em>)
     </td>
   </tr>
   <tr>
@@ -1771,7 +1799,7 @@ cellspacing="0" cellpadding="4">
     Alt-&lt;
     </td>
     <td align="left">
-    Move the current tab to the left (<span class="emphasis">tab-move-left</span>)
+    Move the current tab to the left (<em>tab-move-left</em>)
     </td>
   </tr>
   <tr>
@@ -1779,7 +1807,7 @@ cellspacing="0" cellpadding="4">
     =
     </td>
     <td align="left">
-    Show information about the current page (<span class="emphasis">document-info</span>)
+    Show information about the current page (<em>document-info</em>)
     </td>
   </tr>
   <tr>
@@ -1787,7 +1815,7 @@ cellspacing="0" cellpadding="4">
     &gt;
     </td>
     <td align="left">
-    Next tab (<span class="emphasis">tab-next</span>)
+    Next tab (<em>tab-next</em>)
     </td>
   </tr>
   <tr>
@@ -1795,7 +1823,7 @@ cellspacing="0" cellpadding="4">
     Alt-&gt;
     </td>
     <td align="left">
-    Move the current tab to the right (<span class="emphasis">tab-move-right</span>)
+    Move the current tab to the right (<em>tab-move-right</em>)
     </td>
   </tr>
   <tr>
@@ -1803,7 +1831,7 @@ cellspacing="0" cellpadding="4">
     ?
     </td>
     <td align="left">
-    Search backwards for a text pattern (<span class="emphasis">search-back</span>)
+    Search backwards for a text pattern (<em>search-back</em>)
     </td>
   </tr>
   <tr>
@@ -1811,7 +1839,7 @@ cellspacing="0" cellpadding="4">
     A
     </td>
     <td align="left">
-    Add a new bookmark using current link (<span class="emphasis">add-bookmark-link</span>)
+    Add a new bookmark using current link (<em>add-bookmark-link</em>)
     </td>
   </tr>
   <tr>
@@ -1819,7 +1847,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-A
     </td>
     <td align="left">
-    Move to the start of the document (<span class="emphasis">move-document-start</span>)
+    Move to the start of the document (<em>move-document-start</em>)
     </td>
   </tr>
   <tr>
@@ -1827,7 +1855,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-B
     </td>
     <td align="left">
-    Move upwards by a page (<span class="emphasis">move-page-up</span>)
+    Move upwards by a page (<em>move-page-up</em>)
     </td>
   </tr>
   <tr>
@@ -1835,7 +1863,7 @@ cellspacing="0" cellpadding="4">
     C
     </td>
     <td align="left">
-    Open cache manager (<span class="emphasis">cache-manager</span>)
+    Open cache manager (<em>cache-manager</em>)
     </td>
   </tr>
   <tr>
@@ -1843,7 +1871,7 @@ cellspacing="0" cellpadding="4">
     D
     </td>
     <td align="left">
-    Open download manager (<span class="emphasis">download-manager</span>)
+    Open download manager (<em>download-manager</em>)
     </td>
   </tr>
   <tr>
@@ -1851,7 +1879,7 @@ cellspacing="0" cellpadding="4">
     E
     </td>
     <td align="left">
-    Open \"Go to URL\" dialog box containing the current link URL (<span class="emphasis">goto-url-current-link</span>)
+    Open "Go to URL" dialog box containing the current link URL (<em>goto-url-current-link</em>)
     </td>
   </tr>
   <tr>
@@ -1859,7 +1887,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-E
     </td>
     <td align="left">
-    Move to the end of the document (<span class="emphasis">move-document-end</span>)
+    Move to the end of the document (<em>move-document-end</em>)
     </td>
   </tr>
   <tr>
@@ -1867,7 +1895,7 @@ cellspacing="0" cellpadding="4">
     F
     </td>
     <td align="left">
-    Open form history manager (<span class="emphasis">formhist-manager</span>)
+    Open form history manager (<em>formhist-manager</em>)
     </td>
   </tr>
   <tr>
@@ -1875,7 +1903,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-F
     </td>
     <td align="left">
-    Move downwards by a page (<span class="emphasis">move-page-down</span>)
+    Move downwards by a page (<em>move-page-down</em>)
     </td>
   </tr>
   <tr>
@@ -1883,7 +1911,7 @@ cellspacing="0" cellpadding="4">
     G
     </td>
     <td align="left">
-    Open \"Go to URL\" dialog box containing the current URL (<span class="emphasis">goto-url-current</span>)
+    Open "Go to URL" dialog box containing the current URL (<em>goto-url-current</em>)
     </td>
   </tr>
   <tr>
@@ -1891,7 +1919,7 @@ cellspacing="0" cellpadding="4">
     H
     </td>
     <td align="left">
-    Go to the homepage (<span class="emphasis">goto-url-home</span>)
+    Go to the homepage (<em>goto-url-home</em>)
     </td>
   </tr>
   <tr>
@@ -1899,7 +1927,7 @@ cellspacing="0" cellpadding="4">
     K
     </td>
     <td align="left">
-    Open cookie manager (<span class="emphasis">cookie-manager</span>)
+    Open cookie manager (<em>cookie-manager</em>)
     </td>
   </tr>
   <tr>
@@ -1907,7 +1935,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-K
     </td>
     <td align="left">
-    Reload cookies file (<span class="emphasis">cookies-load</span>)
+    Reload cookies file (<em>cookies-load</em>)
     </td>
   </tr>
   <tr>
@@ -1915,7 +1943,7 @@ cellspacing="0" cellpadding="4">
     L
     </td>
     <td align="left">
-    Open the link context menu (<span class="emphasis">link-menu</span>)
+    Open the link context menu (<em>link-menu</em>)
     </td>
   </tr>
   <tr>
@@ -1923,7 +1951,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-L
     </td>
     <td align="left">
-    Redraw the terminal (<span class="emphasis">redraw</span>)
+    Redraw the terminal (<em>redraw</em>)
     </td>
   </tr>
   <tr>
@@ -1931,7 +1959,7 @@ cellspacing="0" cellpadding="4">
     N
     </td>
     <td align="left">
-    Find the previous occurrence of the current search text (<span class="emphasis">find-next-back</span>)
+    Find the previous occurrence of the current search text (<em>find-next-back</em>)
     </td>
   </tr>
   <tr>
@@ -1939,7 +1967,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-N
     </td>
     <td align="left">
-    Scroll down (<span class="emphasis">scroll-down</span>)
+    Scroll down (<em>scroll-down</em>)
     </td>
   </tr>
   <tr>
@@ -1947,7 +1975,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-P
     </td>
     <td align="left">
-    Scroll up (<span class="emphasis">scroll-up</span>)
+    Scroll up (<em>scroll-up</em>)
     </td>
   </tr>
   <tr>
@@ -1955,7 +1983,7 @@ cellspacing="0" cellpadding="4">
     Q
     </td>
     <td align="left">
-    Quit without confirmation (<span class="emphasis">really-quit</span>)
+    Quit without confirmation (<em>really-quit</em>)
     </td>
   </tr>
   <tr>
@@ -1963,7 +1991,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-R
     </td>
     <td align="left">
-    Reload the current page (<span class="emphasis">reload</span>)
+    Reload the current page (<em>reload</em>)
     </td>
   </tr>
   <tr>
@@ -1971,7 +1999,7 @@ cellspacing="0" cellpadding="4">
     T
     </td>
     <td align="left">
-    Open the current link in a new tab in the background (<span class="emphasis">open-link-in-new-tab-in-background</span>)
+    Open the current link in a new tab in the background (<em>open-link-in-new-tab-in-background</em>)
     </td>
   </tr>
   <tr>
@@ -1979,7 +2007,7 @@ cellspacing="0" cellpadding="4">
     W
     </td>
     <td align="left">
-    Toggle wrapping of text (<span class="emphasis">toggle-wrap-text</span>)
+    Toggle wrapping of text (<em>toggle-wrap-text</em>)
     </td>
   </tr>
   <tr>
@@ -1987,7 +2015,7 @@ cellspacing="0" cellpadding="4">
     [
     </td>
     <td align="left">
-    Scroll left (<span class="emphasis">scroll-left</span>)
+    Scroll left (<em>scroll-left</em>)
     </td>
   </tr>
   <tr>
@@ -1995,7 +2023,7 @@ cellspacing="0" cellpadding="4">
     '
     </td>
     <td align="left">
-    Go at a specified mark (<span class="emphasis">mark-goto</span>)
+    Go at a specified mark (<em>mark-goto</em>)
     </td>
   </tr>
   <tr>
@@ -2003,7 +2031,7 @@ cellspacing="0" cellpadding="4">
     \
     </td>
     <td align="left">
-    Toggle rendering page as HTML / plain text (<span class="emphasis">toggle-html-plain</span>)
+    Toggle rendering page as HTML / plain text (<em>toggle-html-plain</em>)
     </td>
   </tr>
   <tr>
@@ -2011,7 +2039,7 @@ cellspacing="0" cellpadding="4">
     ]
     </td>
     <td align="left">
-    Scroll right (<span class="emphasis">scroll-right</span>)
+    Scroll right (<em>scroll-right</em>)
     </td>
   </tr>
   <tr>
@@ -2019,7 +2047,7 @@ cellspacing="0" cellpadding="4">
     a
     </td>
     <td align="left">
-    Add a new bookmark (<span class="emphasis">add-bookmark</span>)
+    Add a new bookmark (<em>add-bookmark</em>)
     </td>
   </tr>
   <tr>
@@ -2027,7 +2055,7 @@ cellspacing="0" cellpadding="4">
     b
     </td>
     <td align="left">
-    Move upwards by a page (<span class="emphasis">move-page-up</span>)
+    Move upwards by a page (<em>move-page-up</em>)
     </td>
   </tr>
   <tr>
@@ -2035,7 +2063,7 @@ cellspacing="0" cellpadding="4">
     c
     </td>
     <td align="left">
-    Close tab (<span class="emphasis">tab-close</span>)
+    Close tab (<em>tab-close</em>)
     </td>
   </tr>
   <tr>
@@ -2043,7 +2071,7 @@ cellspacing="0" cellpadding="4">
     d
     </td>
     <td align="left">
-    Download the current link (<span class="emphasis">link-download</span>)
+    Download the current link (<em>link-download</em>)
     </td>
   </tr>
   <tr>
@@ -2051,7 +2079,7 @@ cellspacing="0" cellpadding="4">
     e
     </td>
     <td align="left">
-    Open the tab menu (<span class="emphasis">tab-menu</span>)
+    Open the tab menu (<em>tab-menu</em>)
     </td>
   </tr>
   <tr>
@@ -2059,7 +2087,7 @@ cellspacing="0" cellpadding="4">
     f
     </td>
     <td align="left">
-    Maximize the current frame (<span class="emphasis">frame-maximize</span>)
+    Maximize the current frame (<em>frame-maximize</em>)
     </td>
   </tr>
   <tr>
@@ -2067,7 +2095,7 @@ cellspacing="0" cellpadding="4">
     g
     </td>
     <td align="left">
-    Open \"Go to URL\" dialog box (<span class="emphasis">goto-url</span>)
+    Open "Go to URL" dialog box (<em>goto-url</em>)
     </td>
   </tr>
   <tr>
@@ -2075,7 +2103,7 @@ cellspacing="0" cellpadding="4">
     h
     </td>
     <td align="left">
-    Open history manager (<span class="emphasis">history-manager</span>)
+    Open history manager (<em>history-manager</em>)
     </td>
   </tr>
   <tr>
@@ -2083,7 +2111,7 @@ cellspacing="0" cellpadding="4">
     k
     </td>
     <td align="left">
-    Open keybinding manager (<span class="emphasis">keybinding-manager</span>)
+    Open keybinding manager (<em>keybinding-manager</em>)
     </td>
   </tr>
   <tr>
@@ -2091,7 +2119,7 @@ cellspacing="0" cellpadding="4">
     l
     </td>
     <td align="left">
-    Jump to link (<span class="emphasis">jump-to-link</span>)
+    Jump to link (<em>jump-to-link</em>)
     </td>
   </tr>
   <tr>
@@ -2099,7 +2127,7 @@ cellspacing="0" cellpadding="4">
     m
     </td>
     <td align="left">
-    Set a mark (<span class="emphasis">mark-set</span>)
+    Set a mark (<em>mark-set</em>)
     </td>
   </tr>
   <tr>
@@ -2107,7 +2135,7 @@ cellspacing="0" cellpadding="4">
     n
     </td>
     <td align="left">
-    Find the next occurrence of the current search text (<span class="emphasis">find-next</span>)
+    Find the next occurrence of the current search text (<em>find-next</em>)
     </td>
   </tr>
   <tr>
@@ -2115,7 +2143,7 @@ cellspacing="0" cellpadding="4">
     o
     </td>
     <td align="left">
-    Open options manager (<span class="emphasis">options-manager</span>)
+    Open options manager (<em>options-manager</em>)
     </td>
   </tr>
   <tr>
@@ -2123,7 +2151,7 @@ cellspacing="0" cellpadding="4">
     q
     </td>
     <td align="left">
-    Open a quit confirmation dialog box (<span class="emphasis">quit</span>)
+    Open a quit confirmation dialog box (<em>quit</em>)
     </td>
   </tr>
   <tr>
@@ -2131,7 +2159,7 @@ cellspacing="0" cellpadding="4">
     r
     </td>
     <td align="left">
-    Attempt to resume download of the current link (<span class="emphasis">link-download-resume</span>)
+    Attempt to resume download of the current link (<em>link-download-resume</em>)
     </td>
   </tr>
   <tr>
@@ -2139,7 +2167,7 @@ cellspacing="0" cellpadding="4">
     s
     </td>
     <td align="left">
-    Open bookmark manager (<span class="emphasis">bookmark-manager</span>)
+    Open bookmark manager (<em>bookmark-manager</em>)
     </td>
   </tr>
   <tr>
@@ -2147,7 +2175,7 @@ cellspacing="0" cellpadding="4">
     t
     </td>
     <td align="left">
-    Open a new tab (<span class="emphasis">open-new-tab</span>)
+    Open a new tab (<em>open-new-tab</em>)
     </td>
   </tr>
   <tr>
@@ -2155,7 +2183,7 @@ cellspacing="0" cellpadding="4">
     u
     </td>
     <td align="left">
-    Go forward in history (<span class="emphasis">history-move-forward</span>)
+    Go forward in history (<em>history-move-forward</em>)
     </td>
   </tr>
   <tr>
@@ -2163,7 +2191,7 @@ cellspacing="0" cellpadding="4">
     v
     </td>
     <td align="left">
-    View the current image (<span class="emphasis">view-image</span>)
+    View the current image (<em>view-image</em>)
     </td>
   </tr>
   <tr>
@@ -2171,7 +2199,7 @@ cellspacing="0" cellpadding="4">
     x
     </td>
     <td align="left">
-    Follow the current link, forcing reload of the target (<span class="emphasis">link-follow-reload</span>)
+    Follow the current link, forcing reload of the target (<em>link-follow-reload</em>)
     </td>
   </tr>
   <tr>
@@ -2179,7 +2207,7 @@ cellspacing="0" cellpadding="4">
     z
     </td>
     <td align="left">
-    Abort connection (<span class="emphasis">abort-connection</span>)
+    Abort connection (<em>abort-connection</em>)
     </td>
   </tr>
   <tr>
@@ -2187,7 +2215,7 @@ cellspacing="0" cellpadding="4">
     {
     </td>
     <td align="left">
-    Scroll left (<span class="emphasis">scroll-left</span>)
+    Scroll left (<em>scroll-left</em>)
     </td>
   </tr>
   <tr>
@@ -2195,7 +2223,7 @@ cellspacing="0" cellpadding="4">
     |
     </td>
     <td align="left">
-    Show information about the current page protocol headers (<span class="emphasis">header-info</span>)
+    Show information about the current page protocol headers (<em>header-info</em>)
     </td>
   </tr>
   <tr>
@@ -2203,7 +2231,15 @@ cellspacing="0" cellpadding="4">
     }
     </td>
     <td align="left">
-    Scroll right (<span class="emphasis">scroll-right</span>)
+    Scroll right (<em>scroll-right</em>)
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    Backspace
+    </td>
+    <td align="left">
+    Backspace the last entered digit of the current prefix (<em>backspace-prefix</em>)
     </td>
   </tr>
   <tr>
@@ -2211,7 +2247,7 @@ cellspacing="0" cellpadding="4">
     Delete
     </td>
     <td align="left">
-    Scroll down (<span class="emphasis">scroll-down</span>)
+    Scroll down (<em>scroll-down</em>)
     </td>
   </tr>
   <tr>
@@ -2219,7 +2255,7 @@ cellspacing="0" cellpadding="4">
     Down
     </td>
     <td align="left">
-    Move to the next link (<span class="emphasis">move-link-next</span>)
+    Move to the next link (<em>move-link-next</em>)
     </td>
   </tr>
   <tr>
@@ -2227,7 +2263,7 @@ cellspacing="0" cellpadding="4">
     End
     </td>
     <td align="left">
-    Move to the end of the document (<span class="emphasis">move-document-end</span>)
+    Move to the end of the document (<em>move-document-end</em>)
     </td>
   </tr>
   <tr>
@@ -2235,7 +2271,7 @@ cellspacing="0" cellpadding="4">
     Enter
     </td>
     <td align="left">
-    Follow the current link (<span class="emphasis">link-follow</span>)
+    Follow the current link (<em>link-follow</em>)
     </td>
   </tr>
   <tr>
@@ -2243,7 +2279,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-Enter
     </td>
     <td align="left">
-    Follow the current link, forcing reload of the target (<span class="emphasis">link-follow-reload</span>)
+    Follow the current link, forcing reload of the target (<em>link-follow-reload</em>)
     </td>
   </tr>
   <tr>
@@ -2251,7 +2287,7 @@ cellspacing="0" cellpadding="4">
     Escape
     </td>
     <td align="left">
-    Activate the menu (<span class="emphasis">menu</span>)
+    Activate the menu (<em>menu</em>)
     </td>
   </tr>
   <tr>
@@ -2259,7 +2295,7 @@ cellspacing="0" cellpadding="4">
     F10
     </td>
     <td align="left">
-    Open the File menu (<span class="emphasis">file-menu</span>)
+    Open the File menu (<em>file-menu</em>)
     </td>
   </tr>
   <tr>
@@ -2267,7 +2303,7 @@ cellspacing="0" cellpadding="4">
     F9
     </td>
     <td align="left">
-    Activate the menu (<span class="emphasis">menu</span>)
+    Activate the menu (<em>menu</em>)
     </td>
   </tr>
   <tr>
@@ -2275,7 +2311,7 @@ cellspacing="0" cellpadding="4">
     Home
     </td>
     <td align="left">
-    Move to the start of the document (<span class="emphasis">move-document-start</span>)
+    Move to the start of the document (<em>move-document-start</em>)
     </td>
   </tr>
   <tr>
@@ -2283,7 +2319,7 @@ cellspacing="0" cellpadding="4">
     Insert
     </td>
     <td align="left">
-    Scroll up (<span class="emphasis">scroll-up</span>)
+    Scroll up (<em>scroll-up</em>)
     </td>
   </tr>
   <tr>
@@ -2291,7 +2327,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-Insert
     </td>
     <td align="left">
-    Copy text to clipboard (<span class="emphasis">copy-clipboard</span>)
+    Copy text to clipboard (<em>copy-clipboard</em>)
     </td>
   </tr>
   <tr>
@@ -2299,7 +2335,7 @@ cellspacing="0" cellpadding="4">
     Left
     </td>
     <td align="left">
-    Return to the previous document in history (<span class="emphasis">history-move-back</span>)
+    Return to the previous document in history (<em>history-move-back</em>)
     </td>
   </tr>
   <tr>
@@ -2307,7 +2343,7 @@ cellspacing="0" cellpadding="4">
     PageDown
     </td>
     <td align="left">
-    Move downwards by a page (<span class="emphasis">move-page-down</span>)
+    Move downwards by a page (<em>move-page-down</em>)
     </td>
   </tr>
   <tr>
@@ -2315,7 +2351,7 @@ cellspacing="0" cellpadding="4">
     PageUp
     </td>
     <td align="left">
-    Move upwards by a page (<span class="emphasis">move-page-up</span>)
+    Move upwards by a page (<em>move-page-up</em>)
     </td>
   </tr>
   <tr>
@@ -2323,7 +2359,7 @@ cellspacing="0" cellpadding="4">
     Right
     </td>
     <td align="left">
-    Follow the current link (<span class="emphasis">link-follow</span>)
+    Follow the current link (<em>link-follow</em>)
     </td>
   </tr>
   <tr>
@@ -2331,7 +2367,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-Right
     </td>
     <td align="left">
-    Follow the current link, forcing reload of the target (<span class="emphasis">link-follow-reload</span>)
+    Follow the current link, forcing reload of the target (<em>link-follow-reload</em>)
     </td>
   </tr>
   <tr>
@@ -2339,7 +2375,7 @@ cellspacing="0" cellpadding="4">
     Tab
     </td>
     <td align="left">
-    Move to the next frame (<span class="emphasis">frame-next</span>)
+    Move to the next frame (<em>frame-next</em>)
     </td>
   </tr>
   <tr>
@@ -2347,7 +2383,15 @@ cellspacing="0" cellpadding="4">
     Alt-Tab
     </td>
     <td align="left">
-    Move to the previous frame (<span class="emphasis">frame-prev</span>)
+    Move to the previous frame (<em>frame-prev</em>)
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    Tab
+    </td>
+    <td align="left">
+    Move to the previous frame (<em>frame-prev</em>)
     </td>
   </tr>
   <tr>
@@ -2355,7 +2399,7 @@ cellspacing="0" cellpadding="4">
     Up
     </td>
     <td align="left">
-    Move to the previous link (<span class="emphasis">move-link-prev</span>)
+    Move to the previous link (<em>move-link-prev</em>)
     </td>
   </tr>
 </tbody>
@@ -2384,7 +2428,7 @@ cellspacing="0" cellpadding="4">
     Alt-&lt;
     </td>
     <td align="left">
-    Go to the first line of the buffer (<span class="emphasis">beginning-of-buffer</span>)
+    Go to the first line of the buffer (<em>beginning-of-buffer</em>)
     </td>
   </tr>
   <tr>
@@ -2392,7 +2436,7 @@ cellspacing="0" cellpadding="4">
     Alt-&gt;
     </td>
     <td align="left">
-    Go to the last line of the buffer (<span class="emphasis">end-of-buffer</span>)
+    Go to the last line of the buffer (<em>end-of-buffer</em>)
     </td>
   </tr>
   <tr>
@@ -2400,7 +2444,15 @@ cellspacing="0" cellpadding="4">
     Ctrl-A
     </td>
     <td align="left">
-    Go to the start of the page/line (<span class="emphasis">home</span>)
+    Go to the start of the page/line (<em>home</em>)
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    Alt-b
+    </td>
+    <td align="left">
+    Move cursor before current word (<em>move-backward-word</em>)
     </td>
   </tr>
   <tr>
@@ -2408,7 +2460,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-D
     </td>
     <td align="left">
-    Delete character under cursor (<span class="emphasis">delete</span>)
+    Delete character under cursor (<em>delete</em>)
     </td>
   </tr>
   <tr>
@@ -2416,7 +2468,15 @@ cellspacing="0" cellpadding="4">
     Ctrl-E
     </td>
     <td align="left">
-    Go to the end of the page/line (<span class="emphasis">end</span>)
+    Go to the end of the page/line (<em>end</em>)
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    Alt-f
+    </td>
+    <td align="left">
+    Move cursor after current word (<em>move-forward-word</em>)
     </td>
   </tr>
   <tr>
@@ -2424,7 +2484,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-H
     </td>
     <td align="left">
-    Delete character in front of the cursor (<span class="emphasis">backspace</span>)
+    Delete character in front of the cursor (<em>backspace</em>)
     </td>
   </tr>
   <tr>
@@ -2432,7 +2492,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-K
     </td>
     <td align="left">
-    Delete to end of line (<span class="emphasis">kill-to-eol</span>)
+    Delete to end of line (<em>kill-to-eol</em>)
     </td>
   </tr>
   <tr>
@@ -2440,7 +2500,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-L
     </td>
     <td align="left">
-    Redraw the terminal (<span class="emphasis">redraw</span>)
+    Redraw the terminal (<em>redraw</em>)
     </td>
   </tr>
   <tr>
@@ -2448,7 +2508,7 @@ cellspacing="0" cellpadding="4">
     Alt-r
     </td>
     <td align="left">
-    Toggle regex matching (type-ahead searching) (<span class="emphasis">search-toggle-regex</span>)
+    Toggle regex matching (type-ahead searching) (<em>search-toggle-regex</em>)
     </td>
   </tr>
   <tr>
@@ -2456,7 +2516,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-F
     </td>
     <td align="left">
-    Attempt to auto-complete a local file (<span class="emphasis">auto-complete-file</span>)
+    Attempt to auto-complete a local file (<em>auto-complete-file</em>)
     </td>
   </tr>
   <tr>
@@ -2464,7 +2524,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-R
     </td>
     <td align="left">
-    Attempt to unambiguously auto-complete the input (<span class="emphasis">auto-complete-unambiguous</span>)
+    Attempt to unambiguously auto-complete the input (<em>auto-complete-unambiguous</em>)
     </td>
   </tr>
   <tr>
@@ -2472,7 +2532,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-T
     </td>
     <td align="left">
-    Open in external editor (<span class="emphasis">open-external</span>)
+    Open in external editor (<em>open-external</em>)
     </td>
   </tr>
   <tr>
@@ -2480,7 +2540,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-U
     </td>
     <td align="left">
-    Delete to beginning of line (<span class="emphasis">kill-to-bol</span>)
+    Delete to beginning of line (<em>kill-to-bol</em>)
     </td>
   </tr>
   <tr>
@@ -2488,7 +2548,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-V
     </td>
     <td align="left">
-    Paste text from the clipboard (<span class="emphasis">paste-clipboard</span>)
+    Paste text from the clipboard (<em>paste-clipboard</em>)
     </td>
   </tr>
   <tr>
@@ -2496,7 +2556,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-W
     </td>
     <td align="left">
-    Attempt to auto-complete the input (<span class="emphasis">auto-complete</span>)
+    Attempt to auto-complete the input (<em>auto-complete</em>)
     </td>
   </tr>
   <tr>
@@ -2504,7 +2564,15 @@ cellspacing="0" cellpadding="4">
     Ctrl-X
     </td>
     <td align="left">
-    Delete text from clipboard (<span class="emphasis">cut-clipboard</span>)
+    Cut text to clipboard (<em>cut-clipboard</em>)
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    Alt-Backspac
+    </td>
+    <td align="left">
+    e Delete backwards to start of word (<em>kill-word-back</em>)
     </td>
   </tr>
   <tr>
@@ -2512,7 +2580,7 @@ cellspacing="0" cellpadding="4">
     Backspace
     </td>
     <td align="left">
-    Delete character in front of the cursor (<span class="emphasis">backspace</span>)
+    Delete character in front of the cursor (<em>backspace</em>)
     </td>
   </tr>
   <tr>
@@ -2520,7 +2588,7 @@ cellspacing="0" cellpadding="4">
     Delete
     </td>
     <td align="left">
-    Delete character under cursor (<span class="emphasis">delete</span>)
+    Delete character under cursor (<em>delete</em>)
     </td>
   </tr>
   <tr>
@@ -2528,7 +2596,7 @@ cellspacing="0" cellpadding="4">
     Down
     </td>
     <td align="left">
-    Move cursor downwards (<span class="emphasis">down</span>)
+    Move cursor downwards (<em>down</em>)
     </td>
   </tr>
   <tr>
@@ -2536,7 +2604,7 @@ cellspacing="0" cellpadding="4">
     End
     </td>
     <td align="left">
-    Go to the end of the page/line (<span class="emphasis">end</span>)
+    Go to the end of the page/line (<em>end</em>)
     </td>
   </tr>
   <tr>
@@ -2544,7 +2612,7 @@ cellspacing="0" cellpadding="4">
     Enter
     </td>
     <td align="left">
-    Follow the current link (<span class="emphasis">enter</span>)
+    Follow the current link (<em>enter</em>)
     </td>
   </tr>
   <tr>
@@ -2552,7 +2620,7 @@ cellspacing="0" cellpadding="4">
     Escape
     </td>
     <td align="left">
-    Cancel current state (<span class="emphasis">cancel</span>)
+    Cancel current state (<em>cancel</em>)
     </td>
   </tr>
   <tr>
@@ -2560,7 +2628,7 @@ cellspacing="0" cellpadding="4">
     F4
     </td>
     <td align="left">
-    Open in external editor (<span class="emphasis">open-external</span>)
+    Open in external editor (<em>open-external</em>)
     </td>
   </tr>
   <tr>
@@ -2568,7 +2636,7 @@ cellspacing="0" cellpadding="4">
     Home
     </td>
     <td align="left">
-    Go to the start of the page/line (<span class="emphasis">home</span>)
+    Go to the start of the page/line (<em>home</em>)
     </td>
   </tr>
   <tr>
@@ -2576,7 +2644,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-Insert
     </td>
     <td align="left">
-    Copy text to clipboard (<span class="emphasis">copy-clipboard</span>)
+    Copy text to clipboard (<em>copy-clipboard</em>)
     </td>
   </tr>
   <tr>
@@ -2584,7 +2652,7 @@ cellspacing="0" cellpadding="4">
     Left
     </td>
     <td align="left">
-    Move the cursor left (<span class="emphasis">left</span>)
+    Move the cursor left (<em>left</em>)
     </td>
   </tr>
   <tr>
@@ -2592,7 +2660,7 @@ cellspacing="0" cellpadding="4">
     Right
     </td>
     <td align="left">
-    Move the cursor right (<span class="emphasis">right</span>)
+    Move the cursor right (<em>right</em>)
     </td>
   </tr>
   <tr>
@@ -2600,7 +2668,7 @@ cellspacing="0" cellpadding="4">
     Tab
     </td>
     <td align="left">
-    Move to the next item (<span class="emphasis">next-item</span>)
+    Move to the next item (<em>next-item</em>)
     </td>
   </tr>
   <tr>
@@ -2608,7 +2676,15 @@ cellspacing="0" cellpadding="4">
     Alt-Tab
     </td>
     <td align="left">
-    Move to the previous item (<span class="emphasis">previous-item</span>)
+    Move to the previous item (<em>previous-item</em>)
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    Tab
+    </td>
+    <td align="left">
+    Move to the previous item (<em>previous-item</em>)
     </td>
   </tr>
   <tr>
@@ -2616,7 +2692,7 @@ cellspacing="0" cellpadding="4">
     Up
     </td>
     <td align="left">
-    Move cursor upwards (<span class="emphasis">up</span>)
+    Move cursor upwards (<em>up</em>)
     </td>
   </tr>
 </tbody>
@@ -2645,7 +2721,7 @@ cellspacing="0" cellpadding="4">
     Space
     </td>
     <td align="left">
-    Select current highlighted item (<span class="emphasis">select</span>)
+    Select current highlighted item (<em>select</em>)
     </td>
   </tr>
   <tr>
@@ -2653,7 +2729,7 @@ cellspacing="0" cellpadding="4">
     *
     </td>
     <td align="left">
-    Mark item (<span class="emphasis">mark-item</span>)
+    Mark item (<em>mark-item</em>)
     </td>
   </tr>
   <tr>
@@ -2661,7 +2737,7 @@ cellspacing="0" cellpadding="4">
     +
     </td>
     <td align="left">
-    Expand item (<span class="emphasis">expand</span>)
+    Expand item (<em>expand</em>)
     </td>
   </tr>
   <tr>
@@ -2669,7 +2745,7 @@ cellspacing="0" cellpadding="4">
     -
     </td>
     <td align="left">
-    Collapse item (<span class="emphasis">unexpand</span>)
+    Collapse item (<em>unexpand</em>)
     </td>
   </tr>
   <tr>
@@ -2677,7 +2753,7 @@ cellspacing="0" cellpadding="4">
     /
     </td>
     <td align="left">
-    Search for a text pattern (<span class="emphasis">search</span>)
+    Search for a text pattern (<em>search</em>)
     </td>
   </tr>
   <tr>
@@ -2685,7 +2761,7 @@ cellspacing="0" cellpadding="4">
     =
     </td>
     <td align="left">
-    Expand item (<span class="emphasis">expand</span>)
+    Expand item (<em>expand</em>)
     </td>
   </tr>
   <tr>
@@ -2693,7 +2769,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-A
     </td>
     <td align="left">
-    Go to the start of the page/line (<span class="emphasis">home</span>)
+    Go to the start of the page/line (<em>home</em>)
     </td>
   </tr>
   <tr>
@@ -2701,7 +2777,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-B
     </td>
     <td align="left">
-    Move upwards by a page (<span class="emphasis">page-up</span>)
+    Move upwards by a page (<em>page-up</em>)
     </td>
   </tr>
   <tr>
@@ -2709,7 +2785,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-E
     </td>
     <td align="left">
-    Go to the end of the page/line (<span class="emphasis">end</span>)
+    Go to the end of the page/line (<em>end</em>)
     </td>
   </tr>
   <tr>
@@ -2717,7 +2793,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-F
     </td>
     <td align="left">
-    Move downwards by a page (<span class="emphasis">page-down</span>)
+    Move downwards by a page (<em>page-down</em>)
     </td>
   </tr>
   <tr>
@@ -2725,7 +2801,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-L
     </td>
     <td align="left">
-    Redraw the terminal (<span class="emphasis">redraw</span>)
+    Redraw the terminal (<em>redraw</em>)
     </td>
   </tr>
   <tr>
@@ -2733,7 +2809,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-N
     </td>
     <td align="left">
-    Move cursor downwards (<span class="emphasis">down</span>)
+    Move cursor downwards (<em>down</em>)
     </td>
   </tr>
   <tr>
@@ -2741,7 +2817,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-P
     </td>
     <td align="left">
-    Move cursor upwards (<span class="emphasis">up</span>)
+    Move cursor upwards (<em>up</em>)
     </td>
   </tr>
   <tr>
@@ -2749,7 +2825,7 @@ cellspacing="0" cellpadding="4">
     Alt-V
     </td>
     <td align="left">
-    Move upwards by a page (<span class="emphasis">page-up</span>)
+    Move upwards by a page (<em>page-up</em>)
     </td>
   </tr>
   <tr>
@@ -2757,7 +2833,7 @@ cellspacing="0" cellpadding="4">
     Ctrl-V
     </td>
     <td align="left">
-    Move downwards by a page (<span class="emphasis">page-down</span>)
+    Move downwards by a page (<em>page-down</em>)
     </td>
   </tr>
   <tr>
@@ -2765,7 +2841,7 @@ cellspacing="0" cellpadding="4">
     [
     </td>
     <td align="left">
-    Expand item (<span class="emphasis">expand</span>)
+    Expand item (<em>expand</em>)
     </td>
   </tr>
   <tr>
@@ -2773,7 +2849,7 @@ cellspacing="0" cellpadding="4">
     ]
     </td>
     <td align="left">
-    Collapse item (<span class="emphasis">unexpand</span>)
+    Collapse item (<em>unexpand</em>)
     </td>
   </tr>
   <tr>
@@ -2781,7 +2857,7 @@ cellspacing="0" cellpadding="4">
     _
     </td>
     <td align="left">
-    Collapse item (<span class="emphasis">unexpand</span>)
+    Collapse item (<em>unexpand</em>)
     </td>
   </tr>
   <tr>
@@ -2789,7 +2865,7 @@ cellspacing="0" cellpadding="4">
     Delete
     </td>
     <td align="left">
-    Delete character under cursor (<span class="emphasis">delete</span>)
+    Delete character under cursor (<em>delete</em>)
     </td>
   </tr>
   <tr>
@@ -2797,7 +2873,7 @@ cellspacing="0" cellpadding="4">
     Down
     </td>
     <td align="left">
-    Move cursor downwards (<span class="emphasis">down</span>)
+    Move cursor downwards (<em>down</em>)
     </td>
   </tr>
   <tr>
@@ -2805,7 +2881,7 @@ cellspacing="0" cellpadding="4">
     End
     </td>
     <td align="left">
-    Go to the end of the page/line (<span class="emphasis">end</span>)
+    Go to the end of the page/line (<em>end</em>)
     </td>
   </tr>
   <tr>
@@ -2813,7 +2889,7 @@ cellspacing="0" cellpadding="4">
     Enter
     </td>
     <td align="left">
-    Follow the current link (<span class="emphasis">enter</span>)
+    Follow the current link (<em>enter</em>)
     </td>
   </tr>
   <tr>
@@ -2821,7 +2897,7 @@ cellspacing="0" cellpadding="4">
     Escape
     </td>
     <td align="left">
-    Cancel current state (<span class="emphasis">cancel</span>)
+    Cancel current state (<em>cancel</em>)
     </td>
   </tr>
   <tr>
@@ -2829,7 +2905,7 @@ cellspacing="0" cellpadding="4">
     Home
     </td>
     <td align="left">
-    Go to the start of the page/line (<span class="emphasis">home</span>)
+    Go to the start of the page/line (<em>home</em>)
     </td>
   </tr>
   <tr>
@@ -2837,7 +2913,7 @@ cellspacing="0" cellpadding="4">
     Insert
     </td>
     <td align="left">
-    Mark item (<span class="emphasis">mark-item</span>)
+    Mark item (<em>mark-item</em>)
     </td>
   </tr>
   <tr>
@@ -2845,7 +2921,7 @@ cellspacing="0" cellpadding="4">
     Left
     </td>
     <td align="left">
-    Move the cursor left (<span class="emphasis">left</span>)
+    Move the cursor left (<em>left</em>)
     </td>
   </tr>
   <tr>
@@ -2853,7 +2929,7 @@ cellspacing="0" cellpadding="4">
     PageDown
     </td>
     <td align="left">
-    Move downwards by a page (<span class="emphasis">page-down</span>)
+    Move downwards by a page (<em>page-down</em>)
     </td>
   </tr>
   <tr>
@@ -2861,7 +2937,7 @@ cellspacing="0" cellpadding="4">
     PageUp
     </td>
     <td align="left">
-    Move upwards by a page (<span class="emphasis">page-up</span>)
+    Move upwards by a page (<em>page-up</em>)
     </td>
   </tr>
   <tr>
@@ -2869,7 +2945,7 @@ cellspacing="0" cellpadding="4">
     Right
     </td>
     <td align="left">
-    Move the cursor right (<span class="emphasis">right</span>)
+    Move the cursor right (<em>right</em>)
     </td>
   </tr>
   <tr>
@@ -2877,7 +2953,7 @@ cellspacing="0" cellpadding="4">
     Tab
     </td>
     <td align="left">
-    Move to the next item (<span class="emphasis">next-item</span>)
+    Move to the next item (<em>next-item</em>)
     </td>
   </tr>
   <tr>
@@ -2885,7 +2961,15 @@ cellspacing="0" cellpadding="4">
     Alt-Tab
     </td>
     <td align="left">
-    Move to the previous item (<span class="emphasis">previous-item</span>)
+    Move to the previous item (<em>previous-item</em>)
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    Tab
+    </td>
+    <td align="left">
+    Move to the previous item (<em>previous-item</em>)
     </td>
   </tr>
   <tr>
@@ -2893,7 +2977,7 @@ cellspacing="0" cellpadding="4">
     Up
     </td>
     <td align="left">
-    Move cursor upwards (<span class="emphasis">up</span>)
+    Move cursor upwards (<em>up</em>)
     </td>
   </tr>
 </tbody>
@@ -2913,7 +2997,7 @@ to asciidoc format and cleaned up by Jonas Fonseca.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 25-Jan-2006 04:49:54 CEST
+Last updated 21-Feb-2007 10:44:56 EEST
 </div>
 </div>
 </body>

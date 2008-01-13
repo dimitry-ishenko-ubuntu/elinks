@@ -53,6 +53,28 @@
 #endif
 #endif
 
+#if defined(HAVE_LONG_LONG) && !defined(LLONG_MAX)
+#ifdef MAXLLONG
+#define LLONG_MAX MAXLLONG
+#elif SIZEOF_LONG_LONG == 8
+#define LLONG_MAX 9223372036854775807LL
+#elif SIZEOF_LONG_LONG == 4
+#define LLONG_MAX LONG_MAX
+#endif
+#endif
+
+#ifndef OFFT_MAX
+#if defined(HAVE_LONG_LONG) && SIZEOF_OFF_T == SIZEOF_LONG_LONG
+#define OFFT_MAX LLONG_MAX
+#elif SIZEOF_OFF_T == SIZEOF_LONG
+#define OFFT_MAX LONG_MAX
+#elif SIZEOF_OFF_T == SIZEOF_INT
+#define OFFT_MAX INT_MAX
+#elif SIZEOF_OFF_T == SIZEOF_SHORT
+#define OFFT_MAX SHRT_MAX
+#endif
+#endif
+
 #ifndef HAVE_UINT16_T
 #if SIZEOF_CHAR == 2
 typedef unsigned char uint16_t;
@@ -116,6 +138,14 @@ typedef unsigned long long uint32_t;
 #endif
 #ifndef __SHRT_MAX__
 #define __SHRT_MAX__ 0x7fff
+#endif
+
+/* Define internal off_t format macro for printing variables. */
+#if HAVE_OFF_T == 1 && SIZEOF_OFF_T == 8
+#define OFF_T_FORMAT "lld"
+#else
+/* For ELinks, off_t defaults to long. */
+#define OFF_T_FORMAT "ld"
 #endif
 
 #endif

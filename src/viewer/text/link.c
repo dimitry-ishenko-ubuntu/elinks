@@ -906,7 +906,6 @@ activate_link(struct session *ses, struct document_view *doc_view,
 			return FRAME_EVENT_OK;
 
 		break;
-
 	case LINK_CHECKBOX:
 		link_fc = get_link_form_control(link);
 
@@ -922,6 +921,14 @@ activate_link(struct session *ses, struct document_view *doc_view,
 			return FRAME_EVENT_REFRESH;
 		}
 
+		/* @link_fc->type must be FC_RADIO, then.  First turn
+		 * this one on, and then turn off all the other radio
+		 * buttons in the group.  Do it in this order because
+		 * further @find_form_state calls may reallocate
+		 * @doc_view->vs->form_info[] and thereby make the @fs
+		 * pointer invalid.  This also allows us to re-use
+		 * @fs in the loop. */
+		fs->state = 1;
 		foreach (form, doc_view->document->forms) {
 			struct form_control *fc;
 
@@ -930,15 +937,13 @@ activate_link(struct session *ses, struct document_view *doc_view,
 
 			foreach (fc, form->items) {
 				if (fc->type == FC_RADIO
-				    && !xstrcmp(fc->name, link_fc->name)) {
-					struct form_state *frm_st;
-
-					frm_st = find_form_state(doc_view, fc);
-					if (frm_st) frm_st->state = 0;
+				    && !xstrcmp(fc->name, link_fc->name)
+				    && fc != link_fc) {
+					fs = find_form_state(doc_view, fc);
+					if (fs) fs->state = 0;
 				}
 			}
 		}
-		fs->state = 1;
 
 		break;
 
@@ -966,7 +971,6 @@ activate_link(struct session *ses, struct document_view *doc_view,
 enum frame_event_status
 enter(struct session *ses, struct document_view *doc_view, int do_reload)
 {
-	enum frame_event_status ret;
 	struct link *link;
 
 	assert(ses && doc_view && doc_view->vs && doc_view->document);
@@ -975,12 +979,10 @@ enter(struct session *ses, struct document_view *doc_view, int do_reload)
 	link = get_current_link(doc_view);
 	if (!link) return FRAME_EVENT_REFRESH;
 
-	ret = activate_link(ses, doc_view, link, do_reload);
-	if (ret != FRAME_EVENT_IGNORED)
-		if (!current_link_evhook(doc_view, SEVHOOK_ONCLICK))
-			return FRAME_EVENT_REFRESH;
 
-	return ret;
+	if (!current_link_evhook(doc_view, SEVHOOK_ONCLICK))
+		return FRAME_EVENT_REFRESH;
+	return activate_link(ses, doc_view, link, do_reload);
 }
 
 struct link *
@@ -1097,7 +1099,6 @@ try_document_key(struct session *ses, struct document_view *doc_view,
 		 struct term_event *ev)
 {
 	long key;
-	int passed = -1;
 	int i; /* GOD I HATE C! --FF */ /* YEAH, BRAINFUCK RULEZ! --pasky */
 
 	assert(ses && doc_view && doc_view->document && doc_view->vs && ev);
@@ -1112,24 +1113,23 @@ try_document_key(struct session *ses, struct document_view *doc_view,
 	 * key we test.. */
 	key = get_kbd_key(ev);
 
-	for (i = 0; i < doc_view->document->nlinks; i++) {
+	i = doc_view->vs->current_link + 1;
+	for (; i < doc_view->document->nlinks; i++) {
 		struct link *link = &doc_view->document->links[i];
 
 		if (key == link->accesskey) {	/* FIXME: key vs unicode ... */
-			if (passed != i && i <= doc_view->vs->current_link) {
-				/* This is here in order to rotate between
-				 * links with same accesskey. */
-				if (passed < 0)	passed = i;
-				continue;
-			}
 			ses->kbdprefix.repeat_count = 0;
 			goto_link_number_do(ses, doc_view, i);
 			return FRAME_EVENT_REFRESH;
 		}
+	}
+	for (i = 0; i <= doc_view->vs->current_link; i++) {
+		struct link *link = &doc_view->document->links[i];
 
-		if (i == doc_view->document->nlinks - 1 && passed >= 0) {
-			/* Return to the start. */
-			i = passed - 1;
+		if (key == link->accesskey) {	/* FIXME: key vs unicode ... */
+			ses->kbdprefix.repeat_count = 0;
+			goto_link_number_do(ses, doc_view, i);
+			return FRAME_EVENT_REFRESH;
 		}
 	}
 

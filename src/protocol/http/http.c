@@ -673,8 +673,6 @@ http_send_header(struct socket *socket)
 	 * resource we're fetching, and it may help the proxy return
 	 * better error messages.  */
 	optstr = get_opt_str("protocol.http.user_agent");
-
-	optstr = get_opt_str("protocol.http.user_agent");
 	if (*optstr && strcmp(optstr, " ")) {
 		unsigned char *ustr, ts[64] = "";
 
@@ -740,7 +738,6 @@ http_send_header(struct socket *socket)
 	 * sending "Accept: text/css" when it wants an external
 	 * stylesheet, then it should do that only in the inner GET
 	 * and not in the outer CONNECT.  */
-
 	add_to_string(&header, "Accept: */*");
 	add_crlf_to_string(&header);
 
@@ -816,9 +813,9 @@ http_send_header(struct socket *socket)
 		add_crlf_to_string(&header);
 	}
 
-	/* CONNECT: Do not tell the proxy anything we have cached
-	 * about the resource.  */
-	if (!use_connect && conn->cached) {
+ 	/* CONNECT: Do not tell the proxy anything we have cached
+ 	 * about the resource.  */
+ 	if (!use_connect && conn->cached) {
 		if (!conn->cached->incomplete && conn->cached->head && conn->cached->last_modified
 		    && conn->cache_mode <= CACHE_MODE_CHECK_IF_MODIFIED) {
 			add_to_string(&header, "If-Modified-Since: ");
@@ -848,11 +845,10 @@ http_send_header(struct socket *socket)
 		add_crlf_to_string(&header);
 	}
 
-	/* CONNECT: The Authorization header is for the origin server only.  */
-	if (!use_connect) {
+ 	/* CONNECT: The Authorization header is for the origin server only.  */
+ 	if (!use_connect) {
 		entry = find_auth(uri);
-	}
-	
+ 	}
 	if (entry) {
 		if (entry->digest) {
 			unsigned char *response;
@@ -914,7 +910,6 @@ http_send_header(struct socket *socket)
 #ifdef CONFIG_COOKIES
 	/* CONNECT: Cookies are for the origin server only.  */
 	if (!use_connect) {
-
 		struct string *cookies = send_cookies(uri);
 
 		if (cookies) {
@@ -928,12 +923,10 @@ http_send_header(struct socket *socket)
 
 	add_crlf_to_string(&header);
 
+	/* CONNECT: Any POST data is for the origin server only.
+	 * This was already checked above and post_data is NULL
+	 * in that case.  Verified with an assertion below.  */
 	if (post_data) {
- 
-		/* CONNECT: Any POST data is for the origin server only.
-		 * This was already checked above and post_data is NULL
-		 * in that case.  Verified with an assertion below.  */
-
 #define POST_BUFFER_SIZE 4096
 		unsigned char *post = post_data;
 		unsigned char buffer[POST_BUFFER_SIZE];

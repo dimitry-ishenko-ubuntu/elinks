@@ -637,6 +637,26 @@ get_ftp_data_socket(struct connection *conn, struct string *command)
 	return 1;
 }
 
+/* Check if the file or directory name @s can be safely sent to the
+ * FTP server.  To prevent command injection attacks, this function
+ * must reject CR LF sequences.  */
+static int
+is_ftp_pathname_safe(const struct string *s)
+{
+	int i;
+
+	/* RFC 959 says the argument of CWD and RETR is a <pathname>,
+	 * which consists of <char>s, "any of the 128 ASCII characters
+	 * except <CR> and <LF>".  So other control characters, such
+	 * as 0x00 and 0x7F, are allowed here.  Bytes 0x80...0xFF
+	 * should not be allowed, but if we reject them, users will
+	 * probably complain.  */
+	for (i = 0; i < s->length; i++) {
+		if (s->source[i] == 0x0A || s->source[i] == 0x0D)
+			return 0;
+	}
+	return 1;
+}
 
 /* Create passive socket and add appropriate announcing commands to str. Then
  * go and retrieve appropriate object from server.
@@ -644,40 +664,53 @@ get_ftp_data_socket(struct connection *conn, struct string *command)
 static struct ftp_connection_info *
 add_file_cmd_to_str(struct connection *conn)
 {
-	struct ftp_connection_info *ftp;
-	struct string command, ftp_data_command;
+	int ok = 0;
+	struct ftp_connection_info *ftp = NULL;
+	struct string command = NULL_STRING;
+	struct string ftp_data_command = NULL_STRING;
+	struct string pathname = NULL_STRING;
 
 	if (!conn->uri->data) {
 		INTERNAL("conn->uri->data empty");
 		abort_connection(conn, S_INTERNAL);
-		return NULL;
+		goto ret;
 	}
 
+	/* This will be reallocated below when we know how long the
+	 * command string should be.  Error handling could be
+	 * simplified a little by allocating this initial structure on
+	 * the stack, but it's several kilobytes long so that might be
+	 * risky.  */
 	ftp = mem_calloc(1, sizeof(*ftp));
 	if (!ftp) {
 		abort_connection(conn, S_OUT_OF_MEM);
-		return NULL;
+		goto ret;
 	}
 
 	conn->info = ftp;	/* Freed when connection is destroyed. */
 
-	if (!init_string(&command)) {
+	if (!init_string(&command)
+	    || !init_string(&ftp_data_command)
+	    || !init_string(&pathname)) {
 		abort_connection(conn, S_OUT_OF_MEM);
-		return NULL;
-	}
-
-	if (!init_string(&ftp_data_command)) {
-		done_string(&command);
-		abort_connection(conn, S_OUT_OF_MEM);
-		return NULL;
+		goto ret;
 	}
 
 	if (!get_ftp_data_socket(conn, &ftp_data_command)) {
-		done_string(&command);
-		done_string(&ftp_data_command);
 		INTERNAL("Ftp data socket failure");
 		abort_connection(conn, S_INTERNAL);
-		return NULL;
+		goto ret;
+	}
+
+	if (!add_uri_to_string(&pathname, conn->uri, URI_PATH)) {
+		abort_connection(conn, S_OUT_OF_MEM);
+		goto ret;
+	}
+
+	decode_uri_string(&pathname);
+	if (!is_ftp_pathname_safe(&pathname)) {
+		abort_connection(conn, S_BAD_URL);
+		goto ret;
 	}
 
 	if (!conn->uri->datalen
@@ -687,18 +720,20 @@ add_file_cmd_to_str(struct connection *conn)
 		ftp->dir = 1;
 		ftp->pending_commands = 4;
 
-		/* ASCII */
-		add_to_string(&command, "TYPE A");
-		add_crlf_to_string(&command);
+		if (!add_to_string(&command, "TYPE A") /* ASCII */
+		    || !add_crlf_to_string(&command)
 
-		add_string_to_string(&command, &ftp_data_command);
+		    || !add_string_to_string(&command, &ftp_data_command)
+			
+		    || !add_to_string(&command, "CWD ")
+		    || !add_string_to_string(&command, &pathname)
+		    || !add_crlf_to_string(&command)
 
-		add_to_string(&command, "CWD ");
-		add_uri_to_string(&command, conn->uri, URI_PATH);
-		add_crlf_to_string(&command);
-
-		add_to_string(&command, "LIST");
-		add_crlf_to_string(&command);
+		    || !add_to_string(&command, "LIST")
+		    || !add_crlf_to_string(&command)) {
+			abort_connection(conn, S_OUT_OF_MEM);
+			goto ret;
+		}
 
 		conn->from = 0;
 
@@ -708,45 +743,58 @@ add_file_cmd_to_str(struct connection *conn)
 		ftp->dir = 0;
 		ftp->pending_commands = 3;
 
-		/* BINARY */
-		add_to_string(&command, "TYPE I");
-		add_crlf_to_string(&command);
+		if (!add_to_string(&command, "TYPE I") /* BINARY */
+		    || !add_crlf_to_string(&command)
 
-		add_string_to_string(&command, &ftp_data_command);
+		    || !add_string_to_string(&command, &ftp_data_command)) {
+			abort_connection(conn, S_OUT_OF_MEM);
+			goto ret;
+		}
 
 		if (conn->from || conn->progress->start > 0) {
-			add_to_string(&command, "REST ");
-			add_long_to_string(&command, conn->from
-							? conn->from
-							: conn->progress->start);
-			add_crlf_to_string(&command);
+			const off_t offset = conn->from
+				? conn->from
+				: conn->progress->start;
+
+			if (!add_to_string(&command, "REST ")
+			    || !add_long_to_string(&command, offset)
+			    || !add_crlf_to_string(&command)) {
+				abort_connection(conn, S_OUT_OF_MEM);
+				goto ret;
+			}
 
 			ftp->rest_sent = 1;
 			ftp->pending_commands++;
 		}
 
-		add_to_string(&command, "RETR ");
-		add_uri_to_string(&command, conn->uri, URI_PATH);
-		add_crlf_to_string(&command);
+		if (!add_to_string(&command, "RETR ")
+		    || !add_string_to_string(&command, &pathname)
+		    || !add_crlf_to_string(&command)) {
+			abort_connection(conn, S_OUT_OF_MEM);
+			goto ret;
+		}
 	}
-
-	done_string(&ftp_data_command);
 
 	ftp->opc = ftp->pending_commands;
 
 	/* 1 byte is already reserved for cmd_buffer in struct ftp_connection_info. */
 	ftp = mem_realloc(ftp, sizeof(*ftp) + command.length);
 	if (!ftp) {
-		done_string(&command);
 		abort_connection(conn, S_OUT_OF_MEM);
-		return NULL;
+		goto ret;
 	}
+	conn->info = ftp;   /* in case mem_realloc moved the buffer */
 
 	memcpy(ftp->cmd_buffer, command.source, command.length + 1);
-	done_string(&command);
-	conn->info = ftp;
+	ok = 1;
 
-	return ftp;
+ret:
+	/* If @ok is false here, then abort_connection has already
+	 * freed @ftp, which now is a dangling pointer.  */
+	done_string(&pathname);
+	done_string(&ftp_data_command);
+	done_string(&command);
+	return ok ? ftp : NULL;
 }
 
 static void
@@ -835,12 +883,21 @@ next:
 	return file_len;
 }
 
+/* Connect to the host and port specified by a passive FTP server.  */
 static int
 ftp_data_connect(struct connection *conn, int pf, struct sockaddr_storage *sa,
 		 int size_of_sockaddr)
 {
-	int fd = socket(pf, SOCK_STREAM, 0);
+	int fd;
 
+	if (conn->data_socket->fd != -1) {
+		/* The server maliciously sent multiple 227 or 229
+		 * responses.  Do not leak the previous data_socket.  */
+		abort_connection(conn, S_FTP_ERROR);
+		return -1;
+	}
+
+	fd = socket(pf, SOCK_STREAM, 0);
 	if (fd < 0 || set_nonblocking_fd(fd) < 0) {
 		abort_connection(conn, S_FTP_ERROR);
 		return -1;
@@ -961,6 +1018,21 @@ ftp_retr_file(struct socket *socket, struct read_buffer *rb)
 		}
 	}
 
+	if (conn->data_socket->fd == -1) {
+		/* The passive FTP server did not send a 227 or 229
+		 * response.  We check this down here, rather than
+		 * immediately after getting the response to the PASV
+		 * or EPSV command, to make sure that nothing can
+		 * close the socket between the check and the
+		 * following set_handlers call.
+		 *
+		 * If we were using active FTP, then
+		 * get_ftp_data_socket would have created the
+		 * data_socket without waiting for anything from the
+		 * server.  */
+		abort_connection(conn, S_FTP_ERROR);
+		return;
+	}
 	set_handlers(conn->data_socket->fd, (select_handler_T) ftp_data_accept,
 		     NULL, NULL, conn);
 
@@ -1064,7 +1136,7 @@ display_dir_entry(struct cache_entry *cached, off_t *pos, int *tries,
 	add_to_string(&string, "   1 ftp      ftp ");
 
 	if (ftp_info->size != FTP_SIZE_UNKNOWN) {
-		add_format_to_string(&string, "%12lu ", ftp_info->size);
+		add_format_to_string(&string, "%12" OFF_T_FORMAT " ", ftp_info->size);
 	} else {
 		add_to_string(&string, "           - ");
 	}
@@ -1107,7 +1179,7 @@ display_dir_entry(struct cache_entry *cached, off_t *pos, int *tries,
 	}
 
 	add_to_string(&string, "<a href=\"");
-	add_html_to_string(&string, ftp_info->name.source, ftp_info->name.length);
+	encode_uri_string(&string, ftp_info->name.source, ftp_info->name.length, 0);
 	if (ftp_info->type == FTP_FILE_DIRECTORY)
 		add_char_to_string(&string, '/');
 	add_to_string(&string, "\">");
@@ -1192,11 +1264,25 @@ ftp_process_dirlist(struct cache_entry *cached, off_t *pos,
 	}
 }
 
+/* This is the initial read handler for conn->data_socket->fd,
+ * which may be either trying to connect to a passive FTP server or
+ * listening for a connection from an active FTP server.  In active
+ * FTP, this function then accepts the connection and replaces
+ * conn->data_socket->fd with the resulting socket.  In any case,
+ * this function does not read any data from the FTP server, but
+ * rather hands the socket over to got_something_from_data_connection,
+ * which then does the reads.  */
 static void
 ftp_data_accept(struct connection *conn)
 {
 	struct ftp_connection_info *ftp = conn->info;
 	int newsock;
+
+	/* Because this function is called only as a read handler of
+	 * conn->data_socket->fd, the socket must be valid if we get
+	 * here.  */
+	assert(conn->data_socket->fd >= 0);
+	if_assert_failed return;
 
 	set_connection_timeout(conn);
 	clear_handlers(conn->data_socket->fd);
@@ -1223,6 +1309,9 @@ ftp_data_accept(struct connection *conn)
 		     NULL, NULL, conn);
 }
 
+/* A read handler for conn->data_socket->fd.  This function reads
+ * data from the FTP server, reformats it to HTML if it's a directory
+ * listing, and adds the result to the cache entry.  */
 static void
 got_something_from_data_connection(struct connection *conn)
 {
@@ -1230,6 +1319,12 @@ got_something_from_data_connection(struct connection *conn)
 	unsigned char dircolor[8];
 	int colorize_dir = 0;
 	ssize_t len;
+
+	/* Because this function is called only as a read handler of
+	 * conn->data_socket->fd, the socket must be valid if we get
+	 * here.  */
+	assert(conn->data_socket->fd >= 0);
+	if_assert_failed return;
 
 	/* XXX: This probably belongs rather to connect.c ? */
 

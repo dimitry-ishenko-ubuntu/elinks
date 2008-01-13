@@ -1,9 +1,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
     "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" >
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
-<meta name="generator" content="AsciiDoc 7.0.0"/>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 7.1.2" />
 <style type="text/css">
 /* Debug borders */
 p, li, dt, dd, div, pre, h1, h2, h3, h4, h5, h6 {
@@ -16,19 +16,23 @@ body {
   margin: 1em 5% 1em 5%;
 }
 
-a { color: blue; }
-a:visited { color: fuchsia; }
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
 
-span.emphasis {
+em {
   font-style: italic;
 }
 
-span.strong {
+strong {
   font-weight: bold;
 }
 
-span.monospaced {
-  font-family: monospace;
+tt {
   color: navy;
 }
 
@@ -113,9 +117,10 @@ div.content { /* Block element content. */
 }
 
 /* Block element titles. */
-div.title {
+div.title, caption.title {
   font-family: sans-serif;
   font-weight: bold;
+  text-align: left;
   margin-top: 1.0em;
   margin-bottom: 0.5em;
 }
@@ -148,8 +153,12 @@ div.listingblock > div.content {
 div.quoteblock > div.content {
   padding-left: 2.0em;
 }
-div.quoteblock .attribution {
+
+div.attribution {
   text-align: right;
+}
+div.verseblock + div.attribution {
+  text-align: left;
 }
 
 div.admonitionblock .icon {
@@ -199,8 +208,7 @@ ol.olist2 {
 }
 
 div.tableblock > table {
-  border-color: #527bbd;
-  border-width: 3px;
+  border: 3px solid #527bbd;
 }
 thead {
   font-family: sans-serif;
@@ -267,7 +275,7 @@ div.exampleblock-content {
 means complete, it is not even very homogeneous and it should eventually be
 superseded by a complete ELinks Book. Until this happens you may also find it
 necessary to refer to the manual page for a very quick reference, or the
-built-in documentation available via the &#8212;long-help and &#8212;config-help ELinks
+built-in documentation available via the --long-help and --config-help ELinks
 command-line arguments. The built-in documentation is sure to be up-to-date.</p>
 <p>There was a complete (or, for the most part complete) manual for Links 0.82 at
 one time, and you can still find it at:</p>
@@ -325,7 +333,7 @@ the whole process of configuring the compilation, compiling and installing.</p>
 ELinks source directory:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ ./configure &amp;&amp; make &amp;&amp; make install</span></pre>
+<pre><tt>$ ./configure &amp;&amp; make &amp;&amp; make install</tt></pre>
 </div></div>
 <p>However you might consider to tweek a few compile time options before building
 ELinks. You might also want to take a look at what libraries and programs are
@@ -392,7 +400,7 @@ cellspacing="0" cellpadding="4">
     GPM
     </td>
     <td align="left">
-    <span class="emphasis">General Purpose Mouse</span> for mouse support.
+    <em>General Purpose Mouse</em> for mouse support.
     </td>
   </tr>
   <tr>
@@ -400,7 +408,7 @@ cellspacing="0" cellpadding="4">
     expat
     </td>
     <td align="left">
-    <span class="emphasis">XML Parser Toolkit</span> needed for XBEL support.
+    <em>XML Parser Toolkit</em> needed for XBEL support.
     </td>
   </tr>
   <tr>
@@ -448,11 +456,11 @@ cellspacing="0" cellpadding="4">
 </div>
 <p>When compiling, you also need the header files for the libraries. Most OS
 distributors put a given library's headers in a package separate from the
-library itself; this package usually has <span class="monospaced">-dev</span> or similar appended to its
+library itself; this package usually has <tt>-dev</tt> or similar appended to its
 name.</p>
 <h3>Further reading</h3>
 <p>This installation guide is far from being complete. You are also advised to
-read the <span class="monospaced">README</span> and the <span class="monospaced">INSTALL</span> files distributed with ELinks for further
+read the <tt>README</tt> and the <tt>INSTALL</tt> files distributed with ELinks for further
 up to date info on building and installing.</p>
 <h3>Tips to obtain a very small static elinks binary</h3>
 <p>Tips to obtain a very small static elinks binary suitable for mini
@@ -460,20 +468,20 @@ distributions</p>
 <p>Remove config.cache (previous CC may be cached):</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ rm config.cache</span></pre>
+<pre><tt>$ rm config.cache</tt></pre>
 </div></div>
 <p>Use dietlibc (http://www.fefe.de/dietlibc/) or similar stuff (uClibc, &#8230;):</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ export CC='diet -Os gcc'</span></pre>
+<pre><tt>$ export CC='diet -Os gcc'</tt></pre>
 </div></div>
 <p>Use compilers flags to optimize for size:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ export CFLAGS='-s -fno-inline -nostdinc -fomit-frame-pointer'</span></pre>
+<pre><tt>$ export CFLAGS='-s -fno-inline -nostdinc -fomit-frame-pointer'</tt></pre>
 </div></div>
-<p>Note that if you don't use dietlibc, you definitively want to add <span class="monospaced">-Os</span> or
-<span class="monospaced">-O2</span> to <span class="monospaced">CFLAGS</span>; GCC 2.95 does not know <span class="monospaced">-Os</span>, and some say <span class="monospaced">-O2</span> gives
+<p>Note that if you don't use dietlibc, you definitively want to add <tt>-Os</tt> or
+<tt>-O2</tt> to <tt>CFLAGS</tt>; GCC 2.95 does not know <tt>-Os</tt>, and some say <tt>-O2</tt> gives
 smaller executables even for GCC 3.x.</p>
 <div class="admonitionblock">
 <table><tr>
@@ -482,18 +490,18 @@ smaller executables even for GCC 3.x.</p>
 </td>
 <td class="content">
 <div class="title">Warning</div>
-<p>If you use these <span class="monospaced">CFLAGS</span> on Cygwin and you get unresolved symbols (<span class="monospaced">htons</span> and
-suite in particular), try removing <span class="monospaced">-fno-inline</span> parameter.</p>
+<p>If you use these <tt>CFLAGS</tt> on Cygwin and you get unresolved symbols (<tt>htons</tt> and
+suite in particular), try removing <tt>-fno-inline</tt> parameter.</p>
 </td>
 </tr></table>
 </div>
 <p>Disable some compile-time options:</p>
 <div class="listingblock">
 <div class="content">
-<pre><span class="monospaced">$ ./configure --disable-ipv6 --disable-backtrace --disable-nls \
+<pre><tt>$ ./configure --disable-ipv6 --disable-backtrace --disable-nls \
   --enable-fastmem --without-zlib --without-bzlib --disable-xbel \
   --without-lua --without-gnutls --without-openssl --without-x \
-  --enable-small --without-spidermonkey --without-gpm</span></pre>
+  --enable-small --without-spidermonkey --without-gpm</tt></pre>
 </div></div>
 <p>You can disable bookmarks, globhist and more, too, if you want to.</p>
 <div class="admonitionblock">
@@ -506,23 +514,23 @@ suite in particular), try removing <span class="monospaced">-fno-inline</span> p
 <ul>
 <li>
 <p>
-&#8212;disable-backtrace disables internal backtrace code.
+--disable-backtrace disables internal backtrace code.
 </p>
 </li>
 <li>
 <p>
-&#8212;disable-nls disables i18n support.
+--disable-nls disables i18n support.
 </p>
 </li>
 <li>
 <p>
-&#8212;enable-fastmem disables internal <span class="monospaced">malloc()</span> debugging and use <span class="monospaced">alloca()</span>
+--enable-fastmem disables internal <tt>malloc()</tt> debugging and use <tt>alloca()</tt>
    wherever possible.
 </p>
 </li>
 <li>
 <p>
-&#8212;enable-small forces to remove some text descriptions in options and
+--enable-small forces to remove some text descriptions in options and
    keybind stuff (regain 30Kb).
 </p>
 </li>
@@ -551,7 +559,7 @@ cellspacing="0" cellpadding="4">
 <tbody valign="top">
   <tr>
     <td align="left">
-    &#8212;without-zlib
+    --without-zlib
     </td>
     <td align="left">
     removes libz dependency (compression)
@@ -559,7 +567,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    &#8212;without-bzlib
+    --without-bzlib
     </td>
     <td align="left">
     removes libbz2 dependency (compression)
@@ -567,7 +575,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    &#8212;disable-xbel
+    --disable-xbel
     </td>
     <td align="left">
     removes expat dependency (XBEL bookmarks support)
@@ -575,7 +583,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    &#8212;without-lua
+    --without-lua
     </td>
     <td align="left">
     removes liblua dependency (Lua scripting)
@@ -583,7 +591,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    &#8212;without-gnutls
+    --without-gnutls
     </td>
     <td align="left">
     removes libtls dependency (SSL support)
@@ -591,7 +599,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    &#8212;without-openssl
+    --without-openssl
     </td>
     <td align="left">
     removes libssl dependency (SSL support)
@@ -599,7 +607,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    &#8212;without-x
+    --without-x
     </td>
     <td align="left">
     removes libx11 dependency (restoring terminal title)
@@ -607,7 +615,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    &#8212;without-spidermonkey
+    --without-spidermonkey
     </td>
     <td align="left">
     removes libjs dependency (JavaScript)
@@ -615,7 +623,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    &#8212;without-gpm
+    --without-gpm
     </td>
     <td align="left">
     removes libgpm dependency (mouse/console)
@@ -631,11 +639,11 @@ flags.</p>
 <p>Here are some results using gcc 2.95.3, dietlibc-0.23, and previous flags:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">me$ ls -l src/elinks
+<pre><tt>me$ ls -l src/elinks
 -rwxr-xr-x   1 zas      users      495100 Oct 20 15:53 src/elinks
 me$ upx --best src/elinks
 me$ ls -l src/elinks
--rwxr-xr-x   1 zas      users      217946 Oct 20 15:53 src/elinks</span></pre>
+-rwxr-xr-x   1 zas      users      217946 Oct 20 15:53 src/elinks</tt></pre>
 </div></div>
 <p>Whow ! Around 200kb :)</p>
 <div class="admonitionblock">
@@ -644,7 +652,7 @@ me$ ls -l src/elinks
 <div class="title">Note</div>
 </td>
 <td class="content">
-<div class="title">Details about the <span class="monospaced">&#8212;enable-small</span> configure option effects:</div>
+<div class="title">Details about the <tt>--enable-small</tt> configure option effects:</div>
 <ul>
 <li>
 <p>
@@ -691,80 +699,98 @@ would be good to test if you can take the easy path and let the system take
 care of installation through a package system. Below are listed instructions
 on what package you need to install on various systems (please help improve
 the list). If all goes well you can proceed to rebuilding ELinks.</p>
-<p>On Debian testing or unstable, install the packages <span class="emphasis">libsmjs1</span> and
-<span class="emphasis">libsmjs-dev</span> by running:</p>
+<p>On Debian testing (Etch) or unstable (SID), run the following:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ apt-get install libsmjs1 libsmjs-dev</span></pre>
+<pre><tt>$ apt-get install libmozjs-dev</tt></pre>
 </div></div>
-<p>So, you need to get (and install) SpiderMonkey and then recompile your ELinks
-(if you installed SM properly, ELinks should autodetect it during the
-configure phase) and you are ready to fly.</p>
+<p>On Debian stable (Sarge), run the following:</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>$ apt-get install libsmjs-dev</tt></pre>
+</div></div>
+<p>Installing the -dev package will automatically pull in the library package.</p>
+<p>Once this is done, rebuild ELinks. The configure script should detect
+the SpiderMonkey library&#8212;check for this line in the features summary:</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>ECMAScript (JavaScript) ......... SpiderMonkey document scripting</tt></pre>
+</div></div>
+<p>After following these instructions on a Debian system, you are done and should
+ignore the following directions.</p>
+<p>The rest is only for non-Debian system.</p>
 <p>Note that this procedure enables you to install SpiderMonkey, but in such a
 way that it might not work with anything else but ELinks. It is unlikely that
 anything else is ever going to use SpiderMonkey on your system, but if you
 want to take the safe way, get SM and follow the instructions in
-<span class="monospaced">src/README.html</span> instead. You will probably need to do some checkouting of
+<tt>src/README.html</tt> instead. You will probably need to do some checkouting of
 bits of the Mozilla CVS tree and so, have fun.</p>
 <p>To get SpiderMonkey source, go at
-<a href="ftp://ftp.mozilla.org/pub/mozilla.org/js/">ftp://ftp.mozilla.org/pub/mozilla.org/js/</a> and fetch the newest <span class="monospaced">js-</span>
-tarball there (<span class="monospaced">js-1.5-rc6a.tar.gz</span> at the time of writing this; you may try
+<a href="ftp://ftp.mozilla.org/pub/mozilla.org/js/">ftp://ftp.mozilla.org/pub/mozilla.org/js/</a> and fetch the newest <tt>js-</tt>
+tarball there (<tt>js-1.5-rc6a.tar.gz</tt> at the time of writing this; you may try
 the RPMs, but we didn't test them).</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ cd elinks
+<pre><tt>$ cd elinks
 $ wget ftp://ftp.mozilla.org/pub/mozilla.org/js/js-1.5-rc6a.tar.gz
-$ tar xvzf js-1.5-rc6a.tar.gz</span></pre>
+$ tar xvzf js-1.5-rc6a.tar.gz</tt></pre>
 </div></div>
 <p>Next, you need to patch it so that you will have any chance to install it as
-you fetched it. Grab it in ELinks at <span class="monospaced">contrib/js-1.5-rc6a+elinks.patch</span> (if
+you fetched it. Grab it in ELinks at <tt>contrib/js-1.5-rc6a+elinks.patch</tt> (if
 you have a different version, still try to go ahead, you might have some
 success), then go to the SpiderMonkey directory (called js) and apply it as</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ cd js
+<pre><tt>$ cd js
 $ patch -p1 &lt;../contrib/js-1.5-rc6a+elinks.patch
-$ cd src</span></pre>
+$ cd src</tt></pre>
 </div></div>
-<p>Now, edit config.mk and adjust the <span class="monospaced">$PREFIX</span> variable - you probably won't
+<p>Now, edit config.mk and adjust the <tt>$PREFIX</tt> variable - you probably won't
 like the default value - ELinks will find it there, but your dynamic linker
 likely won't.</p>
 <p>E.g., for /usr/local installation:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ sed 's#^PREFIX = /opt/spidermonkey#PREFIX = /usr/local#' &lt; config.mk &gt; config.mk.t
-$ mv -f config.mk.t config.mk</span></pre>
+<pre><tt>$ sed 's#^PREFIX = /opt/spidermonkey#PREFIX = /usr/local#' &lt; config.mk &gt; config.mk.t
+$ mv -f config.mk.t config.mk</tt></pre>
 </div></div>
 <p>Now you can finally go for it:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ make -f Makefile.ref
-$ make -f Makefile.ref export</span></pre>
+<pre><tt>$ make -f Makefile.ref
+$ make -f Makefile.ref export</tt></pre>
 </div></div>
 <p>Now install it:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ su -c 'make -f Makefile.ref install &amp;&amp; (ldconfig -v | grep libjs)'</span></pre>
+<pre><tt>$ su -c 'make -f Makefile.ref install &amp;&amp; (ldconfig -v | grep libjs)'</tt></pre>
 </div></div>
 <p>Check for:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">libjs.so -&gt; libjs.so</span></pre>
+<pre><tt>libjs.so -&gt; libjs.so</tt></pre>
 </div></div>
+<p>If you don't get such result, check that the library's installation path
+(e.g. /usr/local/lib) is present in /etc/ld.so.conf (man 8 ldconfig).</p>
 <p>If all went well, you can proceed to rebuild ELinks now. If something broke,
 see you on #elinks @ FreeNode or in the mailing list.
-You may add your options to <span class="monospaced">./configure</span> as usual; SpiderMonkey should be
+You may add your options to <tt>./configure</tt> as usual; SpiderMonkey should be
 autodetected.</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ cd ../..
-$ ./configure</span></pre>
+<pre><tt>$ cd ../..
+$ ./configure</tt></pre>
 </div></div>
-<p>Check for "<span class="monospaced">Ecmascript &#8230;&#8230;&#8230;&#8230;&#8230;&#8230;.. SpiderMonkey</span>" in Feature summary.</p>
+<p>Check for the following line in the features summary:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ make
-$ su -c 'make install'</span></pre>
+<pre><tt>ECMAScript (JavaScript) ......... SpiderMonkey document scripting</tt></pre>
+</div></div>
+<p>Then run:</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>$ make
+$ su -c 'make install'</tt></pre>
 </div></div>
 <p>Enjoy.</p>
 <h4>The ECMAScript support is buggy! Shall I blame Mozilla people?</h4>
@@ -775,14 +801,14 @@ haven't bothered to implement it at all yet). So better tell us first, and if
 we think it's not our fault we will tell you to go complain to Mozilla (better
 yet if it does not work in the Mozilla browsers neither ;-).</p>
 <h4>Now, I would still like NJS or a new JS engine from scratch&#8230;</h4>
-<p>&#8230;and you don't fear some coding? That's fine then! ELinks is in no way tied
-to SpiderMonkey, in fact the ECMAScript support was carefully implemented so
+<div class="title">..and you don't fear some coding? That's fine then! ELinks is in no way tied</div>
+<p>to SpiderMonkey, in fact the ECMAScript support was carefully implemented so
 that there are no SpiderMonkey references outside of
-<span class="monospaced">src/ecmascript/spidermonkey.*</span>. If you want to implement an alternative
+<tt>src/ecmascript/spidermonkey.*</tt>. If you want to implement an alternative
 ECMAScript backend, go ahead - you will just need to write an autoconf
-detection for it and tie it to <span class="monospaced">src/ecmascript/ecmascript.c</span>, which should be
+detection for it and tie it to <tt>src/ecmascript/ecmascript.c</tt>, which should be
 easy. We await your patches eagerly.</p>
-<h3>Feature configuration file (<span class="monospaced">features.conf</span>)</h3>
+<h3>Feature configuration file (<tt>features.conf</tt>)</h3>
 <p>This file contains various compile-time configuration settings, which you can
 adjust below. You can fine-tune the ELinks binary to include really only what
 you want it to. It acts as a front-end to the configure script in the sense
@@ -790,7 +816,7 @@ that it is possible to control any features in this file by passing arguments
 to the configure script. In fact any arguments given to the script will
 overrule the values set in this file.</p>
 <p>There are still some things which are to be adjusted only directly through the
-configure script arguments though, so check ./configure &#8212;help out as well!</p>
+configure script arguments though, so check ./configure --help out as well!</p>
 <p>All dependency checking is done by the configure script so even though a
 feature is enabled here it is possible that it will be disabled at compile
 time if the dependencies are not met. Check the features.log file generated
@@ -798,44 +824,44 @@ by the configure script to make sure.</p>
 <h4>Notes for users</h4>
 <p>All features that can be controlled using this file are already set to their
 default values. The syntax used is hopefully familiar to most people.</p>
-<p><span class="emphasis">#</span> chars start a comment that runs until the end of the line.</p>
+<p><em>#</em> chars start a comment that runs until the end of the line.</p>
 <p>The features are controlled by setting the various CONFIG_&lt;FEATURE&gt; variables
-to either <span class="emphasis">yes</span> or <span class="emphasis">no</span> depending on whether it should be enabled or disabled.
+to either <em>yes</em> or <em>no</em> depending on whether it should be enabled or disabled.
 So in order to disable bookmark support a line in this file should say:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">CONFIG_BOOKMARKS=no</span></pre>
+<pre><tt>CONFIG_BOOKMARKS=no</tt></pre>
 </div></div>
 <p>It is also possible to simply comment out the line in order to disable it.
 Therefore, if the default doesn't suit you, you can either comment it out or
 set it to the value you desire.</p>
-<h4><a id="CONFIG-BOOKMARKS"></a>Bookmarks (<span class="monospaced">CONFIG_BOOKMARKS</span>)</h4>
+<h4><a id="CONFIG-BOOKMARKS"></a>Bookmarks (<tt>CONFIG_BOOKMARKS</tt>)</h4>
 <p>ELinks has built-in hierarchic bookmarks support. Open the bookmarks manager
-by pressing <span class="emphasis">s</span>. When bookmarks are enabled, also support for the internal
+by pressing <em>s</em>. When bookmarks are enabled, also support for the internal
 ELinks bookmarks format is always compiled in.</p>
 <p>This is a favourite target for disabling in various embedded applications.
 It all depends on your requirements.</p>
 <p>Also read the &#8220;The Ultimate Bookmarks Guide&#8221; in doc/bookmarks.txt</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-XBEL-BOOKMARKS"></a>XBEL Bookmarks (<span class="monospaced">CONFIG_XBEL_BOOKMARKS</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-XBEL-BOOKMARKS"></a>XBEL Bookmarks (<tt>CONFIG_XBEL_BOOKMARKS</tt>)</h4>
 <p>ELinks also supports universal XML bookmarks format called XBEL, also
-supported by ie. Galeon, various "always-have-my-bookmarks" websites and
+supported by e.g. Galeon, various "always-have-my-bookmarks" websites and
 number of universal bookmark converters.</p>
 <p>Frequently, you know you will not need it, then you can of course happily
 forcibly remove support for it and save few bytes.</p>
-<p><span class="strong">Default:</span>  enabled if libexpat is found and bookmarks are enabled</p>
-<h4><a id="CONFIG-COOKIES"></a>Cookies (<span class="monospaced">CONFIG_COOKIES</span>)</h4>
+<p><strong>Default:</strong>  enabled if libexpat is found and bookmarks are enabled</p>
+<h4><a id="CONFIG-COOKIES"></a>Cookies (<tt>CONFIG_COOKIES</tt>)</h4>
 <p>Support for HTTP cookies --- a data token which the server sends the client
 once and then the client sends it back along each request to the server.  This
-mechanism is crucial for ie. keeping HTTP sessions (you "log in" to a site,
+mechanism is crucial e.g. for keeping HTTP sessions (you "log in" to a site,
 and from then on the site recognizes you usually because of the cookie), but
 also for various banner systems, remembering values filled to various forms,
 and so on. You can further tune the ELinks behaviour at runtime (whether to
 accept/send cookies, ask for confirmation when accepting a cookie etc).</p>
 <p>This functionality is usually quite important and you should not disable it
 unless you really know what are you doing.</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-FORMHIST"></a>Form History (<span class="monospaced">CONFIG_FORMHIST</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-FORMHIST"></a>Form History (<tt>CONFIG_FORMHIST</tt>)</h4>
 <p>The famous Competing Browser has that annoying thing which pops up when you
 submit a form, offering to remember it and pre-fill it the next time. And yes,
 ELinks can do that too! You will still need to also enable this manually at
@@ -844,13 +870,13 @@ document.browse.forms.show_formhist.</p>
 consider it extremely handy and will sacrifice almost anything to get it. It
 will not do any harm to have this compiled-in as long as you will leave it
 turned off (which is also the default configuration).</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-GLOBHIST"></a>Global History (<span class="monospaced">CONFIG_GLOBHIST</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-GLOBHIST"></a>Global History (<tt>CONFIG_GLOBHIST</tt>)</h4>
 <p>This device records each and every page you visit (to a configurable limit).
-You can browse through this history in the history manager (press <span class="emphasis">h</span>).  Do
+You can browse through this history in the history manager (press <em>h</em>).  Do
 not confuse this with the "session history", recording history of your
 browsing in the frame of one session (session history is the thing you move
-through when pressing <span class="emphasis">back</span> and <span class="emphasis">unback</span> or which you see in the
+through when pressing <em>back</em> and <em>unback</em> or which you see in the
 File::History menu).</p>
 <p>Global history does not care about the order you visited the pages in, it just
 records that you visited it, when did you do that and the title of the page.
@@ -859,7 +885,7 @@ of the target document at that time), links can be coloured as visited etc.</p>
 <p>If you disable this feature, you will not lose any crucial functionality, just
 some relatively minor convenience features, which can nevertheless prove
 sometimes very practical.</p>
-<p><span class="strong">Default:</span>  enabled</p>
+<p><strong>Default:</strong>  enabled</p>
 <h4>MIME</h4>
 <p>ELinks uses a MIME system for determining the content type of documents and
 configuring programs for external handling. By default the option system can
@@ -867,7 +893,7 @@ be used to configure how media types are handled. More info about how to set
 up the MIME handling using the option system can be found in the doc/mime.html
 file.</p>
 <p>Below are listed some additional ways to do it.</p>
-<h4><a id="CONFIG-MAILCAP"></a>Mailcap (<span class="monospaced">CONFIG_MAILCAP</span>)</h4>
+<h4><a id="CONFIG-MAILCAP"></a>Mailcap (<tt>CONFIG_MAILCAP</tt>)</h4>
 <p>Mailcap files describe what program - on the local system - can be used to
 handle a media type. The file format is defined in RFC 1524 and more info
 including examples can be found in the doc/mailcap.html file.</p>
@@ -875,17 +901,17 @@ including examples can be found in the doc/mailcap.html file.</p>
 MIME-aware applications and fitting nicely into the UNIX system, where this is
 the standard way of specifying MIME handlers. If you are not interested in
 that, you can still use the internal MIME associations system, though.</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-MIMETYPES"></a>Mimetypes File (<span class="monospaced">CONFIG_MIMETYPES</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-MIMETYPES"></a>Mimetypes File (<tt>CONFIG_MIMETYPES</tt>)</h4>
 <p>Mimetypes file can be used to specify the relation between media types and
 file extensions.</p>
 <p>Basically same thing applies here as for the mailcap support.</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-IPV6"></a>IPv6 Protocol Support (<span class="monospaced">CONFIG_IPV6</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-IPV6"></a>IPv6 Protocol Support (<tt>CONFIG_IPV6</tt>)</h4>
 <p>You know this thing that was designed to obsolete IPv4 but only pasky,
 weirdos and projects supported with big funds really use. ;-)</p>
-<p><span class="strong">Default:</span>  enabled if the system supports it</p>
-<h4><a id="CONFIG-URI-REWRITE"></a>URI Rewriting (<span class="monospaced">CONFIG_URI_REWRITE</span>)</h4>
+<p><strong>Default:</strong>  enabled if the system supports it</p>
+<h4><a id="CONFIG-URI-REWRITE"></a>URI Rewriting (<tt>CONFIG_URI_REWRITE</tt>)</h4>
 <p>The goto dialog through which new URIs can be entered is an essential part of
 browsing in ELinks. This feature makes the dialog more powerful by making it
 possible to extend how entered text is handled through a set of rewrite rules
@@ -894,16 +920,16 @@ possible to extend how entered text is handled through a set of rewrite rules
 <p>Simple rewriting rules are basically URI abbreviations, making it possible to
 map a word to the full URI. They can also be used for hierarchic navigation to
 ease moving from some nested directory to the parent directory or doing other
-stuff with the current URI. For example, when you type <span class="emphasis">gg</span> into the goto
+stuff with the current URI. For example, when you type <em>gg</em> into the goto
 dialog, you will be materialized at Google's homepage.</p>
 <p>Smart rules can take arguments and therefore enable more advanced rewriting.
 The arguments could be search words to google for or a lookup query for a
-dictionary. Eg. type <span class="emphasis">gg:Petr Baudis king of ELinks cvs</span>.</p>
+dictionary. Eg. type <em>gg:Petr Baudis king of ELinks cvs</em>.</p>
 <p>This feature is also available in a more powerful form in the Lua and Guile
 extensions, so if you plan to or already use those, you won't miss anything by
 disabling this feature (besides easier and better integrated configuration).</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-BITTORRENT"></a>BitTorrent Protocol Support (<span class="monospaced">CONFIG_BITTORRENT</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-BITTORRENT"></a>BitTorrent Protocol Support (<tt>CONFIG_BITTORRENT</tt>)</h4>
 <p>The BitTorrent protocol is a protocol for distributing files in a peer-to-peer
 (P2P) manner. It uses the HTTP protocol for communicating with a central
 server and a peer-to-peer (P2P) protocol for exchanging file pieces betweens
@@ -925,10 +951,10 @@ by prefixing the URI of the .torrent file with "bittorrent:"</p>
 <td class="content">The BitTorrent support is still experimental.</td>
 </tr></table>
 </div>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-CGI"></a>Local CGI Support (<span class="monospaced">CONFIG_CGI</span>)</h4>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-CGI"></a>Local CGI Support (<tt>CONFIG_CGI</tt>)</h4>
 <p>ELinks can (like w3m or lynx) execute certain executable files stored on the
-local disks as CGIs, when you target it on them (through a URI of the <span class="emphasis">file</span>
+local disks as CGIs, when you target it on them (through a URI of the <em>file</em>
 scheme). ELinks emulates the complete CGI environment, like the program would
 be executed by a web server. See the protocol.file.cgi options tree for
 detailed runtime configuration.</p>
@@ -940,19 +966,19 @@ browser capabilities.</p>
 configuration, and even then only CGI files passing certain user-defined
 filters (path-based) will be allowed to be executed (and there are certain
 other security barriers in place).</p>
-<p><span class="strong">Default:</span>  disabled, available if setenv() or putenv() is found</p>
-<h4><a id="CONFIG-DATA"></a>Data URI protocol (<span class="monospaced">CONFIG_DATA</span>)</h4>
+<p><strong>Default:</strong>  disabled, available if setenv() or putenv() is found</p>
+<h4><a id="CONFIG-DATA"></a>Data URI protocol (<tt>CONFIG_DATA</tt>)</h4>
 <p>The data URI protocol is defined in RFC 2397 and allows inclusion of small
 data items as "immediate" data, as if it had been included externally.</p>
 <p>A data URL might be used for arbitrary types of data. The URI</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">data:,A%20brief%20note</span></pre>
+<pre><tt>data:,A%20brief%20note</tt></pre>
 </div></div>
 <p>encodes the text/plain string "A brief note", which might be useful in a
 footnote link.</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-FINGER"></a>Finger User Information Protocol Support (<span class="monospaced">CONFIG_FINGER</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-FINGER"></a>Finger User Information Protocol Support (<tt>CONFIG_FINGER</tt>)</h4>
 <p>The finger protocol is a simple protocol defined in RFC 1288. The server
 return a friendly, human-oriented status report on either the system at the
 moment or a particular person in depth such as whether a user is currently
@@ -964,28 +990,28 @@ of humor.</p>
 <p>It is most often implemented on Unix or Unix-like systems however due to
 security and privacy reasons it is usually disabled or only allowed locally on
 the system.</p>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-FSP"></a>File Service Protocol (<span class="monospaced">CONFIG_FSP</span>)</h4>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-FSP"></a>File Service Protocol (<tt>CONFIG_FSP</tt>)</h4>
 <p>File Service Protocol (FSP) is a very lightweight UDP based protocol for
 transferring files. FSP has many benefits over FTP, mainly for running
 anonymous archives. FSP protocol is valuable in all kinds of environments
 because it is one of the only TCP/IP protocols that is not aggressive about
 bandwidth, while still being sufficiently fault tolerant.</p>
-<p>FSP is what anonymous FTP <span class="strong">should</span> be!</p>
+<p>FSP is what anonymous FTP <strong>should</strong> be!</p>
 <p>See http://fsp.sourceforge.net/ for more info.</p>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-FTP"></a>File Transfer Protocol Support (<span class="monospaced">CONFIG_FTP</span>)</h4>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-FTP"></a>File Transfer Protocol Support (<tt>CONFIG_FTP</tt>)</h4>
 <p>The File Transfer Protocol (FTP) is a software standard for transferring
 computer files between machines with widely different operating systems.</p>
 <p>Many sites that run FTP servers enable so-called "anonymous ftp". Under
 this arrangement, users do not need an account on the server. By default,
-the account name for the anonymous access is <span class="emphasis">anonymous</span>. This account
+the account name for the anonymous access is <em>anonymous</em>. This account
 does not need a password, but users are commonly asked to send their email
 addresses as their passwords for authentication (protocol.ftp.anon_passwd),
 but there is no verification.</p>
 <p>See also http://en.wikipedia.org/wiki/Ftp .</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-GOPHER"></a>Gopher Protocol Support (<span class="monospaced">CONFIG_GOPHER</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-GOPHER"></a>Gopher Protocol Support (<tt>CONFIG_GOPHER</tt>)</h4>
 <p>Gopher is a distributed document search and retrieval network protocol
 designed for the Internet in RFC 1436. The need for gopher arose in in the
 early days of the hypertext Internet where the number of documents that were
@@ -996,21 +1022,24 @@ not in one place, but in many computers connected to the Internet.</p>
 and various file types that can be downloaded and viewed.</p>
 <p>It is still very experimental and the CSO phone-book protocol is not
 implemented.</p>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-NNTP"></a>NNTP Protocol Support (<span class="monospaced">CONFIG_NNTP</span>)</h4>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-NNTP"></a>NNTP Protocol Support (<tt>CONFIG_NNTP</tt>)</h4>
 <p>Network news transport protocol support makes it possible to access nntp
 and news servers and read postings. It is still very experimental and is
 far from being considered a &#8220;news reader&#8221;.</p>
 <p>It is possible to list news groups on a server, articles in a news group
 and retrieve articles by their number or message-id.</p>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-SMB"></a>SMB Protocol Support (<span class="monospaced">CONFIG_SMB</span>)</h4>
-<p>ELinks supports browsing over the SMB protocol (URI <span class="emphasis">smb</span> scheme), using the
-smbclient program as back-end. Therefore, in order to have this enabled, you
-will need to install Samba (or at least just the smbclient part, if you can
-install it separately).</p>
-<p><span class="strong">Default:</span>  enabled if smbclient will be found</p>
-<h4><a id="CONFIG-CSS"></a>Cascading Style Sheets (<span class="monospaced">CONFIG_CSS</span>)</h4>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-SMB"></a>SMB Protocol Support (<tt>CONFIG_SMB</tt>)</h4>
+<p>ELinks supports browsing over the SMB protocol (URI <em>smb</em> scheme),
+using the libsmbclient library as back-end.  Therefore, in order to
+have this enabled, you will need to install Samba (or at least just
+the libsmbclient part, if you can install it separately).</p>
+<p>This use of libsmbclient is believed to be immune to the command
+injection attacks (CVE-2006-5925, bug 841) from which earlier ELinks
+releases (0.9.0 to 0.11.1) suffered.</p>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-CSS"></a>Cascading Style Sheets (<tt>CONFIG_CSS</tt>)</h4>
 <p>Simplistic CSS support. It is still very much in it's infancy so don't expect
 too much. If you have use of background colors enabled more pages will have
 the intended background color. Also quite a few additional text attributes are
@@ -1018,8 +1047,8 @@ applied. One example is highlighting of search words on Google's cached pages.</
 <p>There are options to disable both imported style sheets to minimize network
 traffic and whether to use CSS at all. Also a default style sheet can be
 defined to control the basic layout in the HTML renderer.</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-HTML-HIGHLIGHT"></a>HTML Highlighting (<span class="monospaced">CONFIG_HTML_HIGHLIGHT</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-HTML-HIGHLIGHT"></a>HTML Highlighting (<tt>CONFIG_HTML_HIGHLIGHT</tt>)</h4>
 <p>Makes it possible to view HTML source with the markup highlighted in colors
 configurable using CSS. It also makes values of referencing attributes
 accessible like the href="&lt;uri&gt;" attribute in &lt;a&gt; elements.</p>
@@ -1027,8 +1056,8 @@ accessible like the href="&lt;uri&gt;" attribute in &lt;a&gt; elements.</p>
 still in progress so enabling this feature will add a considerable amount of
 code to the compiled binary. On the other hand it will help to debug what will
 hopefully evolve into the next generation document renderer.</p>
-<p><span class="strong">Default:</span>  disabled, requires that CSS is enabled</p>
-<h4><a id="CONFIG-SCRIPTING-SPIDERMONKEY"></a>ECMAScript (JavaScript) Browser Scripting (<span class="monospaced">CONFIG_SCRIPTING_SPIDERMONKEY</span>)</h4>
+<p><strong>Default:</strong>  disabled, requires that CSS is enabled</p>
+<h4><a id="CONFIG-SCRIPTING-SPIDERMONKEY"></a>ECMAScript (JavaScript) Browser Scripting (<tt>CONFIG_SCRIPTING_SPIDERMONKEY</tt>)</h4>
 <p>By enabling this feature, certain parts of ELinks, such as the goto URL
 dialog, may be extended using ECMAScript (aka. JavaScript) scripts. This can
 be useful to optimise your usage of ELinks.</p>
@@ -1036,8 +1065,8 @@ be useful to optimise your usage of ELinks.</p>
 often visit by having a goto URL hook expand them. This can also be achieved
 with the URI rewrite feature (CONFIG_URI_REWRITE), however it is not as
 powerful as doing it with scripting.</p>
-<p><span class="strong">Default:</span>  enabled if Spidermonkey is found</p>
-<h4><a id="CONFIG-MOUSE"></a>Mouse Support (<span class="monospaced">CONFIG_MOUSE</span>)</h4>
+<p><strong>Default:</strong>  enabled if Spidermonkey is found</p>
+<h4><a id="CONFIG-MOUSE"></a>Mouse Support (<tt>CONFIG_MOUSE</tt>)</h4>
 <p>ELinks may be controlled not only by keyboard, but also by mouse to quite some
 extent. You can select links, menu items, scroll document, click at buttons
 etc, and it should hopefully work. ELinks supports mouse control by GPM, xterm
@@ -1046,20 +1075,20 @@ mouse reporting and TWAIN's twterm mouse reporting.</p>
 do everything with keyboard as you can with mouse. Also note that the xterm
 mouse reporting takes control over the terminal so that copy and pasting text
 from and to ELinks has to be done by holding down the Shift key.</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-88-COLORS"></a>88 Colors in Terminals (<span class="monospaced">CONFIG_88_COLORS</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-88-COLORS"></a>88 Colors in Terminals (<tt>CONFIG_88_COLORS</tt>)</h4>
 <p>Define to add support for using 88 colors in terminals. Note that this
 requires a capable terminal emulator, such as:</p>
 <ul>
 <li>
 <p>
 Thomas Dickey's XTerm, version 111 or later (check which version you have
-with xterm -version) compiled with &#8212;enable-88-color.
+with xterm -version) compiled with --enable-88-color.
 </p>
 </li>
 <li>
 <p>
-Rxvt, version 2.7.9 or later compiled with &#8212;enable-88-color.
+Rxvt, version 2.7.9 or later compiled with --enable-88-color.
 </p>
 </li>
 </ul>
@@ -1073,20 +1102,20 @@ and 16 colors mode (the memory consumption can be especially remarkable when
 rendering very large documents and/or using very large terminals).  However,
 when you actually run it in the suitable terminal, it looks really impressive,
 I'd say marvelous!</p>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-256-COLORS"></a>256 Colors in Terminals (<span class="monospaced">CONFIG_256_COLORS</span>)</h4>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-256-COLORS"></a>256 Colors in Terminals (<tt>CONFIG_256_COLORS</tt>)</h4>
 <p>Define to add support for using 256 colors in terminals. Note that this
 requires a capable terminal emulator, such as:</p>
 <ul>
 <li>
 <p>
 Thomas Dickey's XTerm, version 111 or later (check which version you have
-with xterm -version) compiled with &#8212;enable-256-color.
+with xterm -version) compiled with --enable-256-color.
 </p>
 </li>
 <li>
 <p>
-Rxvt, version 2.7.9 or later compiled with &#8212;enable-256-color.
+Rxvt, version 2.7.9 or later compiled with --enable-256-color.
 </p>
 </li>
 <li>
@@ -1105,26 +1134,30 @@ and 16 colors mode (the memory consumption can be especially remarkable when
 rendering very large documents and/or using very large terminals).  However,
 when you actually run it in the suitable terminal, it looks really impressive,
 I'd say marvelous!</p>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-EXMODE"></a>Ex-mode Interface (<span class="monospaced">CONFIG_EXMODE</span>)</h4>
-<p>The ex-mode interface makes a prompt available when pressing <span class="emphasis">:</span>. The prompt
-can be used for entering actions like <span class="emphasis">:goto-url</span> and configuration file
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-TRUE-COLOR"></a>True color (<tt>CONFIG_TRUE_COLOR</tt>)</h4>
+<p>Define to add support for True color. Note that only terminal capable to show
+it is konsole from kdebase-3.5.4. This mode eats a lot of memory.</p>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-EXMODE"></a>Ex-mode Interface (<tt>CONFIG_EXMODE</tt>)</h4>
+<p>The ex-mode interface makes a prompt available when pressing <em>:</em>. The prompt
+can be used for entering actions like <em>:goto-url</em> and configuration file
 commands.</p>
 <p>The code is still very experimental and lacks much work such as tab
 completion.</p>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-LEDS"></a>LEDs (<span class="monospaced">CONFIG_LEDS</span>)</h4>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-LEDS"></a>LEDs (<tt>CONFIG_LEDS</tt>)</h4>
 <p>These are the tiny LED-like indicators, shown at the bottom-right of the
-screen as [-----]. They are used for indication of various states, ie.
+screen as [-----]. They are used for indication of various states, e.g.
 whether you are currently talking through a SSL-secured connection,
 what is the current input mode (normal or insert), JavaScript errors etc.</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-MARKS"></a>Document Marks (<span class="monospaced">CONFIG_MARKS</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-MARKS"></a>Document Marks (<tt>CONFIG_MARKS</tt>)</h4>
 <p>Makes it possible to set marks in a document and then later jump to them kind
 of like how fragments in URIs work. It is currently only possible to jump to
 marks set in the current document.</p>
-<p><span class="strong">Default:</span>  enabled</p>
-<h4><a id="CONFIG-DEBUG"></a>Debug mode (<span class="monospaced">CONFIG_DEBUG</span>)</h4>
+<p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-DEBUG"></a>Debug mode (<tt>CONFIG_DEBUG</tt>)</h4>
 <p>Assertions are evaluated and will core dump on failure. Some extra sanity
 checks are done, and some errors will cause core dump instead of just a
 message. Internal memory leak detection is activated (memory usage will grow),
@@ -1134,8 +1167,8 @@ debugging is enabled, it highlights redundant hot-keys in a menu.</p>
 <p>This option should be _always_ used by beta testers and developers, it helps
 to detect many issues. Binary packages maintainers should not use this option
 in normal situation.</p>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-FASTMEM"></a>Fast mode (<span class="monospaced">CONFIG_FASTMEM</span>)</h4>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-FASTMEM"></a>Fast mode (<tt>CONFIG_FASTMEM</tt>)</h4>
 <p>This option provides a way to generate a faster and smaller binary of a
 _stable_ version of ELinks. Please do not use it with unstable releases
 (unless memory footprint, performance and/or binary size are major issues for
@@ -1146,22 +1179,34 @@ functions (so it's much faster, but memory allocation issues and memory leaks
 will be not detected). It defines fmem_alloc(), and fmem_free() to be in fact
 alloca() and nothing, providing much faster allocations in routines where they
 are used</p>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-OWN-LIBC"></a>Own C library functions (<span class="monospaced">CONFIG_OWN_LIBC</span>)</h4>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-OWN-LIBC"></a>Own C library functions (<tt>CONFIG_OWN_LIBC</tt>)</h4>
 <p>Enable this to use the various C library stub functions that is part of the
 portability layer instead of those available in the C library on the system.</p>
 <p>It will make the binary slightly bigger and should only be used for testing
 the portability layer.</p>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-SMALL"></a>Small binary (<span class="monospaced">CONFIG_SMALL</span>)</h4>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-SMALL"></a>Small binary (<tt>CONFIG_SMALL</tt>)</h4>
 <p>Reduces the size of the binary but also disables a few memory consuming
 optimizations to make the program much lighter when running.</p>
 <p>Part of the size reduction is due to various help text not being compiled in
 which will affect usability. Also the disabled optimization will make ELinks
 run slower.</p>
 <p>See doc/small.txt for more information about how to reduce the size of ELinks.</p>
-<p><span class="strong">Default:</span>  disabled</p>
-<h4><a id="CONFIG-BACKTRACE"></a>Back-trace Printing (<span class="monospaced">CONFIG_BACKTRACE</span>)</h4>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-UTF8"></a>Unicode UTF-8 support (<tt>CONFIG_UTF8</tt>)</h4>
+<p>By enabling this option you get better Unicode support. At present only some
+parts of ELinks are influenced with this. It includes DOM, plain, HTML
+renderer and user interface. Beside normal Unicode characters there is
+support for double-width characters (like Japanese, etc.).</p>
+<p>Some features of Unicode are not handled at all. Combining characters is
+most visible absence.
+Some features are partially supported. Like line breaking between
+double-width characters. There is no other detection for determining when to
+break or not.</p>
+<p>Note: This UTF-8 support is experimental.</p>
+<p><strong>Default:</strong>  disabled</p>
+<h4><a id="CONFIG-BACKTRACE"></a>Back-trace Printing (<tt>CONFIG_BACKTRACE</tt>)</h4>
 <p>Once upon a time, a disaster happens and ELinks crashes. That is a very sad
 event and it would be very nice to have some means how to diagnose it. In the
 crash handler, ELinks prints out various helpful things, however the truly
@@ -1174,14 +1219,14 @@ can be sometimes still an indispensable help for the developers.</p>
 <p>You should keep this, unless you will strip your ELinks binary anyway, you
 know you are not going to report back any failures and you care about each
 single wasted bit.</p>
-<p><span class="strong">Default:</span>  enabled if the libc supports it (only glibc)</p>
-<h4><a id="CONFIG-NO-ROOT-EXEC"></a>Disable Root User (<span class="monospaced">CONFIG_NO_ROOT_EXEC</span>)</h4>
+<p><strong>Default:</strong>  enabled if the libc supports it (only glibc)</p>
+<h4><a id="CONFIG-NO-ROOT-EXEC"></a>Disable Root User (<tt>CONFIG_NO_ROOT_EXEC</tt>)</h4>
 <p>Browsers are scary monsters used for traveling around in an even more scary
 world where people indifferently throw garbage files at you and threaten your
 perfect world. Altho' ELinks is a small monster compared to most browsers, it
 can still bite your head off and some might consider running it as the root
 user extremely dangerous. To prevent such usage simply enable this feature.</p>
-<p><span class="strong">Default:</span>  disabled</p>
+<p><strong>Default:</strong>  disabled</p>
 </div>
 <h2>Frequently Asked Questions</h2>
 <div class="sectionbody">
@@ -1193,11 +1238,11 @@ cookies, configuration, etc.  Only the "master" ELinks instance does any real
 work and any other ELinkses you run will only connect to this instance.  So when
 you want to restart ELinks, make sure you have no other ELinks instances
 running.</p>
-<p>Alternatively, you can use the <span class="monospaced">-no-connect</span> parameter to make ELinks always run
+<p>Alternatively, you can use the <tt>-no-connect</tt> parameter to make ELinks always run
 standalone, or create a parallel group of ELinks instances with the
-<span class="monospaced">-session-ring N</span> parameter (where <span class="monospaced">N</span> is a number larger than zero).  Be aware
+<tt>-session-ring N</tt> parameter (where <tt>N</tt> is a number larger than zero).  Be aware
 of that in those cases ELinks won't touch any configuration, bookmark, cookies,
-etc. files.  You can force that with the <span class="monospaced">-touch-files</span> parameter, but beware
+etc. files.  You can force that with the <tt>-touch-files</tt> parameter, but beware
 that this can result in data loss!  (For example, when two master ELinks
 instances try to save the bookmarks, and you add a bookmark to each of those,
 only one of the bookmarks survives.)</p>
@@ -1206,7 +1251,7 @@ only one of the bookmarks survives.)</p>
 mouse event info even if it is compiled without GPM.  Therefore it is necessary
 to hold down the Shift key when cutting or pasting text.  If you do not need to
 use the mouse for navigation you can disable mouse support by passing
-<span class="monospaced">&#8212;disable-mouse</span> to configure.</p>
+<tt>--disable-mouse</tt> to configure.</p>
 <h3><a id="move"></a>How does the "Move" button on the bookmark manager work?</h3>
 <p>First you need to mark all the bookmarks (or folders) you want to move.  This
 can be done with the Insert key if you're using the default key-bindings.  An
@@ -1216,7 +1261,7 @@ have the stuff moved to, and press the "Move" button.</p>
 <p>The managers use list boxes.  To navigate (assuming you're using a default
 key-binding configuration) use Space to open and close the folders.</p>
 <h3><a id="flavors"></a>Why are there so many Links flavors?</h3>
-<p>Please refer to the <a href="http://elinks.or.cz/history.html">history page</a> to read
+<p>Please refer to the <a href="http://elinks.cz/history.html">history page</a> to read
 about the various flavors and the differences between them.</p>
 <h3><a id="which-one"></a>Which one to use?</h3>
 <p>If you want a fast, stable, and feature-thin text browser, use
@@ -1274,13 +1319,13 @@ cellspacing="0" cellpadding="4">
 </table>
 </div>
 <h3><a id="get-256-colours"></a>How can I get 256 colors?</h3>
-<p>First, you must enable it in the <span class="monospaced">feature.conf</span> file before compiling.</p>
+<p>First, you must enable it in the <tt>feature.conf</tt> file before compiling.</p>
 <p>Second, you must run ELinks on a terminal that supports 256 colours:</p>
 <ul>
 <li>
 <p>
 <a href="http://dickey.his.com/xterm/xterm.html">Thomas Dickey's XTerm</a>,
-   revision 111. XTerm must be compiled with <span class="monospaced">&#8212;enable-256-color</span>.
+   revision 111. XTerm must be compiled with <tt>--enable-256-color</tt>.
 </p>
 </li>
 <li>
@@ -1290,7 +1335,7 @@ Recent versions of
 </p>
 </li>
 </ul>
-<p>Third, you must set the <span class="monospaced">TERM</span> environmental variable to <span class="monospaced">xterm-256color</span>
+<p>Third, you must set the <tt>TERM</tt> environmental variable to <tt>xterm-256color</tt>
 before running ELinks.</p>
 <div class="admonitionblock">
 <table><tr>
@@ -1309,12 +1354,12 @@ colors on the Linux console, frame-buffer or not.</p>
 <p>The older ELinks versions (up to 0.4.3) send:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">ELinks ($version; $osinfo; $textmode_dimensions)</span></pre>
+<pre><tt>ELinks ($version; $osinfo; $textmode_dimensions)</tt></pre>
 </div></div>
 <p>The new ELinks versions (from 0.9.0 on) send:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">ELinks/$version (textmode; $osinfo; $textmode_dimensions)</span></pre>
+<pre><tt>ELinks/$version (textmode; $osinfo; $textmode_dimensions)</tt></pre>
 </div></div>
 <p>You should therefore check against something like /^ELinks[\/ ]/, since more
 fields can be added inside the parenthesis in subsequent versions.  Note that
@@ -1355,8 +1400,8 @@ displaying documents and you will hopefully figure in time what works best
 for you. The basic browsing possibilities are presented below.</p>
 <p>ELinks is highly configurable, so if there is something that you would like
 to change, it is most likely possible. The best overview of the many options
-are given in the <span class="monospaced">elinks.conf(5)</span> man page.  Keybindings are discussed in the
-<span class="monospaced">elinkskeys(5)</span> man page.  It is not always up-to-date, so you should also
+are given in the <tt>elinks.conf(5)</tt> man page.  Keybindings are discussed in the
+<tt>elinkskeys(5)</tt> man page.  It is not always up-to-date, so you should also
 check the keybinding manager and the overview of all the configured
 keybindings given in the Help -&gt; Keys dialog. The Keys dialogs serves as a
 good introduction to the most common keybindings.</p>
@@ -1366,7 +1411,7 @@ Documents bigger than can be displayed with the current screen size are
 divided into subpages. In this case the current document position is
 indicated in the far right of the title bar as a suffix to the actual
 document title.  The syntax is: ( current-subpage / total-subpages ), an
-example is <span class="monospaced">(4/9)</span> that indicates the 4th subpage of 9 subpages.</p>
+example is <tt>(4/9)</tt> that indicates the 4th subpage of 9 subpages.</p>
 <p>The tab bar by default is only visible when 2 or more tabs are open. It is
 divided into slots containing the trimmed title of the tabs' loaded
 document. Between each tab is a separator. The current tab is highlighted
@@ -1397,9 +1442,9 @@ the Main Menu. The managers consists of an area showing a hierarchic listbox
 and buttons at the bottom. Below, a view of the cookie manager is shown.</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">+------------------------- Cookie manager -------------------------+
+<pre><tt>+------------------------- Cookie manager -------------------------+
 |                                                                  |
-|   [-]- bugzilla.elinks.or.cz                                     |
+|   [-]- bugzilla.elinks.cz                                        |
 |    |    |-- BUGLIST                                              |
 |    |    `-- LASTORDER                                            |
 |   [+]- kerneltrap.org                                            |
@@ -1412,22 +1457,22 @@ and buttons at the bottom. Below, a view of the cookie manager is shown.</p>
 |                                                                  |
 |                                                                  |
 |   [ Info ]  [ Add ]  [ Edit ]  [ Delete ]  [ Save ]  [ Close ]   |
-+------------------------------------------------------------------+</span></pre>
++------------------------------------------------------------------+</tt></pre>
 </div></div>
-<p>Each item is either a folder or a leaf. A folder is displayed with a <span class="monospaced">[-]</span>
-or <span class="monospaced">[+]</span> before the name telling whether the folder is currently open or
+<p>Each item is either a folder or a leaf. A folder is displayed with a <tt>[-]</tt>
+or <tt>[+]</tt> before the name telling whether the folder is currently open or
 closed. Nested items are displayed indented compared to the folder they are
 nested in. In the cookie manager example above "bjork.com" is a folder and
 "PREF" is a leaf.</p>
 <p>Items can be "marked", which makes it possible to select a group of items
 and perform an action on them, such as deleting all marked items. If any
 item has been marked the currently selected item is ignored when performing
-the action.  Marked items are displayed with an asterisk (<span class="emphasis">*</span>) prefixing the
+the action.  Marked items are displayed with an asterisk (<em>*</em>) prefixing the
 name.</p>
 <p>The buttons make it possible to perform actions either on selected or marked
-items or on all items in the manager. Buttons named <span class="emphasis">Clear</span> and <span class="emphasis">Save</span> are
-performed on all items; <span class="emphasis">Clear</span> will delete all items and <span class="emphasis">Save</span> will update
-the runtime state file associated with the manager in the <span class="monospaced">~/.elinks/</span>
+items or on all items in the manager. Buttons named <em>Clear</em> and <em>Save</em> are
+performed on all items; <em>Clear</em> will delete all items and <em>Save</em> will update
+the runtime state file associated with the manager in the <tt>~/.elinks/</tt>
 directory.  Most buttons presses will query you before completing the
 action.</p>
 <p>At any time, both the currently selected item and button are highlighted.
@@ -1462,7 +1507,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    <span class="emphasis">*</span>
+    <em>*</em>
     </td>
     <td align="left">
     Toggle marking of a item.
@@ -1511,8 +1556,8 @@ cellspacing="0" cellpadding="4">
 </tbody>
 </table>
 </div>
-<p>Some managers also supports searching, either by pressing the <span class="emphasis">Search</span>
-button or by pressing <span class="emphasis">/</span>. By searching the empty string, all hidden items
+<p>Some managers also supports searching, either by pressing the <em>Search</em>
+button or by pressing <em>/</em>. By searching the empty string, all hidden items
 from the previous search will be shown again.</p>
 <h3>LED status indicators</h3>
 <p>As an optional feature it is possible to have tiny LED-like status
@@ -1520,7 +1565,7 @@ indicators shown at the bottom-right of the screen. They are used for
 displaying an overview of the current browsing state, ie.  whether you are
 currently talking through a SSL-secured connection, what is the current
 input mode (normal or insert), JavaScript errors etc.</p>
-<p>An example display may look like: <span class="monospaced">[SIJP&#8212;]</span>. Each position in the LED
+<p>An example display may look like: <tt>[SIJP&#8212;]</tt>. Each position in the LED
 display is associated with the following state:</p>
 <div class="tableblock">
 <table rules="none"
@@ -1541,7 +1586,7 @@ cellspacing="0" cellpadding="4">
 <tbody valign="top">
   <tr>
     <td align="left">
-    <span class="emphasis">S</span>
+    <em>S</em>
     </td>
     <td align="left">
     Whether an SSL connection was used.
@@ -1549,15 +1594,15 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    <span class="emphasis">i</span>/<span class="emphasis">I</span>
+    <em>i</em>/<em>I</em>
     </td>
     <td align="left">
-    The state of insert mode for text-input form-fields: <span class="emphasis">i</span>                     means modeless, <span class="emphasis">I</span> means insert mode is on.
+    The state of insert mode for text-input form-fields: <em>i</em>                     means modeless, <em>I</em> means insert mode is on.
     </td>
   </tr>
   <tr>
     <td align="left">
-    <span class="emphasis">J</span>
+    <em>J</em>
     </td>
     <td align="left">
     A JavaScript error has occured.
@@ -1565,7 +1610,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    <span class="emphasis">P</span>
+    <em>P</em>
     </td>
     <td align="left">
     A JavaScript pop-up window was blocked.
@@ -1590,7 +1635,7 @@ cellspacing="0" cellpadding="4">
 </tbody>
 </table>
 </div>
-<p><span class="monospaced">-</span> generally indicates that the LED is off.</p>
+<p><tt>-</tt> generally indicates that the LED is off.</p>
 <p>The above information is also available in the LED dialog available by
 either clicking on the LED display or via the Help menu.</p>
 <h3>Navigation</h3>
@@ -1642,7 +1687,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    <span class="emphasis">[</span>/<span class="emphasis">]</span>
+    <em>[</em>/<em>]</em>
     </td>
     <td align="left">
     Scroll left/right column-wise. (horizontally)
@@ -1668,7 +1713,7 @@ move in a directional manner to the link in a certain direction such as
 left/right/up/down.</p>
 <p>In order to navigate using link numbers, you have to first toggle link
 numbering on; this will prefix all links with a number using the notation
-[number]. <span class="monospaced">[23]</span> indicates link number 23. When link numbering is enabled,
+[number]. <tt>[23]</tt> indicates link number 23. When link numbering is enabled,
 pressing any number key will pop up a "Go to link"-dialog where the complete
 link number can be entered. By pressing Enter the entered link number will
 be focused, but only if it is a valid link number.</p>
@@ -1702,7 +1747,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    <span class="emphasis">.</span>
+    <em>.</em>
     </td>
     <td align="left">
     Toggle link numbering.
@@ -1743,8 +1788,8 @@ Input text/Password fields
 </dt>
 <dd>
 <p>
-        These will be displayed as <span class="monospaced">________</span>.
-        Note that passwords will be obscured using <span class="monospaced">*</span> characters.
+        These will be displayed as <tt>________</tt>.
+        Note that passwords will be obscured using <tt>*</tt> characters.
         Status bar will display something like "Text field, name q",
         or "Password field, name password" for password fields.
 </p>
@@ -1754,7 +1799,7 @@ Textarea boxes
 </dt>
 <dd>
 <p>
-        These will be displayed as multiple lines consisting of <span class="monospaced">_</span>.
+        These will be displayed as multiple lines consisting of <tt>_</tt>.
         Status bar will display something like "Text area, name comment"
 </p>
 </dd>
@@ -1763,7 +1808,7 @@ Buttons
 </dt>
 <dd>
 <p>
-        These will be displayed as <span class="monospaced">[ Go ]</span>.
+        These will be displayed as <tt>[ Go ]</tt>.
         Status bar will display something like "Submit form to &#8230;",
         "Post form to &#8230;" for submit buttons.
 </p>
@@ -1773,7 +1818,7 @@ Checkboxes
 </dt>
 <dd>
 <p>
-        These will be displayed as <span class="monospaced">[ ]</span> or <span class="monospaced">[X]</span>.
+        These will be displayed as <tt>[ ]</tt> or <tt>[X]</tt>.
         Status bar will display something like "Checkbox, name c, value 1".
         To set one just press ENTER on it.
 </p>
@@ -1783,7 +1828,7 @@ Radio buttons
 </dt>
 <dd>
 <p>
-        These will be displayed as <span class="monospaced">( )</span> or <span class="monospaced">(X)</span>.
+        These will be displayed as <tt>( )</tt> or <tt>(X)</tt>.
         Status bar will display something like "Radio button, name radio1".
         To set one, you may use ENTER.
 </p>
@@ -1793,7 +1838,7 @@ Select lists
 </dt>
 <dd>
 <p>
-        These will be displayed as <span class="monospaced">[first item____]</span>.
+        These will be displayed as <tt>[first item____]</tt>.
         Note that if multiple attribute is used, these are displayed as a
         group of checkboxes instead.
         Status bar will display something like "Select field, name list"
@@ -1803,7 +1848,7 @@ Select lists
 </dd>
 </dl>
 <h3>Searching</h3>
-<p>Searching is by default available by pressing <span class="emphasis">/</span>. This will open a search
+<p>Searching is by default available by pressing <em>/</em>. This will open a search
 dialog with a input text field for entering the search terms and checkboxes
 to control how searching is performed. You can indicate whether matching
 should be case sensitive and whether regular expressions or normal searching
@@ -1839,7 +1884,7 @@ cellspacing="0" cellpadding="4">
 <tbody valign="top">
   <tr>
     <td align="left">
-    <span class="emphasis">/</span>
+    <em>/</em>
     </td>
     <td align="left">
     Open search dialog
@@ -1847,7 +1892,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    <span class="emphasis">?</span>
+    <em>?</em>
     </td>
     <td align="left">
     Open search dialog for backwards searching
@@ -1855,7 +1900,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    <span class="emphasis">#</span>
+    <em>#</em>
     </td>
     <td align="left">
     Start incremental link text search
@@ -1863,7 +1908,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    <span class="emphasis">#/</span>
+    <em>#/</em>
     </td>
     <td align="left">
     Start incremental document search
@@ -1871,7 +1916,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    <span class="emphasis">n</span>/<span class="emphasis">N</span>
+    <em>n</em>/<em>N</em>
     </td>
     <td align="left">
     Show next/previous match
@@ -1907,7 +1952,7 @@ Numerical action prefixes. Example: 3&lt;Down&gt; jumps down three links.
 </li>
 <li>
 <p>
-How to move forward in the document history (<span class="emphasis">u</span>).
+How to move forward in the document history (<em>u</em>).
 </p>
 </li>
 <li>
@@ -1947,20 +1992,20 @@ your own key in place of that. Below, we will list all actions, options and so
 on related to bookmarks. We won't tell you how to rebind the keys, though;
 another document will take on that.</p>
 <p>Somewhat out-of-order, a very frequent FAQ: In order to move bookmarks around,
-you need to mark them first - press <span class="emphasis">Insert</span> or <span class="emphasis">*</span> (if you use the default
+you need to mark them first - press <em>Insert</em> or <em>*</em> (if you use the default
 keymap) to do that.</p>
 <h3>The Bookmark Manager</h3>
 <p>Basically, almost everything is going on in the so-called bookmark manager.
 That's a special dialog window, which contains a listing of all the bookmarks
 you ever told ELinks to remember and it lets you to do with them anything you
 would ever want to do with them.</p>
-<p>You launch the bookmark manager by pressing the <span class="emphasis">s</span> key in standby (standard)
+<p>You launch the bookmark manager by pressing the <em>s</em> key in standby (standard)
 mode. You should see a big empty space (bookmarks will slowly appear there as
 you will add them) and couple of buttons shriveling at the bottom. So, as a
-start, move with the right (or left; both will do) arrow to the button <span class="strong">Add
-bookmark</span> and fill in the input fields it offers to you. I mean, you can type
+start, move with the right (or left; both will do) arrow to the button <strong>Add
+bookmark</strong> and fill in the input fields it offers to you. I mean, you can type
 something like "ELinks homepage" to the first field, then move down by e.g.
-the down arrow and fill "http://elinks.or.cz/" to the second field. Then,
+the down arrow and fill "http://elinks.cz/" to the second field. Then,
 bravely press enter and watch the bookmark popping up at the top of the vast
 area reserved for bookmarks.</p>
 <p>Repeat this step few times. Now, you can move between bookmarks by the up and
@@ -1972,38 +2017,38 @@ you'll become bored, press the escape button and you're free again!</p>
 get lost in them. Thus, in ELinks you can categorize them to various folders,
 subfolders, subsubfolders and so on, then you can expand and back enfold them
 and so on.</p>
-<p>In order to create your first folder, use the button <span class="strong">Add folder</span> and fill the
+<p>In order to create your first folder, use the button <strong>Add folder</strong> and fill the
 first input field. You can safely ignore the URL field, ELinks will do the
-same. <span class="strong">POOF</span> and you see it - it has that strange <span class="monospaced">[+]</span> or <span class="monospaced">[-]</span> thing there.
-If it has <span class="monospaced">[+]</span> near, it's enfolded, while when it has <span class="monospaced">[-]</span> near, it is
+same. <strong>POOF</strong> and you see it - it has that strange <tt>[+]</tt> or <tt>[-]</tt> thing there.
+If it has <tt>[+]</tt> near, it's enfolded, while when it has <tt>[-]</tt> near, it is
 expanded, while you can change that by pressing the spacebar.</p>
 <p>In order to add a bookmark into a folder, move on the item of the folder (it
 must be expanded) or onto any bookmark inside of the folder and simply do the
-usual <span class="strong">Add bookmark</span> job. You can also move the bookmarks around, obviously.
-Before pressing the <span class="strong">Move</span> button, you need to first mark all the bookmarks
-(or even folders) you want to move using the <span class="emphasis">Insert</span> or <span class="emphasis">*</span> key&#8212;asterisk
+usual <strong>Add bookmark</strong> job. You can also move the bookmarks around, obviously.
+Before pressing the <strong>Move</strong> button, you need to first mark all the bookmarks
+(or even folders) you want to move using the <em>Insert</em> or <em>*</em> key&#8212;asterisk
 will appear near of all marked bookmarks&#8212;and then move to where you want to
 have the stuff moved to.</p>
-<p>Separators can be inserted as well, using <span class="strong">Add separator</span> button, or by
+<p>Separators can be inserted as well, using <strong>Add separator</strong> button, or by
 entering a special bookmark with "-" as title and no url.</p>
 <h3>Searching for a needle in the haystack</h3>
-<p>Of course, you can search in the bookmarks. Just use the <span class="strong">Find</span> button  - for
+<p>Of course, you can search in the bookmarks. Just use the <strong>Find</strong> button  - for
 convenience, you have the current document's URL and title pre-filled there,
 and for convenience only up-up-enter-down-down sequence is enough to have the
 playground clean. Then, just fill a substring of what you are looking for, and
 the bookmarks will be filtered so that only the matching ones are shown.
 (Actually, currently it will not be filtered but the cursor will only jump to
 the first matching bookmark below the current cursor position - and it will
-<span class="strong">NOT</span> wrap around. The exact behaviour changes time by time and hasn't been
+<strong>NOT</strong> wrap around. The exact behaviour changes time by time and hasn't been
 stabilized yet.)</p>
 <h3>File formats</h3>
 <p>ELinks supports two bookmark formats: the native format and a generic bookmark
 exchange format called XBEL. Each of those formats has its pros and cons,
 which we shall discuss below. You can switch between then by changing the
-option <span class="emphasis">bookmarks.file_format</span>.</p>
-<p>However, first please note that ELinks <span class="emphasis">CANNOT</span> read Links bookmarks directly.
+option <em>bookmarks.file_format</em>.</p>
+<p>However, first please note that ELinks <em>CANNOT</em> read Links bookmarks directly.
 Importing Links-0.9x (or Links-1.x) bookmarks is easy - it is just matter of
-changing all the <span class="emphasis">|</span> (pipe) characters to tabs.  There is a script for that in
+changing all the <em>|</em> (pipe) characters to tabs.  There is a script for that in
 the contrib/conv/ directory. Importing Links-2.xx bookmarks is not so easy; in
 fact, the scribe knows of no way of doing that at the time of writing this, so
 this is up to you to figure out (if you do, please tell us so that we can add
@@ -2011,18 +2056,18 @@ it here).  Perhaps you might find a way to convert Links2 bookmarks to the
 XBEL format, which can then be loaded in ELinks.</p>
 <h4>Native file format</h4>
 <p>This is the preferred bookmarks format, which is also used by default.  The
-bookmarks file is <span class="monospaced">~/.elinks/bookmarks</span>, in a simple format:</p>
+bookmarks file is <tt>~/.elinks/bookmarks</tt>, in a simple format:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">&lt;name&gt; '\t' &lt;url&gt; [ '\t' &lt;depth&gt; ['\t' &lt;flags&gt;] ] '\n'</span></pre>
+<pre><tt>&lt;name&gt; '\t' &lt;url&gt; [ '\t' &lt;depth&gt; ['\t' &lt;flags&gt;] ] '\n'</tt></pre>
 </div></div>
-<p><span class="emphasis">\t</span> represents a tab character, <span class="emphasis">\n</span> represents a newline character.  [Square
-brackets] denote optional parts. The <span class="emphasis">&lt;name&gt;</span> and <span class="emphasis">&lt;url&gt;</span> fields should be
-obvious.  <span class="emphasis">&lt;depth&gt;</span> contains the depth level of the entry - by that, ELinks
+<p><em>\t</em> represents a tab character, <em>\n</em> represents a newline character.  [Square
+brackets] denote optional parts. The <em>&lt;name&gt;</em> and <em>&lt;url&gt;</em> fields should be
+obvious.  <em>&lt;depth&gt;</em> contains the depth level of the entry - by that, ELinks
 can unambiguously figure out the bookmarks hierarchy:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">Bookmarks structure:                                Depth:
+<pre><tt>Bookmarks structure:                                Depth:
  ,-- The Pasky's C Bestiary                         0
 [-]- Wonderful things                               0
  |    |-- Christmas Carol in l33tsp34k by L.M.      1
@@ -2033,9 +2078,9 @@ can unambiguously figure out the bookmarks hierarchy:</p>
  |         |    `-- Jonas consuming Tofu            3
  |         `-- Jonas with crashed ELinks            2
  |-- Slides from Witek's hack-patch show            0
- `-- Miciah's English Grammar Spellbook             0</span></pre>
+ `-- Miciah's English Grammar Spellbook             0</tt></pre>
 </div></div>
-<p><span class="emphasis">&lt;flags&gt;</span> is a string of characters. Currently, two flags are supported:</p>
+<p><em>&lt;flags&gt;</em> is a string of characters. Currently, two flags are supported:</p>
 <div class="tableblock">
 <table rules="none"
 frame="hsides"
@@ -2093,17 +2138,17 @@ Cons
 </p>
 </dd>
 </dl>
-<p>To use the native format, set <span class="emphasis">bookmarks.file_format</span> = 0.</p>
+<p>To use the native format, set <em>bookmarks.file_format</em> = 0.</p>
 <h4>XBEL file format</h4>
 <p>The XBEL file format support was added at some point during the 0.4
 development by Fabio Boneli. It has never been complete and has plenty of
 troubles, but generally, it works at the basic level. The bookmarks file is
-<span class="monospaced">~/.elinks/bookmarks.xbel</span> (thanks to a different filename, you can have both
-XBEL and native bookmarks saved in your <span class="monospaced">~/.elinks</span> directory).</p>
+<tt>~/.elinks/bookmarks.xbel</tt> (thanks to a different filename, you can have both
+XBEL and native bookmarks saved in your <tt>~/.elinks</tt> directory).</p>
 <p>We shall not describe the XBEL file format here,</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">http://pyxml.sourceforge.net/topics/xbel/</span></pre>
+<pre><tt>http://pyxml.sourceforge.net/topics/xbel/</tt></pre>
 </div></div>
 <p>is the authoritative resource on that. It also contains list of some of the
 applications supporting the format.  Basically, you will be probably able to
@@ -2127,12 +2172,12 @@ Cons
         Especially, national character sets are basically not supported, so
         ELinks will most likely get it wrong if you have any non-ASCII
         characters in your bookmarks.  Generally, the XBEL support should be
-        considered experimental and you shouldn't rely on it. It <span class="strong">could</span> trash
+        considered experimental and you shouldn't rely on it. It <strong>could</strong> trash
         your XBEL bookmarks file so make regular backups.
 </p>
 </dd>
 </dl>
-<p>To use the XBEL format, set <span class="emphasis">bookmarks.file_format</span> to 1.</p>
+<p>To use the XBEL format, set <em>bookmarks.file_format</em> to 1.</p>
 <h4>Usage hints</h4>
 <p>As already noted above, probably the best usage pattern is to use XBEL for
 importing/exporting your bookmarks to/from ELinks and the native format for
@@ -2140,26 +2185,26 @@ regular operation. Of course, if you want to synchronize your bookmarks in
 ELinks and some other XBEL-supporting gadget and you are brave, you can use
 XBEL as your exclusive bookmark format - the choice is upon you.</p>
 <p>Regarding the bookmarks synchronization, there is one important note. ELinks
-saves your bookmarks each time you added one through the <span class="emphasis">a</span> shortcut
+saves your bookmarks each time you added one through the <em>a</em> shortcut
 (add-bookmark action) or when closing the bookmarks manager if you made any
 changes or when quitting ELinks. However, ELinks reads your bookmarks only
-<span class="strong">ONCE</span>, during the startup. This behaviour may change in the future (tell us
+<strong>ONCE</strong>, during the startup. This behaviour may change in the future (tell us
 if you need a way for ELinks to re-read the bookmarks file), but this is how
 it is done now.</p>
 <p>Actually, you may now ask "So how do I convert bookmarks between the two
 formats?".  It is quite easy.  ELinks simply follows the current value of
-<span class="emphasis">bookmarks.file_format</span> whenever loading/saving the bookmarks.</p>
+<em>bookmarks.file_format</em> whenever loading/saving the bookmarks.</p>
 <p>So, e.g. if you normally use the native format but you want the bookmarks to
-be saved in the XBEL format once, change <span class="emphasis">bookmarks.file_format</span> to 1, then
+be saved in the XBEL format once, change <em>bookmarks.file_format</em> to 1, then
 cause the bookmarks to be resaved (e.g. by doing some simple change, like
 adding a trailing space to some bookmark's title or so), then change the
-<span class="emphasis">bookmarks.file_format</span> value back to 0.</p>
+<em>bookmarks.file_format</em> value back to 0.</p>
 <p>It is a little more complicated if you normally use the native format but you
 want to import bookmarks from the XBEL format once. You again change
-<span class="emphasis">bookmarks.file_format</span> to 1, then cause the bookmarks to be reloaded.  That
+<em>bookmarks.file_format</em> to 1, then cause the bookmarks to be reloaded.  That
 involves saving the configuration, quitting ELinks _completely_ (that means
 closing/killing all instances of it you have running), then restarting it and
-changing <span class="emphasis">bookmarks.file_format</span> to 0. Then save the configuration again and
+changing <em>bookmarks.file_format</em> to 0. Then save the configuration again and
 cause ELinks to resave the bookmarks.</p>
 <p>Agreed, this all strange dances are quite clumsy, likely some simple
 wizard-like interface for switching the bookmarks formats will be introduced
@@ -2199,7 +2244,7 @@ a different coloring scheme.</p>
 <p>The tab menu gives access to tab specific actions along with some other useful
 document specific actions.  So even if you haven't configured keybindings for
 all actions, chances are you will find it in the tab menu.  By default, it is
-opened by pressing <span class="emphasis">e</span>.</p>
+opened by pressing <em>e</em>.</p>
 <h4>Creating new tabs</h4>
 <p>When creating new tabs, it is possible to specify whether to create the tab and
 make it the current active tab or if the tab is to be created &#8220;in the
@@ -2209,17 +2254,17 @@ to load.  That is, you can open links or submitted forms in a new tab or just
 open a new tab.  Depending on your configuration, the latter will load the
 configured homepage in the newly created tab or simply leave the tab blank with
 no loaded document.</p>
-<p>By default, <span class="emphasis">t</span> will open a new tab and <span class="emphasis">T</span> will open the current link in a new
+<p>By default, <em>t</em> will open a new tab and <em>T</em> will open the current link in a new
 backgrounded tab.  You can configure keybindings for opening a new tab in the
 background and opening the current link as the active tab.</p>
 <h4>Switching between tabs</h4>
-<p>By default, it is possible to switch between tabs by using <span class="emphasis">&lt;</span> and <span class="emphasis">&gt;</span> to select
+<p>By default, it is possible to switch between tabs by using <em>&lt;</em> and <em>&gt;</em> to select
 the previous and next tab, respectively.  When positioned at the leftmost tab,
 and switching to the previous tab, the tab switching will perform a wrap-around
 so that the rightmost tab will be selected.  The wrap-around behaviour is
 configurable.</p>
 <h4>Closing tabs</h4>
-<p>Tabs can by default be closed by pressing <span class="emphasis">c</span>.  It is possible to optionally
+<p>Tabs can by default be closed by pressing <em>c</em>.  It is possible to optionally
 have a confirmation dialog pop up when closing a tab to avoid accidental
 closing.  To complement closing of the current tab, it is also possible to close
 all tabs but the current one.  No key is by default configured for this; the tab
@@ -2265,7 +2310,7 @@ As a mean of crash protection, tabs can periodically be saved so that it is
 <p>So, were you ever reading this huge 300-pages specification heavily
 cross-referencing itself, jumping around and getting a headache when looking
 for the place where you stopped reading the last time?</p>
-<p>Were you doing something similar in C code, but praising <span class="strong">vi</span> for document
+<p>Were you doing something similar in C code, but praising <strong>vi</strong> for document
 marks?</p>
 <p>ELinks can do them, too! For vim non-users:</p>
 <h3>What it is?</h3>
@@ -2281,7 +2326,7 @@ go to a mark by the "'" (apostrophe) key followed by the mark character.
 E.g., you can place a mark named "a" in the file by pressing "ma", then
 return to it anytime later by typing "'a". You can of course change those
 shortcuts at any time to anything you wish in the keybindings manager.</p>
-<p>Short summary: you can place a mark (e.g. <span class="emphasis">z</span>) in a document by pressing
+<p>Short summary: you can place a mark (e.g. <em>z</em>) in a document by pressing
 "mz" and then go back to it anytime later by pressing "'z".</p>
 <h3>Restrictions</h3>
 <p>Currently, only A-Za-z characters are valid marks.</p>
@@ -2317,7 +2362,7 @@ work as expected - this paragraph serves only as a disclaimer in cases it
 doesn't.  Don't rely on it.</p>
 <p>Marks never survive over ELinks restarts. If you quit your ELinks completely
 and run it again, the marks you placed will be no more. No exceptions. Well.
-In some cases, it <span class="strong">might</span> appear that they survived, but that just means you
+In some cases, it <strong>might</strong> appear that they survived, but that just means you
 did not quit your ELinks _completely_ --- if you run multiple ELinks
 instances under a single user on a single system, they "join" together and
 you must quit (or kill) them all to get rid of the damn thing.  But that's a
@@ -2332,29 +2377,29 @@ typing it to the Goto URL dialog), it has the ability to mangle it in certain
 ways before processing it.  This mangling is called URI rewriting.</p>
 <h3>What it does</h3>
 <p>The URI rewriting can expand certain URL shortcuts to complete URLs.  For
-example, if you type <span class="emphasis">sd</span> to the Goto URL dialog, it will be rewritten to:</p>
+example, if you type <em>sd</em> to the Goto URL dialog, it will be rewritten to:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">http://www.slashdot.org/</span></pre>
+<pre><tt>http://www.slashdot.org/</tt></pre>
 </div></div>
 <p>first, and then loaded.  /.'s front page will be displayed.</p>
-<p>Further, if you type <span class="emphasis">g elinks</span> to the Goto URL dialog, it will be rewritten to:</p>
+<p>Further, if you type <em>g elinks</em> to the Goto URL dialog, it will be rewritten to:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">http://www.google.com/search?q=elinks&amp;amp;btnG=Google+Search</span></pre>
+<pre><tt>http://www.google.com/search?q=elinks&amp;amp;btnG=Google+Search</tt></pre>
 </div></div>
-<p>and then loaded, therefore, a Google search for the keyword <span class="emphasis">elinks</span> will be
-performed.  Note that you can separate the <span class="emphasis">g</span> by either a space or a colon, so
-<span class="emphasis">g:elinks</span> will do the exact same thing.</p>
+<p>and then loaded, therefore, a Google search for the keyword <em>elinks</em> will be
+performed.  Note that you can separate the <em>g</em> by either a space or a colon, so
+<em>g:elinks</em> will do the exact same thing.</p>
 <p>A large number of those shortcuts are already defined for you.  You can browse
 Protocols :: URI Rewriting :: Dumb/Smart prefixes in the Options Manager for
 a complete listing of already defined shortcuts (press the [Info] button on
 a shortcut to see what it will be rewritten to).  See below for details on how
 to enable or disable this rewriting and how to define your own shortcuts.</p>
 <h3>How it works</h3>
-<p>All the URI rewriting can be controlled by options in the <span class="emphasis">protocol.rewrite</span>
+<p>All the URI rewriting can be controlled by options in the <em>protocol.rewrite</em>
 option tree.</p>
-<p>In the case of <span class="emphasis">sd</span>, a URI rewriting mechanism called <span class="emphasis">dumb prefixes</span> is used.
+<p>In the case of <em>sd</em>, a URI rewriting mechanism called <em>dumb prefixes</em> is used.
 If protocol.rewrite.enable-dumb is true, ELinks looks at the contents of the
 protocol.rewrite.dumb.* tree, and if it finds option protocol.rewrite.dumb.sd,
 it will use its value as the target URI.</p>
@@ -2364,26 +2409,26 @@ entered URI with it.  These dumb prefixes can be used as a kind of alternative
 bookmark systen - if you want to have fast access to a certain site and you
 don't want to spend a while navigating the bookmarks manager, you can just fire
 up the Goto URL dialog, type the shortcut and there you go.</p>
-<p>A dumb prefix can contain <span class="emphasis">%c</span>, which will be replaced by the URI of the current
-document.  This is used, for example, in the <span class="emphasis">arc</span> dumb-prefix, which provides
+<p>A dumb prefix can contain <em>%c</em>, which will be replaced by the URI of the current
+document.  This is used, for example, in the <em>arc</em> dumb-prefix, which provides
 a shortcut to the Wayback machine at archive.org.</p>
-<p>In the case of <span class="emphasis">g</span>, a slightly different URI rewriting mechanism called <span class="emphasis">smart
-prefixes</span> is used.  If protocol.rewrite.enable-smart is true, ELinks looks at
+<p>In the case of <em>g</em>, a slightly different URI rewriting mechanism called <em>smart
+prefixes</em> is used.  If protocol.rewrite.enable-smart is true, ELinks looks at
 the contents of the protocol.rewrite.smart tree and, if it finds option
 protocol.rewrite.smart.g, it will use its value as the target URI.</p>
 <p>The difference is that the smart prefixes can take arguments and reference them
-in the target URI.  As with dumb prefixes, <span class="emphasis">%c</span> in the URI means the current
-address.  Additionally, <span class="emphasis">%s</span> will be substituted by the whole string following
-the prefix (<span class="emphasis">elinks</span> in the <span class="emphasis">g</span> example above; <span class="emphasis">%s</span> is by far the most
+in the target URI.  As with dumb prefixes, <em>%c</em> in the URI means the current
+address.  Additionally, <em>%s</em> will be substituted by the whole string following
+the prefix (<em>elinks</em> in the <em>g</em> example above; <em>%s</em> is by far the most
 frequently used expansion), while you can reference individual space-separated
-arguments with the codes <span class="emphasis">%0</span> thru <span class="emphasis">%9</span>.  Finally, if you want a plain % to the
-resulting URI, use <span class="emphasis">%%</span>.</p>
+arguments with the codes <em>%0</em> thru <em>%9</em>.  Finally, if you want a plain % to the
+resulting URI, use <em>%%</em>.</p>
 <p>Note that the prefix searched in the protocol.rewrite.smart tree is everything
-in the typed address up to the first space or colon (so <span class="emphasis">bug:123</span> and <span class="emphasis">bug 123</span>
+in the typed address up to the first space or colon (so <em>bug:123</em> and <em>bug 123</em>
 are identical).  These prefixes are generally useful for searching anything very
-fast - be it Google (<span class="emphasis">g:foo</span>, <span class="emphasis">gi:foo</span>, <span class="emphasis">gr:foo</span>, &#8230;), ELinks Bugzilla bugs
-(<span class="emphasis">bug:1234</span>), the RFC database (<span class="emphasis">cr:foo</span>), or the Czech-English dictionary
-(<span class="emphasis">czen:foo</span>).  The only limit is your imagination.</p>
+fast - be it Google (<em>g:foo</em>, <em>gi:foo</em>, <em>gr:foo</em>, &#8230;), ELinks Bugzilla bugs
+(<em>bug:1234</em>), the RFC database (<em>cr:foo</em>), or the Czech-English dictionary
+(<em>czen:foo</em>).  The only limit is your imagination.</p>
 <h3>Alternative URI rewriting mechanisms</h3>
 <p>In the past, before this was implemented, Lua scripting did the job.  And you
 still have complete control over the URI in the internal scripting goto-url
@@ -2412,9 +2457,9 @@ color highlighted so they stand out.</p>
 <p>In short, ELinks does not use termcap or terminfo.  ELinks uses $TERM, but only
 to distinguish between terminals in its own configuration.  That is, you need
 only configure your terminal within ELinks: Go to the Setup menu and select
-Terminal Options.  If $TERM is set to <span class="emphasis">screen</span> when you configure ELinks'
+Terminal Options.  If $TERM is set to <em>screen</em> when you configure ELinks'
 terminal settings, ELinks will remember to use those settings when $TERM is
-<span class="emphasis">screen</span>.</p>
+<em>screen</em>.</p>
 <h3>Options</h3>
 <p>Apart from the last charset option configurable through the Setup -&gt; Character
 Set submenu in the Main menu, the rest can be configured using the Terminal
@@ -2576,7 +2621,7 @@ color.</p>
 codepage is used.  This is off by default.</p>
 <h4>Character Set</h4>
 <p>Codepage of the charset used for displaying content on terminal.</p>
-<p>The value <span class="emphasis">System</span> (which is the default) will set the charset according to the
+<p>The value <em>System</em> (which is the default) will set the charset according to the
 current locale.  The default is to use the charset of the current locale.</p>
 <h3>Terminal Configurations</h3>
 <p>Built-in configurations exists for the following terminals:</p>
@@ -2619,10 +2664,10 @@ xterm-256color
 </ul>
 <p>The last two configurations requires that support for either 88 or 256 colors
 is compiled in to xterm.</p>
-<p>GNU Screen is VT100-compatible, so select <span class="emphasis">VT 100 frames</span>.  GNU Screen also
-supports colors just fine, so select <span class="emphasis">16 colors</span>, or, if you are running Screen
+<p>GNU Screen is VT100-compatible, so select <em>VT 100 frames</em>.  GNU Screen also
+supports colors just fine, so select <em>16 colors</em>, or, if you are running Screen
 within a terminal emulator that supports 256 colors and you have compiled both
-Screen and ELinks to support it, choose <span class="emphasis">256 colors</span>.</p>
+Screen and ELinks to support it, choose <em>256 colors</em>.</p>
 </div>
 <h2>Introduction to MIME handling</h2>
 <div class="sectionbody">
@@ -2755,14 +2800,14 @@ image_viewer handler which should be used to view images.  The configuration
 file may look like this:</p>
 <div class="listingblock">
 <div class="content">
-<pre><span class="monospaced">set mime.handler.image_viewer.unix.ask = 1
+<pre><tt>set mime.handler.image_viewer.unix.ask = 1
 set mime.handler.image_viewer.unix-xwin.ask = 0
 
 set mime.handler.image_viewer.unix.block = 1
 set mime.handler.image_viewer.unix-xwin.block = 0
 
 set mime.handler.image_viewer.unix.program = "zgv %"
-set mime.handler.image_viewer.unix-xwin.program = "xli %"</span></pre>
+set mime.handler.image_viewer.unix-xwin.program = "xli %"</tt></pre>
 </div></div>
 <p>In this example the image_viewer handler uses the svgalib image viewer zgv
 when X is not available, and the X image viewer xli when it is. The terminal
@@ -2792,7 +2837,7 @@ on most UNIX systems&#8212;usually in /etc/mailcap&#8212;so this makes it possib
 ELinks to know how to handle a great variety of file formats with little
 configuration. To be able to use mailcap, it has to be compiled into ELinks.
 This is the default. If you don't need mailcap support, just configure ELinks
-with the flag: &#8212;disable-mailcap.</p>
+with the flag: --disable-mailcap.</p>
 <h3>Parameters to Mailcap Entries</h3>
 <p>The code has been ported from Mutt and thereby inherits some of its various
 features and limitation.</p>
@@ -2827,7 +2872,7 @@ cellspacing="0" cellpadding="4">
     %f
     </td>
     <td align="left">
-    The content type, like <span class="emphasis">text/plain</span>.
+    The content type, like <em>text/plain</em>.
     </td>
   </tr>
 </tbody>
@@ -2891,7 +2936,7 @@ From the value of the mime.mailcap.path option in elinks.conf; for example:
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">set mime.mailcap.path = "~/.mailcap:/usr/local/etc/mailcap"</span></pre>
+<pre><tt>set mime.mailcap.path = "~/.mailcap:/usr/local/etc/mailcap"</tt></pre>
 </div></div>
 </li>
 <li>
@@ -2902,7 +2947,7 @@ From MAILCAP environment variable.
 <li>
 <p>
 If non of the above is defined, the mailcap path defaults to
-   <span class="monospaced">~/.mailcap:/etc/mailcap</span>.
+   <tt>~/.mailcap:/etc/mailcap</tt>.
 </p>
 </li>
 </ul>
@@ -2912,35 +2957,35 @@ like edit, print, compose etc. are ignored.</p>
 <p>Note: Test commands are supported, but unfortunately, it's not possible to
 provide the file when running the test. So any test that requires a file will
 be considered failed and the handler will not be used.</p>
-<p>Unfortunately, there are no <span class="emphasis">native</span> support for the copiousoutput field.  The
-field basically mean <span class="emphasis">needs pager</span>. So it is handled by appending a pipe and a
-pager program to the command. The pager program will be read from the <span class="monospaced">PAGER</span>
+<p>Unfortunately, there are no <em>native</em> support for the copiousoutput field.  The
+field basically mean <em>needs pager</em>. So it is handled by appending a pipe and a
+pager program to the command. The pager program will be read from the <tt>PAGER</tt>
 environment variable. If this fails, test are made for common pager programs
-(<span class="monospaced">/usr/bin/pager</span>, <span class="monospaced">/usr/bin/less</span> and <span class="monospaced">/usr/bin/more</span> in that order). So if you
+(<tt>/usr/bin/pager</tt>, <tt>/usr/bin/less</tt> and <tt>/usr/bin/more</tt> in that order). So if you
 define png2ascii as your handler for image/png and specify copiousoutput then
-the executed command will be "<span class="monospaced">png2ascii |/usr/bin/less</span>" if less is your pager
+the executed command will be "<tt>png2ascii |/usr/bin/less</tt>" if less is your pager
 or present on your system.</p>
 <h3>Mailcap Configuration</h3>
-<p>Apart from the mime.mailcap.path option, you can configure if mailca support
+<p>Apart from the mime.mailcap.path option, you can configure if mailcap support
 should be disabled. The default being that it is enabled. To disable it just
 put:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">set mime.mailcap.enable = 0</span></pre>
+<pre><tt>set mime.mailcap.enable = 0</tt></pre>
 </div></div>
 <p>in elinks.conf.</p>
-<p>It is also possible to control wether ELinks should ask you before opening a
-file. The option is a boolian and can be set like this:</p>
+<p>It is also possible to control whether ELinks should ask you before opening a
+file. The option is a boolean and can be set like this:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">set mime.mailcap.ask = 1</span></pre>
+<pre><tt>set mime.mailcap.ask = 1</tt></pre>
 </div></div>
 <p>if you would like to be asked before opening a file.</p>
 <h3>Some Sample Mailcap Entries</h3>
 <p>Below are examples of how to specify external viewers:</p>
 <div class="listingblock">
 <div class="content">
-<pre><span class="monospaced"># Use xv if X is running
+<pre><tt># Use xv if X is running
 image/*;                xv %s ; test=test -n "$DISPLAY";
 
 text/x-csrc;            view %s; needsterminal
@@ -2948,7 +2993,7 @@ text/x-csrc;            view %s; needsterminal
 # Various multimedia files
 audio/mpeg;             xmms '%s'; test=test -n "$DISPLAY";
 application/pdf;        xpdf '%s'; test=test -n "$DISPLAY";
-application/postscript; ps2ascii %s ; copiousoutput</span></pre>
+application/postscript; ps2ascii %s ; copiousoutput</tt></pre>
 </div></div>
 </div>
 <h2>Managing remote ELinks instances</h2>
@@ -2961,17 +3006,20 @@ solution.</p>
 instance, but instead connects to an already running ELinks, making it
 possible to control that ELinks instance. The -remote command line switch
 takes a command consisting of the action to invoke and any parameters to the
-action.  Here is an example for opening freshmeat.net in a new tab:</p>
+action. Commands must begin with a nonempty sequence of ASCII alphabetic
+characters followed by optional whitespace and an opening parenthesis. They
+must end with a closing parenthesis optionally followed by whitespace. Here is
+an example for opening freshmeat.net in a new tab:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ elinks -remote "openURL(http://freshmeat.net/, new-tab)"</span></pre>
+<pre><tt>$ elinks -remote "openURL(http://freshmeat.net/, new-tab)"</tt></pre>
 </div></div>
 <p>When running this command in a terminal, you will see a small delay before
 ELinks returns. If no running instance was found, it will return with the
 error message:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">ELinks: No remote session to connect to.</span></pre>
+<pre><tt>ELinks: No remote session to connect to.</tt></pre>
 </div></div>
 <p>All URLs passed to the openURL() commands can be URL prefixes, so the command
 above could have simply used &#8220;openURL(fm, new-tab)&#8221;.</p>
@@ -2993,10 +3041,10 @@ being redirected to new tabs or dialogs opened by the -remote action.</p>
 <p>The command syntax is case-insensitive. For readability, we use the casing in
 the listing of supported commands.</p>
 <div class="tableblock">
-<div class="title">Table: Mozilla <span class="monospaced">-remote</span> compatible commands.</div>
 <table rules="none"
 frame="hsides"
 cellspacing="0" cellpadding="4">
+<caption class="title">Table: Mozilla <tt>-remote</tt> compatible commands.</caption>
 <col width="365" />
 <col width="537" />
 <thead>
@@ -3062,10 +3110,10 @@ cellspacing="0" cellpadding="4">
 </table>
 </div>
 <div class="tableblock">
-<div class="title">Table: ELinks extensions.</div>
 <table rules="none"
 frame="hsides"
 cellspacing="0" cellpadding="4">
+<caption class="title">Table: ELinks extensions.</caption>
 <col width="365" />
 <col width="537" />
 <thead>
@@ -3098,14 +3146,14 @@ cellspacing="0" cellpadding="4">
 </tbody>
 </table>
 </div>
-<p><span class="monospaced">-remote</span> can also take a list of URLs without an explicit action, in which case
+<p><tt>-remote</tt> can also take a list of URLs without an explicit action, in which case
 the URL arguments will be opened in new tabs in the remote instance. For
 example, by running:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ elinks -remote slashdot.org fm g:elinks</span></pre>
+<pre><tt>$ elinks -remote slashdot.org fm g:elinks</tt></pre>
 </div></div>
-<p>new tabs containing <span class="monospaced">slashdot.org</span>, <span class="monospaced">freshmeat.net</span> and a Google search of elinks
+<p>new tabs containing <tt>slashdot.org</tt>, <tt>freshmeat.net</tt> and a Google search of elinks
 will be opened.</p>
 </div>
 <h2>The tale of ex-mode</h2>
@@ -3114,7 +3162,7 @@ will be opened.</p>
 <p>Actually ELinks doesn't shine in this area yet very much. Heck, the famous
 hjkl foursome is still occupied by some feeble managers in the default keymap
 (we have that in our monumental TODO lists). Still, if you know what to touch
-during the compilation (<span class="monospaced">&#8212;enable-exmode</span>), you can get at least some familiar
+during the compilation (<tt>--enable-exmode</tt>), you can get at least some familiar
 reply to the mighty &#8220;:&#8221; (colon) grip.</p>
 <h3>What it is</h3>
 <p>Ex-mode gives you some (still very rough and only marginally complete) access
@@ -3129,42 +3177,42 @@ can invoke (almost) any action from the ex-mode.</p>
 <h3>Configuration directives in exmode</h3>
 <p>There aren't many of these, so we can skim through them fast.</p>
 <p>If you want to flip an option you know by name and refuse to engage with the
-option manager visuals, you can just drop in to the ex-mode and type <span class="emphasis">set
-the.option = 1234</span>. See man elinks.conf (5) or the options manager for the
+option manager visuals, you can just drop in to the ex-mode and type <em>set
+the.option = 1234</em>. See man elinks.conf (5) or the options manager for the
 list of options; you can also get a complete options tree saved to elinks.conf
-if you set <span class="emphasis">config.saving_style</span> = 2 (but do <span class="strong">NOT</span> keep that setting unless
+if you set <em>config.saving_style</em> = 2 (but do <strong>NOT</strong> keep that setting unless
 you know what are you doing; if we change a default value of some option in
 future releases, we (generally) know what are we doing - this change won't
 propagate to you during an upgrade if you already have the original default
 value saved in your configuration file, though).</p>
-<p>It's the same story with keybindings. You can use <span class="emphasis">bind "main" "h" =
-"move-cursor-left"</span>. It's not the same story with keybindings documentation.
+<p>It's the same story with keybindings. You can use <em>bind "main" "h" =
+"move-cursor-left"</em>. It's not the same story with keybindings documentation.
 There is the elinkskeys (5) manual page but it's horribly obsolete, so don't
 rely on it. You can refer to the keybindings manager for names of actions and
-even their short descriptions. Also, all the <span class="emphasis">bind</span> commands are saved to the
+even their short descriptions. Also, all the <em>bind</em> commands are saved to the
 configuration file if you set config.saving_style = 2 (but see above).</p>
-<p>You can also use <span class="emphasis">include my.conf</span>, which will read my.conf as an ELinks
+<p>You can also use <em>include my.conf</em>, which will read my.conf as an ELinks
 configuration file.</p>
-<p>Actually, ELinks would eat <span class="emphasis">#blahblah blah</span> too, if you see a point in feeding
+<p>Actually, ELinks would eat <em>#blahblah blah</em> too, if you see a point in feeding
 it that kind of stuff.</p>
 <h3>Actions in exmode - or exmode in action?</h3>
 <p>There is too many of these, so we should better skim through them fast.</p>
-<p>Actually, we already talked about them. It's the last argument to the <span class="emphasis">bind</span>
+<p>Actually, we already talked about them. It's the last argument to the <em>bind</em>
 command. So, they are those listed in the keybinding manager. So if you enter
-<span class="emphasis">move-cursor-left</span> command, it will move your cursor left - by a single
+<em>move-cursor-left</em> command, it will move your cursor left - by a single
 character, making this a little awkward, but it's useful if you sometimes want
 to easily invoke an action and you don't want to waste a key for it.</p>
 <p>Actually, actions could theoretically take arguments too. This is currently
-implemented only for the <span class="emphasis">goto-url</span> action, which can take the location it
+implemented only for the <em>goto-url</em> action, which can take the location it
 should go at as a parameter (otherwise it opens the standard well-known dialog
-as if you pressed <span class="emphasis">g</span> in the default keymap).</p>
+as if you pressed <em>g</em> in the default keymap).</p>
 <p>Regarding the mysterious "(almost)" hinted above, you can never invoke the
 "quit" action from the exmode - if you type it there, "really-quit" is invoked
 instead.</p>
 <h3>How to use it</h3>
-<p>It's simple. You press <span class="emphasis">:</span> (without the apostrophes, of course) and type in
-the command, then you press enter.  E.g., <span class="emphasis">:set config.saving_style = 3</span> (this
-is a good thing), <span class="emphasis">:quit</span> (and the game is over). The standard line-editing
+<p>It's simple. You press <em>:</em> (without the apostrophes, of course) and type in
+the command, then you press enter.  E.g., <em>:set config.saving_style = 3</em> (this
+is a good thing), <em>:quit</em> (and the game is over). The standard line-editing
 facility is present (cursor keys and so), and the ex-mode input line has own
 history.</p>
 <h3>The "but"s</h3>
@@ -3184,25 +3232,25 @@ should be able to take arguments.</p>
 BitTorrent client. The BitTorrent client is provided as an optional
 add-on for ELinks, and needs to be enabled at compile time.  To build
 ELinks with BitTorrent support be sure to either pass
-<span class="monospaced">&#8212;enable-bittorrent</span> to <span class="monospaced">./configure</span> or change the value of
-<span class="monospaced">CONFIG_BITTORRENT</span> to <span class="monospaced">yes</span> in <span class="monospaced">features.conf</span>.</p>
+<tt>--enable-bittorrent</tt> to <tt>./configure</tt> or change the value of
+<tt>CONFIG_BITTORRENT</tt> to <tt>yes</tt> in <tt>features.conf</tt>.</p>
 <h3>Using the BitTorrent Client</h3>
 <p>To start the client, first go to a site which offers metainfo files. In
 the following, we will use the site <a href="http://www.legaltorrents.com/">http://www.legaltorrents.com/</a>.
 Direct ELinks to this site by issuing the command:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">$ elinks http://www.legaltorrents.com/</span></pre>
+<pre><tt>$ elinks http://www.legaltorrents.com/</tt></pre>
 </div></div>
 <p>Use the arrow keys to move between links on the page. Find a link,
 which points to a metainfo file (a file having the extension
-<span class="monospaced">.torrent</span>). This is indicated in the status bar in the bottom line.
+<tt>.torrent</tt>). This is indicated in the status bar in the bottom line.
 Once a metainfo file has been located, press the Return key. This
 should present you with the following dialog, querying whether the
 client should start to download the torrent:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">+--------------------------- What to do? ----------------------------+
+<pre><tt>+--------------------------- What to do? ----------------------------+
 |                                                                    |
 |  What would you like to do with the file 'go-open-vol-2.torrent'?  |
 |  Information about the torrent:                                    |
@@ -3222,12 +3270,12 @@ client should start to download the torrent:</p>
 |  [X]  22 KiB go-open-vol-2.txt                                     |
 |                                                                    |
 |  [ Download ]  [ Save ]  [ Display ]  [ Show header ]  [ Cancel ]  |
-+--------------------------------------------------------------------+</span></pre>
++--------------------------------------------------------------------+</tt></pre>
 </div></div>
-<p>Press the <span class="monospaced">[ Download ]</span> button to open the download dialog and start
+<p>Press the <tt>[ Download ]</tt> button to open the download dialog and start
 downloading.</p>
 <p>Downloaded files can be found in the directory specified by the option
-<span class="monospaced">document.download.directory</span>.  There is currently no way to change
+<tt>document.download.directory</tt>.  There is currently no way to change
 that.</p>
 <h3>The Resume Dialog</h3>
 <p>If you start downloading a torrent which was previously active, the
@@ -3235,7 +3283,7 @@ client will first try to resume downloaded data from the disk. The
 resume progress is shown in the resume dialog, depicted below:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">+--------------------------------------- Download ---------------------------------------+
+<pre><tt>+--------------------------------------- Download ---------------------------------------+
 |                                                                                        |
 | bittorrent:http://www.legaltorrents.com/bit/blue-a-short-film.torrent                  |
 |                                                                                        |
@@ -3244,7 +3292,7 @@ resume progress is shown in the resume dialog, depicted below:</p>
 | Resuming                                                                               |
 |                                                                                        |
 | [ Background ] [ Background with notify ] [ Info ] [ Abort ] [ Abort and delete file ] |
-+----------------------------------------------------------------------------------------+</span></pre>
++----------------------------------------------------------------------------------------+</tt></pre>
 </div></div>
 <p>Wait until the resume completes. It will automatically launch the
 download dialog.</p>
@@ -3255,7 +3303,7 @@ have been downloaded from. A view of the download dialog along with
 highlights of the most important parts of the dialog is given below:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">+--------------------------------------- Download ---------------------------------------+
+<pre><tt>+--------------------------------------- Download ---------------------------------------+
 |                                                                                        |
 |  bittorrent:http://www.legaltorrents.com/bit/best-of-webbed-hand-vol-1.torrent         |
 |                                                                                        |
@@ -3275,7 +3323,7 @@ highlights of the most important parts of the dialog is given below:</p>
 |  Statistics: 9 in memory                                                               |
 |                                                                                        |
 | [ Background ] [ Background with notify ] [ Info ] [ Abort ] [ Abort and delete file ] |
-+----------------------------------------------------------------------------------------+</span></pre>
++----------------------------------------------------------------------------------------+</tt></pre>
 </div></div>
 <p>The first bar shows the overall progress of the download along with a
 percentage of how much data has been downloaded. The second bar
@@ -3283,10 +3331,10 @@ provides an overview of the piece completion progress, such as where
 in the torrent pieces has been downloaded from.</p>
 <p>Below the information about download speed and time estimations,
 several lines about the internal state of the client and its view of
-the swarm is displayed. For example the <span class="monospaced">Status</span> line shows which
+the swarm is displayed. For example the <tt>Status</tt> line shows which
 connection mode the client has entered along with the piece selection
 strategy if any. Here you will also find information about upload
-speed and sharing rates. Finally, the <span class="monospaced">Pieces</span> and <span class="monospaced">Statistics</span> lines
+speed and sharing rates. Finally, the <tt>Pieces</tt> and <tt>Statistics</tt> lines
 display information from the piece cache. This includes the number of
 pieces which are currently held in memory, and the number of pieces
 currently being downloaded.</p>
@@ -3320,7 +3368,7 @@ regular Links are available at
 maintained.</p>
 <p>Lua can be found at <a href="http://www.lua.org/">http://www.lua.org/</a>.</p>
 <h4>What it runs on</h4>
-<p>The Lua support has only been tested under Linux, although it <span class="strong">should</span>
+<p>The Lua support has only been tested under Linux, although it <strong>should</strong>
 work under other platforms that ELinks and Lua support (perhaps with some
 changes to source code?).</p>
 <p>Also, note that many of the scripts given here assume a Unix system.
@@ -3329,22 +3377,22 @@ Your mileage will definitely vary on other platforms.</p>
 <h4>Installing Lua</h4>
 <p>Before you can compile ELinks with Lua support, you must compile and install
 Lua.  The following instructions are for a Linux system.  People on other
-systems should try to enable <span class="monospaced">popen</span> support, but this is not necessary
+systems should try to enable <tt>popen</tt> support, but this is not necessary
 (you will lose a bit of functionality though).</p>
 <ol>
 <li>
 <p>
-Download and unpack the Lua <span class="monospaced">tar.gz</span> or <span class="monospaced">zip</span> somewhere.
+Download and unpack the Lua <tt>tar.gz</tt> or <tt>zip</tt> somewhere.
 </p>
 </li>
 <li>
 <p>
-<span class="monospaced">cd</span> into the <span class="monospaced">lua</span> directory.
+<tt>cd</tt> into the <tt>lua</tt> directory.
 </p>
 </li>
 <li>
 <p>
-Open <span class="monospaced">config</span> in a text editor and uncomment the <span class="monospaced">POPEN</span> line.
+Open <tt>config</tt> in a text editor and uncomment the <tt>POPEN</tt> line.
 </p>
 </li>
 <li>
@@ -3354,15 +3402,15 @@ Optionally, change the `INSTALL_ROOT line.
 </li>
 <li>
 <p>
-Run <span class="monospaced">make; make so; make sobin; make install</span>.
+Run <tt>make; make so; make sobin; make install</tt>.
 </p>
 </li>
 </ol>
-<p>On systems without shared object support, simply run <span class="monospaced">make; make install</span>
+<p>On systems without shared object support, simply run <tt>make; make install</tt>
 instead.</p>
 <h4>Installing ELinks</h4>
 <p>Follow the instructions for building ELinks (it is the standard
-<span class="monospaced">./configure; make; make install</span> procedure).  During the configure
+<tt>./configure; make; make install</tt> procedure).  During the configure
 step make sure that Lua has been detected on your system.</p>
 <h4>Running ELinks with Lua</h4>
 <p>Simply start ELinks as you normally would.  To check you have Lua support
@@ -3374,10 +3422,11 @@ command-line.</p>
 <p>Out of the box, ELinks with Lua will do nothing different from regular ELinks.
 You need to write some scripts.</p>
 <h4>ELinks Lua additions</h4>
-<p>gets called at a particular point during the execution of ELinks.  To make
+<p>The Lua support is based on the idea of <strong>hooks</strong>.  A hook is a function that
+gets called at a particular point during the execution of ELinks.  To make
 ELinks do what you want, you can add and edit such hooks.</p>
 <p>The Lua support also adds an extra dialog box, which you can open while in
-ELinks with the comma (<span class="monospaced">,</span>) key.  Here you can enter Lua expressions for
+ELinks with the comma (<tt>,</tt>) key.  Here you can enter Lua expressions for
 evaluation, or override it to do something different.</p>
 <p>And finally, you can bind keystrokes to Lua functions.  These keystrokes
 won't let you do any more than is possible with the Lua Console, but
@@ -3389,11 +3438,11 @@ trivial, though. You could already do wonders with simply refactoring the
 example scripts.</p>
 <h4>Config file</h4>
 <p>On startup, ELinks reads in two Lua scripts.  Firstly, a system-wide
-configuration file called <span class="monospaced">/etc/elinks/hooks.lua</span>, then a file in your home
-directory called <span class="monospaced">~/.elinks/hooks.lua</span>.  From these files, you can include
-other Lua files with <span class="monospaced">dofile</span>, if necessary.</p>
+configuration file called <tt>/etc/elinks/hooks.lua</tt>, then a file in your home
+directory called <tt>~/.elinks/hooks.lua</tt>.  From these files, you can include
+other Lua files with <tt>dofile</tt>, if necessary.</p>
 <p>To see what kind of things you should put in here, look at
-<span class="monospaced">contrib/lua/hooks.lua</span>.</p>
+<tt>contrib/lua/hooks.lua</tt>.</p>
 <h4>Hooks</h4>
 <p>The following hooks are available.</p>
 <dl>
@@ -3404,8 +3453,8 @@ goto_url_hook (url, current_url)
 <p>
         This hook is called when the user enters a string into the "Go to URL"
         dialog box.  It is given the string entered, and the current URL
-        (which may be <span class="monospaced">nil</span>).  It should return a string, which is the URL
-        that ELinks should follow, or <span class="monospaced">nil</span> to cancel the operation.
+        (which may be <tt>nil</tt>).  It should return a string, which is the URL
+        that ELinks should follow, or <tt>nil</tt> to cancel the operation.
 </p>
 </dd>
 <dt>
@@ -3414,7 +3463,7 @@ follow_url_hook (url)
 <dd>
 <p>
         This hook is passed the URL that Links is about to follow.  It should
-        return a string (the URL modified or unmodified), or <span class="monospaced">nil</span> to stop
+        return a string (the URL modified or unmodified), or <tt>nil</tt> to stop
         ELinks following the URL
 </p>
 </dd>
@@ -3426,7 +3475,7 @@ pre_format_html_hook (url, html)
         This hook gets called just before the final time an HTML document is
         formatted, i.e. it only gets called once, after the entire document is
         downloaded.  It will be passed the URL and HTML text as strings, and
-        should return the modified HTML text, or <span class="monospaced">nil</span> if there were no
+        should return the modified HTML text, or <tt>nil</tt> if there were no
         modifications.
 </p>
 </dd>
@@ -3437,32 +3486,32 @@ lua_console_hook (string)
 <p>
         This hook is passed the string that the user entered into the "Lua
         Console" dialog box.  It should return two values: the type of action
-        to take (<span class="monospaced">run</span>, <span class="monospaced">eval</span>, <span class="monospaced">goto-url</span> or <span class="monospaced">nil</span>), and
+        to take (<tt>run</tt>, <tt>eval</tt>, <tt>goto-url</tt> or <tt>nil</tt>), and
         a second argument, which is the shell command to run or the Lua
         expression to evaluate. Examples:
 </p>
 <ul>
 <li>
 <p>
-<span class="monospaced">return "run", "someprogram"</span> will attempt to run the program
-           <span class="monospaced">someprogram</span>.
+<tt>return "run", "someprogram"</tt> will attempt to run the program
+           <tt>someprogram</tt>.
 </p>
 </li>
 <li>
 <p>
-<span class="monospaced">return "eval", "somefunction(1+2)"</span> will attempt to call the Lua
-           function <span class="monospaced">somefunction</span> with an argument, 3.
+<tt>return "eval", "somefunction(1+2)"</tt> will attempt to call the Lua
+           function <tt>somefunction</tt> with an argument, 3.
 </p>
 </li>
 <li>
 <p>
-<span class="monospaced">return "goto-url", "http://www.bogus.com"</span> will ask Links to visit
+<tt>return "goto-url", "http://www.bogus.com"</tt> will ask Links to visit
            the URL "http://www.bogus.com".
 </p>
 </li>
 <li>
 <p>
-<span class="monospaced">return nil</span> will do nothing.
+<tt>return nil</tt> will do nothing.
 </p>
 </li>
 </ul>
@@ -3489,15 +3538,12 @@ enable_systems_functions ()
 Enable some potentially dangerous functions, as well as some other
 functions which were unfortunate enough to be lumped in the same group.
 </p>
+<p>The functions are: <tt>openfile</tt>, <tt>closefile</tt>, <tt>readfrom</tt>, <tt>writeto</tt>, <tt>appendto</tt>,
+<tt>pipe_read</tt>, <tt>remove</tt>, <tt>rename</tt>, <tt>flush</tt>, <tt>seek</tt>, <tt>tmpname</tt>, <tt>read</tt>, <tt>write</tt>
+<tt>execute</tt>, <tt>exit</tt>, <tt>clock</tt>, <tt>date</tt>, <tt>getenv</tt>, <tt>setlocale</tt>.</p>
+<p>Note: <tt>setlocale</tt> is a standard Lua function and will not affect
+the current ELinks locale.</p>
 </dd>
-</dl>
-<p>The functions are: <span class="monospaced">openfile</span>, <span class="monospaced">closefile</span>, <span class="monospaced">readfrom</span>, <span class="monospaced">writeto</span>, <span class="monospaced">appendto</span>,
-<span class="monospaced">pipe_read</span>, <span class="monospaced">remove</span>, <span class="monospaced">rename</span>, <span class="monospaced">flush</span>, <span class="monospaced">seek</span>, <span class="monospaced">tmpname</span>, <span class="monospaced">read</span>, <span class="monospaced">write</span>
-<span class="monospaced">execute</span>, <span class="monospaced">exit</span>, <span class="monospaced">clock</span>, <span class="monospaced">date</span>, <span class="monospaced">getenv</span>, <span class="monospaced">setlocale</span>.</p>
-<p>Note: <span class="monospaced">setlocale</span> is a standard Lua function and will not affect
-the current ELinks locale.
-@end deffn</p>
-<dl>
 <dt>
 current_url ()
 </dt>
@@ -3512,7 +3558,7 @@ current_link ()
 </dt>
 <dd>
 <p>
-        Returns the URL of the currently selected link, or <span class="monospaced">nil</span> if none is
+        Returns the URL of the currently selected link, or <tt>nil</tt> if none is
         selected.
 </p>
 </dd>
@@ -3521,7 +3567,7 @@ current_title ()
 </dt>
 <dd>
 <p>
-        Returns the title of the current page, or <span class="monospaced">nil</span> if none.
+        Returns the title of the current page, or <tt>nil</tt> if none.
 </p>
 </dd>
 <dt>
@@ -3540,8 +3586,8 @@ current_document_formatted ([width])
         Returns the current document, formatted for the specified screen
         width.  If the width is not specified, then the document is formatted
         for the current screen width (i.e. what you see on screen).  Note that
-        this function does <span class="strong">not</span> guarantee all lines will be shorter than
-        <span class="monospaced">width</span>, just as some lines may be wider than the screen when
+        this function does <strong>not</strong> guarantee all lines will be shorter than
+        <tt>width</tt>, just as some lines may be wider than the screen when
         viewing documents online.
 </p>
 </dd>
@@ -3550,9 +3596,9 @@ pipe_read (command)
 </dt>
 <dd>
 <p>
-        Executes <span class="monospaced">command</span> and reads in all the data from stdout, until there
+        Executes <tt>command</tt> and reads in all the data from stdout, until there
         is no more.  This is a hack, because for some reason the standard Lua
-        function <span class="monospaced">read</span> seems to crash ELinks when used in pipe-reading mode.
+        function <tt>read</tt> seems to crash ELinks when used in pipe-reading mode.
 </p>
 </dd>
 <dt>
@@ -3560,7 +3606,7 @@ execute (string)
 </dt>
 <dd>
 <p>
-        Executes shell commands <span class="monospaced">string</span> and returns the exit code.  Beware
+        Executes shell commands <tt>string</tt> and returns the exit code.  Beware
         that you must not read or write to stdin and stdout.  And unlike the
         standard Lua function of the same name, the return value is
         meaningless.
@@ -3571,10 +3617,10 @@ bind_key (keymap, keystroke, function)
 </dt>
 <dd>
 <p>
-        Currently, <span class="monospaced">keymap</span> must be the string <span class="monospaced">"main"</span>.  Keystroke is a
+        Currently, <tt>keymap</tt> must be the string <tt>"main"</tt>.  Keystroke is a
         keystroke as you would write it in the ELinks config file
-        <span class="monospaced">~/.elinks/elinks.conf</span>.  The function <span class="monospaced">function</span> should take no
-        arguments, and should return the same values as <span class="monospaced">lua_console_hook</span>.
+        <tt>~/.elinks/elinks.conf</tt>.  The function <tt>function</tt> should take no
+        arguments, and should return the same values as <tt>lua_console_hook</tt>.
 </p>
 </dd>
 </dl>
@@ -3582,21 +3628,21 @@ bind_key (keymap, keystroke, function)
 <p>There is one more little thing which Links-Lua adds, which will not be
 described in detail here.  It is the fake "user:" protocol, which can be used
 when writing your own addons.  It allows you to generate web pages containing
-links to "user://blahblah", which can be intercepted by the <span class="monospaced">follow_url_hook</span>
+links to "user://blahblah", which can be intercepted by the <tt>follow_url_hook</tt>
 (among other things) to perform unusual actions.  For a concrete example, see
 the bookmark addon.</p>
 <h3>Example recipes</h3>
 <p>This chapter contains some example scripts that you can use.  All of them come
-from <span class="monospaced">contrib/lua/hooks.lua</span>.  I really recommend you to see it directly
+from <tt>contrib/lua/hooks.lua</tt>.  I really recommend you to see it directly
 instead of copying code out of this document.  Also, not everything in there is
 covered here.</p>
 <p>If you would like to contribute scripts, that would be great!  Please send
-them to me at <a href="mailto:tjaden@@users.sourceforge.net">tjaden@@users.sourceforge.net</a>.  Cliff and I plan to
+them to me at <a href="mailto:tjaden@users.sourceforge.net">tjaden@users.sourceforge.net</a>.  Cliff and I plan to
 start a script repository, provided we get some contributions.  As for script
 ideas, you'll just have to be a little creative :-)</p>
-<p>Also take a look at the <span class="monospaced">contrib/lua/</span> directory in the ELinks distribution.
+<p>Also take a look at the <tt>contrib/lua/</tt> directory in the ELinks distribution.
 Note that Peter and Cliff don't maintain the Lua support intensively anymore,
-thus it would be probably nice to Cc me (<a href="mailto:pasky@@ucw.cz">pasky@@ucw.cz</a>) if you want
+thus it would be probably nice to Cc me (<a href="mailto:pasky@ucw.cz">pasky@ucw.cz</a>) if you want
 to contribute some patch, so that I would be able to add it to the ELinks
 distribution.</p>
 <h4>Go to URL on steroids</h4>
@@ -3610,7 +3656,7 @@ a bonus, it allows me perform some searches on sites like Google without
 loading up the front page first.</p>
 <div class="listingblock">
 <div class="content">
-<pre><span class="monospaced">function match (prefix, url)
+<pre><tt>function match (prefix, url)
     return strsub (url, 1, strlen (prefix)) == prefix
 end
 
@@ -3666,18 +3712,18 @@ function goto_url_hook (url, current_url)
     else
         return url
     end
-end</span></pre>
+end</tt></pre>
 </div></div>
 <p>(Note that this was noticably enhanced and rewritten in the ELinks standart
 hooks.)</p>
 <h4>Expanding ~ (tilde)</h4>
 <p>By adding an extra snippet of code to the previous example, we can make ELinks
-expand pathnames such as <span class="monospaced">~/foo/bar</span>
-and <span class="monospaced">~user/zappo</span>, like in the shell
+expand pathnames such as <tt>~/foo/bar</tt>
+and <tt>~user/zappo</tt>, like in the shell
 and other Unix programs.</p>
 <div class="listingblock">
 <div class="content">
-<pre><span class="monospaced">-- Home directory: If you do not enable system functions, you will need
+<pre><tt>-- Home directory: If you do not enable system functions, you will need
 -- to set the following to your home directory.
 
 home_dir = (getenv and getenv ("HOME")) or "/home/MYSELF"
@@ -3695,7 +3741,7 @@ function goto_url_hook (url, current_url)
         end
 
                 .
-                .</span></pre>
+                .</tt></pre>
 </div></div>
 <h4>Filtering crap</h4>
 <p>Many web pages nowadays have columns to the left and right of the text, which
@@ -3709,7 +3755,7 @@ left and the right and all the text appears in cyan.  Here is a quick recipe
 to fix that:</p>
 <div class="listingblock">
 <div class="content">
-<pre><span class="monospaced">-- Plain strfind (no metacharacters)
+<pre><tt>-- Plain strfind (no metacharacters)
 function sstrfind (s, pattern)
     return strfind (s, pattern, 1, 1)
 end
@@ -3731,13 +3777,13 @@ function pre_format_html_hook (url, html)
     end
 
     return nil
-end</span></pre>
+end</tt></pre>
 </div></div>
 <h5>linuxgames.com</h5>
 <p>Here is a simpler example, for <a href="http://www.linuxgames.com/">http://www.linuxgames.com/</a>.</p>
 <div class="listingblock">
 <div class="content">
-<pre><span class="monospaced">function pre_format_html_hook (url, html)
+<pre><tt>function pre_format_html_hook (url, html)
                 .
                 .
 
@@ -3745,7 +3791,7 @@ end</span></pre>
         return gsub (html, "&lt;CENTER&gt;.-&lt;/center&gt;", "", 1)
 
                 .
-                .</span></pre>
+                .</tt></pre>
 </div></div>
 <h4>Reading gzipped files</h4>
 <p>Note: ELinks already supports gzipped files natively.</p>
@@ -3754,7 +3800,7 @@ uncompress them to read them with ELinks.  Here is a recipe to handle gzipped
 files on a Unix system.</p>
 <div class="listingblock">
 <div class="content">
-<pre><span class="monospaced">-- This script requires system functions.
+<pre><tt>-- This script requires system functions.
 
 function pre_format_html_hook (url, html)
                 .
@@ -3770,7 +3816,7 @@ function pre_format_html_hook (url, html)
     end
 
                 .
-                .</span></pre>
+                .</tt></pre>
 </div></div>
 <h4>Printing</h4>
 <p>Printing a web page with ELinks usually involves quite a few steps: Save the
@@ -3779,12 +3825,12 @@ fits into 80 columns) to generate a plain text version.  Remove the 80th
 column from the text version, as it will make printers wrap down to the next
 line.  Finally, run the processed file through `lpr', then delete it.</p>
 <p>The following functions allow you to print web pages directly from ELinks,
-using <span class="monospaced">lpr' or `enscript'.  Type `lpr()</span> or <span class="monospaced">enscript()</span> in the Lua Console to
-run them.  (In the <span class="monospaced">hooks.lua</span>, I have also made it so you can just type <span class="monospaced">lpr</span>
-or <span class="monospaced">enscript</span>.)</p>
+using <tt>lpr' or `enscript'.  Type `lpr()</tt> or <tt>enscript()</tt> in the Lua Console to
+run them.  (In the <tt>hooks.lua</tt>, I have also made it so you can just type <tt>lpr</tt>
+or <tt>enscript</tt>.)</p>
 <div class="listingblock">
 <div class="content">
-<pre><span class="monospaced">-- This script requires system functions.
+<pre><tt>-- This script requires system functions.
 
 function catto (output)
     writeto (output)
@@ -3802,7 +3848,7 @@ end
 -- Send the current document to `enscript'.
 function enscript ()
     catto ("|enscript -fCourier8")
-end</span></pre>
+end</tt></pre>
 </div></div>
 <h4>Deferring to Netscape</h4>
 <p>If you come across a brain-dead web page that is totally unreadable with
@@ -3810,7 +3856,7 @@ ELinks, you'd probably want to open it with a graphical browser.  The
 following function opens the current document in Netscape.</p>
 <div class="listingblock">
 <div class="content">
-<pre><span class="monospaced">-- This function requires `execute', a system function.
+<pre><tt>-- This function requires `execute', a system function.
 
 -- When starting Netscape: Set to `nil' if you do not want
 -- to open a new window for each document.
@@ -3821,7 +3867,7 @@ function netscape ()
     local new = netscape_new_window and ",new_window" or ""
     execute ("( netscape -remote 'openURL("..current_url ()..new..")'"
              .." || netscape '"..current_url ().."' ) 2&gt;/dev/null &amp;")
-end</span></pre>
+end</tt></pre>
 </div></div>
 <h4>Alternative bookmark system</h4>
 <p>Many people would like to have a bookmark system with categories (note that
@@ -3882,7 +3928,7 @@ More things are possible, I'm sure.  If you have an idea that requires
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 25-Jan-2006 04:49:55 CEST
+Last updated 17-Mar-2007 21:21:36 EEST
 </div>
 </div>
 </body>

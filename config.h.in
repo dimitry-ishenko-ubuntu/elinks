@@ -42,7 +42,7 @@
 /* Define if you want: Debug mode support */
 #undef CONFIG_DEBUG
 
-/* Define if you want: Documentation support */
+/* Define if you want: Documentation Tools support */
 #undef CONFIG_DOC
 
 /* Define if you want: DOM engine support */
@@ -115,6 +115,9 @@
 #undef CONFIG_MAILCAP
 
 /* Define if you want: Man Page Formats support */
+#undef CONFIG_MANPAGE
+
+/* Define if you want: Manual Formats support */
 #undef CONFIG_MANUAL
 
 /* Define if you want: Marks support */
@@ -461,6 +464,9 @@
 /* Define to 1 if you have the <nl_types.h> header file. */
 #undef HAVE_NL_TYPES_H
 
+/* Define if you have off_t */
+#undef HAVE_OFF_T
+
 /* Define to 1 if you have the `popen' function. */
 #undef HAVE_POPEN
 
@@ -723,6 +729,9 @@
 
 /* The size of a `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
+
+/* The size of a `off_t', as computed by sizeof. */
+#undef SIZEOF_OFF_T
 
 /* The size of a `short', as computed by sizeof. */
 #undef SIZEOF_SHORT

@@ -1,9 +1,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
     "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" >
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
-<meta name="generator" content="AsciiDoc 7.0.0"/>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 7.1.2" />
 <style type="text/css">
 /* Debug borders */
 p, li, dt, dd, div, pre, h1, h2, h3, h4, h5, h6 {
@@ -16,19 +16,23 @@ body {
   margin: 1em 5% 1em 5%;
 }
 
-a { color: blue; }
-a:visited { color: fuchsia; }
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
 
-span.emphasis {
+em {
   font-style: italic;
 }
 
-span.strong {
+strong {
   font-weight: bold;
 }
 
-span.monospaced {
-  font-family: monospace;
+tt {
   color: navy;
 }
 
@@ -113,9 +117,10 @@ div.content { /* Block element content. */
 }
 
 /* Block element titles. */
-div.title {
+div.title, caption.title {
   font-family: sans-serif;
   font-weight: bold;
+  text-align: left;
   margin-top: 1.0em;
   margin-bottom: 0.5em;
 }
@@ -148,8 +153,12 @@ div.listingblock > div.content {
 div.quoteblock > div.content {
   padding-left: 2.0em;
 }
-div.quoteblock .attribution {
+
+div.attribution {
   text-align: right;
+}
+div.verseblock + div.attribution {
+  text-align: left;
 }
 
 div.admonitionblock .icon {
@@ -199,8 +208,7 @@ ol.olist2 {
 }
 
 div.tableblock > table {
-  border-color: #527bbd;
-  border-width: 3px;
+  border: 3px solid #527bbd;
 }
 thead {
   font-family: sans-serif;
@@ -226,6 +234,7 @@ td.hlist2 {
 @media print {
   div#footer-badges { display: none; }
 }
+include1::./stylesheets/xhtml11-manpage.css[]
 /* Workarounds for IE6's broken and incomplete CSS2. */
 
 div.sidebar-content {
@@ -254,21 +263,8 @@ div.exampleblock-content {
   border-left: 2px solid silver;
   padding-left: 0.5em;
 }
-/* Overrides for manpage documents */
-h1 {
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
-  border-top: 2px solid silver;
-  border-bottom: 2px solid silver;
-}
-h2 {
-  border-style: none;
-}
-div.sectionbody {
-  margin-left: 5%;
-}
 </style>
-<title>elinks.conf</title>
+<title>elinks.conf(5)</title>
 </head>
 <body>
 <div id="header">
@@ -292,7 +288,7 @@ include "&lt;file&gt;"</div></div>
 </div>
 <h2>DESCRIPTION</h2>
 <div class="sectionbody">
-<p>The <span class="monospaced">elinks.conf</span> file contains configuration information for ELinks.  It can
+<p>The <tt>elinks.conf</tt> file contains configuration information for ELinks.  It can
 be used to configure the behaviour of ELinks in a wide variety of ways:
 protocol behaviour, keybindings, colors used for rendering and for the user
 interface.</p>
@@ -317,14 +313,14 @@ the # character and end at the end of the line.</p>
 <p>Some sample settings:</p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced"># Use asynchronous DNS resolver?
+<pre><tt># Use asynchronous DNS resolver?
 set connection.async_dns = 1
 # horizontal text margin.
 set document.browse.margin_width = 3
 # Default document codepage.
 set document.codepage.assume = "ISO-8859-1"
 # User defined protocol handlers
-set protocol.user.mailto.unix = "mutt %h -s \e\*(lq%s\e\*(rq"</span></pre>
+set protocol.user.mailto.unix = "mutt %h -s \e\*(lq%s\e\*(rq"</tt></pre>
 </div></div>
 </div>
 <h2>OPTIONS</h2>
@@ -348,12 +344,12 @@ bookmarks.file_format &lt;num&gt; (default: 0)
 <ul>
 <li>
 <p>
-0:    is the default native <span class="emphasis">ELinks</span> format
+0:    is the default native <em>ELinks</em> format
 </p>
 </li>
 <li>
 <p>
-1:    is XBEL universal XML bookmarks format (NO NATIONAL CHARS SUPPORT!)
+1:    is XBEL universal XML bookmarks format (<em>ELinks</em> bug 153: NO NATIONAL CHARS SUPPORT!)
 </p>
 </li>
 </ul>
@@ -365,8 +361,8 @@ bookmarks.folder_state [0|1] (default: 1)
 <p>
         When saving bookmarks also store whether folders are
         expanded or not, so the look of the bookmark dialog is
-        kept across <span class="emphasis">ELinks</span> sessions. If disabled all folders will
-        appear unexpanded next time <span class="emphasis">ELinks</span> is run.
+        kept across <em>ELinks</em> sessions. If disabled all folders will
+        appear unexpanded next time <em>ELinks</em> is run.
 </p>
 </dd>
 <dt>
@@ -422,7 +418,7 @@ config.saving_style &lt;num&gt; (default: 3)
 </dt>
 <dd>
 <p>
-        Determines what happens when you tell <span class="emphasis">ELinks</span> to save options:
+        Determines what happens when you tell <em>ELinks</em> to save options:
 </p>
 <ul>
 <li>
@@ -444,7 +440,7 @@ config.saving_style &lt;num&gt; (default: 3)
 <li>
 <p>
 3:    is values of current options are altered and missing options
-        CHANGED during this <span class="emphasis">ELinks</span> session are added at the end of
+        CHANGED during this <em>ELinks</em> session are added at the end of
         the file
 </p>
 </li>
@@ -586,7 +582,7 @@ connection.try_ipv4 [0|1] (default: 1)
         at all unless you are sure what are you doing.
         Note that you can also force a given protocol
         to be used on a per-connection basis by using an URL
-        in the style of i.e. http4://elinks.or.cz/.
+        in the style of e.g. http4://elinks.cz/.
 </p>
 </dd>
 <dt>
@@ -597,7 +593,7 @@ connection.try_ipv6 [0|1] (default: 1)
         Whether to try to connect to a host over IPv6.
         Note that you can also force a given protocol
         to be used on a per-connection basis by using an URL
-        in the style of i.e. http6://elinks.or.cz/.
+        in the style of e.g. http6://elinks.cz/.
 </p>
 </dd>
 <dt>
@@ -818,10 +814,10 @@ document.browse.forms.editor &lt;str&gt; (default: "")
 </dt>
 <dd>
 <p>
-        Path to the executable that <span class="emphasis">ELinks</span> should launch when the user
+        Path to the executable that <em>ELinks</em> should launch when the user
         requests to edit a textarea with an external editor.
-        If this is blank, <span class="emphasis">ELinks</span> will use the value of the environmental
-        variable $EDITOR. If $EDITOR is empty or not set, <span class="emphasis">ELinks</span> will then
+        If this is blank, <em>ELinks</em> will use the value of the environmental
+        variable $EDITOR. If $EDITOR is empty or not set, <em>ELinks</em> will then
         default to "vi".
 </p>
 </dd>
@@ -1320,8 +1316,8 @@ document.browse.refresh [0|1] (default: 1)
 </dt>
 <dd>
 <p>
-        Automatically follow document-specified refresh directives (<span class="emphasis">&lt;meta&gt;
-        refresh</span> tags). Web-page authors use these to instruct the browser
+        Automatically follow document-specified refresh directives (<em>&lt;meta&gt;
+        refresh</em> tags). Web-page authors use these to instruct the browser
         to reload a document at a given interval or to load another page.
         Regardless of the value the refresh URI is accessible as a link.
         Use the document.browse.minimum_refresh_time to control the minimum
@@ -1375,7 +1371,7 @@ document.cache.format.size &lt;num&gt; (default: 5)
         size of the HTML source is probably not unusual, but it can
         be even more if the document consists of a lot of short lines
         (padded right, if possible) and links and not much other markup.
-        So if you set this to 256 and then you don't like your <span class="emphasis">ELinks</span>
+        So if you set this to 256 and then you don't like your <em>ELinks</em>
         eating 90M, don't come complaining to us. ;-)
         Also note that the format cache itself is not counted to the
         memory cache size, but the HTML source of the formatted documents
@@ -1430,6 +1426,18 @@ document.cache.ignore_cache_control [0|1] (default: 1)
 <p>
         Ignore Cache-Control and Pragma server headers.
         When set, the document is cached even with 'Cache-Control: no-cache'.
+</p>
+</dd>
+<dt>
+document.cache.revalidation_interval &lt;num&gt; (default: -1)
+</dt>
+<dd>
+<p>
+        Period in seconds that a cache entry is considered to be
+        up-to-date. When a document is loaded and this interval has elapsed
+        since the document was initially loaded or most recently
+        revalidated with the server, the server will be checked in case
+        there is a more up-to-date version of the document.
 </p>
 </dd>
 <dt>
@@ -1603,7 +1611,7 @@ document.css.stylesheet &lt;str&gt; (default: "")
         The path to the file containing the default user defined
         Cascading Style Sheet. It can be used to control the basic
         layout of HTML documents. The path is assumed to be relative
-        to <span class="emphasis">ELinks</span>' home directory.
+        to <em>ELinks</em>' home directory.
         Leave as "" to use built-in document styling.
 </p>
 </dd>
@@ -1698,6 +1706,48 @@ document.dump.codepage &lt;codepage&gt; (default: System)
         Codepage used in dump output. 'System' stands for
         a codepage determined by a selected locale.
 </p>
+</dd>
+<dt>
+document.dump.color_mode &lt;num&gt; (default: -1)
+</dt>
+<dd>
+<p>
+        Color mode for dumps.
+        Some modes may have been disabled at compile time. The Setup -&gt; Terminal options dialog lists the modes supported by this executable. If you select an unsupported mode, <em>ELinks</em> uses 16 colors.
+        The color modes are:
+</p>
+<ul>
+<li>
+<p>
+-1:   is standard dump mode
+</p>
+</li>
+<li>
+<p>
+0:    is mono mode
+</p>
+</li>
+<li>
+<p>
+1:    is 16 color mode
+</p>
+</li>
+<li>
+<p>
+2:    is 88 color mode
+</p>
+</li>
+<li>
+<p>
+3:    is 256 color mode
+</p>
+</li>
+<li>
+<p>
+4:    is true color mode
+</p>
+</li>
+</ul>
 </dd>
 <dt>
 document.dump.footer &lt;str&gt; (default: "")
@@ -1930,7 +1980,16 @@ document.uri_passing
 </dt>
 <dd>
 <p>
-        Rules for passing URIs to external commands.
+        Rules for passing URIs to external commands. When one rule
+        is defined the link and tab menu will have a menu item that
+        makes it possible to pass the the link, frame or tab URI to
+        an external command. If several rules are defined the link and
+        tab menu will have a submenu of items for each rule. Note, this
+        is mostly useful for launching graphical viewers, since there
+        is no support for releasing the terminal while the command runs.
+        The action and submenus are also available by binding keys to
+        the frame-external-command, the link-external-command, and
+        the tab-external-command actions.
 </p>
 </dd>
 <dt>
@@ -1954,7 +2013,7 @@ ecmascript
 </p>
 </dd>
 <dt>
-ecmascript.enable [0|1] (default: 1)
+ecmascript.enable [0|1] (default: 0)
 </dt>
 <dd>
 <p>
@@ -1999,7 +2058,7 @@ infofiles
 </dt>
 <dd>
 <p>
-        Options for information files in <span class="monospaced">~/.elinks</span>.
+        Options for information files in <tt>~/.elinks</tt>.
 </p>
 </dd>
 <dt>
@@ -2007,7 +2066,7 @@ infofiles.save_interval &lt;num&gt; (default: 300)
 </dt>
 <dd>
 <p>
-        Interval at which to trigger information files in <span class="monospaced">~/.elinks</span>
+        Interval at which to trigger information files in <tt>~/.elinks</tt>
         to be saved to disk if they has changed (seconds; 0 to disable)
 </p>
 </dd>
@@ -2508,30 +2567,6 @@ protocol.file
 </p>
 </dd>
 <dt>
-protocol.file.cgi
-</dt>
-<dd>
-<p>
-        Local CGI specific options.
-</p>
-</dd>
-<dt>
-protocol.file.cgi.path &lt;str&gt; (default: "")
-</dt>
-<dd>
-<p>
-        Colon separated list of directories, where CGI scripts are stored.
-</p>
-</dd>
-<dt>
-protocol.file.cgi.policy [0|1] (default: 0)
-</dt>
-<dd>
-<p>
-        Whether to execute local CGI scripts.
-</p>
-</dd>
-<dt>
 protocol.file.allow_special_files [0|1] (default: 0)
 </dt>
 <dd>
@@ -2558,6 +2593,30 @@ protocol.file.try_encoding_extensions [0|1] (default: 1)
         When set, if we can't open a file named 'filename', we'll try
         to open 'filename' with some encoding extension appended
         (ie. 'filename.gz'); it depends on the supported encodings.
+</p>
+</dd>
+<dt>
+protocol.file.cgi
+</dt>
+<dd>
+<p>
+        Local CGI specific options.
+</p>
+</dd>
+<dt>
+protocol.file.cgi.path &lt;str&gt; (default: "")
+</dt>
+<dd>
+<p>
+        Colon separated list of directories, where CGI scripts are stored.
+</p>
+</dd>
+<dt>
+protocol.file.cgi.policy [0|1] (default: 0)
+</dt>
+<dd>
+<p>
+        Whether to execute local CGI scripts.
 </p>
 </dd>
 <dt>
@@ -2783,7 +2842,7 @@ protocol.http.accept_ui_language [0|1] (default: 1)
 <p>
         Request localised versions of documents from web-servers (using the
         Accept-Language header) using the language you have configured for
-        <span class="emphasis">ELinks</span>' user-interface (this also affects navigator.language ECMAScript
+        <em>ELinks</em>' user-interface (this also affects navigator.language ECMAScript
         value available to scripts). Note that some see this as a potential
         security risk because it tells web-masters and the FBI sniffers about
         your language preference.
@@ -2795,7 +2854,7 @@ protocol.http.trace [0|1] (default: 0)
 <dd>
 <p>
         If active, all HTTP requests are sent with TRACE as their method
-        rather than GET or POST. This is useful for debugging of both <span class="emphasis">ELinks</span>
+        rather than GET or POST. This is useful for debugging of both <em>ELinks</em>
         and various server-side scripts --- the server only returns the client's
         request back to the client verbatim. Note that this type of request may
         not be enabled on all servers.
@@ -2812,10 +2871,10 @@ protocol.http.user_agent &lt;str&gt; (default: "ELinks/%v (textmode; %s; %t-%b)"
         a standard for new textmode user agents, so that the webmasters can
         have just a single uniform test for these if they are ie. pushing
         some lite version to them automagically.
-        %v in the string means <span class="emphasis">ELinks</span> version
+        %v in the string means <em>ELinks</em> version
         %s in the string means system identification
         %t in the string means size of the terminal
-        %b in the string means number of bars displayed by <span class="emphasis">ELinks</span>
+        %b in the string means number of bars displayed by <em>ELinks</em>
         Use " " if you don't want any User-Agent header to be sent at all.
 </p>
 </dd>
@@ -2867,7 +2926,7 @@ protocol.nntp.header_entries &lt;str&gt; (default: "Subject,From,Date,Message-ID
 <dd>
 <p>
         Comma separated list of which entries in the article header
-        to show. E.g. 'Subject' and <span class="emphasis">From</span>.
+        to show. E.g. 'Subject' and <em>From</em>.
         All header entries can be read in the header info dialog.
 </p>
 </dd>
@@ -2929,9 +2988,13 @@ protocol.rewrite.default_template &lt;str&gt; (default: "")
 <p>
         Default URI template used when the string entered in
         the goto dialog does not appear to be a URI or a filename
-        (i.e. contains no '.', <span class="emphasis">:</span> or <span class="emphasis">/</span> characters), and does
+        (i.e. contains no '.', <em>:</em> or <em>/</em> characters), and does
         not match any defined prefixes. Set the value to "" to
         disable use of the default template rewrite rule.
+        %c in the template means the current URL
+        %s in the template means the whole string from the goto dialog
+        %0,%1,&#8230;,%9 mean the 1st,2nd,&#8230;,10th space-delimited part of %s
+        %% in the template means '%'
 </p>
 </dd>
 <dt>
@@ -2953,23 +3016,7 @@ protocol.rewrite.enable-smart [0|1] (default: 1)
         Enable smart prefixes - URI templates triggered by writing
         given abbreviation to the Goto URL dialog followed by a list
         of arguments from which the actual URI is composed - i.e.
-        'gg:search keywords' or <span class="emphasis">gn search keywords for news</span>.
-</p>
-</dd>
-<dt>
-protocol.smb
-</dt>
-<dd>
-<p>
-        SAMBA specific options.
-</p>
-</dd>
-<dt>
-protocol.smb.credentials &lt;str&gt; (default: "")
-</dt>
-<dd>
-<p>
-        Credentials file passed to smbclient via -A option.
+        'gg:search keywords' or <em>gn search keywords for news</em>.
 </p>
 </dd>
 <dt>
@@ -3083,8 +3130,9 @@ terminal._template_.utf_8_io [0|1] (default: 0)
 </dt>
 <dd>
 <p>
-        Enable I/O in UTF8 for Unicode terminals. Note that currently,
-        only the subset of UTF8 according to terminal codepage is used.
+        Enable I/O in UTF-8 for Unicode terminals. Note that currently,
+        only the subset of UTF-8 according to terminal codepage is used.
+        <em>ELinks</em> ignores this option if the terminal codepage is UTF-8.
 </p>
 </dd>
 <dt>
@@ -3111,8 +3159,9 @@ terminal._template_.colors &lt;num&gt; (default: 0)
 </dt>
 <dd>
 <p>
-        The color mode controls what colors are used and how they are
-        output to the terminal. The color modes are:
+        The color mode controls what colors are used and how they are output to the terminal.
+        Some modes may have been disabled at compile time. The Setup -&gt; Terminal options dialog lists the modes supported by this executable. If you select an unsupported mode, <em>ELinks</em> uses 16 colors.
+        The color modes are:
 </p>
 <ul>
 <li>
@@ -3127,20 +3176,32 @@ terminal._template_.colors &lt;num&gt; (default: 0)
 </li>
 <li>
 <p>
-2:    is 256 color mode, uses XTerm RGB codes
+2:    is 88 color mode, uses XTerm RGB codes
+</p>
+</li>
+<li>
+<p>
+3:    is 256 color mode, uses XTerm RGB codes
+</p>
+</li>
+<li>
+<p>
+4:    is true color mode, uses konsole RGB codes
 </p>
 </li>
 </ul>
 </dd>
 <dt>
-terminal._template_.transparency [0|1] (default: 1)
+terminal._template_.transparency [0|1] (default: 0)
 </dt>
 <dd>
 <p>
         If we should not set the background to black. This is particularly
         useful when we have a terminal (typically in some windowing
         environment) with a background image or a transparent background -
-        it will be visible in <span class="emphasis">ELinks</span> as well. Note that this option makes
+        it will be visible in <em>ELinks</em> as well (but <em>ELinks</em> document color handling
+        will still assume the background is black so if you have a bright background
+        you might experience contrast problems). Note that this option makes
         sense only when colors are enabled.
 </p>
 </dd>
@@ -5285,6 +5346,14 @@ ui.tabs.show_bar &lt;num&gt; (default: 1)
 </ul>
 </dd>
 <dt>
+ui.tabs.top [0|1] (default: 0)
+</dt>
+<dd>
+<p>
+        Whether display tab bar at top like other browsers do.
+</p>
+</dd>
+<dt>
 ui.tabs.wraparound [0|1] (default: 1)
 </dt>
 <dd>
@@ -5370,6 +5439,14 @@ ui.language &lt;language&gt; (default: "System")
 </p>
 </dd>
 <dt>
+ui.show_menu_bar_always [0|1] (default: 0)
+</dt>
+<dd>
+<p>
+        Always show menu bar on the screen.
+</p>
+</dd>
+<dt>
 ui.show_status_bar [0|1] (default: 1)
 </dt>
 <dd>
@@ -5423,7 +5500,7 @@ ui.window_title [0|1] (default: 1)
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 25-Jan-2006 17:32:27 CEST
+Last updated 17-Mar-2007 21:21:14 EEST
 </div>
 </div>
 </body>

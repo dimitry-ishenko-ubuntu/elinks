@@ -187,12 +187,8 @@ delete_cookie_item(struct listbox_item *item, int last)
 		assert(!is_object_used(cookie));
 
 		delete_cookie(cookie);
+		set_cookies_dirty();
 	}
-
-	if (last
-	    && get_opt_bool("cookies.save")
-	    && get_opt_bool("cookies.resave"))
-		save_cookies();
 }
 
 static struct listbox_ops_messages cookies_messages = {
@@ -245,6 +241,7 @@ set_cookie_name(struct dialog_data *dlg_data, struct widget_data *widget_data)
 
 	if (!value || !cookie) return EVENT_NOT_PROCESSED;
 	mem_free_set(&cookie->name, stracpy(value));
+	set_cookies_dirty();
 	return EVENT_PROCESSED;
 }
 
@@ -256,6 +253,7 @@ set_cookie_value(struct dialog_data *dlg_data, struct widget_data *widget_data)
 
 	if (!value || !cookie) return EVENT_NOT_PROCESSED;
 	mem_free_set(&cookie->value, stracpy(value));
+	set_cookies_dirty();
 	return EVENT_PROCESSED;
 }
 
@@ -267,6 +265,7 @@ set_cookie_domain(struct dialog_data *dlg_data, struct widget_data *widget_data)
 
 	if (!value || !cookie) return EVENT_NOT_PROCESSED;
 	mem_free_set(&cookie->domain, stracpy(value));
+	set_cookies_dirty();
 	return EVENT_PROCESSED;
 }
 
@@ -285,6 +284,7 @@ set_cookie_expires(struct dialog_data *dlg_data, struct widget_data *widget_data
 	if (errno || *end || number < 0) return EVENT_NOT_PROCESSED;
 
 	cookie->expires = (time_t) number;
+	set_cookies_dirty();
 	return EVENT_PROCESSED;
 }
 
@@ -303,6 +303,7 @@ set_cookie_secure(struct dialog_data *dlg_data, struct widget_data *widget_data)
 	if (errno || *end) return EVENT_NOT_PROCESSED;
 
 	cookie->secure = (number != 0);
+	set_cookies_dirty();
 	return EVENT_PROCESSED;
 }
 

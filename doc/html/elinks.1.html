@@ -1,9 +1,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
     "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" >
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
-<meta name="generator" content="AsciiDoc 7.0.0"/>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 7.1.2" />
 <style type="text/css">
 /* Debug borders */
 p, li, dt, dd, div, pre, h1, h2, h3, h4, h5, h6 {
@@ -16,19 +16,23 @@ body {
   margin: 1em 5% 1em 5%;
 }
 
-a { color: blue; }
-a:visited { color: fuchsia; }
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
 
-span.emphasis {
+em {
   font-style: italic;
 }
 
-span.strong {
+strong {
   font-weight: bold;
 }
 
-span.monospaced {
-  font-family: monospace;
+tt {
   color: navy;
 }
 
@@ -113,9 +117,10 @@ div.content { /* Block element content. */
 }
 
 /* Block element titles. */
-div.title {
+div.title, caption.title {
   font-family: sans-serif;
   font-weight: bold;
+  text-align: left;
   margin-top: 1.0em;
   margin-bottom: 0.5em;
 }
@@ -148,8 +153,12 @@ div.listingblock > div.content {
 div.quoteblock > div.content {
   padding-left: 2.0em;
 }
-div.quoteblock .attribution {
+
+div.attribution {
   text-align: right;
+}
+div.verseblock + div.attribution {
+  text-align: left;
 }
 
 div.admonitionblock .icon {
@@ -199,8 +208,7 @@ ol.olist2 {
 }
 
 div.tableblock > table {
-  border-color: #527bbd;
-  border-width: 3px;
+  border: 3px solid #527bbd;
 }
 thead {
   font-family: sans-serif;
@@ -226,6 +234,7 @@ td.hlist2 {
 @media print {
   div#footer-badges { display: none; }
 }
+include1::./stylesheets/xhtml11-manpage.css[]
 /* Workarounds for IE6's broken and incomplete CSS2. */
 
 div.sidebar-content {
@@ -254,21 +263,8 @@ div.exampleblock-content {
   border-left: 2px solid silver;
   padding-left: 0.5em;
 }
-/* Overrides for manpage documents */
-h1 {
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
-  border-top: 2px solid silver;
-  border-bottom: 2px solid silver;
-}
-h2 {
-  border-style: none;
-}
-div.sectionbody {
-  margin-left: 5%;
-}
 </style>
-<title>elinks</title>
+<title>elinks(1)</title>
 </head>
 <body>
 <div id="header">
@@ -284,34 +280,34 @@ elinks(1) Manual Page
 </div>
 <h2>SYNOPSIS</h2>
 <div class="sectionbody">
-<p><span class="emphasis">elinks</span> [OPTION]&#8230; [URL]&#8230;</p>
+<p><em>elinks</em> [OPTION]&#8230; [URL]&#8230;</p>
 </div>
 <h2>DESCRIPTION</h2>
 <div class="sectionbody">
-<p><span class="emphasis">ELinks</span> is a text mode WWW browser, supporting colors, table rendering,
+<p><em>ELinks</em> is a text mode WWW browser, supporting colors, table rendering,
 background downloading, menu driven configuration interface, tabbed browsing
 and slim code.</p>
 <p>Frames are supported. You can have different file formats associated with
-external viewers. <span class="monospaced">mailto:</span> and <span class="monospaced">telnet:</span> are supported via external clients.</p>
+external viewers. <tt>mailto:</tt> and <tt>telnet:</tt> are supported via external clients.</p>
 <p>ELinks  can handle both local files and remote URLs. The main supported remote
-URL protocols are <span class="emphasis">HTTP</span>, <span class="emphasis">HTTPS</span> (with SSL support compiled in) and <span class="emphasis">FTP</span>.
-Additional  protocol  support  exists for <span class="emphasis">BitTorrent</span> <span class="emphasis">finger</span>, <span class="emphasis">Gopher</span>,
-<span class="emphasis">SMB</span> and <span class="emphasis">NNTP</span>.</p>
-<p>The homepage of <span class="emphasis">ELinks</span> can be found at <a href="http://elinks.cz/">http://elinks.cz/</a>, where the ELinks
+URL protocols are <em>HTTP</em>, <em>HTTPS</em> (with SSL support compiled in) and <em>FTP</em>.
+Additional  protocol  support  exists for <em>BitTorrent</em> <em>finger</em>, <em>Gopher</em>,
+<em>SMB</em> and <em>NNTP</em>.</p>
+<p>The homepage of <em>ELinks</em> can be found at <a href="http://elinks.cz/">http://elinks.cz/</a>, where the ELinks
 manual is also hosted.</p>
 </div>
 <h2>OPTIONS</h2>
 <div class="sectionbody">
 <p>Most options can be set in the user interface or config file, so usually you
 do not need to care about them. Note that this list is roughly equivalent to
-the output of running ELinks with the option <span class="monospaced">--long-help</span>.</p>
+the output of running ELinks with the option <tt>--long-help</tt>.</p>
 <dl>
 <dt>
 -anonymous [0|1] (default: 0)
 </dt>
 <dd>
 <p>
-        Restricts <span class="emphasis">ELinks</span> so it can run on an anonymous account.
+        Restricts <em>ELinks</em> so it can run on an anonymous account.
         Local file browsing, downloads, and modification of options
         will be disabled. Execution of viewers is allowed, but entries
         in the association table can't be added or modified.
@@ -330,7 +326,7 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 </dt>
 <dd>
 <p>
-        Used internally when opening <span class="emphasis">ELinks</span> instances in new windows.
+        Used internally when opening <em>ELinks</em> instances in new windows.
         The ID maps to information that will be used when creating the
         new instance. You don't want to use it.
 </p>
@@ -340,10 +336,10 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 </dt>
 <dd>
 <p>
-        Path of the directory <span class="emphasis">ELinks</span> will read and write its
-        config and runtime state files to instead of <span class="monospaced">~/.elinks</span>.
+        Path of the directory <em>ELinks</em> will read and write its
+        config and runtime state files to instead of <tt>~/.elinks</tt>.
         If the path does not begin with a '/' it is assumed to be
-        relative to your <span class="emphasis">HOME</span> directory.
+        relative to your <em>HOME</em> directory.
 </p>
 </dd>
 <dt>
@@ -408,6 +404,14 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 </p>
 </dd>
 <dt>
+-dump-color-mode (alias for document.dump.color_mode)
+</dt>
+<dd>
+<p>
+        Color mode used with <tt>-dump</tt>.
+</p>
+</dd>
+<dt>
 -dump-width (alias for document.dump.width)
 </dt>
 <dd>
@@ -426,7 +430,7 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><span class="monospaced">-eval 'set protocol.file.allow_special_files = 1'</span></pre>
+<pre><tt>-eval 'set protocol.file.allow_special_files = 1'</tt></pre>
 </div></div>
 </dd>
 <dt>
@@ -434,9 +438,9 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 </dt>
 <dd>
 <p>
-        Makes <span class="emphasis">ELinks</span> assume documents of unknown types are HTML.
-        Useful when using <span class="emphasis">ELinks</span> as an external viewer from MUAs.
-        This is equivalent to <span class="monospaced">-default-mime-type</span> <span class="monospaced">text/html</span>.
+        Makes <em>ELinks</em> assume documents of unknown types are HTML.
+        Useful when using <em>ELinks</em> as an external viewer from MUAs.
+        This is equivalent to <tt>-default-mime-type</tt> <tt>text/html</tt>.
 </p>
 </dd>
 <dt>
@@ -452,7 +456,7 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 </dt>
 <dd>
 <p>
-        Restricts <span class="emphasis">ELinks</span> to work offline and only connect to servers
+        Restricts <em>ELinks</em> to work offline and only connect to servers
         with local addresses (ie. 127.0.0.1). No connections to remote
         servers will be permitted.
 </p>
@@ -478,10 +482,10 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 </dt>
 <dd>
 <p>
-        Run <span class="emphasis">ELinks</span> as a separate instance instead of connecting to an
+        Run <em>ELinks</em> as a separate instance instead of connecting to an
         existing instance. Note that normally no runtime state files
         (bookmarks, history, etc.) are written to the disk when this
-        option is used. See also <span class="monospaced">-touch-files</span>.
+        option is used. See also <tt>-touch-files</tt>.
 </p>
 </dd>
 <dt>
@@ -490,7 +494,7 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 <dd>
 <p>
         Disables creation and use of files in the user specific home
-        configuration directory (<span class="monospaced">~/.elinks</span>). It forces default configuration
+        configuration directory (<tt>~/.elinks</tt>). It forces default configuration
         values to be used and disables saving of runtime state files.
 </p>
 </dd>
@@ -500,7 +504,7 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 <dd>
 <p>
         Prevents printing of link number in dump output.
-        Note that this really affects only <span class="monospaced">-dump</span>, nothing else.
+        Note that this really affects only <tt>-dump</tt>, nothing else.
 </p>
 </dd>
 <dt>
@@ -510,7 +514,7 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 <p>
         Prevents printing of references (URIs) of document links
         in dump output.
-        Note that this really affects only <span class="monospaced">-dump</span>, nothing else.
+        Note that this really affects only <tt>-dump</tt>, nothing else.
 </p>
 </dd>
 <dt>
@@ -518,7 +522,7 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 </dt>
 <dd>
 <p>
-        Control a remote <span class="emphasis">ELinks</span> instance by passing commands to it.
+        Control a remote <em>ELinks</em> instance by passing commands to it.
         The option takes an additional argument containing the method
         which should be invoked and any parameters that should be passed
         to it. For ease of use, the additional method argument can be
@@ -529,42 +533,42 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 <ul>
 <li>
 <p>
-<span class="monospaced">ping()</span>: look for a remote instance
+<tt>ping()</tt>: look for a remote instance
 </p>
 </li>
 <li>
 <p>
-<span class="monospaced">openURL()</span>: prompt URL in current tab
+<tt>openURL()</tt>: prompt URL in current tab
 </p>
 </li>
 <li>
 <p>
-<span class="monospaced">openURL(URL)</span>: open URL in current tab
+<tt>openURL(URL)</tt>: open URL in current tab
 </p>
 </li>
 <li>
 <p>
-<span class="monospaced">openURL(URL, new-tab)</span>: open URL in new tab
+<tt>openURL(URL, new-tab)</tt>: open URL in new tab
 </p>
 </li>
 <li>
 <p>
-<span class="monospaced">openURL(URL, new-window)</span>: open URL in new window
+<tt>openURL(URL, new-window)</tt>: open URL in new window
 </p>
 </li>
 <li>
 <p>
-<span class="monospaced">addBookmark(URL)</span>: bookmark URL
+<tt>addBookmark(URL)</tt>: bookmark URL
 </p>
 </li>
 <li>
 <p>
-<span class="monospaced">infoBox(text)</span>: show text in a message box
+<tt>infoBox(text)</tt>: show text in a message box
 </p>
 </li>
 <li>
 <p>
-<span class="monospaced">xfeDoCommand(openBrowser)</span>: open new window
+<tt>xfeDoCommand(openBrowser)</tt>: open new window
 </p>
 </li>
 </ul>
@@ -574,20 +578,20 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 </dt>
 <dd>
 <p>
-        ID of session ring this <span class="emphasis">ELinks</span> session should connect to. <span class="emphasis">ELinks</span>
-        works in so-called session rings, whereby all instances of <span class="emphasis">ELinks</span>
+        ID of session ring this <em>ELinks</em> session should connect to. <em>ELinks</em>
+        works in so-called session rings, whereby all instances of <em>ELinks</em>
         are interconnected and share state (cache, bookmarks, cookies,
-        and so on). By default, all <span class="emphasis">ELinks</span> instances connect to session
+        and so on). By default, all <em>ELinks</em> instances connect to session
         ring 0. You can change that behaviour with this switch and form as
         many session rings as you want. Obviously, if the session-ring with
         this number doesn't exist yet, it's created and this 'ELinks' instance
         will become the master instance (that usually doesn't matter for you
         as a user much). Note that you usually don't want to use this unless
         you're a developer and you want to do some testing - if you want the
-        <span class="emphasis">ELinks</span> instances each running standalone, rather use the <span class="monospaced">-no-connect</span>
+        <em>ELinks</em> instances each running standalone, rather use the <tt>-no-connect</tt>
         command-line option. Also note that normally no runtime state files
         are written to the disk when this option is used. See also
-        <span class="monospaced">-touch-files</span>.
+        <tt>-touch-files</tt>.
 </p>
 </dd>
 <dt>
@@ -604,7 +608,7 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 <dd>
 <p>
         When enabled, runtime state files (bookmarks, history, etc.) are
-        written to disk, even when <span class="monospaced">-no-connect</span> or <span class="monospaced">-session-ring</span> is used.
+        written to disk, even when <tt>-no-connect</tt> or <tt>-session-ring</tt> is used.
         The option has no effect if not used in conjunction with any of
         these options.
 </p>
@@ -640,7 +644,7 @@ the output of running ELinks with the option <span class="monospaced">--long-hel
 </dt>
 <dd>
 <p>
-        Print <span class="emphasis">ELinks</span> version information and exit.
+        Print <em>ELinks</em> version information and exit.
 </p>
 </dd>
 </dl>
@@ -672,7 +676,7 @@ ELINKS_CONFDIR
 <dd>
 <p>
         The location of the directory containing configuration files.  If not
-        set the default is <span class="monospaced">~/.elinks/</span>.
+        set the default is <tt>~/.elinks/</tt>.
 </p>
 </dd>
 <dt>
@@ -681,7 +685,7 @@ ELINKS_TWTERM, LINKS_TWTERM
 <dd>
 <p>
         The command to run when selecting File -&gt; New window and if
-        <span class="monospaced">TWDISPLAY</span> is defined (default <span class="monospaced">twterm -e</span>)
+        <tt>TWDISPLAY</tt> is defined (default <tt>twterm -e</tt>)
 </p>
 </dd>
 <dt>
@@ -689,8 +693,8 @@ ELINKS_XTERM, LINKS_XTERM
 </dt>
 <dd>
 <p>
-        The command to run when selecting File -&gt; New window and if <span class="monospaced">DISPLAY</span>
-        is defined (default <span class="monospaced">xterm -e</span>)
+        The command to run when selecting File -&gt; New window and if <tt>DISPLAY</tt>
+        is defined (default <tt>xterm -e</tt>)
 </p>
 </dd>
 <dt>
@@ -714,7 +718,7 @@ HOME
 </dt>
 <dd>
 <p>
-        The path to the users home directory. Used when expanding <span class="monospaced">~/</span>.
+        The path to the users home directory. Used when expanding <tt>~/</tt>.
 </p>
 </dd>
 <dt>
@@ -815,7 +819,7 @@ WWW_HOME
 </dt>
 <dd>
 <p>
-        Internal <span class="emphasis">ELinks</span> socket for communication between its instances.
+        Internal <em>ELinks</em> socket for communication between its instances.
 </p>
 </dd>
 <dt>
@@ -835,38 +839,38 @@ WWW_HOME
 </p>
 </dd>
 </dl>
-<p>Other files that ELinks uses from <span class="emphasis">~/.elinks/</span> includes the user defined CSS
-stylesheet. The name of the file can set in the <span class="emphasis">document.css.stylesheet</span>
+<p>Other files that ELinks uses from <em>~/.elinks/</em> includes the user defined CSS
+stylesheet. The name of the file can set in the <em>document.css.stylesheet</em>
 option.</p>
 </div>
 <h2>PLATFORMS</h2>
 <div class="sectionbody">
-<p><span class="emphasis">ELinks</span> is known to work on <span class="emphasis">Linux</span>, <span class="emphasis">FreeBSD</span>, <span class="emphasis">OpenBSD</span>, <span class="emphasis">Solaris</span>, <span class="emphasis">IRIX</span>,
-<span class="emphasis">HPUX</span>, <span class="emphasis">Digital Unix</span>, <span class="emphasis">AIX</span>, <span class="emphasis">OS/2</span>, <span class="emphasis">BeOS</span> and <span class="emphasis">RISC OS</span>. Port for <span class="emphasis">Win32</span>
+<p><em>ELinks</em> is known to work on <em>Linux</em>, <em>FreeBSD</em>, <em>OpenBSD</em>, <em>Solaris</em>, <em>IRIX</em>,
+<em>HPUX</em>, <em>Digital Unix</em>, <em>AIX</em>, <em>OS/2</em>, <em>BeOS</em> and <em>RISC OS</em>. Port for <em>Win32</em>
 is in state of beta testing.</p>
 </div>
 <h2>BUGS</h2>
 <div class="sectionbody">
 <p>Please report any other bugs you find to the either the ELinks mailing list at
 <a href="mailto:elinks-users@linuxfromscratch.org">elinks-users@linuxfromscratch.org</a> or if you prefer enter them into
-<a href="http://bugzilla.elinks.or.cz/">the bug tracking system</a>. More information about
+<a href="http://bugzilla.elinks.cz/">the bug tracking system</a>. More information about
 how to get in contact with developers and getting help can be found on
-<a href="http://elinks.or.cz/community.html">the community page</a>.</p>
+<a href="http://elinks.cz/community.html">the community page</a>.</p>
 </div>
 <h2>LICENSE</h2>
 <div class="sectionbody">
-<p><span class="emphasis">ELinks</span> is free software; you can redistribute it and/or modify it under the
+<p><em>ELinks</em> is free software; you can redistribute it and/or modify it under the
 terms of <a href="http://www.gnu.org/copyleft/gpl.html">the GNU General Public License</a>
 as published by the Free Software Foundation; version 2 of the License.</p>
 </div>
 <h2>AUTHORS</h2>
 <div class="sectionbody">
-<p>The <span class="emphasis">Links</span> browser - on which <span class="emphasis">ELinks</span> is based - was written by Mikulas
-Patocka <a href="mailto:mikulas@artax.karlin.mff.cuni.cz">mikulas@artax.karlin.mff.cuni.cz</a>. <span class="emphasis">ELinks</span> was written by
-Petr Baudis <a href="mailto:pasky@ucw.cz">pasky@ucw.cz</a>. See file <span class="monospaced">AUTHORS</span> in the source tree for a
+<p>The <em>Links</em> browser - on which <em>ELinks</em> is based - was written by Mikulas
+Patocka <a href="mailto:mikulas@artax.karlin.mff.cuni.cz">mikulas@artax.karlin.mff.cuni.cz</a>. <em>ELinks</em> was written by
+Petr Baudis <a href="mailto:pasky@ucw.cz">pasky@ucw.cz</a>. See file <tt>AUTHORS</tt> in the source tree for a
 list of people contributing to this project.</p>
 <p>This manual page was written by Peter Gervai <a href="mailto:grin@tolna.net">grin@tolna.net</a>, using
-excerpts from a (yet?) unknown <span class="emphasis">Links</span> fan for the <span class="emphasis">Debian GNU/Linux system</span>
+excerpts from a (yet?) unknown <em>Links</em> fan for the <em>Debian GNU/Linux system</em>
 (but may be used by others). Contributions from Francis A. Holop. Extended,
 clarified and made more up-to-date by Petr Baudis <a href="mailto:pasky@ucw.cz">pasky@ucw.cz</a>.
 Updated by Zas <a href="mailto:zas@norz.org">zas@norz.org</a>. The conversion to Asciidoc and trimming
@@ -879,7 +883,7 @@ was done by Jonas Fonseca <a href="mailto:fonseca@diku.dk">fonseca@diku.dk</a>.<
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 25-Jan-2006 04:49:49 CEST
+Last updated 11-Feb-2007 04:23:55 EEST
 </div>
 </div>
 </body>
