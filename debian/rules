@@ -42,7 +42,7 @@ confopts = --prefix=/usr \
 confopts_main = $(confopts) \
 	--enable-nntp \
 	--enable-256-colors \
-	--enable-leds \
+	--disable-leds \
 	--enable-html-highlight \
 	--disable-smb \
 	--with-perl \
