@@ -6,8 +6,8 @@ Uploaders: Moritz Muehlenhoff <jmm@debian.org>
 Build-Depends: debhelper (>= 5), libgnutls-dev, libgpmg1-dev [!hurd-i386 !kfreebsd-i386 !kfreebsd-amd64], liblua50-dev, liblualib50-dev, libbz2-dev, libexpat1-dev (>= 1.95.6), libperl-dev, autotools-dev, gettext, asciidoc, xmlto, docbook-utils, perl
 Standards-Version: 3.7.3
 Homepage: http://elinks.or.cz/
-Vcs-Svn: git://git.debian.org/git/collab-maint/elinks.git
-Vcs-Browser: http://git.debian.org/git/collab-maint/elinks.git
+Vcs-Git: git://git.debian.org/git/collab-maint/elinks.git
+Vcs-Browser: http://git.debian.org/?p=collab-maint/elinks.git;a=summary
 
 Package: elinks
 Architecture: any
