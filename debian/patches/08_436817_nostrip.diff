@@ -1,0 +1,14 @@
+# Remove CFLAGS from the linker command
+
+diff -Nur elinks-0.11.3~/Makefile.lib elinks-0.11.3/Makefile.lib
+--- elinks-0.11.3~/Makefile.lib	2008-01-14 17:00:19.599578000 +0530
++++ elinks-0.11.3/Makefile.lib	2008-01-14 16:42:39.129859000 +0530
+@@ -48,7 +48,7 @@
+ 			    `test -e $(subdir)/$(LIB_O_NAME) && echo $(subdir)/$(LIB_O_NAME)`)
+ 
+    quiet_cmd_link = '    [$(LINK_COLOR)LINK$(END_COLOR)]   $(RELPATH)$@'
+-         cmd_link = $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
++         cmd_link = $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+ 
+  quiet_cmd_sparse = '    [SPARSE]   $(RELPATH)$(2)'
+        cmd_sparse = $(SPARSE) $(DEFS) $(INCLUDES) $(AM_CFLAGS) $(CFLAGS) $(SPARSE_FLAGS) $(2)
