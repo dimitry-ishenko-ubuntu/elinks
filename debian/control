@@ -51,6 +51,7 @@ Description: Documentation for ELinks - An advanced text-mode WWW browser
  This package contains the documentation and manuals for ELinks.
 
 Package: elinks-lite
+Priority: extra
 Architecture: any
 Depends: ${shlibs:Depends}
 Suggests: elinks-doc
