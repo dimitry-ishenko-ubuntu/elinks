@@ -13,7 +13,7 @@ Package: elinks
 Architecture: any
 Depends: ${shlibs:Depends}, elinks-data (= ${source:Version})
 Suggests: elinks-doc
-Provides: links, www-browser
+Provides: www-browser
 Conflicts: elinks-lite
 Description: Advanced text-mode WWW browser
  ELinks (Enhanced Links) is a lynx-like character mode browser, created
@@ -55,7 +55,7 @@ Priority: extra
 Architecture: any
 Depends: ${shlibs:Depends}
 Suggests: elinks-doc
-Provides: links, www-browser
+Provides: www-browser
 Conflicts: elinks
 Description: Lightweight version of Elinks - An advanced text-mode WWW browser
  ELinks (Enhanced Links) is a lynx-like character mode browser, created

@@ -5,9 +5,6 @@ set -e
 case "$1" in
     configure)
         update-alternatives --quiet \
-            --install /usr/bin/links links /usr/bin/elinks 20 \
-            --slave /usr/share/man/man1/links.1.gz links.1.gz /usr/share/man/man1/elinks.1.gz
-        update-alternatives --quiet \
             --install /usr/bin/www-browser www-browser /usr/bin/elinks 35 \
             --slave /usr/share/man/man1/www-browser.1.gz www-browser.1.gz /usr/share/man/man1/elinks.1.gz
     ;;
