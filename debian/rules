@@ -21,14 +21,14 @@ ORIG_TAR=$(PKG_NAME)_$(PKG_VERS).orig.tar
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
-CFLAGS_COMMON=-Wall -g
+CFLAGS_COMMON=-g
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
 	CFLAGS_COMMON += -O0
 	CFLAGS_LITE=
 else
 	CFLAGS_COMMON += -O2
-	CFLAGS_LITE=-s -fno-inline -fomit-frame-pointer
+	CFLAGS_LITE=-Os -fno-inline
 endif
 
 confopts = --prefix=/usr \
