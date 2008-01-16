@@ -1,3 +1,11 @@
+elinks (0.11.3-3) unstable; urgency=low
+
+  * Update 06_elinks.conf-parse-error.diff to comment ui.clock.enable and
+    ui.clock.format (they are not valid with --disable-leds).  Thanks giggz
+    <giggzounet@gmail.com> for the bug report (Closes: #460912)
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Wed, 16 Jan 2008 15:51:05 +0530
+
 elinks (0.11.3-2) unstable; urgency=low
 
   * Change Moritz's email ID in Uploaders to jmm@debian.org to be in sync with

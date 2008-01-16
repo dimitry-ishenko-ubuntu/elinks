@@ -3167,6 +3167,21 @@ diff -urNad elinks-0.11.3~/contrib/elinks.conf elinks-0.11.3/contrib/elinks.conf
  
  
    ## protocol.user 
+@@ -1964,12 +1964,12 @@
+ 
+     ## ui.clock.enable [0|1]
+     #  Whether to display a digital clock in the status bar.
+-    set ui.clock.enable = 0
++    # set ui.clock.enable = 0
+ 
+     ## ui.clock.format <str>
+     #  Format string for the digital clock. See the strftime(3)
+     #  manpage for details.
+-    set ui.clock.format = "[%H:%M]"
++    # set ui.clock.format = "[%H:%M]"
+ 
+ 
+   ## ui.colors 
 @@ -2969,7 +2969,7 @@
      ## ui.leds.enable [0|1]
      #  Enable LEDs.
