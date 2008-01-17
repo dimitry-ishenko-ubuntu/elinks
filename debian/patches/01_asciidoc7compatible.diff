@@ -1,0 +1,15 @@
+# Add a "-a asciidoc7compatible" to ASCIIDOC_FLAGS.  Based on upstream
+# commit 5210d97c3756b04f1cf5c27fde8ed342ac756a0d
+
+diff -urNad elinks-0.11.3~/doc/Makefile elinks-0.11.3/doc/Makefile
+--- elinks-0.11.3~/doc/Makefile	2008-01-17 11:44:56.256703000 +0530
++++ elinks-0.11.3/doc/Makefile	2008-01-17 11:38:05.464159000 +0530
+@@ -13,7 +13,7 @@
+ PDF_DIR  = $(DESTDIR)$(docdir)/$(PACKAGE)/pdf
+ 
+ ASCIIDOC_CONF  = $(srcdir)asciidoc.conf
+-ASCIIDOC_FLAGS += -f $(ASCIIDOC_CONF) -a "builddir=$(CURDIR)/"
++ASCIIDOC_FLAGS += -f $(ASCIIDOC_CONF) -a "builddir=$(CURDIR)/" -a asciidoc7compatible
+ 
+ #############################################################################
+ # Build files
