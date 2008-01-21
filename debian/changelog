@@ -6,8 +6,9 @@ elinks (0.11.3-3) unstable; urgency=low
   * Rename patch 01_asciidoc-escape-FTBFS as 01_asciidoc7compatible to add a
     "-a asciidoc7compatible" to ASCIIDOC_FLAGS.  Thanks Kalle Olavi Niemitalo
     <kon@iki.fi> for the suggestion.
+  * Add 2008 to Debian packaging Copyright 'years'.
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 17 Jan 2008 11:39:39 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Mon, 21 Jan 2008 13:05:15 +0530
 
 elinks (0.11.3-2) unstable; urgency=low
 
