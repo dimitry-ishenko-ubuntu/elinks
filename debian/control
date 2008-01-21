@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 5), libgnutls-dev, libgpmg1-dev [!hurd-i386 !kfreeb
 Standards-Version: 3.7.3
 Homepage: http://elinks.or.cz/
 Vcs-Git: git://git.debian.org/git/collab-maint/elinks.git
-Vcs-Browser: http://git.debian.org/?p=collab-maint/elinks.git;a=summary
+Vcs-Browser: http://git.debian.org/?p=collab-maint/elinks.git
 
 Package: elinks
 Architecture: any
