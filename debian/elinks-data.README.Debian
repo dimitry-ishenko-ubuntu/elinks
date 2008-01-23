@@ -7,7 +7,7 @@ more stable because of the few feature change. YMMW.
 
 				* * *
 
-Modified on Thu, 03 Jan 2008 17:01:37 +0530 - Y Giridhar Appaji Nag
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 03 Jan 2008 17:01:37 +0530
 
 Do not forget to setup after the first install: press F9, go to the Setup
 menu, and set Linux console, default display character set and others. (An
@@ -35,3 +35,10 @@ A: Install the elinks-doc package and read the bookmarks section of the
          (contributed by Miciah Dashiel Butler Masters)
 
  --  Peter Gervai <grin@tolna.net>, Wed,  7 Apr 2004 13:40:56 +0200
+
+Q: What happened to the links alternative?
+A: Beginning 0.11.3-2, ELinks no longer installs the links alternative
+   and doesn't provide links.  ELinks should be invoked as "elinks" and
+   the links package can be installed alongside elinks.
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Wed, 23 Jan 2008 17:23:08 +0530
