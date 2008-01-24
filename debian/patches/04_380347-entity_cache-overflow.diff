@@ -1,5 +1,5 @@
 Prevent a buffer overflow in entity_cache.  Based on upstream commit
-14588b9455583096ddeb54b0541bfc230a2a2451.
+14588b9455583096ddeb54b0541bfc230a2a2451 for #380347
 
 diff --git a/src/intl/charsets.c b/src/intl/charsets.c
 index d25c558..94ba5a7 100644

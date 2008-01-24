@@ -1,5 +1,5 @@
 Turn terminal transparency off by default.  Based on upstream commit
-6390c327aa61b83776a45512ca3db08f04fe4a5d
+6390c327aa61b83776a45512ca3db08f04fe4a5d for #257762
 
 diff --git a/src/config/options.inc b/src/config/options.inc
 index 481d623..eadd5f7 100644

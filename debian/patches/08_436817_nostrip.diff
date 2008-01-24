@@ -1,4 +1,5 @@
-Remove CFLAGS from the linker command
+Remove CFLAGS from the linker command for dh_strip - comply with Debian
+policy (section 10.1 "Binaries") for #436817
 
 diff --git a/Makefile.lib b/Makefile.lib
 index b095376..df9e994 100644
