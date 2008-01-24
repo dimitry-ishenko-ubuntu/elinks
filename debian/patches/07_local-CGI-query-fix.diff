@@ -1,10 +1,11 @@
-# Patch to fix regression: query parsing in local CGI URIs.  Based on
-# upstream commit e96665134ae9b5106fe0d5c30d445212d970e91b
+Patch to fix regression: query parsing in local CGI URIs.  Based on
+upstream commit e96665134ae9b5106fe0d5c30d445212d970e91b
 
-diff -urNad elinks-0.11.3~/src/protocol/uri.c elinks-0.11.3/src/protocol/uri.c
---- elinks-0.11.3~/src/protocol/uri.c	2007-04-16 02:21:03.000000000 +0530
-+++ elinks-0.11.3/src/protocol/uri.c	2008-01-06 23:51:53.000000000 +0530
-@@ -149,7 +149,7 @@
+diff --git a/src/protocol/uri.c b/src/protocol/uri.c
+index fd22b4a..58f2df2 100644
+--- a/src/protocol/uri.c
++++ b/src/protocol/uri.c
+@@ -149,7 +149,7 @@ static int
  check_uri_file(unsigned char *name)
  {
  	/* Check POST_CHAR etc ... */

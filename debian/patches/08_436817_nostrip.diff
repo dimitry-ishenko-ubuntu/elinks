@@ -1,9 +1,10 @@
-# Remove CFLAGS from the linker command
+Remove CFLAGS from the linker command
 
-diff -Nur elinks-0.11.3~/Makefile.lib elinks-0.11.3/Makefile.lib
---- elinks-0.11.3~/Makefile.lib	2008-01-14 17:00:19.599578000 +0530
-+++ elinks-0.11.3/Makefile.lib	2008-01-14 16:42:39.129859000 +0530
-@@ -48,7 +48,7 @@
+diff --git a/Makefile.lib b/Makefile.lib
+index b095376..df9e994 100644
+--- a/Makefile.lib
++++ b/Makefile.lib
+@@ -48,7 +48,7 @@ quiet_cmd_ld_objs = "      [$(LD_COLOR)LD$(END_COLOR)]   $(RELPATH)$@"
  			    `test -e $(subdir)/$(LIB_O_NAME) && echo $(subdir)/$(LIB_O_NAME)`)
  
     quiet_cmd_link = '    [$(LINK_COLOR)LINK$(END_COLOR)]   $(RELPATH)$@'

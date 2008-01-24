@@ -1,8 +1,9 @@
-# Point bugs URL to debian.org and remove FSSTND dir in setup.h
+Point bugs URL to debian.org and remove FSSTND dir in setup.h
 
-diff -urNad elinks-0.11.3~/contrib/elinks.conf elinks-0.11.3/contrib/elinks.conf
---- elinks-0.11.3~/contrib/elinks.conf	2008-01-03 12:40:46.000000000 +0530
-+++ elinks-0.11.3/contrib/elinks.conf	2008-01-03 12:42:58.000000000 +0530
+diff --git a/contrib/elinks.conf b/contrib/elinks.conf
+index 6dc251c..d050c95 100644
+--- a/contrib/elinks.conf
++++ b/contrib/elinks.conf
 @@ -865,7 +865,7 @@
      ## mime.mailcap.path <str>
      #  Mailcap search path. Colon-separated list of files.
@@ -21,10 +22,11 @@ diff -urNad elinks-0.11.3~/contrib/elinks.conf elinks-0.11.3/contrib/elinks.conf
  
  
    ## mime.type 
-diff -urNad elinks-0.11.3~/doc/elinks.1.txt elinks-0.11.3/doc/elinks.1.txt
---- elinks-0.11.3~/doc/elinks.1.txt	2007-04-16 02:21:02.000000000 +0530
-+++ elinks-0.11.3/doc/elinks.1.txt	2008-01-03 12:47:13.000000000 +0530
-@@ -136,9 +136,10 @@
+diff --git a/doc/elinks.1.txt b/doc/elinks.1.txt
+index 060336f..485e19b 100644
+--- a/doc/elinks.1.txt
++++ b/doc/elinks.1.txt
+@@ -136,9 +136,10 @@ is in state of beta testing.
  BUGS
  ----
  
@@ -38,10 +40,11 @@ diff -urNad elinks-0.11.3~/doc/elinks.1.txt elinks-0.11.3/doc/elinks.1.txt
  how to get in contact with developers and getting help can be found on
  http://elinks.or.cz/community.html[the community page].
  
-diff -urNad elinks-0.11.3~/doc/html/elinks.conf.5.html elinks-0.11.3/doc/html/elinks.conf.5.html
---- elinks-0.11.3~/doc/html/elinks.conf.5.html	2008-01-03 12:40:46.000000000 +0530
-+++ elinks-0.11.3/doc/html/elinks.conf.5.html	2008-01-03 12:42:58.000000000 +0530
-@@ -2194,7 +2194,7 @@
+diff --git a/doc/html/elinks.conf.5.html b/doc/html/elinks.conf.5.html
+index c7d9ffe..fc819c5 100644
+--- a/doc/html/elinks.conf.5.html
++++ b/doc/html/elinks.conf.5.html
+@@ -2194,7 +2194,7 @@ mime.mailcap.enable [0|1] (default: 1)
  </p>
  </dd>
  <dt>
@@ -50,7 +53,7 @@ diff -urNad elinks-0.11.3~/doc/html/elinks.conf.5.html elinks-0.11.3/doc/html/el
  </dt>
  <dd>
  <p>
-@@ -2265,7 +2265,7 @@
+@@ -2265,7 +2265,7 @@ mime.mimetypes.enable [0|1] (default: 1)
  </p>
  </dd>
  <dt>
@@ -59,10 +62,11 @@ diff -urNad elinks-0.11.3~/doc/html/elinks.conf.5.html elinks-0.11.3/doc/html/el
  </dt>
  <dd>
  <p>
-diff -urNad elinks-0.11.3~/doc/man/man5/elinks.conf.5 elinks-0.11.3/doc/man/man5/elinks.conf.5
---- elinks-0.11.3~/doc/man/man5/elinks.conf.5	2008-01-03 12:40:46.000000000 +0530
-+++ elinks-0.11.3/doc/man/man5/elinks.conf.5	2008-01-03 12:42:58.000000000 +0530
-@@ -991,7 +991,7 @@
+diff --git a/doc/man/man5/elinks.conf.5 b/doc/man/man5/elinks.conf.5
+index 1c73edc..3a263c6 100644
+--- a/doc/man/man5/elinks.conf.5
++++ b/doc/man/man5/elinks.conf.5
+@@ -991,7 +991,7 @@ mime\&.mailcap\&.enable [0|1] (default: 1)
  Enable mailcap support\&.
  
  .TP
@@ -71,7 +75,7 @@ diff -urNad elinks-0.11.3~/doc/man/man5/elinks.conf.5 elinks-0.11.3/doc/man/man5
  Mailcap search path\&. Colon\-separated list of files\&. Leave as "" to use MAILCAP environment variable instead\&.
  
  .TP
-@@ -1029,7 +1029,7 @@
+@@ -1029,7 +1029,7 @@ mime\&.mimetypes\&.enable [0|1] (default: 1)
  Enable mime\&.types support\&.
  
  .TP
@@ -80,9 +84,10 @@ diff -urNad elinks-0.11.3~/doc/man/man5/elinks.conf.5 elinks-0.11.3/doc/man/man5
  The search path for mime\&.types files\&. Colon\-separated list of files\&.
  
  .TP
-diff -urNad elinks-0.11.3~/src/setup.h elinks-0.11.3/src/setup.h
---- elinks-0.11.3~/src/setup.h	2008-01-03 12:40:47.000000000 +0530
-+++ elinks-0.11.3/src/setup.h	2008-01-03 12:42:58.000000000 +0530
+diff --git a/src/setup.h b/src/setup.h
+index 8b6e0c0..6489bc5 100644
+--- a/src/setup.h
++++ b/src/setup.h
 @@ -12,7 +12,7 @@
  
  #define ELINKS_HOMEPAGE			"http://elinks.cz/"
