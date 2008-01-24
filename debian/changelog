@@ -14,8 +14,11 @@ elinks (0.11.3-3) unstable; urgency=low
   * Changed all patches from "diff -urNad" to "git diff".  This will make it
     easier to maintain the patches.  Just modify the code in place and do a
     "git diff > debian/patches/0X_foo.diff"
+  * Pass --enable-leds to configure.  Set ui.leds.enable to 0 by default via
+    06_459467_ui.leds.enable_0.diff, this solves #459467 better.  Thanks to
+    أحمد المحمودي (Ahmed El-Mahmoudy) for the suggestion.
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 24 Jan 2008 17:07:21 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 24 Jan 2008 17:38:29 +0530
 
 elinks (0.11.3-2) unstable; urgency=low
 
