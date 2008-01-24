@@ -1,8 +1,8 @@
 elinks (0.11.3-3) unstable; urgency=low
 
-  * Update 06_elinks.conf-parse-error.diff to comment ui.clock.enable and
-    ui.clock.format (they are not valid with --disable-leds).  Thanks giggz
-    <giggzounet@gmail.com> for the bug report (Closes: #460912)
+  * Remove 06_elinks.conf-parse-error.diff and use a minimal elinks.conf file
+    with only the user_agent setting.  Thanks giggz <giggzounet@gmail.com> for
+    the bug report and Kalle Olavi Niemitalo for suggestion (Closes: #460912)
   * Rename patch 01_asciidoc-escape-FTBFS as 01_asciidoc7compatible to add a
     "-a asciidoc7compatible" to ASCIIDOC_FLAGS.  Thanks Kalle Olavi Niemitalo
     <kon@iki.fi> for the suggestion.
@@ -12,7 +12,7 @@ elinks (0.11.3-3) unstable; urgency=low
   * Really install elinks.desktop desktop file for elinks and elinks-lite
     (remove elinks-lite.desktop, it is identical to elinks.desktop).
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Tue, 22 Jan 2008 13:12:16 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 24 Jan 2008 16:08:41 +0530
 
 elinks (0.11.3-2) unstable; urgency=low
 

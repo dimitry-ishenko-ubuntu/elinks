@@ -16,6 +16,8 @@ UPSTR_FILE=$(UPSTR_DIR).tar.bz2
 ORIG_DIR=$(UPSTR_DIR).orig
 ORIG_TAR=$(PKG_NAME)_$(PKG_VERS).orig.tar
 
+version=`dpkg-parsechangelog -ldebian/changelog | grep 'Version: ' | sed 's/Version: //g'`
+
 # These are used for cross-compiling and for saving the configure script
 # from having to guess our platform (since we know it already)
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
@@ -88,6 +90,10 @@ patch-stamp:
 
 save-stamp:
 	dh_testdir
+	rm -f debian/elinks.conf
+	cat debian/elinks.config | sed "s/%v/$(version)/g" > debian/elinks.conf
+	rm -f debian/elinks-lite.conf
+	cat debian/elinks.config | sed "s/%v/$(version)-lite/g" > debian/elinks-lite.conf
 	# Add here commands to configure the package.
 ifneq "$(wildcard /usr/share/misc/config.sub)" ""
 	[ ! -f config/config.sub ] || mv -f config/config.sub config/config.sub.ups
@@ -132,6 +138,8 @@ clean-patched:
 	[ ! -f config.h.ups ] || mv -f config.h.ups config.h
 	[ ! -f config/config.guess.ups ] || mv -f config/config.guess.ups config/config.guess
 	[ ! -f config/config.sub.ups ] || mv -f config/config.sub.ups config/config.sub
+	rm -f debian/elinks-lite.conf
+	rm -f debian/elinks.conf
 	rm -rf debian/tmp.elinks-data
 	dh_clean 
 
@@ -166,13 +174,13 @@ install-arch:
 	dh_testroot
 	dh_clean -k -s 
 	dh_installdirs -s
-	# Install elinks binaries and contrib/elinks.conf
+	# Install elinks binaries and elinks.conf
 	$(MAKE) -C build-main DESTDIR=$(CURDIR)/debian/elinks install
-	install -o root -g root -p -D -m 0644 $(CURDIR)/contrib/elinks.conf \
+	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.conf \
 		$(CURDIR)/debian/elinks/etc/elinks/elinks.conf
-	# Install elinks-lite binaries and contrib/elinks.conf
+	# Install elinks-lite binaries and elinks.conf
 	$(MAKE) -C build-lite DESTDIR=$(CURDIR)/debian/elinks-lite install
-	install -o root -g root -p -D -m 0644 $(CURDIR)/contrib/elinks-lite.conf \
+	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks-lite.conf \
 		$(CURDIR)/debian/elinks-lite/etc/elinks/elinks.conf
 	# Move elinks arch-indep parts to temp location for elinks-data
 	mkdir -p $(CURDIR)/debian/tmp.elinks-data/usr/
