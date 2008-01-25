@@ -83,7 +83,7 @@ patch-stamp:
 		pname="$$(basename $$pfile .diff)"; \
 		[ ! -f "debian/patched/$$pname.patched" ] || continue; \
 		echo "### Applying patch $$pname"; \
-		patch -p1 -N -b -B debian/patched/ < $$pfile; \
+		patch -p1 -N < $$pfile; \
 		cp -f "$$pfile" "debian/patched/$$pname.patched"; \
 	done
 	touch $@
