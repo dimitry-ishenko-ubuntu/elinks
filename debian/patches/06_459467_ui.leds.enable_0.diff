@@ -3,10 +3,10 @@ laptops and desktop folks can enable this if they like it.  Patch based
 on suggestion from أحمد المحمودي (Ahmed El-Mahmoudy).
 
 diff --git a/doc/html/elinks.conf.5.html b/doc/html/elinks.conf.5.html
-index c7d9ffe..9b7ac3a 100644
+index 452e8f2..a404550 100644
 --- a/doc/html/elinks.conf.5.html
 +++ b/doc/html/elinks.conf.5.html
-@@ -5239,7 +5239,7 @@ ui.leds
+@@ -5274,7 +5274,7 @@ ui.leds
  </p>
  </dd>
  <dt>
@@ -16,7 +16,7 @@ index c7d9ffe..9b7ac3a 100644
  <dd>
  <p>
 diff --git a/src/bfu/leds.c b/src/bfu/leds.c
-index 3ec76ef..f59ce0a 100644
+index e54d995..6f2264d 100644
 --- a/src/bfu/leds.c
 +++ b/src/bfu/leds.c
 @@ -92,7 +92,7 @@ static struct option_info led_options[] = {
