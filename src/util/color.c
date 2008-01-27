@@ -1,4 +1,5 @@
-/* Color parser */
+/** Color parser
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -13,15 +14,16 @@
 #include "elinks.h"
 
 #include "util/color.h"
+#include "util/conv.h"
 #include "util/fastfind.h"
 #include "util/string.h"
 
 struct color_spec {
-	char *name;
+	const char *name;
 	color_T rgb;
 };
 
-static struct color_spec color_specs[] = {
+static const struct color_spec color_specs[] = {
 #include "util/color_s.inc"
 #ifndef CONFIG_SMALL
 #include "util/color.inc"
@@ -31,7 +33,7 @@ static struct color_spec color_specs[] = {
 
 #ifdef USE_FASTFIND
 
-static struct color_spec *internal_pointer;
+static const struct color_spec *internal_pointer;
 
 static void
 colors_list_reset(void)
@@ -39,7 +41,7 @@ colors_list_reset(void)
 	internal_pointer = color_specs;
 }
 
-/* Returns a pointer to a struct that contains
+/** Returns a pointer to a struct that contains
  * current key and data pointers and increment
  * internal pointer.
  * It returns NULL when key is NULL. */
@@ -51,7 +53,7 @@ colors_list_next(void)
 	if (!internal_pointer->name) return NULL;
 
 	kv.key = (unsigned char *) internal_pointer->name;
-	kv.data = internal_pointer;
+	kv.data = (void *) internal_pointer; /* cast away const */
 
 	internal_pointer++;
 
@@ -80,7 +82,7 @@ free_colors_lookup(void)
 }
 
 int
-decode_color(unsigned char *str, int slen, color_T *color)
+decode_color(const unsigned char *str, int slen, color_T *color)
 {
 	if (*str == '#' && (slen == 7 || slen == 4)) {
 		unsigned char buffer[7];
@@ -106,7 +108,7 @@ decode_hex_color:
 			return 0;
 		}
 	} else {
-		struct color_spec *cs;
+		const struct color_spec *cs;
 
 #ifndef USE_FASTFIND
 		for (cs = color_specs; cs->name; cs++)
@@ -134,10 +136,10 @@ decode_hex_color:
 	return -1; /* Not found */
 }
 
-unsigned char *
+const unsigned char *
 get_color_string(color_T color, unsigned char hexcolor[8])
 {
-	struct color_spec *cs;
+	const struct color_spec *cs;
 
 	for (cs = color_specs; cs->name; cs++)
 		if (cs->rgb == color)
@@ -148,7 +150,8 @@ get_color_string(color_T color, unsigned char hexcolor[8])
 }
 
 void
-color_to_string(color_T color, unsigned char str[])
+color_to_string(color_T color, unsigned char str[8])
 {
-	snprintf(str, 8, "#%06lx", (unsigned long) color);
+	str[0]='#';
+	elinks_ulongcat(&str[1], NULL, (unsigned long) color, 6, '0', 16, 0);
 }

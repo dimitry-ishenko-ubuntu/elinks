@@ -26,7 +26,7 @@
 
 
 struct bittorrent_download_info {
-	struct list_head labels;	/* -> struct string_list_item */
+	LIST_OF(struct string_list_item) labels;
 	unsigned char *name;
 	int *selection;
 	size_t size;
@@ -574,7 +574,12 @@ bittorrent_message_dialog(struct session *ses, void *data)
 
 	uristring = get_uri_string(message->uri, URI_PUBLIC);
 	if (uristring) {
-		decode_uri_for_display(uristring);
+#ifdef CONFIG_UTF8
+		if (ses->tab->term->utf8_cp)
+			decode_uri(uristring);
+		else
+#endif /* CONFIG_UTF8 */
+			decode_uri_for_display(uristring);
 		add_format_to_string(&string,
 			_("Unable to retrieve %s", ses->tab->term),
 			uristring);
@@ -684,6 +689,7 @@ static void
 bittorrent_query_callback(void *data, enum connection_state state,
 			    struct string *response)
 {
+	/* [gettext_accelerator_context(.bittorrent_query_callback)] */
 	struct type_query *type_query = data;
 	struct string filename;
 	unsigned char *text;
@@ -718,7 +724,12 @@ bittorrent_query_callback(void *data, enum connection_state state,
 
 		/* Let's make the filename pretty for display & save */
 		/* TODO: The filename can be the empty string here. See bug 396. */
-		decode_uri_string_for_display(&filename);
+#ifdef CONFIG_UTF8
+		if (term->utf8_cp)
+			decode_uri_string(&filename);
+		else
+#endif /* CONFIG_UTF8 */
+			decode_uri_string_for_display(&filename);
 	}
 
 	add_format_to_string(&msg,
@@ -803,7 +814,7 @@ bittorrent_query_callback(void *data, enum connection_state state,
 
 	add_dlg_end(dlg, widgets);
 
-	ml = getml(dlg, NULL);
+	ml = getml(dlg, (void *) NULL);
 	if (!ml) {
 		/* XXX: Assume that the allocated @external_handler will be
 		 * freed when releasing the @type_query. */

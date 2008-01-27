@@ -94,7 +94,7 @@ exec_cmd(struct option *o, unsigned char ***argv, int *argc)
 { \
 	struct option *real = get_opt_rec(config_options, opt->value.string); \
  \
-	assertm(real, "%s aliased to unknown option %s!", opt->name, opt->value.string); \
+	assertm(real != NULL, "%s aliased to unknown option %s!", opt->name, opt->value.string); \
 	if_assert_failed { return ret_; } \
  \
 	if (option_types[real->type].name_) \
@@ -109,7 +109,7 @@ redir_cmd(struct option *opt, unsigned char ***argv, int *argc)
 	struct option *real = get_opt_rec(config_options, opt->value.string);
 	unsigned char * ret = NULL;
 
-	assertm(real, "%s aliased to unknown option %s!", opt->name, opt->value.string);
+	assertm(real != NULL, "%s aliased to unknown option %s!", opt->name, opt->value.string);
 	if_assert_failed { return ret; }
 
 	if (option_types[real->type].cmdline) {
@@ -131,7 +131,7 @@ redir_wr(struct option *opt, struct string *string)
 {
 	struct option *real = get_opt_rec(config_options, opt->value.string);
 
-	assertm(real, "%s aliased to unknown option %s!", opt->name, opt->value.string);
+	assertm(real != NULL, "%s aliased to unknown option %s!", opt->name, opt->value.string);
 	if_assert_failed { return; }
 
 	if (option_types[real->type].write)
@@ -144,7 +144,7 @@ redir_set(struct option *opt, unsigned char *str)
 	struct option *real = get_opt_rec(config_options, opt->value.string);
 	int ret = 0;
 
-	assertm(real, "%s aliased to unknown option %s!", opt->name, opt->value.string);
+	assertm(real != NULL, "%s aliased to unknown option %s!", opt->name, opt->value.string);
 	if_assert_failed { return ret; }
 
 	if (option_types[real->type].set) {
@@ -158,15 +158,11 @@ redir_set(struct option *opt, unsigned char *str)
 }
 
 
-static int
-redir_add(struct option *opt, unsigned char *str)
-	wrap_or_(add, add(real, str), 0);
-
 
 /* Support functions for config file parsing. */
 
 static void
-add_optstring_to_string(struct string *s, unsigned char *q, int qlen)
+add_optstring_to_string(struct string *s, const unsigned char *q, int qlen)
 {
  	if (!commandline) add_char_to_string(s, '"');
 	add_quoted_to_string(s, q, qlen);
@@ -212,6 +208,19 @@ num_wr(struct option *option, struct string *string)
 	add_knum_to_string(string, option->value.number);
 }
 
+
+static int
+long_set(struct option *opt, unsigned char *str)
+{
+	opt->value.big_number = *((long *) str);
+	return 1;
+}
+
+static void
+long_wr(struct option *option, struct string *string)
+{
+	add_knum_to_string(string, option->value.big_number);
+}
 
 static unsigned char *
 str_rd(struct option *opt, unsigned char **file, int *line)
@@ -309,7 +318,7 @@ cp_set(struct option *opt, unsigned char *str)
 static void
 cp_wr(struct option *o, struct string *s)
 {
-	unsigned char *mime_name = get_cp_mime_name(o->value.number);
+	unsigned char *mime_name = get_cp_config_name(o->value.number);
 
 	add_optstring_to_string(s, mime_name, strlen(mime_name));
 }
@@ -351,7 +360,7 @@ color_wr(struct option *opt, struct string *str)
 {
 	color_T color = opt->value.color;
 	unsigned char hexcolor[8];
-	unsigned char *strcolor = get_color_string(color, hexcolor);
+	const unsigned char *strcolor = get_color_string(color, hexcolor);
 
 	add_optstring_to_string(str, strcolor, strlen(strcolor));
 }
@@ -359,8 +368,8 @@ color_wr(struct option *opt, struct string *str)
 static void
 tree_dup(struct option *opt, struct option *template)
 {
-	struct list_head *new = init_options_tree();
-	struct list_head *tree = template->value.tree;
+	LIST_OF(struct option) *new = init_options_tree();
+	LIST_OF(struct option) *tree = template->value.tree;
 	struct option *option;
 
 	if (!new) return;
@@ -370,6 +379,7 @@ tree_dup(struct option *opt, struct option *template)
 		struct option *new_opt = copy_option(option);
 
 		if (!new_opt) continue;
+		object_nolock(new_opt, "option");
 		add_to_list_end(*new, new_opt);
 		new_opt->root = opt;
 
@@ -386,21 +396,32 @@ tree_dup(struct option *opt, struct option *template)
 }
 
 const struct option_type_info option_types[] = {
-	{ N_("Boolean"), bool_cmd, num_rd, num_wr, NULL, num_set, NULL, N_("[0|1]") },
-	{ N_("Integer"), gen_cmd, num_rd, num_wr, NULL, num_set, NULL, N_("<num>") },
-	{ N_("Longint"), gen_cmd, num_rd, num_wr, NULL, num_set, NULL, N_("<num>") },
-	{ N_("String"), gen_cmd, str_rd, str_wr, str_dup, str_set, NULL, N_("<str>") },
+	/* The OPT_ comments below are here to be found by grep.  */
 
-	{ N_("Codepage"), gen_cmd, str_rd, cp_wr, NULL, cp_set, NULL, N_("<codepage>") },
-	{ N_("Language"), gen_cmd, str_rd, lang_wr, NULL, lang_set, NULL, N_("<language>") },
-	{ N_("Color"), gen_cmd, str_rd, color_wr, NULL, color_set, NULL, N_("<color|#rrggbb>") },
+	/* OPT_BOOL */
+	{ N_("Boolean"),  bool_cmd,  num_rd,   num_wr,   NULL,     num_set,   N_("[0|1]") },
+	/* OPT_INT */
+	{ N_("Integer"),  gen_cmd,   num_rd,   num_wr,   NULL,     num_set,   N_("<num>") },
+	/* OPT_LONG */
+	{ N_("Longint"),  gen_cmd,   num_rd,   long_wr,  NULL,     long_set,  N_("<num>") },
+	/* OPT_STRING */
+	{ N_("String"),   gen_cmd,   str_rd,   str_wr,   str_dup,  str_set,   N_("<str>") },
 
-	{ N_("Special"), exec_cmd, NULL, NULL, NULL, NULL, NULL, "" },
+	/* OPT_CODEPAGE */
+	{ N_("Codepage"), gen_cmd,   str_rd,   cp_wr,    NULL,     cp_set,    N_("<codepage>") },
+	/* OPT_LANGUAGE */
+	{ N_("Language"), gen_cmd,   str_rd,   lang_wr,  NULL,     lang_set,  N_("<language>") },
+	/* OPT_COLOR */
+	{ N_("Color"),    gen_cmd,   str_rd,   color_wr, NULL,     color_set, N_("<color|#rrggbb>") },
 
-	{ N_("Alias"), redir_cmd, redir_rd, redir_wr, NULL, redir_set, redir_add, "" },
+	/* OPT_COMMAND */
+	{ N_("Special"),  exec_cmd,  NULL,     NULL,     NULL,     NULL,      "" },
 
-	/* tree */
-	{ N_("Folder"), NULL, NULL, NULL, tree_dup, NULL, NULL, "" },
+	/* OPT_ALIAS */
+	{ N_("Alias"),    redir_cmd, redir_rd, redir_wr, NULL,     redir_set, "" },
+
+	/* OPT_TREE */
+	{ N_("Folder"),   NULL,      NULL,     NULL,     tree_dup, NULL,      "" },
 };
 
 unsigned char *

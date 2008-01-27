@@ -50,13 +50,13 @@ html_form(struct html_context *html_context, unsigned char *a,
 	form->method = FORM_METHOD_GET;
 	form->form_num = a - html_context->startf;
 
-	al = get_attr_val(a, "method", html_context->options);
+	al = get_attr_val(a, "method", html_context->doc_cp);
 	if (al) {
 		if (!strcasecmp(al, "post")) {
 			unsigned char *enctype;
 
 			enctype  = get_attr_val(a, "enctype",
-			                        html_context->options);
+						html_context->doc_cp);
 
 			form->method = FORM_METHOD_POST;
 			if (enctype) {
@@ -69,11 +69,11 @@ html_form(struct html_context *html_context, unsigned char *a,
 		}
 		mem_free(al);
 	}
-
-	al = get_attr_val(a, "name", html_context->options);
+	form->onsubmit = get_attr_val(a, "onsubmit", html_context->doc_cp);
+	al = get_attr_val(a, "name", html_context->doc_cp);
 	if (al) form->name = al;
 
-	al = get_attr_val(a, "action", html_context->options);
+	al = get_attr_val(a, "action", html_context->doc_cp);
 	/* The HTML specification at
 	 * http://www.w3.org/TR/REC-html40/interact/forms.html#h-17.3 states
 	 * that the behavior of an empty action attribute should be undefined.
@@ -114,10 +114,10 @@ html_form(struct html_context *html_context, unsigned char *a,
 static int
 get_form_mode(struct html_context *html_context, unsigned char *attr)
 {
-	if (has_attr(attr, "disabled", html_context->options))
+	if (has_attr(attr, "disabled", html_context->doc_cp))
 		return FORM_MODE_DISABLED;
 
-	if (has_attr(attr, "readonly", html_context->options))
+	if (has_attr(attr, "readonly", html_context->doc_cp))
 		return FORM_MODE_READONLY;
 
 	return FORM_MODE_NORMAL;
@@ -146,10 +146,11 @@ html_button(struct html_context *html_context, unsigned char *a,
 	unsigned char *al;
 	struct form_control *fc;
 	enum form_type type = FC_SUBMIT;
+	int cp = html_context->doc_cp;
 
 	html_focusable(html_context, a);
 
-	al = get_attr_val(a, "type", html_context->options);
+	al = get_attr_val(a, "type", cp);
 	if (!al) goto no_type_attr;
 
 	if (!strcasecmp(al, "button")) {
@@ -167,8 +168,9 @@ no_type_attr:
 	fc = init_form_control(type, a, html_context);
 	if (!fc) return;
 
-	fc->name = get_attr_val(a, "name", html_context->options);
-	fc->default_value = get_attr_val(a, "value", html_context->options);
+	fc->id = get_attr_val(a, "id", cp);
+	fc->name = get_attr_val(a, "name", cp);
+	fc->default_value = get_attr_val(a, "value", cp);
 	if (!fc->default_value) {
 		if (fc->type == FC_SUBMIT)
 			fc->default_value = stracpy("Submit");
@@ -194,7 +196,7 @@ html_input_format(struct html_context *html_context, unsigned char *a,
 	html_focusable(html_context, a);
 	format.form = fc;
 	if (format.title) mem_free(format.title);
-	format.title = get_attr_val(a, "title", html_context->options);
+	format.title = get_attr_val(a, "title", html_context->doc_cp);
 	switch (fc->type) {
 		case FC_TEXT:
 		case FC_PASSWORD:
@@ -220,10 +222,10 @@ html_input_format(struct html_context *html_context, unsigned char *a,
 			unsigned char *al;
 
 			mem_free_set(&format.image, NULL);
-			al = get_url_val(a, "src", html_context->options);
+			al = get_url_val(a, "src", html_context->doc_cp);
 			if (!al)
 				al = get_url_val(a, "dynsrc",
-				                 html_context->options);
+				                 html_context->doc_cp);
 			if (al) {
 				format.image = join_urls(html_context->base_href, al);
 				mem_free(al);
@@ -254,7 +256,7 @@ html_input_format(struct html_context *html_context, unsigned char *a,
 		case FC_HIDDEN:
 			INTERNAL("bad control type");
 	}
-	kill_html_stack_item(html_context, &html_top);
+	pop_html_element(html_context);
 	put_chrs(html_context, " ", 1);
 }
 
@@ -264,11 +266,12 @@ html_input(struct html_context *html_context, unsigned char *a,
 {
 	unsigned char *al;
 	struct form_control *fc;
+	int cp = html_context->doc_cp;
 
 	fc = init_form_control(FC_TEXT, a, html_context);
 	if (!fc) return;
 
-	al = get_attr_val(a, "type", html_context->options);
+	al = get_attr_val(a, "type", cp);
 	if (al) {
 		if (!strcasecmp(al, "text")) fc->type = FC_TEXT;
 		else if (!strcasecmp(al, "hidden")) fc->type = FC_HIDDEN;
@@ -285,8 +288,7 @@ html_input(struct html_context *html_context, unsigned char *a,
 	}
 
 	if (fc->type != FC_FILE)
-		fc->default_value = get_attr_val(a, "value",
-		                                 html_context->options);
+		fc->default_value = get_attr_val(a, "value", cp);
 	if (!fc->default_value) {
 		if (fc->type == FC_CHECKBOX)
 			fc->default_value = stracpy("on");
@@ -300,21 +302,21 @@ html_input(struct html_context *html_context, unsigned char *a,
 	if (!fc->default_value)
 		fc->default_value = stracpy("");
 
-	fc->name = get_attr_val(a, "name", html_context->options);
+	fc->id = get_attr_val(a, "id", cp);
+	fc->name = get_attr_val(a, "name", cp);
 
-	fc->size = get_num(a, "size", html_context->options);
+	fc->size = get_num(a, "size", cp);
 	if (fc->size == -1)
 		fc->size = html_context->options->default_form_input_size;
 	fc->size++;
 	if (fc->size > html_context->options->box.width)
 		fc->size = html_context->options->box.width;
-	fc->maxlength = get_num(a, "maxlength", html_context->options);
+	fc->maxlength = get_num(a, "maxlength", cp);
 	if (fc->maxlength == -1) fc->maxlength = INT_MAX;
 	if (fc->type == FC_CHECKBOX || fc->type == FC_RADIO)
-		fc->default_state = has_attr(a, "checked",
-		                             html_context->options);
+		fc->default_state = has_attr(a, "checked", cp);
 	if (fc->type == FC_IMAGE)
-		fc->alt = get_attr_val(a, "alt", html_context->options);
+		fc->alt = get_attr_val(a, "alt", cp);
 
 	if (fc->type != FC_HIDDEN) {
 		html_input_format(html_context, a, fc);
@@ -417,18 +419,18 @@ abort:
 		if (!closing_tag) {
 			unsigned char *value, *label;
 
-			if (has_attr(t_attr, "disabled", html_context->options))
+			if (has_attr(t_attr, "disabled", html_context->doc_cp))
 				goto see;
 			if (preselect == -1
-			    && has_attr(t_attr, "selected", html_context->options))
+			    && has_attr(t_attr, "selected", html_context->doc_cp))
 				preselect = order;
-			value = get_attr_val(t_attr, "value", html_context->options);
+			value = get_attr_val(t_attr, "value", html_context->doc_cp);
 
-			if (!mem_align_alloc(&values, order, order + 1, unsigned char *, 0xFF))
+			if (!mem_align_alloc(&values, order, order + 1, 0xFF))
 				goto abort;
 
 			values[order++] = value;
-			label = get_attr_val(t_attr, "label", html_context->options);
+			label = get_attr_val(t_attr, "label", html_context->doc_cp);
 			if (label) new_menu_item(&lnk_menu, label, order - 1, 0);
 			if (!value || !label) {
 				init_string(&lbl);
@@ -448,7 +450,7 @@ abort:
 		if (!closing_tag) {
 			unsigned char *label;
 
-			label = get_attr_val(t_attr, "label", html_context->options);
+			label = get_attr_val(t_attr, "label", html_context->doc_cp);
 
 			if (!label) {
 				label = stracpy("");
@@ -475,7 +477,8 @@ end_parse:
 		goto abort;
 	}
 
-	fc->name = get_attr_val(attr, "name", html_context->options);
+	fc->id = get_attr_val(attr, "id", html_context->doc_cp);
+	fc->name = get_attr_val(attr, "name", html_context->doc_cp);
 	fc->default_state = preselect < 0 ? 0 : preselect;
 	fc->default_value = order ? stracpy(values[fc->default_state]) : stracpy("");
 	fc->nvalues = order;
@@ -492,13 +495,19 @@ end_parse:
 	max_width = 0;
 	for (i = 0; i < order; i++) {
 		if (!labels[i]) continue;
-		int_lower_bound(&max_width, strlen(labels[i]));
+#ifdef CONFIG_UTF8
+		if (html_context->options->utf8)
+			int_lower_bound(&max_width,
+					utf8_ptr2cells(labels[i], NULL));
+		else
+#endif /* CONFIG_UTF8 */
+			int_lower_bound(&max_width, strlen(labels[i]));
 	}
 
 	for (i = 0; i < max_width; i++)
 		put_chrs(html_context, "_", 1);
 
-	kill_html_stack_item(html_context, &html_top);
+	pop_html_element(html_context);
 	put_chrs(html_context, "]", 1);
 	html_context->special_f(html_context, SP_CONTROL, fc);
 }
@@ -509,13 +518,13 @@ do_html_select_multiple(struct html_context *html_context, unsigned char *a,
                         unsigned char *html, unsigned char *eof,
                         unsigned char **end)
 {
-	unsigned char *al = get_attr_val(a, "name", html_context->options);
+	unsigned char *al = get_attr_val(a, "name", html_context->doc_cp);
 
 	if (!al) return;
 	html_focusable(html_context, a);
-	html_top.type = ELEMENT_DONT_KILL;
+	html_top->type = ELEMENT_DONT_KILL;
 	mem_free_set(&format.select, al);
-	format.select_disabled = has_attr(a, "disabled", html_context->options)
+	format.select_disabled = has_attr(a, "disabled", html_context->doc_cp)
 	                         ? FORM_MODE_DISABLED
 	                         : FORM_MODE_NORMAL;
 }
@@ -524,7 +533,7 @@ void
 html_select(struct html_context *html_context, unsigned char *a,
             unsigned char *html, unsigned char *eof, unsigned char **end)
 {
-	if (has_attr(a, "multiple", html_context->options))
+	if (has_attr(a, "multiple", html_context->doc_cp))
 		do_html_select_multiple(html_context, a, html, eof, end);
 	else
 		do_html_select(a, html, eof, end, html_context);
@@ -540,7 +549,7 @@ html_option(struct html_context *html_context, unsigned char *a,
 
 	if (!format.select) return;
 
-	val = get_attr_val(a, "value", html_context->options);
+	val = get_attr_val(a, "value", html_context->doc_cp);
 	if (!val) {
 		struct string str;
 		unsigned char *p, *r;
@@ -574,10 +583,10 @@ sp:
 			goto se;
 		}
 		if (parse_element(r, html_context->eoff, &name, &namelen, NULL, &p)) goto sp;
-		
+
 		if (namelen < 6) goto se;
 		if (name[0] == '/') name++, namelen--;
-		
+
 		if (strlcasecmp(name, namelen, "OPTION", 6)
 		    && strlcasecmp(name, namelen, "SELECT", 6)
 		    && strlcasecmp(name, namelen, "OPTGROUP", 8))
@@ -591,10 +600,11 @@ end_parse:
 		return;
 	}
 
+	fc->id = get_attr_val(a, "id", html_context->doc_cp);
 	fc->name = null_or_stracpy(format.select);
 	fc->default_value = val;
-	fc->default_state = has_attr(a, "selected", html_context->options);
-	fc->mode = has_attr(a, "disabled", html_context->options)
+	fc->default_state = has_attr(a, "selected", html_context->doc_cp);
+	fc->mode = has_attr(a, "disabled", html_context->doc_cp)
 	           ? FORM_MODE_DISABLED
 	           : format.select_disabled;
 
@@ -603,7 +613,7 @@ end_parse:
 	format.form = fc;
 	format.style.attr |= AT_BOLD;
 	put_chrs(html_context, "[ ]", 3);
-	kill_html_stack_item(html_context, &html_top);
+	pop_html_element(html_context);
 	put_chrs(html_context, " ", 1);
 	html_context->special_f(html_context, SP_CONTROL, fc);
 }
@@ -636,8 +646,11 @@ pp:
 	fc = init_form_control(FC_TEXTAREA, attr, html_context);
 	if (!fc) return;
 
-	fc->name = get_attr_val(attr, "name", html_context->options);
-	fc->default_value = memacpy(html, p - html);
+	fc->id = get_attr_val(attr, "id", html_context->doc_cp);
+	fc->name = get_attr_val(attr, "name", html_context->doc_cp);
+	fc->default_value = convert_string(NULL, html, p - html,
+					   html_context->doc_cp,
+					   CSM_DEFAULT, NULL, NULL, NULL);
 	for (p = fc->default_value; p && p[0]; p++) {
 		/* FIXME: We don't cope well with entities here. Bugzilla uses
 		 * &#13; inside of textarea and we fail miserably upon that
@@ -645,7 +658,7 @@ pp:
 		if (p[0] == '\r') {
 			if (p[1] == '\n'
 			    || (p > fc->default_value && p[-1] == '\n')) {
-				memcpy(p, p + 1, strlen(p));
+				memmove(p, p + 1, strlen(p));
 				p--;
 			} else {
 				p[0] = '\n';
@@ -653,7 +666,7 @@ pp:
 		}
 	}
 
-	cols = get_num(attr, "cols", html_context->options);
+	cols = get_num(attr, "cols", html_context->doc_cp);
 	if (cols <= 0)
 		cols = html_context->options->default_form_input_size;
 	cols++; /* Add 1 column, other browsers may have different
@@ -662,14 +675,14 @@ pp:
 		cols = html_context->options->box.width;
 	fc->cols = cols;
 
-	rows = get_num(attr, "rows", html_context->options);
+	rows = get_num(attr, "rows", html_context->doc_cp);
 	if (rows <= 0) rows = 1;
 	if (rows > html_context->options->box.height)
 		rows = html_context->options->box.height;
 	fc->rows = rows;
 	html_context->options->needs_height = 1;
 
-	wrap_attr = get_attr_val(attr, "wrap", html_context->options);
+	wrap_attr = get_attr_val(attr, "wrap", html_context->doc_cp);
 	if (wrap_attr) {
 		if (!strcasecmp(wrap_attr, "hard")
 		    || !strcasecmp(wrap_attr, "physical")) {
@@ -683,14 +696,14 @@ pp:
 		}
 		mem_free(wrap_attr);
 
-	} else if (has_attr(attr, "nowrap", html_context->options)) {
+	} else if (has_attr(attr, "nowrap", html_context->doc_cp)) {
 		fc->wrap = FORM_WRAP_NONE;
 
 	} else {
 		fc->wrap = FORM_WRAP_SOFT;
 	}
 
-	fc->maxlength = get_num(attr, "maxlength", html_context->options);
+	fc->maxlength = get_num(attr, "maxlength", html_context->doc_cp);
 	if (fc->maxlength == -1) fc->maxlength = INT_MAX;
 
 	if (rows > 1) ln_break(html_context, 1);
@@ -709,7 +722,7 @@ pp:
 			ln_break(html_context, 1);
 	}
 
-	kill_html_stack_item(html_context, &html_top);
+	pop_html_element(html_context);
 	if (rows > 1)
 		ln_break(html_context, 1);
 	else

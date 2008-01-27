@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION ACLOCAL AUTOCONF AUTOHEADER MAKE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AWK RANLIB ac_ct_RANLIB INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CG_COMMIT_ID SPARSE ASCIIDOC XMLTO JW POD2HTML ASCIIDOC_FLAGS CONFIG_ASCIIDOC CONFIG_POD2HTML CONFIG_XMLTO CONFIG_JW CONFIG_DOC CONFIG_MANUAL CONFIG_MANPAGE CONFIG_BEOS CONFIG_RISCOS CONFIG_WIN32 CONFIG_OS2 CONFIG_UNIX CPP EGREP CONFIG_INTERLINK LIBOBJS CONFIG_GPM CONFIG_GZIP CONFIG_BZIP2 CONFIG_IDN CONFIG_BOOKMARKS CONFIG_XBEL_BOOKMARKS SPIDERMONKEY_LIBS SPIDERMONKEY_CFLAGS CONFIG_SPIDERMONKEY CONFIG_ECMASCRIPT GUILE_CONFIG GUILE_CFLAGS PERL_LIBS PERL_CFLAGS PYTHON_LIBS PYTHON_CFLAGS LUA_LIBS LUA_CFLAGS CONFIG_RUBY RUBY_CFLAGS RUBY_LIBS CONFIG_SCRIPTING CONFIG_GUILE CONFIG_LUA CONFIG_PERL CONFIG_PYTHON CONFIG_SM_SCRIPTING OPENSSL_CFLAGS LIBGNUTLS_CONFIG GNUTLS_CFLAGS CONFIG_SSL CONFIG_GNUTLS_OPENSSL_COMPAT CONFIG_OPENSSL CONFIG_GNUTLS X_CFLAGS HAVE_SMBCLIENT SET_MAKE build build_cpu build_vendor build_os host host_cpu host_vendor host_os ALLOCA GLIBC21 CONFIG_NLS CONFIG_NLS_TRUE CONFIG_NLS_FALSE MSGFMT GMSGFMT XGETTEXT INTLBISON CATALOGS GMOFILES MKINSTALLDIRS INTL_LIBTOOL_SUFFIX_PREFIX CONFIG_COOKIES CONFIG_FORMHIST CONFIG_GLOBHIST CONFIG_MAILCAP CONFIG_MIMETYPES CONFIG_IPV6 CONFIG_BITTORRENT CONFIG_DATA CONFIG_URI_REWRITE CONFIG_CGI CONFIG_FINGER CONFIG_FSP CONFIG_FTP CONFIG_GOPHER CONFIG_NNTP CONFIG_SMB CONFIG_MOUSE CONFIG_SYSMOUSE CONFIG_88_COLORS CONFIG_256_COLORS CONFIG_EXMODE CONFIG_LEDS CONFIG_MARKS CONFIG_CSS CONFIG_HTML_HIGHLIGHT CONFIG_DOM CONFIG_BACKTRACE CONFIG_NO_ROOT_EXEC CONFIG_DEBUG CONFIG_FASTMEM CONFIG_OWN_LIBC CONFIG_SMALL CONFIG_MD5 CONFIG_SHA1 CONFIG_SCANNER CONFDIR LOCALEDIR LIBDIR ALL_CFLAGS MAKE_COLOR LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION ACLOCAL AUTOCONF AUTOHEADER MAKE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AWK RANLIB ac_ct_RANLIB INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CG_COMMIT_ID SPARSE ASCIIDOC XMLTO JW POD2HTML DOXYGEN api_srcdir ASCIIDOC_FLAGS CONFIG_ASCIIDOC CONFIG_DOXYGEN CONFIG_POD2HTML CONFIG_XMLTO CONFIG_JW CONFIG_DOC CONFIG_MANUAL CONFIG_MANPAGE CONFIG_APIDOCS CONFIG_OS_BEOS CONFIG_OS_RISCOS CONFIG_OS_WIN32 CONFIG_OS_OS2 CONFIG_OS_UNIX CPP EGREP CONFIG_INTERLINK LIBOBJS CONFIG_GPM CONFIG_GZIP CONFIG_BZIP2 CONFIG_IDN CONFIG_GC CONFIG_LZMA CONFIG_GSSAPI CONFIG_BOOKMARKS CONFIG_XBEL_BOOKMARKS SEE_CONFIG SEE_CFLAGS CONFIG_ECMASCRIPT CONFIG_ECMASCRIPT_SEE CONFIG_ECMASCRIPT_SMJS SPIDERMONKEY_LIBS SPIDERMONKEY_CFLAGS CONFIG_SPIDERMONKEY GUILE_CONFIG GUILE_CFLAGS PERL_LIBS PERL_CFLAGS PYTHON PYTHON_LIBS PYTHON_CFLAGS LUA_LIBS LUA_CFLAGS CONFIG_SCRIPTING_RUBY RUBY_CFLAGS RUBY_LIBS CONFIG_SCRIPTING CONFIG_SCRIPTING_GUILE CONFIG_SCRIPTING_LUA CONFIG_SCRIPTING_PERL CONFIG_SCRIPTING_PYTHON CONFIG_SCRIPTING_SPIDERMONKEY OPENSSL_CFLAGS LIBGNUTLS_CONFIG GNUTLS_CFLAGS CONFIG_SSL CONFIG_GNUTLS_OPENSSL_COMPAT CONFIG_OPENSSL CONFIG_GNUTLS X_CFLAGS SET_MAKE build build_cpu build_vendor build_os host host_cpu host_vendor host_os ALLOCA GLIBC21 CONFIG_NLS CONFIG_NLS_TRUE CONFIG_NLS_FALSE MSGFMT GMSGFMT XGETTEXT INTLBISON CATALOGS GMOFILES MKINSTALLDIRS INTL_LIBTOOL_SUFFIX_PREFIX CONFIG_COOKIES CONFIG_FORMHIST CONFIG_GLOBHIST CONFIG_MAILCAP CONFIG_MIMETYPES CONFIG_IPV6 CONFIG_BITTORRENT CONFIG_DATA CONFIG_URI_REWRITE CONFIG_CGI CONFIG_FINGER CONFIG_FSP CONFIG_FTP CONFIG_GOPHER CONFIG_NNTP CONFIG_SMB CONFIG_MOUSE CONFIG_SYSMOUSE CONFIG_88_COLORS CONFIG_256_COLORS CONFIG_TRUE_COLOR CONFIG_EXMODE CONFIG_LEDS CONFIG_MARKS CONFIG_CSS CONFIG_HTML_HIGHLIGHT CONFIG_DOM CONFIG_BACKTRACE CONFIG_NO_ROOT_EXEC CONFIG_DEBUG CONFIG_FASTMEM CONFIG_OWN_LIBC CONFIG_SMALL CONFIG_UTF8 CONFDIR LOCALEDIR LIBDIR MAKE_COLOR LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -849,6 +849,7 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-largefile     omit support for large files
+  --enable-lzma           enable lzma encoding support
   --disable-bookmarks     disable bookmark support
   --disable-xbel          disable XBEL bookmark support (requires expat)
   --disable-sm-scripting  ECMAScript browser scripting (requires Spidermonkey)
@@ -868,11 +869,12 @@ Optional Features:
   --disable-ftp           disable ftp protocol support
   --enable-gopher         enable gopher protocol support
   --enable-nntp           enable nntp protocol support
-  --enable-smb            not currently allowed
+  --enable-smb            enable Samba protocol support
   --disable-mouse         disable mouse support
   --disable-sysmouse      disable BSD sysmouse support
   --enable-88-colors      enable 88 color support
   --enable-256-colors     enable 256 color support
+  --enable-true-color     enable true color support
   --enable-exmode         enable exmode (CLI) interface
   --disable-leds          disable LEDs support
   --disable-marks         disable document marks support
@@ -884,6 +886,7 @@ Optional Features:
   --enable-fastmem        enable direct use of system allocation functions, not usable with --enable-debug
   --enable-own-libc       force use of internal functions instead of those of system libc
   --enable-small          reduce binary size as far as possible (but see the bottom of doc/small.txt!)
+  --disable-utf-8         disable UTF-8 support
 
     Also check out the features.conf file for more information about features!
 
@@ -896,10 +899,13 @@ Optional Packages:
   --without-zlib          disable zlib support
   --without-bzlib         disable bzlib support
   --without-idn           disable international domain names support
+  --with-gc               enable Boehm's garbage collector
+  --with-gssapi           enable GSSAPI support
+  --with-see              enable Simple Ecmascript Engine (SEE) support
   --without-spidermonkey  disable SpiderMonkey Mozilla JavaScript engine support
   --with-guile            enable Guile support
   --with-perl             enable Perl support
-  --with-python           enable Python support
+  --with-python=DIR     enable Python support
   --without-lua           disable Lua support
   --with-ruby             enable Ruby support
   --without-gnutls        disable GNUTLS SSL support
@@ -1356,6 +1362,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
 ac_aux_dir=
 for ac_dir in config $srcdir/config; do
   if test -f $ac_dir/install-sh; then
@@ -1383,7 +1390,7 @@ ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
 
 
 PACKAGE=elinks
-VERSION=0.11.3
+VERSION=0.12.GIT
 
 
 
@@ -3153,7 +3160,65 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 	fi
+
+	for ac_prog in "doxygen"
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_DOXYGEN+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $DOXYGEN in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DOXYGEN="$DOXYGEN" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DOXYGEN="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
 fi
+DOXYGEN=$ac_cv_path_DOXYGEN
+
+if test -n "$DOXYGEN"; then
+  echo "$as_me:$LINENO: result: $DOXYGEN" >&5
+echo "${ECHO_T}$DOXYGEN" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  test -n "$DOXYGEN" && break
+done
+
+	if test "x$DOXYGEN" != "x"; then
+
+	  CONFIG_DOXYGEN=yes
+	  ABOUT_CONFIG_DOXYGEN="Doxygen"
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_DOXYGEN 1
+_ACEOF
+
+		api_srcdir="$(cd "$srcdir" && pwd)/src"
+
+	fi
+fi
+
 
 
 
@@ -3198,7 +3263,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -3252,7 +3317,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -3306,7 +3371,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -3317,6 +3382,60 @@ _ACEOF
 
 	if test -z "$value"; then
 		value="$CONFIG_MANPAGE"
+	fi
+
+	echo "$about $dots $value" >> features.log
+
+
+
+
+	CONFIG_APIDOCS=no
+	el_value=
+
+	for dependency in CONFIG_DOXYGEN; do
+		# Hope this is portable?!? --jonas
+		eval el_config_value=$`echo $dependency`
+
+		if test "$el_config_value" = yes; then
+			el_about_dep=$`echo ABOUT_$dependency`
+			eval depvalue=$el_about_dep
+
+			if test -z "$el_value"; then
+				el_value="$depvalue"
+			else
+				el_value="$el_value, $depvalue"
+			fi
+			CONFIG_APIDOCS=yes
+		fi
+	done
+
+	if test "$CONFIG_APIDOCS" = yes; then
+
+	  CONFIG_APIDOCS=yes
+	  ABOUT_CONFIG_APIDOCS="API Documentation"
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_APIDOCS 1
+_ACEOF
+
+	fi
+
+	about="API Documentation"
+	value="$el_value"
+	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
+	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
+	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
+	DOTS="................................"
+	dots=`echo $DOTS | sed "s/$msgdots//"`
+
+	# $msgdots too big?
+	if test "$dots" = "$DOTS"; then
+		dots=""
+	fi
+
+	if test -z "$value"; then
+		value="$CONFIG_APIDOCS"
 	fi
 
 	echo "$about $dots $value" >> features.log
@@ -3376,29 +3495,29 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  CONFIG_BEOS=yes
+  CONFIG_OS_BEOS=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-CONFIG_BEOS=no
+CONFIG_OS_BEOS=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-		if test "$CONFIG_BEOS" = yes; then
+		if test "$CONFIG_OS_BEOS" = yes; then
 
-	  CONFIG_BEOS=yes
-	  ABOUT_CONFIG_BEOS="BEOS"
+	  CONFIG_OS_BEOS=yes
+	  ABOUT_CONFIG_OS_BEOS="BEOS"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_BEOS 1
+#define CONFIG_OS_BEOS 1
 _ACEOF
 
 			break
 		fi
 	done
 
-	echo "$as_me:$LINENO: result: $CONFIG_BEOS" >&5
-echo "${ECHO_T}$CONFIG_BEOS" >&6
+	echo "$as_me:$LINENO: result: $CONFIG_OS_BEOS" >&5
+echo "${ECHO_T}$CONFIG_OS_BEOS" >&6
 
 
 
@@ -3446,29 +3565,29 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  CONFIG_RISCOS=yes
+  CONFIG_OS_RISCOS=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-CONFIG_RISCOS=no
+CONFIG_OS_RISCOS=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-		if test "$CONFIG_RISCOS" = yes; then
+		if test "$CONFIG_OS_RISCOS" = yes; then
 
-	  CONFIG_RISCOS=yes
-	  ABOUT_CONFIG_RISCOS="RISCOS"
+	  CONFIG_OS_RISCOS=yes
+	  ABOUT_CONFIG_OS_RISCOS="RISCOS"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_RISCOS 1
+#define CONFIG_OS_RISCOS 1
 _ACEOF
 
 			break
 		fi
 	done
 
-	echo "$as_me:$LINENO: result: $CONFIG_RISCOS" >&5
-echo "${ECHO_T}$CONFIG_RISCOS" >&6
+	echo "$as_me:$LINENO: result: $CONFIG_OS_RISCOS" >&5
+echo "${ECHO_T}$CONFIG_OS_RISCOS" >&6
 
 
 
@@ -3516,29 +3635,29 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  CONFIG_WIN32=yes
+  CONFIG_OS_WIN32=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-CONFIG_WIN32=no
+CONFIG_OS_WIN32=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-		if test "$CONFIG_WIN32" = yes; then
+		if test "$CONFIG_OS_WIN32" = yes; then
 
-	  CONFIG_WIN32=yes
-	  ABOUT_CONFIG_WIN32="WIN32"
+	  CONFIG_OS_WIN32=yes
+	  ABOUT_CONFIG_OS_WIN32="WIN32"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_WIN32 1
+#define CONFIG_OS_WIN32 1
 _ACEOF
 
 			break
 		fi
 	done
 
-	echo "$as_me:$LINENO: result: $CONFIG_WIN32" >&5
-echo "${ECHO_T}$CONFIG_WIN32" >&6
+	echo "$as_me:$LINENO: result: $CONFIG_OS_WIN32" >&5
+echo "${ECHO_T}$CONFIG_OS_WIN32" >&6
 
 
 
@@ -3586,52 +3705,52 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  CONFIG_OS2=yes
+  CONFIG_OS_OS2=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-CONFIG_OS2=no
+CONFIG_OS_OS2=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-		if test "$CONFIG_OS2" = yes; then
+		if test "$CONFIG_OS_OS2" = yes; then
 
-	  CONFIG_OS2=yes
-	  ABOUT_CONFIG_OS2="EMX"
+	  CONFIG_OS_OS2=yes
+	  ABOUT_CONFIG_OS_OS2="EMX"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_OS2 1
+#define CONFIG_OS_OS2 1
 _ACEOF
 
 			break
 		fi
 	done
 
-	echo "$as_me:$LINENO: result: $CONFIG_OS2" >&5
-echo "${ECHO_T}$CONFIG_OS2" >&6
+	echo "$as_me:$LINENO: result: $CONFIG_OS_OS2" >&5
+echo "${ECHO_T}$CONFIG_OS_OS2" >&6
 
 
-test "$CONFIG_OS2" = yes && LDFLAGS=`echo "$LDFLAGS" | sed "s/-Zexe//g"`
+test "$CONFIG_OS_OS2" = yes && LDFLAGS=`echo "$LDFLAGS" | sed "s/-Zexe//g"`
 
 echo "$as_me:$LINENO: checking for UNIX" >&5
 echo $ECHO_N "checking for UNIX... $ECHO_C" >&6
-if test "$CONFIG_BEOS" = no && \
-   test "$CONFIG_RISCOS" = no && \
-   test "$CONFIG_WIN32" = no && \
-   test "$CONFIG_OS2" = no; then
+if test "$CONFIG_OS_BEOS" = no && \
+   test "$CONFIG_OS_RISCOS" = no && \
+   test "$CONFIG_OS_WIN32" = no && \
+   test "$CONFIG_OS_OS2" = no; then
 
-	  CONFIG_UNIX=yes
-	  ABOUT_CONFIG_UNIX="UNIX"
+	  CONFIG_OS_UNIX=yes
+	  ABOUT_CONFIG_OS_UNIX="UNIX"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_UNIX 1
+#define CONFIG_OS_UNIX 1
 _ACEOF
 
 else
-	CONFIG_UNIX=no
+	CONFIG_OS_UNIX=no
 fi
-echo "$as_me:$LINENO: result: $CONFIG_UNIX" >&5
-echo "${ECHO_T}$CONFIG_UNIX" >&6
+echo "$as_me:$LINENO: result: $CONFIG_OS_UNIX" >&5
+echo "${ECHO_T}$CONFIG_OS_UNIX" >&6
 
 
 
@@ -4589,6 +4708,156 @@ fi
 
 done
 
+
+
+for ac_header in wctype.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ------------------------------------------ ##
+## Report this to the AC_PACKAGE_NAME lists.  ##
+## ------------------------------------------ ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
 
 
 
@@ -12055,7 +12324,8 @@ done
 
 
 
-for ac_func in cfmakeraw gethostbyaddr herror strerror
+
+for ac_func in atoll cfmakeraw gethostbyaddr herror strerror
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -14655,9 +14925,22 @@ echo "${ECHO_T}yes" >&6
 	LIBS_X="$LIBS";
 
 		if test -n "$withval" && test -d "$withval"; then
-			CFLAGS="$CFLAGS -I$withval/include";
-			CPPFLAGS="$CPPFLAGS -I$withval/include";
-			LDFLAGS="$LDFLAGS -L$withval/lib";
+			# Be a little more careful when setting
+			# include and lib directories. This way
+			# $withval will work when includes are
+			# there but the library is in the common
+			# /usr/lib ... Does the right thing when
+			# looking for gc on Debian.
+			if test -d "$withval/include"; then
+				CFLAGS="$CFLAGS -I$withval/include"
+				CPPFLAGS="$CPPFLAGS -I$withval/include"
+			else
+				CFLAGS="$CFLAGS -I$withval"
+				CPPFLAGS="$CPPFLAGS -I$withval"
+			fi
+			if test -d "$withval/lib"; then
+				LDFLAGS="$LDFLAGS -L$withval/lib"
+			fi
 		fi
 
 
@@ -14921,7 +15204,7 @@ echo "${ECHO_T}disabled" >&6
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -14965,9 +15248,22 @@ echo "${ECHO_T}yes" >&6
 	LIBS_X="$LIBS";
 
 		if test -n "$withval" && test -d "$withval"; then
-			CFLAGS="$CFLAGS -I$withval/include";
-			CPPFLAGS="$CPPFLAGS -I$withval/include";
-			LDFLAGS="$LDFLAGS -L$withval/lib";
+			# Be a little more careful when setting
+			# include and lib directories. This way
+			# $withval will work when includes are
+			# there but the library is in the common
+			# /usr/lib ... Does the right thing when
+			# looking for gc on Debian.
+			if test -d "$withval/include"; then
+				CFLAGS="$CFLAGS -I$withval/include"
+				CPPFLAGS="$CPPFLAGS -I$withval/include"
+			else
+				CFLAGS="$CFLAGS -I$withval"
+				CPPFLAGS="$CPPFLAGS -I$withval"
+			fi
+			if test -d "$withval/lib"; then
+				LDFLAGS="$LDFLAGS -L$withval/lib"
+			fi
 		fi
 
 
@@ -15123,9 +15419,9 @@ fi
 done
 
 		if test "$CONFIG_GZIP" = yes; then
-			echo "$as_me:$LINENO: checking for gzdopen in -lz" >&5
-echo $ECHO_N "checking for gzdopen in -lz... $ECHO_C" >&6
-if test "${ac_cv_lib_z_gzdopen+set}" = set; then
+			echo "$as_me:$LINENO: checking for gzclearerr in -lz" >&5
+echo $ECHO_N "checking for gzclearerr in -lz... $ECHO_C" >&6
+if test "${ac_cv_lib_z_gzclearerr+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -15143,11 +15439,11 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char gzdopen ();
+char gzclearerr ();
 int
 main ()
 {
-gzdopen ();
+gzclearerr ();
   ;
   return 0;
 }
@@ -15174,20 +15470,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_lib_z_gzdopen=yes
+  ac_cv_lib_z_gzclearerr=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_lib_z_gzdopen=no
+ac_cv_lib_z_gzclearerr=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_z_gzdopen" >&5
-echo "${ECHO_T}$ac_cv_lib_z_gzdopen" >&6
-if test $ac_cv_lib_z_gzdopen = yes; then
+echo "$as_me:$LINENO: result: $ac_cv_lib_z_gzclearerr" >&5
+echo "${ECHO_T}$ac_cv_lib_z_gzclearerr" >&6
+if test $ac_cv_lib_z_gzclearerr = yes; then
   CONFIG_GZIP=yes
 else
   CONFIG_GZIP=no
@@ -15231,7 +15527,7 @@ echo "${ECHO_T}disabled" >&6
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -15275,9 +15571,22 @@ echo "${ECHO_T}yes" >&6
 	LIBS_X="$LIBS";
 
 		if test -n "$withval" && test -d "$withval"; then
-			CFLAGS="$CFLAGS -I$withval/include";
-			CPPFLAGS="$CPPFLAGS -I$withval/include";
-			LDFLAGS="$LDFLAGS -L$withval/lib";
+			# Be a little more careful when setting
+			# include and lib directories. This way
+			# $withval will work when includes are
+			# there but the library is in the common
+			# /usr/lib ... Does the right thing when
+			# looking for gc on Debian.
+			if test -d "$withval/include"; then
+				CFLAGS="$CFLAGS -I$withval/include"
+				CPPFLAGS="$CPPFLAGS -I$withval/include"
+			else
+				CFLAGS="$CFLAGS -I$withval"
+				CPPFLAGS="$CPPFLAGS -I$withval"
+			fi
+			if test -d "$withval/lib"; then
+				LDFLAGS="$LDFLAGS -L$withval/lib"
+			fi
 		fi
 
 
@@ -15541,7 +15850,7 @@ echo "${ECHO_T}disabled" >&6
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -15585,9 +15894,22 @@ echo "${ECHO_T}yes" >&6
 	LIBS_X="$LIBS";
 
 		if test -n "$withval" && test -d "$withval"; then
-			CFLAGS="$CFLAGS -I$withval/include";
-			CPPFLAGS="$CPPFLAGS -I$withval/include";
-			LDFLAGS="$LDFLAGS -L$withval/lib";
+			# Be a little more careful when setting
+			# include and lib directories. This way
+			# $withval will work when includes are
+			# there but the library is in the common
+			# /usr/lib ... Does the right thing when
+			# looking for gc on Debian.
+			if test -d "$withval/include"; then
+				CFLAGS="$CFLAGS -I$withval/include"
+				CPPFLAGS="$CPPFLAGS -I$withval/include"
+			else
+				CFLAGS="$CFLAGS -I$withval"
+				CPPFLAGS="$CPPFLAGS -I$withval"
+			fi
+			if test -d "$withval/lib"; then
+				LDFLAGS="$LDFLAGS -L$withval/lib"
+			fi
 		fi
 
 
@@ -15851,7 +16173,7 @@ echo "${ECHO_T}disabled" >&6
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -15866,6 +16188,412 @@ echo "${ECHO_T}disabled" >&6
 
 	echo "$about $dots $value" >> features.log
 
+
+
+
+if test "x{with_gc}" != xno; then
+
+	CONFIG_GC=yes
+	WITHVAL_CONFIG_GC=
+
+
+# Check whether --with-gc or --without-gc was given.
+if test "${with_gc+set}" = set; then
+  withval="$with_gc"
+  WITHVAL_CONFIG_GC="$withval"
+fi;
+	if test "x$WITHVAL_CONFIG_GC" = xno; then CONFIG_GC=no; fi
+
+
+	echo "$as_me:$LINENO: checking for gc support" >&5
+echo $ECHO_N "checking for gc support... $ECHO_C" >&6
+
+	if test "$CONFIG_GC" != no; then
+		echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+	CFLAGS_X="$CFLAGS";
+	CPPFLAGS_X="$CPPFLAGS";
+	LDFLAGS_X="$LDFLAGS";
+	LIBS_X="$LIBS";
+
+		if test -n "$withval" && test -d "$withval"; then
+			# Be a little more careful when setting
+			# include and lib directories. This way
+			# $withval will work when includes are
+			# there but the library is in the common
+			# /usr/lib ... Does the right thing when
+			# looking for gc on Debian.
+			if test -d "$withval/include"; then
+				CFLAGS="$CFLAGS -I$withval/include"
+				CPPFLAGS="$CPPFLAGS -I$withval/include"
+			else
+				CFLAGS="$CFLAGS -I$withval"
+				CPPFLAGS="$CPPFLAGS -I$withval"
+			fi
+			if test -d "$withval/lib"; then
+				LDFLAGS="$LDFLAGS -L$withval/lib"
+			fi
+		fi
+
+
+for ac_header in gc.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ------------------------------------------ ##
+## Report this to the AC_PACKAGE_NAME lists.  ##
+## ------------------------------------------ ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ CONFIG_GC=yes
+else
+  CONFIG_GC=no; break;
+fi
+
+done
+
+		if test "$CONFIG_GC" = yes; then
+			echo "$as_me:$LINENO: checking for GC_init in -lgc" >&5
+echo $ECHO_N "checking for GC_init in -lgc... $ECHO_C" >&6
+if test "${ac_cv_lib_gc_GC_init+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgc  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char GC_init ();
+int
+main ()
+{
+GC_init ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_gc_GC_init=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_gc_GC_init=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_gc_GC_init" >&5
+echo "${ECHO_T}$ac_cv_lib_gc_GC_init" >&6
+if test $ac_cv_lib_gc_GC_init = yes; then
+  CONFIG_GC=yes
+else
+  CONFIG_GC=no
+fi
+
+		fi
+
+		if test "$CONFIG_GC" = yes; then
+
+	  CONFIG_GC=yes
+	  ABOUT_CONFIG_GC="gc"
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_GC 1
+_ACEOF
+
+			LIBS="$LIBS -lgc"
+		else
+			if test -n "$WITHVAL_CONFIG_GC" &&
+			   test "$WITHVAL_CONFIG_GC" != xno; then
+				{ { echo "$as_me:$LINENO: error: gc not found" >&5
+echo "$as_me: error: gc not found" >&2;}
+   { (exit 1); exit 1; }; }
+			fi
+
+	CFLAGS="$CFLAGS_X";
+	CPPFLAGS="$CPPFLAGS_X";
+	LDFLAGS="$LDFLAGS_X";
+	LIBS="$LIBS_X";
+
+		fi
+	else
+		echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+	fi
+
+
+
+	about="gc"
+	value=""
+	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
+	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
+	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
+	DOTS="................................"
+	dots=`echo $DOTS | sed "s/$msgdots//"`
+
+	# $msgdots too big?
+	if test "$dots" = "$DOTS"; then
+		dots=""
+	fi
+
+	if test -z "$value"; then
+		value="$CONFIG_GC"
+	fi
+
+	echo "$about $dots $value" >> features.log
+
+
+
+fi
+
+
+	# Check whether --enable-lzma or --disable-lzma was given.
+if test "${enable_lzma+set}" = set; then
+  enableval="$enable_lzma"
+
+		if test "$enableval" != no; then enableval="yes"; fi
+		CONFIG_LZMA="$enableval";
+
+fi;
+
+	if test "x$CONFIG_LZMA" = xyes; then
+
+	  CONFIG_LZMA=yes
+	  ABOUT_CONFIG_LZMA="lzma"
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_LZMA 1
+_ACEOF
+
+	else
+		CONFIG_LZMA=no
+	fi
+
+	about="lzma"
+	value=""
+	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
+	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
+	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
+	DOTS="................................"
+	dots=`echo $DOTS | sed "s/$msgdots//"`
+
+	# $msgdots too big?
+	if test "$dots" = "$DOTS"; then
+		dots=""
+	fi
+
+	if test -z "$value"; then
+		value="$CONFIG_LZMA"
+	fi
+
+	echo "$about $dots $value" >> features.log
+
+
+
+
+
+enable_gssapi="no";
+
+
+# Check whether --with-gssapi or --without-gssapi was given.
+if test "${with_gssapi+set}" = set; then
+  withval="$with_gssapi"
+   if test "x$withval" != xno; then enable_gssapi=yes; fi
+fi;
+
+echo "$as_me:$LINENO: checking for GSSAPI" >&5
+echo $ECHO_N "checking for GSSAPI... $ECHO_C" >&6
+
+if test "$enable_gssapi" = "yes"; then
+	echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+	GSSAPI_CFLAGS=`krb5-config --cflags gssapi`
+	GSSAPI_LIBS=`krb5-config --libs gssapi`
+	CFLAGS="$GSSAPI_CFLAGS $CFLAGS"
+	LIBS="$GSSAPI_LIBS $LIBS"
+
+	  CONFIG_GSSAPI=yes
+	  ABOUT_CONFIG_GSSAPI="GssApi"
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_GSSAPI 1
+_ACEOF
+
+else
+	echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
 
 
 
@@ -15905,7 +16633,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -16202,7 +16930,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -16386,7 +17114,7 @@ done
 
 
 
-if test "$CONFIG_OS2" = yes; then
+if test "$CONFIG_OS_OS2" = yes; then
 
 	echo "$as_me:$LINENO: checking for OS/2 threads" >&5
 echo $ECHO_N "checking for OS/2 threads... $ECHO_C" >&6
@@ -16793,7 +17521,7 @@ echo "${ECHO_T}$cf_result" >&6
 fi
 
 
-if test "$CONFIG_WIN32" = yes; then
+if test "$CONFIG_OS_WIN32" = yes; then
 
 	echo "$as_me:$LINENO: checking for win32 threads" >&5
 echo $ECHO_N "checking for win32 threads... $ECHO_C" >&6
@@ -16870,7 +17598,8 @@ _ACEOF
 	fi
 
 
-for ac_header in windows.h
+
+for ac_header in windows.h ws2tcpip.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -17027,14 +17756,169 @@ done
 fi
 
 
+# Check whether --with-see or --without-see was given.
+if test "${with_see+set}" = set; then
+  withval="$with_see"
+   if test "x$withval" != xno; then enable_see=yes; fi
+fi;
+
+# The following is probably bad, ugly and so on. Stolen from Guile's (1.4)
+# SEE_FLAGS but I really don't want to require people to have Guile in order
+# to compile CVS. Also, the macro seems to be really stupid regarding searching
+# for Guile in $PATH etc. --pasky
+
+CONFIG_ECMASCRIPT_SEE=no
+
+if test "$enable_see" = "yes"; then
+	if test -d "$withval"; then
+		SEE_PATH="$withval:$PATH"
+	else
+		SEE_PATH="$PATH"
+	fi
+
+	# Extract the first word of "libsee-config", so it can be a program name with args.
+set dummy libsee-config; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_SEE_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $SEE_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SEE_CONFIG="$SEE_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $SEE_PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SEE_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_path_SEE_CONFIG" && ac_cv_path_SEE_CONFIG="no"
+  ;;
+esac
+fi
+SEE_CONFIG=$ac_cv_path_SEE_CONFIG
+
+if test -n "$SEE_CONFIG"; then
+  echo "$as_me:$LINENO: result: $SEE_CONFIG" >&5
+echo "${ECHO_T}$SEE_CONFIG" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+	echo "$as_me:$LINENO: checking for SEE (2.0.1131 or later)" >&5
+echo $ECHO_N "checking for SEE (2.0.1131 or later)... $ECHO_C" >&6
+	if test "$SEE_CONFIG" != no; then
+
+	CFLAGS_X="$CFLAGS";
+	CPPFLAGS_X="$CPPFLAGS";
+	LDFLAGS_X="$LDFLAGS";
+	LIBS_X="$LIBS";
+
+		SEE_LIBS="`$SEE_CONFIG --libs`"
+		SEE_CFLAGS="`$SEE_CONFIG --cppflags`"
+		CPPFLAGS="$SEE_CFLAGS $CPPFLAGS"
+		LIBS="$SEE_LIBS $LIBS_X"
+		cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <see/see.h>
+int
+main ()
+{
+#if SEE_VERSION_API_MAJOR < 2
+			#error SEE too old
+			#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  cf_result=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+cf_result=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+
+	CFLAGS="$CFLAGS_X";
+	CPPFLAGS="$CPPFLAGS_X";
+	LDFLAGS="$LDFLAGS_X";
+	LIBS="$LIBS_X";
+
+		if test "$cf_result" = yes; then
+			LIBS="$SEE_LIBS $LIBS"
+
+	  CONFIG_ECMASCRIPT_SEE=yes
+	  ABOUT_CONFIG_ECMASCRIPT_SEE="SEE"
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_ECMASCRIPT_SEE 1
+_ACEOF
+
+
+		fi
+		echo "$as_me:$LINENO: result: $cf_result" >&5
+echo "${ECHO_T}$cf_result" >&6
+	else
+		if test -n "$withval" && test "x$withval" != xno; then
+			{ { echo "$as_me:$LINENO: error: SEE not found" >&5
+echo "$as_me: error: SEE not found" >&2;}
+   { (exit 1); exit 1; }; }
+		else
+			{ echo "$as_me:$LINENO: WARNING: SEE support disabled" >&5
+echo "$as_me: WARNING: SEE support disabled" >&2;}
+		fi
+	fi
+fi
+
+
 
 # Check whether --with-spidermonkey or --without-spidermonkey was given.
 if test "${with_spidermonkey+set}" = set; then
   withval="$with_spidermonkey"
   if test "$withval" = no; then disable_spidermonkey=yes; fi
 fi;
-echo "$as_me:$LINENO: checking for SpiderMonkey" >&5
-echo $ECHO_N "checking for SpiderMonkey... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for SpiderMonkey (1.5 RC3a or later)" >&5
+echo $ECHO_N "checking for SpiderMonkey (1.5 RC3a or later)... $ECHO_C" >&6
 
 
 	CFLAGS_X="$CFLAGS";
@@ -17049,15 +17933,12 @@ if test -z "$disable_spidermonkey"; then
 		withval="";
 	fi
 	for spidermonkeydir in "$withval" "" /usr /usr/local /opt/spidermonkey /opt/js; do
-		for spidermonkeyinclude in "/include" "/include/js" "/include/smjs"; do
-			for spidermonkeylib in js smjs; do
-				if test "$cf_result" = no; then
-					SPIDERMONKEY_LIBS="-l$spidermonkeylib"
-
-					if test ! -z "$spidermonkeydir"; then
-						SPIDERMONKEY_LIBS="-L$spidermonkeydir/lib $SPIDERMONKEY_LIBS"
-						SPIDERMONKEY_CFLAGS="-I$spidermonkeydir$spidermonkeyinclude"
-					fi
+		for spidermonkeyinclude in "/include" "/include/js" "/include/smjs" "/include/mozjs"; do
+			for spidermonkeylib in js smjs mozjs; do
+				if test "$cf_result" = no &&
+				   test -f "$spidermonkeydir$spidermonkeyinclude/jsapi.h"; then
+					SPIDERMONKEY_LIBS="-L$spidermonkeydir/lib -l$spidermonkeylib"
+					SPIDERMONKEY_CFLAGS="-I$spidermonkeydir$spidermonkeyinclude"
 
 					LIBS="$SPIDERMONKEY_LIBS $LIBS_X"
 					CFLAGS="$CFLAGS_X $SPIDERMONKEY_CFLAGS"
@@ -17074,7 +17955,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-JS_GetImplementationVersion()
+JS_GetReservedSlot(NULL, NULL, 0, NULL)
   ;
   return 0;
 }
@@ -17118,36 +17999,33 @@ fi
 
 echo "$as_me:$LINENO: result: $cf_result" >&5
 echo "${ECHO_T}$cf_result" >&6
-
-if test "$cf_result" != yes; then
+CONFIG_SPIDERMONKEY="$cf_result"
 
 	CFLAGS="$CFLAGS_X";
 	CPPFLAGS="$CPPFLAGS_X";
 	LDFLAGS="$LDFLAGS_X";
 	LIBS="$LIBS_X";
 
-else
 
-	  CONFIG_SPIDERMONKEY=yes
-	  ABOUT_CONFIG_SPIDERMONKEY="SpiderMonkey"
+if test "x$CONFIG_SPIDERMONKEY" = xyes &&
+   test "x$CONFIG_ECMASCRIPT_SEE" != xyes; then
+
+	  CONFIG_ECMASCRIPT_SMJS=yes
+	  ABOUT_CONFIG_ECMASCRIPT_SMJS="SpiderMonkey document scripting"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_SPIDERMONKEY 1
+#define CONFIG_ECMASCRIPT_SMJS 1
 _ACEOF
 
-
-	CFLAGS="$CFLAGS_X"
-
-
+else
+	CONFIG_ECMASCRIPT_SMJS=no
 fi
-
-
 
 
 	CONFIG_ECMASCRIPT=no
 	el_value=
 
-	for dependency in CONFIG_SPIDERMONKEY; do
+	for dependency in CONFIG_ECMASCRIPT_SEE CONFIG_ECMASCRIPT_SMJS; do
 		# Hope this is portable?!? --jonas
 		eval el_config_value=$`echo $dependency`
 
@@ -17180,7 +18058,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -17198,6 +18076,38 @@ _ACEOF
 
 
 
+
+
+
+
+# Check whether --enable-sm-scripting or --disable-sm-scripting was given.
+if test "${enable_sm_scripting+set}" = set; then
+  enableval="$enable_sm_scripting"
+  if test "$enableval" != no; then enableval="yes"; fi
+	       CONFIG_SCRIPTING_SPIDERMONKEY="$enableval";
+fi;
+
+if test "x$CONFIG_SPIDERMONKEY" = xyes &&
+   test "x$CONFIG_SCRIPTING_SPIDERMONKEY" = xyes; then
+
+	  CONFIG_SCRIPTING_SPIDERMONKEY=yes
+	  ABOUT_CONFIG_SCRIPTING_SPIDERMONKEY="SpiderMonkey"
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_SCRIPTING_SPIDERMONKEY 1
+_ACEOF
+
+else
+	CONFIG_SCRIPTING_SPIDERMONKEY=no
+fi
+
+if test "x$CONFIG_ECMASCRIPT_SMJS" = xyes ||
+   test "x$CONFIG_SCRIPTING_SPIDERMONKEY" = xyes; then
+	LIBS="$LIBS $SPIDERMONKEY_LIBS"
+
+
+
+fi
 
 
 enable_guile="no";
@@ -17276,13 +18186,12 @@ fi
 		GUILE_LIBS="`guile-config link`"
 		GUILE_CFLAGS="`guile-config compile`"
 		LIBS="$GUILE_LIBS $LIBS"
-		CPPFLAGS="$CPPFLAGS $GUILE_CFLAGS"
 
-	  CONFIG_GUILE=yes
-	  ABOUT_CONFIG_GUILE="Guile"
+	  CONFIG_SCRIPTING_GUILE=yes
+	  ABOUT_CONFIG_SCRIPTING_GUILE="Guile"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_GUILE 1
+#define CONFIG_SCRIPTING_GUILE 1
 _ACEOF
 
 
@@ -17396,6 +18305,68 @@ rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 fi
 
+if test "$cf_result"; then echo "$as_me:$LINENO: result: $cf_result" >&5
+echo "${ECHO_T}$cf_result" >&6; fi
+
+echo "$as_me:$LINENO: checking whether POPpx works without an n_a variable" >&5
+echo $ECHO_N "checking whether POPpx works without an n_a variable... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <EXTERN.h>
+#include <perl.h>
+extern PerlInterpreter *my_perl;
+
+int
+main ()
+{
+dSP; (void) POPpx;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_PERL_POPPX_WITHOUT_N_A 1
+_ACEOF
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+
 if test "$cf_result" != "yes"; then
 
 	CFLAGS="$CFLAGS_X";
@@ -17405,49 +18376,28 @@ if test "$cf_result" != "yes"; then
 
 else
 
-	  CONFIG_PERL=yes
-	  ABOUT_CONFIG_PERL="Perl"
+	  CONFIG_SCRIPTING_PERL=yes
+	  ABOUT_CONFIG_SCRIPTING_PERL="Perl"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_PERL 1
+#define CONFIG_SCRIPTING_PERL 1
 _ACEOF
 
 
 	CFLAGS="$CFLAGS_X"
+	CPPFLAGS="$CPPFLAGS_X"
 
 
 fi
 
-if test "$cf_result"; then echo "$as_me:$LINENO: result: $cf_result" >&5
-echo "${ECHO_T}$cf_result" >&6; fi
 enable_python="no";
 
 
 # Check whether --with-python or --without-python was given.
 if test "${with_python+set}" = set; then
   withval="$with_python"
-
-if test "$withval" = yes; then
-	# FIXME: If withval is a valid directory append it to PATH
-	# so that you can specify one of several Python installations.
-	withval="";
-	enable_python=yes;
-	cat <<EOF
-***********************************************************************
-The Python support is incomplete and not so well integrated to ELinks
-yet. That means, e.g.., that you have no Python console and there might
-not be all the necessary hooks. Also, the Python interface is not too
-well tested (success stories heartily welcomed!).
-***********************************************************************
-EOF
-fi
-
+   if test "x$withval" != xno; then enable_python=yes; fi
 fi;
-
-echo "$as_me:$LINENO: checking for Python" >&5
-echo $ECHO_N "checking for Python... $ECHO_C" >&6
-
-cf_result=no
 
 
 	CFLAGS_X="$CFLAGS";
@@ -17455,22 +18405,76 @@ cf_result=no
 	LDFLAGS_X="$LDFLAGS";
 	LIBS_X="$LIBS";
 
+cf_result=no
+
+echo "$as_me:$LINENO: checking for Python" >&5
+echo $ECHO_N "checking for Python... $ECHO_C" >&6
 
 if test "$enable_python" = "yes"; then
-	PYTHON_LIBS="-lpython`python -c 'from distutils import sysconfig; print sysconfig.get_config_var("VERSION")' 2> /dev/null`"
-	PYTHON_CFLAGS="-I`python -c 'from distutils import sysconfig; print sysconfig.get_python_inc()' 2> /dev/null`"
-	LIBS="$PYTHON_LIBS $LIBS"
-	CFLAGS="$PYTHON_CFLAGS $CFLAGS"
-	CPPFLAGS="$CPPFLAGS $PYTHON_CFLAGS"
-	cat >conftest.$ac_ext <<_ACEOF
+	echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6;
+
+	if test -d "$withval"; then
+		PYTHON_PATH="$withval:$PATH"
+	else
+		PYTHON_PATH="$PATH"
+	fi
+
+	# Extract the first word of "python", so it can be a program name with args.
+set dummy python; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_PYTHON+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PYTHON in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PYTHON="$PYTHON" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PYTHON_PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PYTHON="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_path_PYTHON" && ac_cv_path_PYTHON="no"
+  ;;
+esac
+fi
+PYTHON=$ac_cv_path_PYTHON
+
+if test -n "$PYTHON"; then
+  echo "$as_me:$LINENO: result: $PYTHON" >&5
+echo "${ECHO_T}$PYTHON" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+	if test "$PYTHON" != no; then
+		cf_result="yes";
+
+		PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; print "-I%s -I%s" % (sysconfig.get_python_inc(), sysconfig.get_python_inc(plat_specific=True))'`"
+		PYTHON_LIBS="`$PYTHON -c 'from distutils import sysconfig; var = sysconfig.get_config_var; print "%s %s %s -L%s -lpython%s" % (var("LINKFORSHARED"), var("LIBS"), var("SYSLIBS"), var("LIBPL"), var("VERSION"))'`"
+		LIBS="$PYTHON_LIBS $LIBS"
+		CPPFLAGS="$CPPFLAGS $PYTHON_CFLAGS"
+		cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-
 #include <Python.h>
-
 int
 main ()
 {
@@ -17510,32 +18514,49 @@ cf_result=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-fi
 
-if test "$cf_result" != "yes"; then
+		if test "$cf_result" != "yes"; then
 
 	CFLAGS="$CFLAGS_X";
 	CPPFLAGS="$CPPFLAGS_X";
 	LDFLAGS="$LDFLAGS_X";
 	LIBS="$LIBS_X";
 
-else
+		else
 
-	  CONFIG_PYTHON=yes
-	  ABOUT_CONFIG_PYTHON="Python"
+	  CONFIG_SCRIPTING_PYTHON=yes
+	  ABOUT_CONFIG_SCRIPTING_PYTHON="Python"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_PYTHON 1
+#define CONFIG_SCRIPTING_PYTHON 1
 _ACEOF
 
 
-	CFLAGS="$CFLAGS_X"
 
-
+			CPPFLAGS="$CPPFLAGS_X"
+			cat <<EOF
+***********************************************************************
+The Python support is incomplete and not so well integrated to ELinks
+yet. That means, e.g., that you have no Python console and there might
+not be all the necessary hooks. Also, the Python interface is not too
+well tested (success stories heartily welcomed!).
+***********************************************************************
+EOF
+		fi
+	else
+		if test -n "$withval" && test "x$withval" != xno; then
+			{ { echo "$as_me:$LINENO: error: Python not found" >&5
+echo "$as_me: error: Python not found" >&2;}
+   { (exit 1); exit 1; }; }
+		else
+			{ echo "$as_me:$LINENO: WARNING: Python support disabled" >&5
+echo "$as_me: WARNING: Python support disabled" >&2;}
+		fi
+	fi
+else
+	echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6;
 fi
-
-if test "$cf_result"; then echo "$as_me:$LINENO: result: $cf_result" >&5
-echo "${ECHO_T}$cf_result" >&6; fi
 
 
 
@@ -17563,13 +18584,10 @@ if test -z "$disable_lua"; then
 	fi
 	for luadir in "$withval" "" /usr /usr/local; do
 		for suffix in "" 50 51; do
-			if test "$cf_result" = no; then
-				LUA_LIBS="-llua$suffix -llualib$suffix -lm"
-
-				if test ! -z "$luadir"; then
-					LUA_LIBS="-L$luadir/lib $LUA_LIBS"
-					LUA_CFLAGS="-I$luadir/include -I$luadir/include/lua$suffix"
-				fi
+			if test "$cf_result" = no && ( test -f "$luadir/include/lua.h" || \
+			   test -f "$luadir/include/lua$suffix/lua.h" ) ; then
+				LUA_LIBS="-L$luadir/lib -llua$suffix -llualib$suffix -lm"
+				LUA_CFLAGS="-I$luadir/include -I$luadir/include/lua$suffix"
 
 				LIBS="$LUA_LIBS $LIBS_X"
 				CFLAGS="$CFLAGS_X $LUA_CFLAGS"
@@ -17647,11 +18665,11 @@ if test "$cf_result" != yes; then
 
 else
 
-	  CONFIG_LUA=yes
-	  ABOUT_CONFIG_LUA="Lua"
+	  CONFIG_SCRIPTING_LUA=yes
+	  ABOUT_CONFIG_SCRIPTING_LUA="Lua"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_LUA 1
+#define CONFIG_SCRIPTING_LUA 1
 _ACEOF
 
 
@@ -17806,6 +18824,7 @@ done
 
 
 	CFLAGS="$CFLAGS_X"
+	CPPFLAGS="$CPPFLAGS_X"
 
 
 fi
@@ -17816,8 +18835,8 @@ fi
 echo "$as_me:$LINENO: checking for Ruby" >&5
 echo $ECHO_N "checking for Ruby... $ECHO_C" >&6
 
-CONFIG_RUBY_WITHVAL="no"
-CONFIG_RUBY="no"
+CONFIG_SCRIPTING_RUBY_WITHVAL="no"
+CONFIG_SCRIPTING_RUBY="no"
 
 
 	CFLAGS_X="$CFLAGS";
@@ -17830,19 +18849,19 @@ CONFIG_RUBY="no"
 # Check whether --with-ruby or --without-ruby was given.
 if test "${with_ruby+set}" = set; then
   withval="$with_ruby"
-  CONFIG_RUBY_WITHVAL="$withval"
+  CONFIG_SCRIPTING_RUBY_WITHVAL="$withval"
 fi;
 
-if test "$CONFIG_RUBY_WITHVAL" != no; then
-	CONFIG_RUBY="yes"
+if test "$CONFIG_SCRIPTING_RUBY_WITHVAL" != no; then
+	CONFIG_SCRIPTING_RUBY="yes"
 fi
 
-echo "$as_me:$LINENO: result: $CONFIG_RUBY" >&5
-echo "${ECHO_T}$CONFIG_RUBY" >&6
+echo "$as_me:$LINENO: result: $CONFIG_SCRIPTING_RUBY" >&5
+echo "${ECHO_T}$CONFIG_SCRIPTING_RUBY" >&6
 
-if test "$CONFIG_RUBY" = "yes"; then
-	if test -d "$CONFIG_RUBY_WITHVAL"; then
-		RUBY_PATH="$CONFIG_RUBY_WITHVAL:$PATH"
+if test "$CONFIG_SCRIPTING_RUBY" = "yes"; then
+	if test -d "$CONFIG_SCRIPTING_RUBY_WITHVAL"; then
+		RUBY_PATH="$CONFIG_SCRIPTING_RUBY_WITHVAL:$PATH"
 	else
 		RUBY_PATH="$PATH"
 	fi
@@ -17851,12 +18870,12 @@ if test "$CONFIG_RUBY" = "yes"; then
 set dummy ruby; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_path_CONFIG_RUBY+set}" = set; then
+if test "${ac_cv_path_CONFIG_SCRIPTING_RUBY+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  case $CONFIG_RUBY in
+  case $CONFIG_SCRIPTING_RUBY in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_CONFIG_RUBY="$CONFIG_RUBY" # Let the user override the test with a path.
+  ac_cv_path_CONFIG_SCRIPTING_RUBY="$CONFIG_SCRIPTING_RUBY" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -17866,63 +18885,63 @@ do
   test -z "$as_dir" && as_dir=.
   for ac_exec_ext in '' $ac_executable_extensions; do
   if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_CONFIG_RUBY="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_CONFIG_SCRIPTING_RUBY="$as_dir/$ac_word$ac_exec_ext"
     echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
 done
 done
 
-  test -z "$ac_cv_path_CONFIG_RUBY" && ac_cv_path_CONFIG_RUBY="no"
+  test -z "$ac_cv_path_CONFIG_SCRIPTING_RUBY" && ac_cv_path_CONFIG_SCRIPTING_RUBY="no"
   ;;
 esac
 fi
-CONFIG_RUBY=$ac_cv_path_CONFIG_RUBY
+CONFIG_SCRIPTING_RUBY=$ac_cv_path_CONFIG_SCRIPTING_RUBY
 
-if test -n "$CONFIG_RUBY"; then
-  echo "$as_me:$LINENO: result: $CONFIG_RUBY" >&5
-echo "${ECHO_T}$CONFIG_RUBY" >&6
+if test -n "$CONFIG_SCRIPTING_RUBY"; then
+  echo "$as_me:$LINENO: result: $CONFIG_SCRIPTING_RUBY" >&5
+echo "${ECHO_T}$CONFIG_SCRIPTING_RUBY" >&6
 else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
-	if test "$CONFIG_RUBY" != "no"; then
+	if test "$CONFIG_SCRIPTING_RUBY" != "no"; then
 
 		echo "$as_me:$LINENO: checking Ruby version" >&5
 echo $ECHO_N "checking Ruby version... $ECHO_C" >&6
-		if $CONFIG_RUBY -e '(VERSION rescue RUBY_VERSION) >= "1.6.0" or exit 1' >/dev/null 2>/dev/null; then
-			ruby_version=`$CONFIG_RUBY -e 'puts "#{VERSION rescue RUBY_VERSION}"'`
+		if $CONFIG_SCRIPTING_RUBY -e 'exit((VERSION or RUBY_VERSION) >= "1.6.0")' >/dev/null 2>/dev/null; then
+			ruby_version=`$CONFIG_SCRIPTING_RUBY -e 'puts "#{VERSION rescue RUBY_VERSION}"'`
 			echo "$as_me:$LINENO: result: $ruby_version" >&5
 echo "${ECHO_T}$ruby_version" >&6
 
 			echo "$as_me:$LINENO: checking for Ruby header files" >&5
 echo $ECHO_N "checking for Ruby header files... $ECHO_C" >&6
-			rubyhdrdir=`$CONFIG_RUBY -r mkmf -e 'print Config::CONFIG["archdir"] || $hdrdir' 2>/dev/null`
+			rubyhdrdir=`$CONFIG_SCRIPTING_RUBY -r mkmf -e 'print Config::CONFIG["archdir"] || $hdrdir' 2>/dev/null`
 
 			if test "X$rubyhdrdir" != "X"; then
 				echo "$as_me:$LINENO: result: $rubyhdrdir" >&5
 echo "${ECHO_T}$rubyhdrdir" >&6
 				RUBY_CFLAGS="-I$rubyhdrdir"
-				rubylibs=`$CONFIG_RUBY -r rbconfig -e 'print Config::CONFIG["LIBS"]'`
+				rubylibs=`$CONFIG_SCRIPTING_RUBY -r rbconfig -e 'print Config::CONFIG["LIBS"]'`
 
 				if test "X$rubylibs" != "X"; then
 					RUBY_LIBS="$rubylibs"
 				fi
 
-				librubyarg=`$CONFIG_RUBY -r rbconfig -e 'print Config.expand(Config::CONFIG["LIBRUBYARG"])'`
+				librubyarg=`$CONFIG_SCRIPTING_RUBY -r rbconfig -e 'print Config.expand(Config::CONFIG["LIBRUBYARG"])'`
 
 				if test -f "$rubyhdrdir/$librubyarg"; then
 					librubyarg="$rubyhdrdir/$librubyarg"
 
 				else
-					rubylibdir=`$CONFIG_RUBY -r rbconfig -e 'print Config.expand(Config::CONFIG["libdir"])'`
+					rubylibdir=`$CONFIG_SCRIPTING_RUBY -r rbconfig -e 'print Config.expand(Config::CONFIG["libdir"])'`
 					if test -f "$rubylibdir/$librubyarg"; then
 						librubyarg="$rubylibdir/$librubyarg"
 					elif test "$librubyarg" = "libruby.a"; then
 												librubyarg="-lruby"
 					else
-						librubyarg=`$CONFIG_RUBY -r rbconfig -e "print '$librubyarg'.gsub(/-L\./, %'-L#{Config.expand(Config::CONFIG[\"libdir\"])}')"`
+						librubyarg=`$CONFIG_SCRIPTING_RUBY -r rbconfig -e "print '$librubyarg'.gsub(/-L\./, %'-L#{Config.expand(Config::CONFIG[\"libdir\"])}')"`
 					fi
 				fi
 
@@ -17930,7 +18949,7 @@ echo "${ECHO_T}$rubyhdrdir" >&6
 					RUBY_LIBS="$librubyarg $RUBY_LIBS"
 				fi
 
-				rubyldflags=`$CONFIG_RUBY -r rbconfig -e 'print Config::CONFIG["LDFLAGS"]'`
+				rubyldflags=`$CONFIG_SCRIPTING_RUBY -r rbconfig -e 'print Config::CONFIG["LDFLAGS"]'`
 				if test "X$rubyldflags" != "X"; then
 					LDFLAGS="$rubyldflags $LDFLAGS"
 				fi
@@ -17976,12 +18995,12 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  CONFIG_RUBY=yes
+  CONFIG_SCRIPTING_RUBY=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-CONFIG_RUBY=no
+CONFIG_SCRIPTING_RUBY=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
@@ -18003,20 +19022,20 @@ fi
 	LIBS="$LIBS_X";
 
 
-if test "$CONFIG_RUBY" != "yes"; then
-	if test -n "$CONFIG_RUBY_WITHVAL" &&
-	   test "$CONFIG_RUBY_WITHVAL" != no; then
+if test "$CONFIG_SCRIPTING_RUBY" != "yes"; then
+	if test -n "$CONFIG_SCRIPTING_RUBY_WITHVAL" &&
+	   test "$CONFIG_SCRIPTING_RUBY_WITHVAL" != no; then
 		{ { echo "$as_me:$LINENO: error: Ruby not found" >&5
 echo "$as_me: error: Ruby not found" >&2;}
    { (exit 1); exit 1; }; }
 	fi
 else
 
-	  CONFIG_RUBY=yes
-	  ABOUT_CONFIG_RUBY="Ruby"
+	  CONFIG_SCRIPTING_RUBY=yes
+	  ABOUT_CONFIG_SCRIPTING_RUBY="Ruby"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_RUBY 1
+#define CONFIG_SCRIPTING_RUBY 1
 _ACEOF
 
 
@@ -18027,33 +19046,11 @@ fi
 
 
 
-# Check whether --enable-sm-scripting or --disable-sm-scripting was given.
-if test "${enable_sm_scripting+set}" = set; then
-  enableval="$enable_sm_scripting"
-  if test "$enableval" != no; then enableval="yes"; fi
-	       CONFIG_SM_SCRIPTING="$enableval";
-fi;
-
-if test "x$CONFIG_SPIDERMONKEY" = xyes &&
-   test "x$CONFIG_SM_SCRIPTING" = xyes; then
-
-	  CONFIG_SM_SCRIPTING=yes
-	  ABOUT_CONFIG_SM_SCRIPTING="SpiderMonkey"
-
-cat >>confdefs.h <<\_ACEOF
-#define CONFIG_SM_SCRIPTING 1
-_ACEOF
-
-else
-	CONFIG_SM_SCRIPTING=no
-fi
-
-
 
 	CONFIG_SCRIPTING=no
 	el_value=
 
-	for dependency in CONFIG_GUILE CONFIG_LUA CONFIG_PERL CONFIG_PYTHON CONFIG_RUBY CONFIG_SM_SCRIPTING; do
+	for dependency in CONFIG_SCRIPTING_GUILE CONFIG_SCRIPTING_LUA CONFIG_SCRIPTING_PERL CONFIG_SCRIPTING_PYTHON CONFIG_SCRIPTING_RUBY CONFIG_SCRIPTING_SPIDERMONKEY; do
 		# Hope this is portable?!? --jonas
 		eval el_config_value=$`echo $dependency`
 
@@ -18086,7 +19083,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -18469,9 +19466,22 @@ echo "${ECHO_T}yes" >&6
 	LIBS_X="$LIBS";
 
 		if test -n "$withval" && test -d "$withval"; then
-			CFLAGS="$CFLAGS -I$withval/include";
-			CPPFLAGS="$CPPFLAGS -I$withval/include";
-			LDFLAGS="$LDFLAGS -L$withval/lib";
+			# Be a little more careful when setting
+			# include and lib directories. This way
+			# $withval will work when includes are
+			# there but the library is in the common
+			# /usr/lib ... Does the right thing when
+			# looking for gc on Debian.
+			if test -d "$withval/include"; then
+				CFLAGS="$CFLAGS -I$withval/include"
+				CPPFLAGS="$CPPFLAGS -I$withval/include"
+			else
+				CFLAGS="$CFLAGS -I$withval"
+				CPPFLAGS="$CPPFLAGS -I$withval"
+			fi
+			if test -d "$withval/lib"; then
+				LDFLAGS="$LDFLAGS -L$withval/lib"
+			fi
 		fi
 
 
@@ -18787,7 +19797,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -19424,20 +20434,85 @@ echo "${ECHO_T}libraries $x_libraries, headers $x_includes" >&6
 fi
 
 if test x"$no_x" != xyes; then
+
+	CFLAGS_X="$CFLAGS";
+	CPPFLAGS_X="$CPPFLAGS";
+	LDFLAGS_X="$LDFLAGS";
+	LIBS_X="$LIBS";
+
 	if test -n "$x_includes"; then
 		X_CFLAGS="-I$x_includes"
-		CPPFLAGS="$CPPFLAGS -I$x_includes"
+		CPPFLAGS="$CPPLAGS $X_CFLAGS"
+		CFLAGS="$CFLAGS $X_CFLAGS"
 	fi
 	if test -n "$x_libraries"; then
 		LDFLAGS="$LDFLAGS -L$x_libraries"
 	fi
 	LIBS="-lX11 $LIBS"
+	cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <X11/Xlib.h>
+int
+main ()
+{
+XrmInitialize()
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  cf_result=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+cf_result=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+
+	CFLAGS="$CFLAGS_X";
+	CPPFLAGS="$CPPFLAGS_X";
+	LDFLAGS="$LDFLAGS_X";
+	LIBS="$LIBS_X";
+
+	if test "$cf_result" = yes; then
+		if test -n "$x_libraries"; then
+			LDFLAGS="$LDFLAGS -L$x_libraries"
+		fi
+		LIBS="-lX11 $LIBS"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_X11 1
 _ACEOF
 
 
+	fi
 fi
 
 
@@ -19598,46 +20673,7 @@ done
 
 
 
-# Extract the first word of "smbclient", so it can be a program name with args.
-set dummy smbclient; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_HAVE_SMBCLIENT+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$HAVE_SMBCLIENT"; then
-  ac_cv_prog_HAVE_SMBCLIENT="$HAVE_SMBCLIENT" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_HAVE_SMBCLIENT="yes"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-  test -z "$ac_cv_prog_HAVE_SMBCLIENT" && ac_cv_prog_HAVE_SMBCLIENT="no"
-fi
-fi
-HAVE_SMBCLIENT=$ac_cv_prog_HAVE_SMBCLIENT
-if test -n "$HAVE_SMBCLIENT"; then
-  echo "$as_me:$LINENO: result: $HAVE_SMBCLIENT" >&5
-echo "${ECHO_T}$HAVE_SMBCLIENT" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-
-ALL_LINGUAS="be bg ca cs da de el es et fi fr gl hr hu id is it lt nl nb pl pt pt_BR ro ru sk sr sv tr uk"
+ALL_LINGUAS="af be bg ca cs da de el es et fi fr gl hr hu id is it lt nl nb pl pt pt_BR ro ru sk sr sv tr uk"
 
 echo "$as_me:$LINENO: checking whether ${MAKE-make} sets \$(MAKE)" >&5
 echo $ECHO_N "checking whether ${MAKE-make} sets \$(MAKE)... $ECHO_C" >&6
@@ -20479,6 +21515,13 @@ done
 
 
 
+	CFLAGS_X="$CFLAGS";
+	CPPFLAGS_X="$CPPFLAGS";
+	LDFLAGS_X="$LDFLAGS";
+	LIBS_X="$LIBS";
+
+
+
 # Check whether --with-libiconv or --without-libiconv was given.
 if test "${with_libiconv+set}" = set; then
   withval="$with_libiconv"
@@ -20690,6 +21733,13 @@ _ACEOF
   LIBICONV=
   if test "$am_cv_lib_iconv" = yes; then
     LIBICONV="-liconv"
+  else
+
+	CFLAGS="$CFLAGS_X";
+	CPPFLAGS="$CPPFLAGS_X";
+	LDFLAGS="$LDFLAGS_X";
+	LIBS="$LIBS_X";
+
   fi
 
 
@@ -20850,7 +21900,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -21175,7 +22225,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -21221,7 +22271,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -21267,7 +22317,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -21314,7 +22364,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -21360,7 +22410,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -21425,7 +22475,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -21471,7 +22521,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -21517,7 +22567,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -21563,7 +22613,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -21627,7 +22677,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -21673,7 +22723,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22049,7 +23099,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22104,7 +23154,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22150,7 +23200,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22196,7 +23246,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22214,14 +23264,244 @@ _ACEOF
 
 
 
-if test "${enable_smb-no}" != no || test "${CONFIG_SMB-no}" != no; then
-  { echo "$as_me:$LINENO: WARNING: Forcing --disable-smb because of vulnerability CVE-2006-5925.
-If you want to use SMB, please vote for bug 844 or post a patch." >&5
-echo "$as_me: WARNING: Forcing --disable-smb because of vulnerability CVE-2006-5925.
-If you want to use SMB, please vote for bug 844 or post a patch." >&2;}
+
+	CFLAGS_X="$CFLAGS";
+	CPPFLAGS_X="$CPPFLAGS";
+	LDFLAGS_X="$LDFLAGS";
+	LIBS_X="$LIBS";
+
+
+if test "x${enable_smb}" != xno; then
+
+for ac_header in libsmbclient.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
 fi
-enable_smb=no
-CONFIG_SMB=no
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ------------------------------------------ ##
+## Report this to the AC_PACKAGE_NAME lists.  ##
+## ------------------------------------------ ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ HAVE_SMBCLIENT=yes
+else
+  HAVE_SMBCLIENT=no
+fi
+
+done
+
+
+	if test "$HAVE_SMBCLIENT" = yes; then
+		echo "$as_me:$LINENO: checking for smbc_init in -lsmbclient" >&5
+echo $ECHO_N "checking for smbc_init in -lsmbclient... $ECHO_C" >&6
+if test "${ac_cv_lib_smbclient_smbc_init+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsmbclient  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char smbc_init ();
+int
+main ()
+{
+smbc_init ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_smbclient_smbc_init=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_smbclient_smbc_init=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_smbclient_smbc_init" >&5
+echo "${ECHO_T}$ac_cv_lib_smbclient_smbc_init" >&6
+if test $ac_cv_lib_smbclient_smbc_init = yes; then
+  HAVE_SMBCLIENT=yes
+else
+  HAVE_SMBCLIENT=no
+fi
+
+		if test "$HAVE_SMBCLIENT" = yes; then
+			LIBS="$LIBS -lsmbclient"
+		fi
+	fi
+fi
+
 
 	# Check whether --enable-smb or --disable-smb was given.
 if test "${enable_smb+set}" = set; then
@@ -22250,7 +23530,7 @@ fi;
 		if test "$ENABLE_CONFIG_SMB" = yes; then
 
 	  CONFIG_SMB=yes
-	  ABOUT_CONFIG_SMB="SMB protocol"
+	  ABOUT_CONFIG_SMB="Samba protocol"
 
 cat >>confdefs.h <<\_ACEOF
 #define CONFIG_SMB 1
@@ -22263,12 +23543,12 @@ _ACEOF
 		CONFIG_SMB=no;
 	fi
 
-	about="SMB protocol"
+	about="Samba protocol"
 	value=""
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22285,6 +23565,15 @@ _ACEOF
 
 
 
+
+if test "x$CONFIG_SMB" = xno; then
+
+	CFLAGS="$CFLAGS_X";
+	CPPFLAGS="$CPPFLAGS_X";
+	LDFLAGS="$LDFLAGS_X";
+	LIBS="$LIBS_X";
+
+fi
 
 
 
@@ -22315,7 +23604,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22381,7 +23670,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22427,7 +23716,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22473,7 +23762,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22488,6 +23777,51 @@ _ACEOF
 
 	echo "$about $dots $value" >> features.log
 
+
+
+
+
+	# Check whether --enable-true-color or --disable-true-color was given.
+if test "${enable_true_color+set}" = set; then
+  enableval="$enable_true_color"
+
+		if test "$enableval" != no; then enableval="yes"; fi
+		CONFIG_TRUE_COLOR="$enableval";
+
+fi;
+
+	if test "x$CONFIG_TRUE_COLOR" = xyes; then
+
+	  CONFIG_TRUE_COLOR=yes
+	  ABOUT_CONFIG_TRUE_COLOR="true color"
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_TRUE_COLOR 1
+_ACEOF
+
+	else
+		CONFIG_TRUE_COLOR=no
+	fi
+
+	about="true color"
+	value=""
+	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
+	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
+	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
+	DOTS="................................"
+	dots=`echo $DOTS | sed "s/$msgdots//"`
+
+	# $msgdots too big?
+	if test "$dots" = "$DOTS"; then
+		dots=""
+	fi
+
+	if test -z "$value"; then
+		value="$CONFIG_TRUE_COLOR"
+	fi
+
+	echo "$about $dots $value" >> features.log
 
 
 
@@ -22520,7 +23854,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22566,7 +23900,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22612,7 +23946,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22659,7 +23993,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22723,7 +24057,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22778,7 +24112,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22842,7 +24176,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22906,7 +24240,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -22953,7 +24287,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -23017,7 +24351,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -23063,7 +24397,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -23109,7 +24443,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -23127,58 +24461,51 @@ _ACEOF
 
 
 
-if test "$CONFIG_OPENSSL" != yes &&
-   test "$CONFIG_GNUTLS_OPENSSL_COMPAT" != yes ||
-   test "$CONFIG_OWN_LIBC" = yes;
-then
-	echo "$as_me:$LINENO: checking for built-in MD5 support" >&5
-echo $ECHO_N "checking for built-in MD5 support... $ECHO_C" >&6
-	echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
 
-	  CONFIG_MD5=yes
-	  ABOUT_CONFIG_MD5="Built-in MD5"
+	# Check whether --enable-utf-8 or --disable-utf-8 was given.
+if test "${enable_utf_8+set}" = set; then
+  enableval="$enable_utf_8"
 
-cat >>confdefs.h <<\_ACEOF
-#define CONFIG_MD5 1
-_ACEOF
+		if test "$enableval" != no; then enableval="yes"; fi
+		CONFIG_UTF8="$enableval";
 
-fi
+fi;
 
+	if test "x$CONFIG_UTF8" = xyes; then
 
-
-if test "$CONFIG_BITTORRENT" = yes; then
-	if test "$CONFIG_OPENSSL" != yes ||
-	   test "$CONFIG_OWN_LIBC" = yes;
-	then
-		echo "$as_me:$LINENO: checking for built-in SHA1 support" >&5
-echo $ECHO_N "checking for built-in SHA1 support... $ECHO_C" >&6
-		echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-	  CONFIG_SHA1=yes
-	  ABOUT_CONFIG_SHA1="Built-in SHA1"
+	  CONFIG_UTF8=yes
+	  ABOUT_CONFIG_UTF8="UTF-8"
 
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_SHA1 1
+#define CONFIG_UTF8 1
 _ACEOF
 
+	else
+		CONFIG_UTF8=no
 	fi
-fi
+
+	about="UTF-8"
+	value=""
+	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
+	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
+	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
+	DOTS="................................"
+	dots=`echo $DOTS | sed "s/$msgdots//"`
+
+	# $msgdots too big?
+	if test "$dots" = "$DOTS"; then
+		dots=""
+	fi
+
+	if test -z "$value"; then
+		value="$CONFIG_UTF8"
+	fi
+
+	echo "$about $dots $value" >> features.log
 
 
 
-if test "$CONFIG_CSS" = yes || test "$CONFIG_DOM" = yes;
-then
-
-	  CONFIG_SCANNER=yes
-	  ABOUT_CONFIG_SCANNER="Built-in scanner"
-
-cat >>confdefs.h <<\_ACEOF
-#define CONFIG_SCANNER 1
-_ACEOF
-
-fi
 
 
 # Check whether --enable-weehoofooboomookerchoo or --disable-weehoofooboomookerchoo was given.
@@ -23191,8 +24518,8 @@ fi;
 
 
 
-test "$CONFIG_OS2" = yes && LDFLAGS="$LDFLAGS -Zexe"
-test "$CONFIG_OS2" = yes && LDFLAGS=`echo "$LDFLAGS" | sed "s/-Zbin-files//g"`
+test "$CONFIG_OS_OS2" = yes && LDFLAGS="$LDFLAGS -Zexe"
+test "$CONFIG_OS_OS2" = yes && LDFLAGS=`echo "$LDFLAGS" | sed "s/-Zbin-files//g"`
 
 
 
@@ -23223,6 +24550,10 @@ _ACEOF
 
 # Create LOCALEDIR #define for config.h
 LOCALEDIR=`eval echo "$datadir/locale"`
+while echo "$LOCALEDIR" | grep "\\$"
+do
+	LOCALEDIR=`eval echo "$LOCALEDIR"`
+done > /dev/null 2> /dev/null
 
 cat >>confdefs.h <<_ACEOF
 #define LOCALEDIR "$LOCALEDIR"
@@ -23245,7 +24576,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -23267,7 +24598,7 @@ _ACEOF
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -23310,20 +24641,89 @@ if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
       # These should be ok using -Werror
       ;;
   esac
+
+  # GCC 4.2.1 warns if we use the address of an object in Boolean context:
+  # warning: the address of `builtin_modules' will always evaluate as `true'
+  # This hits the object_lock and foreach_module macros in particular.
+  # It would be okay to put something in the macros to avoid the warning,
+  # but currently this seems to require defining parallel macros that skip
+  # the NULL check, and that's too ugly.  So we instead disable the warning.
+  # GCC 4.2.1 needs -Wno-address, but GCC 4.2 snapshots need -Wno-always-true.
+  # GCC 4.1.3 recognizes neither and exits with code 1 if they are given.
+  for warning_flag in -Wno-address -Wno-always-true; do
+    echo "$as_me:$LINENO: checking whether $CC accepts $warning_flag" >&5
+echo $ECHO_N "checking whether $CC accepts $warning_flag... $ECHO_C" >&6
+
+	CFLAGS_X="$CFLAGS";
+	CPPFLAGS_X="$CPPFLAGS";
+	LDFLAGS_X="$LDFLAGS";
+	LIBS_X="$LIBS";
+
+    CFLAGS="$CFLAGS $warning_flag"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+       break
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+
+	CFLAGS="$CFLAGS_X";
+	CPPFLAGS="$CPPFLAGS_X";
+	LDFLAGS="$LDFLAGS_X";
+	LIBS="$LIBS_X";
+
+  done
 fi
 
-# CFLAGS doesn't contain all compile flags. Some will be added only when
-# needed in the respective source directory. To get all compile flags
-# easily just add CPPFLAGS.
-ALL_CFLAGS="$CFLAGS $CPPFLAGS"
 
-
-	about="Compiler options (CFLAGS)"
+	about="Compiler flags (CFLAGS)"
 	value=""
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -23333,19 +24733,63 @@ ALL_CFLAGS="$CFLAGS $CPPFLAGS"
 	fi
 
 	if test -z "$value"; then
-		value="$ALL_CFLAGS"
+		value="$CFLAGS"
 	fi
 
 	echo "$about $dots $value" >> features.log
 
 
 
-	about="Linker options (LIBS)"
+	about="Preprocessor flags (CPPFLAGS)"
 	value=""
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
 	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
-	msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
+	DOTS="................................"
+	dots=`echo $DOTS | sed "s/$msgdots//"`
+
+	# $msgdots too big?
+	if test "$dots" = "$DOTS"; then
+		dots=""
+	fi
+
+	if test -z "$value"; then
+		value="$CPPFLAGS"
+	fi
+
+	echo "$about $dots $value" >> features.log
+
+
+
+	about="Linker flags (LDFLAGS)"
+	value=""
+	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
+	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
+	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
+	DOTS="................................"
+	dots=`echo $DOTS | sed "s/$msgdots//"`
+
+	# $msgdots too big?
+	if test "$dots" = "$DOTS"; then
+		dots=""
+	fi
+
+	if test -z "$value"; then
+		value="$LDFLAGS"
+	fi
+
+	echo "$about $dots $value" >> features.log
+
+
+
+	about="Library flags (LIBS)"
+	value=""
+	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
+	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
+	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -23369,7 +24813,8 @@ if test $(`which tput` colors) -ge 4; then
 fi
 
 
-                                                                      ac_config_files="$ac_config_files Makefile.config contrib/elinks.spec contrib/lua/hooks.lua contrib/conv/w3m2links.awk doc/man/man1/elinks.1 src/intl/gettext/ref-add.sed src/intl/gettext/ref-del.sed"
+                                                                                ac_config_files="$ac_config_files Makefile.config contrib/elinks.spec contrib/lua/hooks.lua contrib/conv/w3m2links.awk doc/Doxyfile doc/man/man1/elinks.1 src/intl/gettext/ref-add.sed src/intl/gettext/ref-del.sed"
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -23899,6 +25344,7 @@ do
   "contrib/elinks.spec" ) CONFIG_FILES="$CONFIG_FILES contrib/elinks.spec" ;;
   "contrib/lua/hooks.lua" ) CONFIG_FILES="$CONFIG_FILES contrib/lua/hooks.lua" ;;
   "contrib/conv/w3m2links.awk" ) CONFIG_FILES="$CONFIG_FILES contrib/conv/w3m2links.awk" ;;
+  "doc/Doxyfile" ) CONFIG_FILES="$CONFIG_FILES doc/Doxyfile" ;;
   "doc/man/man1/elinks.1" ) CONFIG_FILES="$CONFIG_FILES doc/man/man1/elinks.1" ;;
   "src/intl/gettext/ref-add.sed" ) CONFIG_FILES="$CONFIG_FILES src/intl/gettext/ref-add.sed" ;;
   "src/intl/gettext/ref-del.sed" ) CONFIG_FILES="$CONFIG_FILES src/intl/gettext/ref-del.sed" ;;
@@ -24012,19 +25458,23 @@ s,@ASCIIDOC@,$ASCIIDOC,;t t
 s,@XMLTO@,$XMLTO,;t t
 s,@JW@,$JW,;t t
 s,@POD2HTML@,$POD2HTML,;t t
+s,@DOXYGEN@,$DOXYGEN,;t t
+s,@api_srcdir@,$api_srcdir,;t t
 s,@ASCIIDOC_FLAGS@,$ASCIIDOC_FLAGS,;t t
 s,@CONFIG_ASCIIDOC@,$CONFIG_ASCIIDOC,;t t
+s,@CONFIG_DOXYGEN@,$CONFIG_DOXYGEN,;t t
 s,@CONFIG_POD2HTML@,$CONFIG_POD2HTML,;t t
 s,@CONFIG_XMLTO@,$CONFIG_XMLTO,;t t
 s,@CONFIG_JW@,$CONFIG_JW,;t t
 s,@CONFIG_DOC@,$CONFIG_DOC,;t t
 s,@CONFIG_MANUAL@,$CONFIG_MANUAL,;t t
 s,@CONFIG_MANPAGE@,$CONFIG_MANPAGE,;t t
-s,@CONFIG_BEOS@,$CONFIG_BEOS,;t t
-s,@CONFIG_RISCOS@,$CONFIG_RISCOS,;t t
-s,@CONFIG_WIN32@,$CONFIG_WIN32,;t t
-s,@CONFIG_OS2@,$CONFIG_OS2,;t t
-s,@CONFIG_UNIX@,$CONFIG_UNIX,;t t
+s,@CONFIG_APIDOCS@,$CONFIG_APIDOCS,;t t
+s,@CONFIG_OS_BEOS@,$CONFIG_OS_BEOS,;t t
+s,@CONFIG_OS_RISCOS@,$CONFIG_OS_RISCOS,;t t
+s,@CONFIG_OS_WIN32@,$CONFIG_OS_WIN32,;t t
+s,@CONFIG_OS_OS2@,$CONFIG_OS_OS2,;t t
+s,@CONFIG_OS_UNIX@,$CONFIG_OS_UNIX,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@CONFIG_INTERLINK@,$CONFIG_INTERLINK,;t t
@@ -24033,29 +25483,37 @@ s,@CONFIG_GPM@,$CONFIG_GPM,;t t
 s,@CONFIG_GZIP@,$CONFIG_GZIP,;t t
 s,@CONFIG_BZIP2@,$CONFIG_BZIP2,;t t
 s,@CONFIG_IDN@,$CONFIG_IDN,;t t
+s,@CONFIG_GC@,$CONFIG_GC,;t t
+s,@CONFIG_LZMA@,$CONFIG_LZMA,;t t
+s,@CONFIG_GSSAPI@,$CONFIG_GSSAPI,;t t
 s,@CONFIG_BOOKMARKS@,$CONFIG_BOOKMARKS,;t t
 s,@CONFIG_XBEL_BOOKMARKS@,$CONFIG_XBEL_BOOKMARKS,;t t
+s,@SEE_CONFIG@,$SEE_CONFIG,;t t
+s,@SEE_CFLAGS@,$SEE_CFLAGS,;t t
+s,@CONFIG_ECMASCRIPT@,$CONFIG_ECMASCRIPT,;t t
+s,@CONFIG_ECMASCRIPT_SEE@,$CONFIG_ECMASCRIPT_SEE,;t t
+s,@CONFIG_ECMASCRIPT_SMJS@,$CONFIG_ECMASCRIPT_SMJS,;t t
 s,@SPIDERMONKEY_LIBS@,$SPIDERMONKEY_LIBS,;t t
 s,@SPIDERMONKEY_CFLAGS@,$SPIDERMONKEY_CFLAGS,;t t
 s,@CONFIG_SPIDERMONKEY@,$CONFIG_SPIDERMONKEY,;t t
-s,@CONFIG_ECMASCRIPT@,$CONFIG_ECMASCRIPT,;t t
 s,@GUILE_CONFIG@,$GUILE_CONFIG,;t t
 s,@GUILE_CFLAGS@,$GUILE_CFLAGS,;t t
 s,@PERL_LIBS@,$PERL_LIBS,;t t
 s,@PERL_CFLAGS@,$PERL_CFLAGS,;t t
+s,@PYTHON@,$PYTHON,;t t
 s,@PYTHON_LIBS@,$PYTHON_LIBS,;t t
 s,@PYTHON_CFLAGS@,$PYTHON_CFLAGS,;t t
 s,@LUA_LIBS@,$LUA_LIBS,;t t
 s,@LUA_CFLAGS@,$LUA_CFLAGS,;t t
-s,@CONFIG_RUBY@,$CONFIG_RUBY,;t t
+s,@CONFIG_SCRIPTING_RUBY@,$CONFIG_SCRIPTING_RUBY,;t t
 s,@RUBY_CFLAGS@,$RUBY_CFLAGS,;t t
 s,@RUBY_LIBS@,$RUBY_LIBS,;t t
 s,@CONFIG_SCRIPTING@,$CONFIG_SCRIPTING,;t t
-s,@CONFIG_GUILE@,$CONFIG_GUILE,;t t
-s,@CONFIG_LUA@,$CONFIG_LUA,;t t
-s,@CONFIG_PERL@,$CONFIG_PERL,;t t
-s,@CONFIG_PYTHON@,$CONFIG_PYTHON,;t t
-s,@CONFIG_SM_SCRIPTING@,$CONFIG_SM_SCRIPTING,;t t
+s,@CONFIG_SCRIPTING_GUILE@,$CONFIG_SCRIPTING_GUILE,;t t
+s,@CONFIG_SCRIPTING_LUA@,$CONFIG_SCRIPTING_LUA,;t t
+s,@CONFIG_SCRIPTING_PERL@,$CONFIG_SCRIPTING_PERL,;t t
+s,@CONFIG_SCRIPTING_PYTHON@,$CONFIG_SCRIPTING_PYTHON,;t t
+s,@CONFIG_SCRIPTING_SPIDERMONKEY@,$CONFIG_SCRIPTING_SPIDERMONKEY,;t t
 s,@OPENSSL_CFLAGS@,$OPENSSL_CFLAGS,;t t
 s,@LIBGNUTLS_CONFIG@,$LIBGNUTLS_CONFIG,;t t
 s,@GNUTLS_CFLAGS@,$GNUTLS_CFLAGS,;t t
@@ -24064,7 +25522,6 @@ s,@CONFIG_GNUTLS_OPENSSL_COMPAT@,$CONFIG_GNUTLS_OPENSSL_COMPAT,;t t
 s,@CONFIG_OPENSSL@,$CONFIG_OPENSSL,;t t
 s,@CONFIG_GNUTLS@,$CONFIG_GNUTLS,;t t
 s,@X_CFLAGS@,$X_CFLAGS,;t t
-s,@HAVE_SMBCLIENT@,$HAVE_SMBCLIENT,;t t
 s,@SET_MAKE@,$SET_MAKE,;t t
 s,@build@,$build,;t t
 s,@build_cpu@,$build_cpu,;t t
@@ -24107,6 +25564,7 @@ s,@CONFIG_MOUSE@,$CONFIG_MOUSE,;t t
 s,@CONFIG_SYSMOUSE@,$CONFIG_SYSMOUSE,;t t
 s,@CONFIG_88_COLORS@,$CONFIG_88_COLORS,;t t
 s,@CONFIG_256_COLORS@,$CONFIG_256_COLORS,;t t
+s,@CONFIG_TRUE_COLOR@,$CONFIG_TRUE_COLOR,;t t
 s,@CONFIG_EXMODE@,$CONFIG_EXMODE,;t t
 s,@CONFIG_LEDS@,$CONFIG_LEDS,;t t
 s,@CONFIG_MARKS@,$CONFIG_MARKS,;t t
@@ -24119,13 +25577,10 @@ s,@CONFIG_DEBUG@,$CONFIG_DEBUG,;t t
 s,@CONFIG_FASTMEM@,$CONFIG_FASTMEM,;t t
 s,@CONFIG_OWN_LIBC@,$CONFIG_OWN_LIBC,;t t
 s,@CONFIG_SMALL@,$CONFIG_SMALL,;t t
-s,@CONFIG_MD5@,$CONFIG_MD5,;t t
-s,@CONFIG_SHA1@,$CONFIG_SHA1,;t t
-s,@CONFIG_SCANNER@,$CONFIG_SCANNER,;t t
+s,@CONFIG_UTF8@,$CONFIG_UTF8,;t t
 s,@CONFDIR@,$CONFDIR,;t t
 s,@LOCALEDIR@,$LOCALEDIR,;t t
 s,@LIBDIR@,$LIBDIR,;t t
-s,@ALL_CFLAGS@,$ALL_CFLAGS,;t t
 s,@MAKE_COLOR@,$MAKE_COLOR,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
@@ -24626,10 +26081,10 @@ if test "$abs_srcdir" != "$builddir"; then
 	# Bootstrap the Makefile creation
 	echo "include $abs_srcdir/Makefile" > "$builddir/Makefile"
 	"$MAKE" "SRC=$abs_srcdir" init
+
 	# Make cg-status ignore this build directory
 	echo "*" > "$builddir/.gitignore"
 fi
-
 
 
 echo "$as_me:$LINENO: result: The following feature summary has been saved to features.log" >&5

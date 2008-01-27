@@ -52,7 +52,7 @@
  * (struct option *) instead. This applies to bookmarks, global history and
  * listbox items as well, though. --pasky */
 
-static INIT_LIST_HEAD(options_root_tree);
+static INIT_LIST_OF(struct option, options_root_tree);
 
 static struct option options_root = INIT_OPTION(
 	/* name: */	"",
@@ -68,7 +68,7 @@ struct option *config_options;
 struct option *cmdline_options;
 
 static void add_opt_rec(struct option *, unsigned char *, struct option *);
-static void free_options_tree(struct list_head *, int recursive);
+static void free_options_tree(LIST_OF(struct option) *, int recursive);
 
 #ifdef CONFIG_DEBUG
 /* Detect ending '.' (and some others) in options captions.
@@ -159,7 +159,7 @@ static int no_autocreate = 0;
 
 /* Get record of option of given name, or NULL if there's no such option. */
 struct option *
-get_opt_rec(struct option *tree, unsigned char *name_)
+get_opt_rec(struct option *tree, const unsigned char *name_)
 {
 	struct option *option;
 	unsigned char *aname = stracpy(name_);
@@ -197,7 +197,7 @@ get_opt_rec(struct option *tree, unsigned char *name_)
 	if (tree && tree->flags & OPT_AUTOCREATE && !no_autocreate) {
 		struct option *template = get_opt_rec(tree, "_template_");
 
-		assertm(template, "Requested %s should be autocreated but "
+		assertm(template != NULL, "Requested %s should be autocreated but "
 			"%.*s._template_ is missing!", name_, sep - name_,
 			name_);
 		if_assert_failed {
@@ -231,7 +231,7 @@ get_opt_rec(struct option *tree, unsigned char *name_)
  * do not create the option if it doesn't exist and there's autocreation
  * enabled. */
 struct option *
-get_opt_rec_real(struct option *tree, unsigned char *name)
+get_opt_rec_real(struct option *tree, const unsigned char *name)
 {
 	struct option *opt;
 
@@ -279,10 +279,14 @@ get_opt_(
 		break;
 	case OPT_BOOL:
 	case OPT_INT:
-	case OPT_LONG:
 		if (opt->value.number < opt->min
 		    || opt->value.number > opt->max)
 			elinks_internal("Option %s has invalid value %d!", name, opt->value.number);
+		break;
+	case OPT_LONG:
+		if (opt->value.big_number < opt->min
+		    || opt->value.big_number > opt->max)
+			elinks_internal("Option %s has invalid value %ld!", name, opt->value.big_number);
 		break;
 	case OPT_COMMAND:
 		if (!opt->value.command)
@@ -301,8 +305,8 @@ get_opt_(
 static void
 add_opt_sort(struct option *tree, struct option *option, int abi)
 {
-	struct list_head *cat = tree->value.tree;
-	struct list_head *bcat = &tree->box_item->child;
+	LIST_OF(struct option) *cat = tree->value.tree;
+	LIST_OF(struct listbox_item) *bcat = &tree->box_item->child;
 	struct option *pos;
 
 	/* The list is empty, just add it there. */
@@ -387,7 +391,7 @@ add_opt_rec(struct option *tree, unsigned char *path, struct option *option)
 	assert(path && option && tree);
 	if (*path) tree = get_opt_rec(tree, path);
 
-	assertm(tree, "Missing option tree for '%s'", path);
+	assertm(tree != NULL, "Missing option tree for '%s'", path);
 	if (!tree->value.tree) return;
 
 	object_nolock(option, "option");
@@ -445,7 +449,7 @@ init_option_listbox_item(struct option *option)
 struct option *
 add_opt(struct option *tree, unsigned char *path, unsigned char *capt,
 	unsigned char *name, enum option_flags flags, enum option_type type,
-	int min, int max, void *value, unsigned char *desc)
+	long min, long max, longptr_T value, unsigned char *desc)
 {
 	struct option *option = mem_calloc(1, sizeof(*option));
 
@@ -465,50 +469,52 @@ add_opt(struct option *tree, unsigned char *path, unsigned char *capt,
 
 	debug_check_option_syntax(option);
 
-	if (option->type != OPT_ALIAS
-	    && ((tree->flags & OPT_LISTBOX) || (option->flags & OPT_LISTBOX))) {
-		option->box_item = init_option_listbox_item(option);
-		if (!option->box_item) {
-			delete_option(option);
-			return NULL;
-		}
-	}
-
 	/* XXX: For allocated values we allocate in the add_opt_<type>() macro.
 	 * This involves OPT_TREE and OPT_STRING. */
 	switch (type) {
 		case OPT_TREE:
 			if (!value) {
-				delete_option(option);
+				mem_free(option);
 				return NULL;
 			}
-			option->value.tree = value;
+			option->value.tree = (LIST_OF(struct option) *) value;
 			break;
 		case OPT_STRING:
 			if (!value) {
-				delete_option(option);
+				mem_free(option);
 				return NULL;
 			}
-			option->value.string = value;
+			option->value.string = (unsigned char *) value;
 			break;
 		case OPT_ALIAS:
-			option->value.string = value;
+			option->value.string = (unsigned char *) value;
 			break;
 		case OPT_BOOL:
 		case OPT_INT:
 		case OPT_CODEPAGE:
+			option->value.number = (int) value;
+			break;
 		case OPT_LONG:
-			option->value.number = (long) value;
+			option->value.big_number = (long) value; /* FIXME: cast from void * */
 			break;
 		case OPT_COLOR:
-			decode_color(value, strlen((unsigned char *) value),
+			decode_color((unsigned char *) value, strlen((unsigned char *) value),
 					&option->value.color);
 			break;
 		case OPT_COMMAND:
-			option->value.command = value;
+			option->value.command = (void *) value;
 			break;
 		case OPT_LANGUAGE:
 			break;
+	}
+
+	if (option->type != OPT_ALIAS
+	    && ((tree->flags & OPT_LISTBOX) || (option->flags & OPT_LISTBOX))) {
+		option->box_item = init_option_listbox_item(option);
+		if (!option->box_item) {
+			mem_free(option);
+			return NULL;
+		}
 	}
 
 	add_opt_rec(tree, path, option);
@@ -636,10 +642,10 @@ copy_option(struct option *template)
 	return option;
 }
 
-struct list_head *
+LIST_OF(struct option) *
 init_options_tree(void)
 {
-	struct list_head *ptr = mem_alloc(sizeof(*ptr));
+	LIST_OF(struct option) *ptr = mem_alloc(sizeof(*ptr));
 
 	if (ptr) init_list(*ptr);
 	return ptr;
@@ -674,7 +680,7 @@ register_autocreated_options(void)
 
 static struct option_info config_options_info[];
 extern struct option_info cmdline_options_info[];
-static struct change_hook_info change_hooks[];
+static const struct change_hook_info change_hooks[];
 
 void
 init_options(void)
@@ -694,7 +700,7 @@ init_options(void)
 }
 
 static void
-free_options_tree(struct list_head *tree, int recursive)
+free_options_tree(LIST_OF(struct option) *tree, int recursive)
 {
 	while (!list_empty(*tree))
 		delete_option_do(tree->next, recursive);
@@ -710,7 +716,7 @@ done_options(void)
 }
 
 void
-register_change_hooks(struct change_hook_info *change_hooks)
+register_change_hooks(const struct change_hook_info *change_hooks)
 {
 	int i;
 
@@ -724,7 +730,7 @@ register_change_hooks(struct change_hook_info *change_hooks)
 }
 
 void
-unmark_options_tree(struct list_head *tree)
+unmark_options_tree(LIST_OF(struct option) *tree)
 {
 	struct option *option;
 
@@ -736,7 +742,7 @@ unmark_options_tree(struct list_head *tree)
 }
 
 void
-watermark_deleted_options(struct list_head *tree)
+watermark_deleted_options(LIST_OF(struct option) *tree)
 {
 	struct option *option;
 
@@ -749,7 +755,7 @@ watermark_deleted_options(struct list_head *tree)
 }
 
 static int
-check_nonempty_tree(struct list_head *options)
+check_nonempty_tree(LIST_OF(struct option) *options)
 {
 	struct option *opt;
 
@@ -767,7 +773,8 @@ check_nonempty_tree(struct list_head *options)
 
 void
 smart_config_string(struct string *str, int print_comment, int i18n,
-		    struct list_head *options, unsigned char *path, int depth,
+		    LIST_OF(struct option) *options,
+		    unsigned char *path, int depth,
 		    void (*fn)(struct string *, struct option *,
 			       unsigned char *, int, int, int, int))
 {
@@ -911,7 +918,7 @@ change_hook_ui(struct session *ses, struct option *current, struct option *chang
 /* Bit 2 of show means we should always set visibility, otherwise we set it
  * only on templates. */
 static void
-update_visibility(struct list_head *tree, int show)
+update_visibility(LIST_OF(struct option) *tree, int show)
 {
 	struct option *opt;
 
@@ -949,9 +956,8 @@ toggle_option(struct session *ses, struct option *option)
 	assert(option->type == OPT_BOOL || option->type == OPT_INT);
 	assert(option->max);
 
-	/* TODO: call change hooks. --jonas */
 	option->value.number = (number <= option->max) ? number : option->min;
-	option_changed(ses, option, option);
+	option_changed(ses, option);
 }
 
 static int
@@ -970,7 +976,7 @@ change_hook_language(struct session *ses, struct option *current, struct option 
 	return 0;
 }
 
-static struct change_hook_info change_hooks[] = {
+static const struct change_hook_info change_hooks[] = {
 	{ "config.show_template",	change_hook_stemplate },
 	{ "connection",			change_hook_connection },
 	{ "document.browse",		change_hook_html },
@@ -1006,11 +1012,11 @@ call_change_hooks(struct session *ses, struct option *current, struct option *op
 }
 
 void
-option_changed(struct session *ses, struct option *current, struct option *option)
+option_changed(struct session *ses, struct option *option)
 {
 	option->flags |= OPT_TOUCHED;
 	/* Notify everyone out there! */
-	call_change_hooks(ses, current, option);
+	call_change_hooks(ses, option, option);
 }
 
 int

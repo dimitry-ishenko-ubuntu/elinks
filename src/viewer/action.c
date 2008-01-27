@@ -127,6 +127,27 @@ do_action(struct session *ses, enum main_action action_id, int verbose)
 			auth_manager(ses);
 			break;
 
+		case ACT_MAIN_BACKSPACE_PREFIX:
+
+			if (!ses->kbdprefix.repeat_count) break;
+
+			/* Clear the highlighting. */
+			draw_formatted(ses, 0);
+
+			ses->kbdprefix.repeat_count /= 10;
+
+			if (ses->kbdprefix.repeat_count)
+				highlight_links_with_prefixes_that_start_with_n(
+			                           term, doc_view,
+			                           ses->kbdprefix.repeat_count);
+
+			print_screen_status(ses);
+
+			/* Keep send_event from resetting repeat_count. */
+			status = FRAME_EVENT_SESSION_DESTROYED;
+
+			break;
+
 		case ACT_MAIN_BOOKMARK_MANAGER:
 #ifdef CONFIG_BOOKMARKS
 			bookmark_manager(ses);
@@ -293,7 +314,7 @@ do_action(struct session *ses, enum main_action action_id, int verbose)
 			break;
 
 		case ACT_MAIN_LUA_CONSOLE:
-#ifdef CONFIG_LUA
+#ifdef CONFIG_SCRIPTING_LUA
 			trigger_event_name("dialog-lua-console", ses);
 #endif
 			break;
@@ -335,12 +356,24 @@ do_action(struct session *ses, enum main_action action_id, int verbose)
 			status = move_cursor_right(ses, doc_view);
 			break;
 
+		case ACT_MAIN_MOVE_CURSOR_LINE_START:
+			status = move_cursor_line_start(ses, doc_view);
+			break;
+
 		case ACT_MAIN_MOVE_LINK_DOWN:
 			status = move_link_down(ses, doc_view);
 			break;
 
+		case ACT_MAIN_MOVE_LINK_DOWN_LINE:
+			status = move_link_down_line(ses, doc_view);
+			break;
+
 		case ACT_MAIN_MOVE_LINK_LEFT:
 			status = move_link_left(ses, doc_view);
+			break;
+
+		case ACT_MAIN_MOVE_LINK_LEFT_LINE:
+			status = move_link_prev_line(ses, doc_view);
 			break;
 
 		case ACT_MAIN_MOVE_LINK_NEXT:
@@ -355,8 +388,16 @@ do_action(struct session *ses, enum main_action action_id, int verbose)
 			status = move_link_right(ses, doc_view);
 			break;
 
+		case ACT_MAIN_MOVE_LINK_RIGHT_LINE:
+			status = move_link_next_line(ses, doc_view);
+			break;
+
 		case ACT_MAIN_MOVE_LINK_UP:
 			status = move_link_up(ses, doc_view);
+			break;
+
+		case ACT_MAIN_MOVE_LINK_UP_LINE:
+			status = move_link_up_line(ses, doc_view);
 			break;
 
 		case ACT_MAIN_MOVE_PAGE_DOWN:

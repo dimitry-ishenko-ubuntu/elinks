@@ -19,6 +19,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_WS2TCPIP_H
+#include <ws2tcpip.h> /* socklen_t for MinGW */
+#endif
 
 #ifdef HAVE_GETIFADDRS
 #ifdef HAVE_NETDB_H
@@ -279,6 +282,7 @@ get_pasv_socket(struct socket *ctrl_socket, struct sockaddr_storage *addr)
 	struct sockaddr *pasv_addr = (struct sockaddr *) addr;
 	size_t addrlen;
 	int sock = -1;
+	int syspf; /* Protocol Family given to system, not EL_PF_... */
 	socklen_t len;
 #ifdef CONFIG_IPV6
 	struct sockaddr_in6 bind_addr6;
@@ -286,15 +290,17 @@ get_pasv_socket(struct socket *ctrl_socket, struct sockaddr_storage *addr)
 	if (ctrl_socket->protocol_family == EL_PF_INET6) {
 		bind_addr = (struct sockaddr *) &bind_addr6;
 		addrlen   = sizeof(bind_addr6);
+		syspf     = PF_INET6;
 	} else
 #endif
 	{
 		bind_addr = (struct sockaddr *) &bind_addr4;
 		addrlen   = sizeof(bind_addr4);
+		syspf     = PF_INET;
 	}
 
-	memset(pasv_addr, 0, sizeof(addrlen));
-	memset(bind_addr, 0, sizeof(addrlen));
+	memset(pasv_addr, 0, addrlen);
+	memset(bind_addr, 0, addrlen);
 
 	/* Get our endpoint of the control socket */
 	len = addrlen;
@@ -307,7 +313,7 @@ sock_error:
 
 	/* Get a passive socket */
 
-	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	sock = socket(syspf, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0)
 		goto sock_error;
 
@@ -455,7 +461,7 @@ connected(struct socket *socket)
 	int err = 0;
 	socklen_t len = sizeof(err);
 
-	assertm(socket->connect_info, "Lost connect_info!");
+	assertm(socket->connect_info != NULL, "Lost connect_info!");
 	if_assert_failed return;
 
 	if (getsockopt(socket->fd, SOL_SOCKET, SO_ERROR, (void *) &err, &len) == 0) {
@@ -488,6 +494,10 @@ connect_socket(struct socket *csocket, enum connection_state state)
 	int only_local = get_cmd_opt_bool("localhost");
 	int saved_errno = 0;
 	int at_least_one_remote_ip = 0;
+#ifdef CONFIG_IPV6
+	int try_ipv6 = get_opt_bool("connection.try_ipv6");
+#endif
+	int try_ipv4 = get_opt_bool("connection.try_ipv4");
 	/* We tried something but we failed in such a way that we would rather
 	 * prefer the connection to retain the information about previous
 	 * failures.  That is, we i.e. decided we are forbidden to even think
@@ -505,25 +515,20 @@ connect_socket(struct socket *csocket, enum connection_state state)
 	for (i = connect_info->triedno + 1; i < connect_info->addrno; i++) {
 #ifdef CONFIG_IPV6
 		struct sockaddr_in6 addr = *((struct sockaddr_in6 *) &connect_info->addr[i]);
+		int family = addr.sin6_family;
 #else
 		struct sockaddr_in addr = *((struct sockaddr_in *) &connect_info->addr[i]);
+		int family = addr.sin_family;
 #endif
 		int pf;
-		int family;
 		int force_family = connect_info->ip_family;
-
-#ifdef CONFIG_IPV6
-		family = addr.sin6_family;
-#else
-		family = addr.sin_family;
-#endif
 
 		connect_info->triedno++;
 
 		if (only_local) {
 			int local = 0;
 #ifdef CONFIG_IPV6
-			if (addr.sin6_family == AF_INET6)
+			if (family == AF_INET6)
 				local = check_if_local_address6((struct sockaddr_in6 *) &addr);
 			else
 #endif
@@ -538,22 +543,20 @@ connect_socket(struct socket *csocket, enum connection_state state)
 
 #ifdef CONFIG_IPV6
 		if (family == AF_INET6) {
-			pf = PF_INET6;
-			if (!get_opt_bool("connection.try_ipv6")
-			    || (force_family && force_family != 6)) {
+			if (!try_ipv6 || (force_family && force_family != 6)) {
 				silent_fail = 1;
 				continue;
 			}
+			pf = PF_INET6;
 
 		} else
 #endif
 		if (family == AF_INET) {
-			pf = PF_INET;
-			if (!get_opt_bool("connection.try_ipv4")
-			    || (force_family && force_family != 4)) {
+			if (!try_ipv4 || (force_family && force_family != 4)) {
 				silent_fail = 1;
 				continue;
 			}
+			pf = PF_INET;
 
 		} else {
 			continue;
@@ -583,23 +586,24 @@ connect_socket(struct socket *csocket, enum connection_state state)
 		 * will fail, as we will use it only when it will be successfully
 		 * established. At least I hope that noone else will want to do
 		 * something else ;-). --pasky */
+		/* And in fact we must set it early, because of EINPROGRESS.  */
 
 #ifdef CONFIG_IPV6
-		if (addr.sin6_family == AF_INET6) {
+		if (family == AF_INET6) {
+			csocket->protocol_family = EL_PF_INET6;
 			if (connect(sock, (struct sockaddr *) &addr,
 					sizeof(struct sockaddr_in6)) == 0) {
 				/* Success */
-				csocket->protocol_family = EL_PF_INET6;
 				complete_connect_socket(csocket, NULL, NULL);
 				return;
 			}
 		} else
 #endif
 		{
+			csocket->protocol_family = EL_PF_INET;
 			if (connect(sock, (struct sockaddr *) &addr,
 					sizeof(struct sockaddr_in)) == 0) {
 				/* Success */
-				csocket->protocol_family = EL_PF_INET;
 				complete_connect_socket(csocket, NULL, NULL);
 				return;
 			}
@@ -675,7 +679,7 @@ write_select(struct socket *socket)
 	struct write_buffer *wb = socket->write_buffer;
 	int wr;
 
-	assertm(wb, "write socket has no buffer");
+	assertm(wb != NULL, "write socket has no buffer");
 	if_assert_failed {
 		socket->ops->done(socket, S_INTERNAL);
 		return;
@@ -805,7 +809,7 @@ read_select(struct socket *socket)
 	struct read_buffer *rb = socket->read_buffer;
 	ssize_t rd;
 
-	assertm(rb, "read socket has no buffer");
+	assertm(rb != NULL, "read socket has no buffer");
 	if_assert_failed {
 		socket->ops->done(socket, S_INTERNAL);
 		return;

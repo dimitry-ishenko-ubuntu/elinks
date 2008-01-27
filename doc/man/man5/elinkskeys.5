@@ -17,7 +17,7 @@
 .el .ne 3
 .IP "\\$1" \\$2
 ..
-.TH "ELINKSKEYS" 5 "ELinks keybindings" "2006-01-29" "ELinks keybindings"
+.TH "ELINKSKEYS" 5 "ELinks keybindings" "2007-06-21" "ELinks keybindings"
 .SH NAME
 elinkskeys \- keybindings for ELinks
 .SH "SYNOPSIS"
@@ -46,7 +46,7 @@ is \fImain\fR, \fIedit\fR, or \fImenu\fR\&. The main keymap is used for general 
 
 .TP
 <keystroke>
-is a case sensitive key, which you can prefix with \fICtrl\-\fR or \fIAlt\-\fR\&. \fICtrl\-\fR must be followed by an uppercase key\&. See below for a list of valid keys\&.
+is a case sensitive key, which you can prefix with \fICtrl\-\fR, \fIAlt\-\fR, or both\&. \fICtrl\-\fR must be followed by an uppercase key\&. See below for a list of valid keys\&.
 
 .TP
 <action>
@@ -112,6 +112,10 @@ Bookmark all open tabs\&.
 .TP
 auth\-manager
 Open authentication manager\&.
+
+.TP
+backspace\-prefix
+Backspace the last entered digit of the current prefix\&.
 
 .TP
 bookmark\-manager
@@ -569,7 +573,7 @@ Copy text to clipboard\&.
 
 .TP
 cut\-clipboard
-Delete text from clipboard\&.
+Cut text to clipboard\&.
 
 .TP
 delete
@@ -604,8 +608,20 @@ kill\-to\-eol
 Delete to end of line\&.
 
 .TP
+kill\-word\-back
+Delete backwards to start of word\&.
+
+.TP
 left
 Move the cursor left\&.
+
+.TP
+move\-backward\-word
+Move cursor before current word\&.
+
+.TP
+move\-forward\-word
+Move cursor after current word\&.
 
 .TP
 next\-item
@@ -802,7 +818,7 @@ Open download manager (\fIdownload\-manager\fR)
 
 .TP
 \fIE\fR
-Open \\"Go to URL\\" dialog box containing the current link URL (\fIgoto\-url\-current\-link\fR)
+Open "Go to URL" dialog box containing the current link URL (\fIgoto\-url\-current\-link\fR)
 
 .TP
 \fICtrl\-E\fR
@@ -818,7 +834,7 @@ Move downwards by a page (\fImove\-page\-down\fR)
 
 .TP
 \fIG\fR
-Open \\"Go to URL\\" dialog box containing the current URL (\fIgoto\-url\-current\fR)
+Open "Go to URL" dialog box containing the current URL (\fIgoto\-url\-current\fR)
 
 .TP
 \fIH\fR
@@ -910,7 +926,7 @@ Maximize the current frame (\fIframe\-maximize\fR)
 
 .TP
 \fIg\fR
-Open \\"Go to URL\\" dialog box (\fIgoto\-url\fR)
+Open "Go to URL" dialog box (\fIgoto\-url\fR)
 
 .TP
 \fIh\fR
@@ -979,6 +995,10 @@ Show information about the current page protocol headers (\fIheader\-info\fR)
 .TP
 \fI}\fR
 Scroll right (\fIscroll\-right\fR)
+
+.TP
+\fIBackspace\fR
+Backspace the last entered digit of the current prefix (\fIbackspace\-prefix\fR)
 
 .TP
 \fIDelete\fR
@@ -1053,6 +1073,10 @@ Move to the next frame (\fIframe\-next\fR)
 Move to the previous frame (\fIframe\-prev\fR)
 
 .TP
+\fITab\fR
+Move to the previous frame (\fIframe\-prev\fR)
+
+.TP
 \fIUp\fR
 Move to the previous link (\fImove\-link\-prev\fR)
 
@@ -1071,12 +1095,20 @@ Go to the last line of the buffer (\fIend\-of\-buffer\fR)
 Go to the start of the page/line (\fIhome\fR)
 
 .TP
+\fIAlt\-b\fR
+Move cursor before current word (\fImove\-backward\-word\fR)
+
+.TP
 \fICtrl\-D\fR
 Delete character under cursor (\fIdelete\fR)
 
 .TP
 \fICtrl\-E\fR
 Go to the end of the page/line (\fIend\fR)
+
+.TP
+\fIAlt\-f\fR
+Move cursor after current word (\fImove\-forward\-word\fR)
 
 .TP
 \fICtrl\-H\fR
@@ -1120,7 +1152,11 @@ Attempt to auto\-complete the input (\fIauto\-complete\fR)
 
 .TP
 \fICtrl\-X\fR
-Delete text from clipboard (\fIcut\-clipboard\fR)
+Cut text to clipboard (\fIcut\-clipboard\fR)
+
+.TP
+\fIAlt\-Backspace\fR
+Delete backwards to start of word (\fIkill\-word\-back\fR)
 
 .TP
 \fIBackspace\fR
@@ -1172,6 +1208,10 @@ Move to the next item (\fInext\-item\fR)
 
 .TP
 \fIAlt\-Tab\fR
+Move to the previous item (\fIprevious\-item\fR)
+
+.TP
+\fITab\fR
 Move to the previous item (\fIprevious\-item\fR)
 
 .TP
@@ -1302,6 +1342,10 @@ Move to the next item (\fInext\-item\fR)
 
 .TP
 \fIAlt\-Tab\fR
+Move to the previous item (\fIprevious\-item\fR)
+
+.TP
+\fITab\fR
 Move to the previous item (\fIprevious\-item\fR)
 
 .TP

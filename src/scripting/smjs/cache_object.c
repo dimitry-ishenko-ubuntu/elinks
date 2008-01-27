@@ -16,12 +16,16 @@
 
 static const JSClass cache_entry_class; /* defined below */
 
+/* Tinyids of properties.  Use negative values to distinguish these
+ * from array indexes (even though this object has no array elements).
+ * ECMAScript code should not use these directly as in cache_entry[-1];
+ * future versions of ELinks may change the numbers.  */
 enum cache_entry_prop {
-	CACHE_ENTRY_CONTENT,
-	CACHE_ENTRY_TYPE,
-	CACHE_ENTRY_LENGTH,
-	CACHE_ENTRY_HEAD,
-	CACHE_ENTRY_URI,
+	CACHE_ENTRY_CONTENT = -1,
+	CACHE_ENTRY_TYPE    = -2,
+	CACHE_ENTRY_LENGTH  = -3,
+	CACHE_ENTRY_HEAD    = -4,
+	CACHE_ENTRY_URI     = -5,
 };
 
 static const JSPropertySpec cache_entry_props[] = {
@@ -45,7 +49,8 @@ cache_entry_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	if (!JS_InstanceOf(ctx, obj, (JSClass *) &cache_entry_class, NULL))
 		return JS_FALSE;
 
-	cached = JS_GetPrivate(ctx, obj); /* from @cache_entry_class */
+	cached = JS_GetInstancePrivate(ctx, obj,
+				       (JSClass *) &cache_entry_class, NULL);
 
 	if (!cache_entry_is_valid(cached)) return JS_FALSE;
 
@@ -86,8 +91,8 @@ cache_entry_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 		return JS_TRUE;
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case
 		 * and leave *@vp unchanged.  Do the same here.
 		 * (Actually not quite the same, as we already used
@@ -108,7 +113,8 @@ cache_entry_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	if (!JS_InstanceOf(ctx, obj, (JSClass *) &cache_entry_class, NULL))
 		return JS_FALSE;
 
-	cached = JS_GetPrivate(ctx, obj); /* from @cache_entry_class */
+	cached = JS_GetInstancePrivate(ctx, obj,
+				       (JSClass *) &cache_entry_class, NULL);
 
 	if (!cache_entry_is_valid(cached)) return JS_FALSE;
 
@@ -143,8 +149,8 @@ cache_entry_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		return JS_TRUE;
 	}
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case.
 		 * Do the same here.  */
 		return JS_TRUE;
@@ -160,13 +166,14 @@ cache_entry_finalize(JSContext *ctx, JSObject *obj)
 	assert(JS_InstanceOf(ctx, obj, (JSClass *) &cache_entry_class, NULL));
 	if_assert_failed return;
 
-	cached = JS_GetPrivate(ctx, obj); /* from @cache_entry_class */
+	cached = JS_GetInstancePrivate(ctx, obj,
+				       (JSClass *) &cache_entry_class, NULL);
 
 	if (!cached) return;
 
 	object_unlock(cached);
 }
-	
+
 static const JSClass cache_entry_class = {
 	"cache_entry",
 	JSCLASS_HAS_PRIVATE,	/* struct cache_entry * */
@@ -179,7 +186,7 @@ JSObject *
 smjs_get_cache_entry_object(struct cache_entry *cached)
 {
 	JSObject *cache_entry_object;
-		
+
 	assert(smjs_ctx);
 
 	cache_entry_object = JS_NewObject(smjs_ctx,

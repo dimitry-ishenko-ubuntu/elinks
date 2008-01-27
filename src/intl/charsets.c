@@ -1,5 +1,9 @@
 /* Charsets convertor */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE /* strcasecmp() */
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -10,6 +14,9 @@
 
 #include <ctype.h>
 #include <stdlib.h>
+#if HAVE_WCTYPE_H
+#include <wctype.h>
+#endif
 
 #include "elinks.h"
 
@@ -27,13 +34,35 @@
 
 struct table_entry {
 	unsigned char c;
-	unicode_val_T u;
+	/* This should in principle be unicode_val_T, but because all
+	 * the values currently in codepage.inc fit in 16 bits, we can
+	 * as well use uint16_t and halve sizeof(struct table_entry)
+	 * from 8 bytes to 4.  Should other characters ever be needed,
+	 * unicode_val_T u : 24 might be a possibility, although it
+	 * seems a little unportable as bitfields are in principle
+	 * restricted to int, which may be 16-bit.  */
+	uint16_t u;
 };
 
 struct codepage_desc {
 	unsigned char *name;
-	unsigned char **aliases;
-	struct table_entry *table;
+	unsigned char *const *aliases;
+
+ 	/* The Unicode mappings of codepage bytes 0x80...0xFF.
+ 	 * (0x00...0x7F are assumed to be ASCII in all codepages.)
+ 	 * Because all current values fit in 16 bits, we store them as
+ 	 * uint16_t rather than unicode_val_T.  If the codepage does
+ 	 * not use some byte, then @highhalf maps that byte to 0xFFFF,
+ 	 * which C code converts to UCS_REPLACEMENT_CHARACTER where
+ 	 * appropriate.  (U+FFFF is reserved and will never be
+ 	 * assigned as a character.)  */
+	const uint16_t *highhalf;
+
+ 	/* If some byte in the codepage corresponds to multiple Unicode
+ 	 * characters, then the preferred character is in @highhalf
+ 	 * above, and the rest are listed here in @table.  This table
+ 	 * is not used for translating from the codepage to Unicode.  */
+	const struct table_entry *table;
 };
 
 #include "intl/codepage.inc"
@@ -41,7 +70,7 @@ struct codepage_desc {
 #include "intl/entity.inc"
 
 
-static char strings[256][2] = {
+static const char strings[256][2] = {
 	"\000", "\001", "\002", "\003", "\004", "\005", "\006", "\007",
 	"\010", "\011", "\012", "\013", "\014", "\015", "\016", "\017",
 	"\020", "\021", "\022", "\023", "\024", "\025", "\026", "\033",
@@ -88,7 +117,12 @@ free_translation_table(struct conv_table *p)
 	mem_free(p);
 }
 
-static unsigned char *no_str = "*";
+/* A string used in conversion tables when there is no correct
+ * conversion.  This is compared by address and therefore should be a
+ * named array rather than a pointer so that it won't share storage
+ * with any other string literal that happens to have the same
+ * characters.  */
+static const unsigned char no_str[] = "*";
 
 static void
 new_translation_table(struct conv_table *p)
@@ -132,27 +166,42 @@ static const unicode_val_T strange_chars[32] = {
 };
 
 #define SYSTEM_CHARSET_FLAG 128
+#define is_cp_ptr_utf8(cp_ptr) ((cp_ptr)->aliases == aliases_utf8)
 
-unsigned char *
-u2cp_(unicode_val_T u, int to, int no_nbsp_hack)
+const unsigned char *
+u2cp_(unicode_val_T u, int to, enum nbsp_mode nbsp_mode)
 {
 	int j;
 	int s;
 
 	if (u < 128) return strings[u];
-	/* To mark non breaking spaces, we use a special char NBSP_CHAR. */
-	if (u == 0xa0) return no_nbsp_hack ? " " : NBSP_CHAR_STRING;
-	if (u == 0xad) return "";
+
+	to &= ~SYSTEM_CHARSET_FLAG;
+
+#ifdef CONFIG_UTF8
+	if (is_cp_ptr_utf8(&codepages[to]))
+		return encode_utf8(u);
+#endif /* CONFIG_UTF8 */
+
+	/* To mark non breaking spaces in non-UTF-8 strings, we use a
+	 * special char NBSP_CHAR. */
+	if (u == UCS_NO_BREAK_SPACE) {
+		if (nbsp_mode == NBSP_MODE_HACK) return NBSP_CHAR_STRING;
+		else /* NBSP_MODE_ASCII */ return " ";
+	}
+	if (u == UCS_SOFT_HYPHEN) return "";
 
 	if (u < 0xa0) {
 		unicode_val_T strange = strange_chars[u - 0x80];
 
 		if (!strange) return NULL;
-		return u2cp_(strange, to, no_nbsp_hack);
+		return u2cp_(strange, to, nbsp_mode);
 	}
 
-	to &= ~SYSTEM_CHARSET_FLAG;
-
+	if (u < 0xFFFF)
+		for (j = 0; j < 0x80; j++)
+			if (codepages[to].highhalf[j] == u)
+				return strings[0x80 + j];
 	for (j = 0; codepages[to].table[j].c; j++)
 		if (codepages[to].table[j].u == u)
 			return strings[codepages[to].table[j].c];
@@ -165,8 +214,13 @@ u2cp_(unicode_val_T u, int to, int no_nbsp_hack)
 
 static unsigned char utf_buffer[7];
 
+#ifdef CONFIG_UTF8
+inline unsigned char *
+encode_utf8(unicode_val_T u)
+#else
 static unsigned char *
-encode_utf_8(unicode_val_T u)
+encode_utf8(unicode_val_T u)
+#endif /* CONFIG_UTF8 */
 {
 	memset(utf_buffer, 0, 7);
 
@@ -200,28 +254,528 @@ encode_utf_8(unicode_val_T u)
 	return utf_buffer;
 }
 
-/* This slow and ugly code is used by the terminal utf_8_io */
-unsigned char *
-cp2utf_8(int from, int c)
+#ifdef CONFIG_UTF8
+/* Number of bytes utf8 character indexed by first byte. Illegal bytes are
+ * equal ones and handled different. */
+static const char utf8char_len_tab[256] = {
+	1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,
+	2,2,2,2,2,2,2,2, 2,2,2,2,2,2,2,2, 2,2,2,2,2,2,2,2, 2,2,2,2,2,2,2,2,
+	3,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3, 4,4,4,4,4,4,4,4, 5,5,5,5,6,6,1,1,
+};
+
+inline int utf8charlen(const unsigned char *p)
 {
-	int j;
-
-	from &= ~SYSTEM_CHARSET_FLAG;
-
-	if (codepages[from].table == table_utf_8 || c < 128)
-		return strings[c];
-
-	for (j = 0; codepages[from].table[j].c; j++)
-		if (codepages[from].table[j].c == c)
-			return encode_utf_8(codepages[from].table[j].u);
-
-	return encode_utf_8(UCS_NO_CHAR);
+	return p ? utf8char_len_tab[*p] : 0;
 }
 
-static void
-add_utf_8(struct conv_table *ct, unicode_val_T u, unsigned char *str)
+inline int
+strlen_utf8(unsigned char **str)
 {
-	unsigned char *p = encode_utf_8(u);
+	unsigned char *s = *str;
+	unsigned char *end = strchr(s, '\0');
+	int x;
+	int len;
+
+	for (x = 0;; x++, s += len) {
+		len = utf8charlen(s);
+		if (s + len > end) break;
+	}
+	*str = s;
+	return x;
+}
+
+#define utf8_issingle(p) (((p) & 0x80) == 0)
+#define utf8_islead(p) (utf8_issingle(p) || ((p) & 0xc0) == 0xc0)
+
+/* Start from @current and move back to @pos char. This pointer return. The
+ * most left pointer is @start. */
+inline unsigned char *
+utf8_prevchar(unsigned char *current, int pos, unsigned char *start)
+{
+	if (current == NULL || start == NULL || pos < 0)
+		return NULL;
+	while (pos > 0 && current != start) {
+		current--;
+		if (utf8_islead(*current))
+			pos--;
+	}
+	return current;
+}
+
+/* Count number of standard terminal cells needed for displaying UTF-8
+ * character. */
+int
+utf8_char2cells(unsigned char *utf8_char, unsigned char *end)
+{
+	unicode_val_T u;
+
+	if (end == NULL)
+		end = strchr(utf8_char, '\0');
+
+	if(!utf8_char || !end)
+		return -1;
+
+	u = utf8_to_unicode(&utf8_char, end);
+
+	return unicode_to_cell(u);
+}
+
+/* Count number of standard terminal cells needed for displaying string
+ * with UTF-8 characters. */
+int
+utf8_ptr2cells(unsigned char *string, unsigned char *end)
+{
+	int charlen, cell, cells = 0;
+
+	if (end == NULL)
+		end = strchr(string, '\0');
+
+	if(!string || !end)
+		return -1;
+
+	do {
+		charlen = utf8charlen(string);
+		if (string + charlen > end)
+			break;
+
+		cell = utf8_char2cells(string, end);
+		if  (cell < 0)
+			return -1;
+
+		cells += cell;
+		string += charlen;
+	} while (1);
+
+	return cells;
+}
+
+/* Count number of characters in string. */
+int
+utf8_ptr2chars(unsigned char *string, unsigned char *end)
+{
+	int charlen, chars = 0;
+
+	if (end == NULL)
+		end = strchr(string, '\0');
+
+	if(!string || !end)
+		return -1;
+
+	do {
+		charlen = utf8charlen(string);
+		if (string + charlen > end)
+			break;
+
+		chars++;
+		string += charlen;
+	} while (1);
+
+	return chars;
+}
+
+/*
+ * Count number of bytes from begining of the string needed for displaying
+ * specified number of cells.
+ */
+int
+utf8_cells2bytes(unsigned char *string, int max_cells, unsigned char *end)
+{
+	unsigned int bytes = 0, cells = 0;
+
+	assert(max_cells>=0);
+
+	if (end == NULL)
+		end = strchr(string, '\0');
+
+	if(!string || !end)
+		return -1;
+
+	do {
+		int cell = utf8_char2cells(&string[bytes], end);
+		if (cell < 0)
+			return -1;
+
+		cells += cell;
+		if (cells > max_cells)
+			break;
+
+		bytes += utf8charlen(&string[bytes]);
+
+		if (string + bytes > end) {
+			bytes = end - string;
+			break;
+		}
+	} while(1);
+
+	return bytes;
+}
+
+/* Take @max steps forward from @string in the specified @way, but
+ * not going past @end.  Return the resulting address.  Store the
+ * number of steps taken to *@count, unless @count is NULL.
+ *
+ * This assumes the text is valid UTF-8, and @string and @end point to
+ * character boundaries.  If not, it doesn't crash but the results may
+ * be inconsistent.
+ *
+ * This function can do some of the same jobs as utf8charlen(),
+ * utf8_cells2bytes(), and strlen_utf8().  */
+unsigned char *
+utf8_step_forward(unsigned char *string, unsigned char *end,
+		  int max, enum utf8_step way, int *count)
+{
+	int steps = 0;
+	unsigned char *current = string;
+
+	assert(string);
+	assert(max >= 0);
+	if_assert_failed goto invalid_arg;
+	if (end == NULL)
+		end = strchr(string, '\0');
+
+	switch (way) {
+	case UTF8_STEP_CHARACTERS:
+		while (steps < max && current < end) {
+			++current;
+			if (utf8_islead(*current))
+				++steps;
+		}
+		break;
+
+	case UTF8_STEP_CELLS_FEWER:
+	case UTF8_STEP_CELLS_MORE:
+		while (steps < max) {
+			unicode_val_T u;
+			unsigned char *prev = current;
+			int width;
+
+			u = utf8_to_unicode(&current, end);
+			if (u == UCS_NO_CHAR) {
+				/* Assume the incomplete sequence
+				 * costs one cell.  */
+				current = end;
+				++steps;
+				break;
+			}
+
+			width = unicode_to_cell(u);
+			if (way == UTF8_STEP_CELLS_FEWER
+			    && steps + width > max) {
+				/* Back off.  */
+				current = prev;
+				break;
+			}
+			steps += width;
+		}
+		break;
+
+	default:
+		INTERNAL("impossible enum utf8_step");
+	}
+
+invalid_arg:
+	if (count)
+		*count = steps;
+	return current;
+}
+
+/* Take @max steps backward from @string in the specified @way, but
+ * not going past @start.  Return the resulting address.  Store the
+ * number of steps taken to *@count, unless @count is NULL.
+ *
+ * This assumes the text is valid UTF-8, and @string and @start point
+ * to character boundaries.  If not, it doesn't crash but the results
+ * may be inconsistent.
+ *
+ * This function can do some of the same jobs as utf8_prevchar().  */
+unsigned char *
+utf8_step_backward(unsigned char *string, unsigned char *start,
+		   int max, enum utf8_step way, int *count)
+{
+	int steps = 0;
+	unsigned char *current = string;
+
+	assert(string);
+	assert(start);
+	assert(max >= 0);
+	if_assert_failed goto invalid_arg;
+
+	switch (way) {
+	case UTF8_STEP_CHARACTERS:
+		while (steps < max && current > start) {
+			--current;
+			if (utf8_islead(*current))
+				++steps;
+		}
+		break;
+
+	case UTF8_STEP_CELLS_FEWER:
+	case UTF8_STEP_CELLS_MORE:
+		while (steps < max) {
+			unsigned char *prev = current;
+			unsigned char *look;
+			unicode_val_T u;
+			int width;
+
+			if (current <= start)
+				break;
+			do {
+				--current;
+			} while (current > start && !utf8_islead(*current));
+
+			look = current;
+			u = utf8_to_unicode(&look, prev);
+			if (u == UCS_NO_CHAR) {
+				/* Assume the incomplete sequence
+				 * costs one cell.  */
+				width = 1;
+			} else
+				width = unicode_to_cell(u);
+
+			if (way == UTF8_STEP_CELLS_FEWER
+			    && steps + width > max) {
+				/* Back off.  */
+				current = prev;
+				break;
+			}
+			steps += width;
+		}
+		break;
+
+	default:
+		INTERNAL("impossible enum utf8_step");
+	}
+
+invalid_arg:
+	if (count)
+		*count = steps;
+	return current;
+}
+
+/*
+ * Find out number of standard terminal collumns needed for displaying symbol
+ * (glyph) which represents Unicode character c.
+ *
+ * TODO: Use wcwidth when it is available. This seems to require:
+ * - Make the configure script check whether <wchar.h> and wcwidth exist.
+ * - Define _XOPEN_SOURCE and include <wchar.h>.
+ * - Test that __STDC_ISO_10646__ is defined.  (This macro means wchar_t
+ *   matches ISO 10646 in all locales.)
+ * However, these do not suffice, because wcwidth depends on LC_CTYPE
+ * in glibc-2.3.6.  For instance, wcwidth(0xff20) is -1 when LC_CTYPE
+ * is "fi_FI.ISO-8859-1" or "C", but 2 when LC_CTYPE is "fi_FI.UTF-8".
+ * <features.h> defines __STDC_ISO_10646__ as 200009L, so 0xff20 means
+ * U+FF20 FULLWIDTH COMMERCIAL AT regardless of LC_CTYPE; but this
+ * character is apparently not supported in all locales.  Why is that?
+ * - Perhaps there is standardese that requires supported characters
+ *   to be convertable to multibyte form.  Then ELinks could just pick
+ *   some UTF-8 locale for its wcwidth purposes.
+ * - Perhaps wcwidth can even return different nonnegative values for
+ *   the same ISO 10646 character in different locales.  Then ELinks
+ *   would have to set LC_CTYPE to match at least the terminal's
+ *   charset (which may differ from the LC_CTYPE environment variable,
+ *   especially when the master process is serving a slave terminal).
+ *   But there is no guarantee that the libc supports all the same
+ *   charsets as ELinks does.
+ * For now, it seems safest to avoid the potentially locale-dependent
+ * libc version of wcwidth, and instead use a hardcoded mapping.
+ *
+ * @return	2 for double-width glyph, 1 for others.
+ * 		TODO: May be extended to return 0 for zero-width glyphs
+ * 		(like composing, maybe unprintable too).
+ */
+inline int
+unicode_to_cell(unicode_val_T c)
+{
+	if (c >= 0x1100
+		&& (c <= 0x115f			/* Hangul Jamo */
+		|| c == 0x2329
+		|| c == 0x232a
+		|| (c >= 0x2e80 && c <= 0xa4cf
+			&& c != 0x303f)		/* CJK ... Yi */
+		|| (c >= 0xac00 && c <= 0xd7a3)	/* Hangul Syllables */
+		|| (c >= 0xf900 && c <= 0xfaff)	/* CJK Compatibility
+								Ideographs */
+		|| (c >= 0xfe30 && c <= 0xfe6f)	/* CJK Compatibility Forms */
+		|| (c >= 0xff00 && c <= 0xff60)	/* Fullwidth Forms */
+		|| (c >= 0xffe0 && c <= 0xffe6)
+		|| (c >= 0x20000 && c <= 0x2fffd)
+		|| (c >= 0x30000 && c <= 0x3fffd)))
+		return 2;
+
+	return 1;
+}
+
+/* Fold the case of a Unicode character, so that hotkeys in labels can
+ * be compared case-insensitively.  It is unspecified whether the
+ * result will be in upper or lower case.  */
+unicode_val_T
+unicode_fold_label_case(unicode_val_T c)
+{
+#if __STDC_ISO_10646__ && HAVE_WCTYPE_H
+	return towlower(c);
+#else  /* !(__STDC_ISO_10646__ && HAVE_WCTYPE_H) */
+	/* For now, this supports only ASCII.  It would be possible to
+	 * use code generated from CaseFolding.txt of Unicode if the
+	 * acknowledgements required by http://www.unicode.org/copyright.html
+	 * were added to associated documentation of ELinks.  */
+	if (c >= 0x41 && c <= 0x5A)
+		return c + 0x20;
+	else
+		return c;
+#endif /* !(__STDC_ISO_10646__ && HAVE_WCTYPE_H) */
+}
+
+inline unicode_val_T
+utf8_to_unicode(unsigned char **string, const unsigned char *end)
+{
+	unsigned char *str = *string;
+	unicode_val_T u;
+	int length;
+
+	length = utf8char_len_tab[str[0]];
+
+	if (str + length > end) {
+		return UCS_NO_CHAR;
+	}
+
+	switch (length) {
+		case 1:		/* U+0000 to U+007F */
+			if (str[0] >= 0x80) {
+invalid_utf8:
+				++*string;
+				return UCS_REPLACEMENT_CHARACTER;
+			}
+			u = str[0];
+			break;
+		case 2:		/* U+0080 to U+07FF */
+			if ((str[1] & 0xc0) != 0x80)
+				goto invalid_utf8;
+			u = (str[0] & 0x1f) << 6;
+			u += (str[1] & 0x3f);
+			if (u < 0x80)
+				goto invalid_utf8;
+			break;
+		case 3:		/* U+0800 to U+FFFF, except surrogates */
+			if ((str[1] & 0xc0) != 0x80 || (str[2] & 0xc0) != 0x80)
+				goto invalid_utf8;
+			u = (str[0] & 0x0f) << 12;
+			u += ((str[1] & 0x3f) << 6);
+			u += (str[2] & 0x3f);
+			if (u < 0x800 || is_utf16_surrogate(u))
+				goto invalid_utf8;
+			break;
+		case 4:		/* U+10000 to U+1FFFFF */
+			if ((str[1] & 0xc0) != 0x80 || (str[2] & 0xc0) != 0x80
+			    || (str[3] & 0xc0) != 0x80)
+				goto invalid_utf8;
+			u = (str[0] & 0x0f) << 18;
+			u += ((str[1] & 0x3f) << 12);
+			u += ((str[2] & 0x3f) << 6);
+			u += (str[3] & 0x3f);
+			if (u < 0x10000)
+				goto invalid_utf8;
+			break;
+		case 5:		/* U+200000 to U+3FFFFFF */
+			if ((str[1] & 0xc0) != 0x80 || (str[2] & 0xc0) != 0x80
+			    || (str[3] & 0xc0) != 0x80 || (str[4] & 0xc0) != 0x80)
+				goto invalid_utf8;
+			u = (str[0] & 0x0f) << 24;
+			u += ((str[1] & 0x3f) << 18);
+			u += ((str[2] & 0x3f) << 12);
+			u += ((str[3] & 0x3f) << 6);
+			u += (str[4] & 0x3f);
+			if (u < 0x200000)
+				goto invalid_utf8;
+			break;
+		case 6:		/* U+4000000 to U+7FFFFFFF */
+			if ((str[1] & 0xc0) != 0x80 || (str[2] & 0xc0) != 0x80
+			    || (str[3] & 0xc0) != 0x80 || (str[4] & 0xc0) != 0x80
+			    || (str[5] & 0xc0) != 0x80)
+				goto invalid_utf8;
+			u = (str[0] & 0x01) << 30;
+			u += ((str[1] & 0x3f) << 24);
+			u += ((str[2] & 0x3f) << 18);
+			u += ((str[3] & 0x3f) << 12);
+			u += ((str[4] & 0x3f) << 6);
+			u += (str[5] & 0x3f);
+			if (u < 0x4000000)
+				goto invalid_utf8;
+			break;
+		default:
+			INTERNAL("utf8char_len_tab out of range");
+			goto invalid_utf8;
+	}
+	*string = str + length;
+	return u;
+}
+#endif /* CONFIG_UTF8 */
+
+/* The common part of cp2u and cp2utf_8.  */
+static unicode_val_T
+cp2u_shared(const struct codepage_desc *from, unsigned char c)
+{
+	unicode_val_T u = from->highhalf[c - 0x80];
+
+	if (u == 0xFFFF) u = UCS_REPLACEMENT_CHARACTER;
+	return u;
+}
+
+/* Used for converting input from the terminal.  */
+unicode_val_T
+cp2u(int from, unsigned char c)
+{
+	from &= ~SYSTEM_CHARSET_FLAG;
+
+	/* UTF-8 is a multibyte codepage and cannot be handled with
+	 * this function.  */
+	assert(!is_cp_ptr_utf8(&codepages[from]));
+	if_assert_failed return UCS_REPLACEMENT_CHARACTER;
+
+	if (c < 0x80) return c;
+	else return cp2u_shared(&codepages[from], c);
+}
+
+/* This slow and ugly code is used by the terminal utf_8_io */
+const unsigned char *
+cp2utf8(int from, int c)
+{
+	from &= ~SYSTEM_CHARSET_FLAG;
+
+	if (is_cp_ptr_utf8(&codepages[from]) || c < 128)
+		return strings[c];
+
+	return encode_utf8(cp2u_shared(&codepages[from], c));
+}
+
+#ifdef CONFIG_UTF8
+unicode_val_T
+cp_to_unicode(int codepage, unsigned char **string, unsigned char *end)
+{
+	unicode_val_T ret;
+
+	if (is_cp_utf8(codepage))
+		return utf8_to_unicode(string, end);
+
+	if (*string >= end)
+		return UCS_NO_CHAR;
+
+	ret = cp2u(codepage, **string);
+	++*string;
+	return ret;
+}
+#endif	/* CONFIG_UTF8 */
+
+
+static void
+add_utf8(struct conv_table *ct, unicode_val_T u, const unsigned char *str)
+{
+	unsigned char *p = encode_utf8(u);
 
 	while (p[1]) {
 		if (ct[*p].t) ct = ct[*p].u.tbl;
@@ -248,6 +802,10 @@ add_utf_8(struct conv_table *ct, unicode_val_T u, unsigned char *str)
 		ct[*p].u.str = str;
 }
 
+/* A conversion table from some charset to UTF-8.
+ * If it is from UTF-8 to UTF-8, it converts each byte separately.
+ * Unlike in other translation tables, the strings in elements 0x80 to
+ * 0xFF are allocated dynamically.  */
 struct conv_table utf_table[256];
 int utf_table_init = 1;
 
@@ -256,12 +814,13 @@ free_utf_table(void)
 {
 	int i;
 
+	/* Cast away const.  */
 	for (i = 128; i < 256; i++)
-		mem_free(utf_table[i].u.str);
+		mem_free((unsigned char *) utf_table[i].u.str);
 }
 
 static struct conv_table *
-get_translation_table_to_utf_8(int from)
+get_translation_table_to_utf8(int from)
 {
 	int i;
 	static int lfr = -1;
@@ -269,30 +828,37 @@ get_translation_table_to_utf_8(int from)
 	if (from == -1) return NULL;
 	from &= ~SYSTEM_CHARSET_FLAG;
 	if (from == lfr) return utf_table;
-	if (utf_table_init)
-		memset(utf_table, 0, sizeof(utf_table)),
+	lfr = from;
+	if (utf_table_init) {
+		memset(utf_table, 0, sizeof(utf_table));
 		utf_table_init = 0;
-	else
+	} else
 		free_utf_table();
 
 	for (i = 0; i < 128; i++)
 		utf_table[i].u.str = strings[i];
 
-	if (codepages[from].table == table_utf_8) {
+	if (is_cp_ptr_utf8(&codepages[from])) {
 		for (i = 128; i < 256; i++)
 			utf_table[i].u.str = stracpy(strings[i]);
 		return utf_table;
 	}
 
-	for (i = 128; i < 256; i++)
-		utf_table[i].u.str = NULL;
+	for (i = 128; i < 256; i++) {
+		unicode_val_T u = codepages[from].highhalf[i - 0x80];
+
+		if (u == 0xFFFF)
+			utf_table[i].u.str = NULL;
+		else
+			utf_table[i].u.str = stracpy(encode_utf8(u));
+	}
 
 	for (i = 0; codepages[from].table[i].c; i++) {
 		unicode_val_T u = codepages[from].table[i].u;
 
 		if (!utf_table[codepages[from].table[i].c].u.str)
 			utf_table[codepages[from].table[i].c].u.str =
-				stracpy(encode_utf_8(u));
+				stracpy(encode_utf8(u));
 	}
 
 	for (i = 128; i < 256; i++)
@@ -302,7 +868,8 @@ get_translation_table_to_utf_8(int from)
 	return utf_table;
 }
 
-struct conv_table table[256];
+/* A conversion table between two charsets, where the target is not UTF-8.  */
+static struct conv_table table[256];
 static int first = 1;
 
 void
@@ -331,40 +898,45 @@ get_translation_table(int from, int to)
 	}
 	if (/*from == to ||*/ from == -1 || to == -1)
 		return NULL;
-	if (codepages[to].table == table_utf_8)
-		return get_translation_table_to_utf_8(from);
+	if (is_cp_ptr_utf8(&codepages[to]))
+		return get_translation_table_to_utf8(from);
 	if (from == lfr && to == lto)
 		return table;
 	lfr = from;
 	lto = to;
 	new_translation_table(table);
 
-	if (codepages[from].table == table_utf_8) {
+	if (is_cp_ptr_utf8(&codepages[from])) {
 		int i;
 
+		/* Map U+00A0 and U+00AD the same way as u2cp() would.  */
+		add_utf8(table, UCS_NO_BREAK_SPACE, strings[NBSP_CHAR]);
+		add_utf8(table, UCS_SOFT_HYPHEN, "");
+
+		for (i = 0x80; i <= 0xFF; i++)
+			if (codepages[to].highhalf[i - 0x80] != 0xFFFF)
+				add_utf8(table,
+					 codepages[to].highhalf[i - 0x80],
+					 strings[i]);
+
 		for (i = 0; codepages[to].table[i].c; i++)
-			add_utf_8(table, codepages[to].table[i].u,
-				  strings[codepages[to].table[i].c]);
+			add_utf8(table, codepages[to].table[i].u,
+				 strings[codepages[to].table[i].c]);
 
 		for (i = 0; unicode_7b[i].x != -1; i++)
 			if (unicode_7b[i].x >= 0x80)
-				add_utf_8(table, unicode_7b[i].x,
-					  unicode_7b[i].s);
+				add_utf8(table, unicode_7b[i].x,
+					 unicode_7b[i].s);
 
 	} else {
 		int i;
 
 		for (i = 128; i < 256; i++) {
-			int j;
+			if (codepages[from].highhalf[i - 0x80] != 0xFFFF) {
+				const unsigned char *u;
 
-			for (j = 0; codepages[from].table[j].c; j++) {
-				if (codepages[from].table[j].c == i) {
-					unsigned char *u;
-
-					u = u2cp(codepages[from].table[j].u, to);
-					if (u) table[i].u.str = u;
-					break;
-				}
+				u = u2cp(codepages[from].highhalf[i - 0x80], to);
+				if (u) table[i].u.str = u;
 			}
 		}
 	}
@@ -397,13 +969,16 @@ struct entity_cache {
 	unsigned int hits;
 	int strlen;
 	int encoding;
-	unsigned char *result;
+	const unsigned char *result;
 	unsigned char str[20]; /* Suffice in any case. */
 };
 
+/* comparison function for qsort() */
 static int
-hits_cmp(struct entity_cache *a, struct entity_cache *b)
+hits_cmp(const void *v1, const void *v2)
 {
+	const struct entity_cache *a = v1, *b = v2;
+
 	if (a->hits == b->hits) return 0;
 	if (a->hits > b->hits) return -1;
 	else return 1;
@@ -421,7 +996,7 @@ compare_entities(const void *key_, const void *element_)
 	return xxstrcmp(first, second, length);
 }
 
-unsigned char *
+const unsigned char *
 get_entity_string(const unsigned char *str, const int strlen, int encoding)
 {
 #define ENTITY_CACHE_SIZE 10	/* 10 seems a good value. */
@@ -430,10 +1005,17 @@ get_entity_string(const unsigned char *str, const int strlen, int encoding)
 	static struct entity_cache entity_cache[ENTITY_CACHE_MAXLEN][ENTITY_CACHE_SIZE];
 	static unsigned int nb_entity_cache[ENTITY_CACHE_MAXLEN];
 	static int first_time = 1;
-	unsigned int slen;
-	unsigned char *result = NULL;
+	unsigned int slen = 0;
+	const unsigned char *result = NULL;
 
 	if (strlen <= 0) return NULL;
+
+#ifdef CONFIG_UTF8
+	/* TODO: caching UTF-8 */
+	encoding &= ~SYSTEM_CHARSET_FLAG;
+	if (is_cp_ptr_utf8(&codepages[encoding]))
+		goto skip;
+#endif /* CONFIG_UTF8 */
 
 	if (first_time) {
 		memset(&nb_entity_cache, 0, ENTITY_CACHE_MAXLEN * sizeof(unsigned int));
@@ -488,7 +1070,9 @@ get_entity_string(const unsigned char *str, const int strlen, int encoding)
 		fprintf(stderr, "miss\n");
 #endif
 	}
-
+#ifdef CONFIG_UTF8
+skip:
+#endif /* CONFIG_UTF8 */
 	if (*str == '#') { /* Numeric entity. */
 		int l = (int) strlen;
 		unsigned char *st = (unsigned char *) str;
@@ -540,10 +1124,25 @@ get_entity_string(const unsigned char *str, const int strlen, int encoding)
 		if (element) result = u2cp(element->c, encoding);
 	}
 
+#ifdef CONFIG_UTF8
+	if (is_cp_ptr_utf8(&codepages[encoding])) {
+		return result;
+	}
+#endif /* CONFIG_UTF8 */
 end:
 	/* Take care of potential buffer overflow. */
 	if (strlen < sizeof(entity_cache[slen][0].str)) {
-		struct entity_cache *ece = &entity_cache[slen][nb_entity_cache[slen]];
+		struct entity_cache *ece;
+
+		/* Sort entries by hit order. */
+		if (nb_entity_cache[slen] > 1)
+			qsort(&entity_cache[slen][0], nb_entity_cache[slen],
+			      sizeof(entity_cache[slen][0]), hits_cmp);
+
+		/* Increment number of cache entries if possible.
+		 * Else, just replace the least used entry.  */
+		if (nb_entity_cache[slen] < ENTITY_CACHE_SIZE) nb_entity_cache[slen]++;
+		ece = &entity_cache[slen][nb_entity_cache[slen] - 1];
 
 		/* Copy new entry to cache. */
 		ece->hits = 1;
@@ -553,21 +1152,11 @@ end:
 		memcpy(ece->str, str, strlen);
 		ece->str[strlen] = '\0';
 
-		/* Increment number of cache entries if possible. */
-		if (nb_entity_cache[slen] < ENTITY_CACHE_SIZE) nb_entity_cache[slen]++;
 
 #ifdef DEBUG_ENTITY_CACHE
 		fprintf(stderr, "Added in [%u]: l=%d st='%s'\n", slen,
 				entity_cache[slen][0].strlen, entity_cache[slen][0].str);
 
-#endif
-
-		/* Sort entries by hit order. */
-		if (nb_entity_cache[slen] > 1)
-			qsort(&entity_cache[slen][0], nb_entity_cache[slen],
-			      sizeof(entity_cache[slen][0]), (void *) hits_cmp);
-
-#ifdef DEBUG_ENTITY_CACHE
 	{
 		unsigned int i;
 
@@ -578,7 +1167,7 @@ end:
 				entity_cache[slen][i].str);
 		fprintf(stderr, "-----------------\n");
 	}
-#endif
+#endif	/* DEBUG_ENTITY_CACHE */
 	}
 	return result;
 }
@@ -611,7 +1200,7 @@ convert_string(struct conv_table *convert_table,
 	/* Iterate ;-) */
 
 	while (charspos < charslen) {
-		unsigned char *translit;
+		const unsigned char *translit;
 
 #define PUTC do { \
 		buffer[bufferpos++] = chars[charspos++]; \
@@ -782,7 +1371,7 @@ charsets_list_next(void)
 	if (!codepages[i_name].name) return NULL;
 
 	kv.key = codepages[i_name].aliases[i_alias];
-	kv.data = &codepages[i_name];
+	kv.data = (void *) &codepages[i_name]; /* cast away const */
 
 	if (codepages[i_name].aliases[i_alias + 1])
 		i_alias++;
@@ -802,7 +1391,7 @@ static struct fastfind_index ff_charsets_index
 int
 get_cp_index(unsigned char *name)
 {
-	struct codepage_desc *codepage;
+	const struct codepage_desc *codepage;
 	int syscp = 0;
 
 	if (!strcasecmp(name, "System")) {
@@ -845,6 +1434,11 @@ free_charsets_lookup(void)
 #endif
 }
 
+/* Get the codepage's name for displaying to the user, or NULL if
+ * @cp_index is one past the end.  In the future, we might want to
+ * localize these with gettext.  So it may be best not to use this
+ * function if the name will have to be converted back to an
+ * index.  */
 unsigned char *
 get_cp_name(int cp_index)
 {
@@ -854,8 +1448,11 @@ get_cp_name(int cp_index)
 	return codepages[cp_index].name;
 }
 
+/* Get the codepage's name for saving to a configuration file.  These
+ * names can be converted back to indexes, even in future versions of
+ * ELinks.  */
 unsigned char *
-get_cp_mime_name(int cp_index)
+get_cp_config_name(int cp_index)
 {
 	if (cp_index < 0) return "none";
 	if (cp_index & SYSTEM_CHARSET_FLAG) return "System";
@@ -864,9 +1461,22 @@ get_cp_mime_name(int cp_index)
 	return codepages[cp_index].aliases[0];
 }
 
+/* Get the codepage's name for sending to a library or server that
+ * understands MIME charset names.  This function irreversibly maps
+ * the "System" codepage to the underlying charset.  */
+unsigned char *
+get_cp_mime_name(int cp_index)
+{
+	if (cp_index < 0) return "none";
+	cp_index &= ~SYSTEM_CHARSET_FLAG;
+	if (!codepages[cp_index].aliases) return NULL;
+
+	return codepages[cp_index].aliases[0];
+}
+
 int
-is_cp_special(int cp_index)
+is_cp_utf8(int cp_index)
 {
 	cp_index &= ~SYSTEM_CHARSET_FLAG;
-	return codepages[cp_index].table == table_utf_8;
+	return is_cp_ptr_utf8(&codepages[cp_index]);
 }

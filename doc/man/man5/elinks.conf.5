@@ -17,7 +17,7 @@
 .el .ne 3
 .IP "\\$1" \\$2
 ..
-.TH "ELINKS.CONF" 5 "ELinks configuration file" "2006-01-29" "ELinks configuration file"
+.TH "ELINKS.CONF" 5 "ELinks configuration file" "2007-06-21" "ELinks configuration file"
 .SH NAME
 elinks.conf \- ELinks configuration file
 .SH "SYNOPSIS"
@@ -77,7 +77,7 @@ File format for bookmarks (affects both reading and saving):
 0: is the default native \fIELinks\fR format
 .TP
 \(bu
-1: is XBEL universal XML bookmarks format (NO NATIONAL CHARS SUPPORT!)
+1: is XBEL universal XML bookmarks format (\fIELinks\fR bug 153: NO NATIONAL CHARS SUPPORT!)
 .LP
 .RE
 .IP
@@ -194,11 +194,11 @@ Number of tries to establish a connection\&. Zero means try forever\&.
 
 .TP
 connection\&.try_ipv4 [0|1] (default: 1)
-Whether to try to connect to a host over IPv4\&. Note that if connection\&.try_ipv6 is enabled too, it takes precedence\&. And better do not touch this at all unless you are sure what are you doing\&. Note that you can also force a given protocol to be used on a per\-connection basis by using an URL in the style of i\&.e\&. http4://elinks\&.or\&.cz/\&.
+Whether to try to connect to a host over IPv4\&. Note that if connection\&.try_ipv6 is enabled too, it takes precedence\&. And better do not touch this at all unless you are sure what are you doing\&. Note that you can also force a given protocol to be used on a per\-connection basis by using an URL in the style of e\&.g\&. http4://elinks\&.cz/\&.
 
 .TP
 connection\&.try_ipv6 [0|1] (default: 1)
-Whether to try to connect to a host over IPv6\&. Note that you can also force a given protocol to be used on a per\-connection basis by using an URL in the style of i\&.e\&. http6://elinks\&.or\&.cz/\&.
+Whether to try to connect to a host over IPv6\&. Note that you can also force a given protocol to be used on a per\-connection basis by using an URL in the style of e\&.g\&. http6://elinks\&.cz/\&.
 
 .TP
 connection\&.unrestartable_receive_timeout <num> (default: 600)
@@ -635,6 +635,10 @@ document\&.cache\&.ignore_cache_control [0|1] (default: 1)
 Ignore Cache\-Control and Pragma server headers\&. When set, the document is cached even with 'Cache\-Control: no\-cache'\&.
 
 .TP
+document\&.cache\&.revalidation_interval <num> (default: \-1)
+Period in seconds that a cache entry is considered to be up\-to\-date\&. When a document is loaded and this interval has elapsed since the document was initially loaded or most recently revalidated with the server, the server will be checked in case there is a more up\-to\-date version of the document\&.
+
+.TP
 document\&.codepage
 Charset options\&.
 
@@ -777,6 +781,33 @@ document\&.dump\&.codepage <codepage> (default: System)
 Codepage used in dump output\&. 'System' stands for a codepage determined by a selected locale\&.
 
 .TP
+document\&.dump\&.color_mode <num> (default: \-1)
+Color mode for dumps\&. Some modes may have been disabled at compile time\&. The Setup \-> Terminal options dialog lists the modes supported by this executable\&. If you select an unsupported mode, \fIELinks\fR uses 16 colors\&. The color modes are:
+
+.RS
+.TP 3
+\(bu
+\-1: is standard dump mode
+.TP
+\(bu
+0: is mono mode
+.TP
+\(bu
+1: is 16 color mode
+.TP
+\(bu
+2: is 88 color mode
+.TP
+\(bu
+3: is 256 color mode
+.TP
+\(bu
+4: is true color mode
+.LP
+.RE
+.IP
+
+.TP
 document\&.dump\&.footer <str> (default: "")
 Footer string used in dumps\&. %u is substituted by URL\&.
 
@@ -900,7 +931,7 @@ Compress successive empty lines to only one in displayed text\&.
 
 .TP
 document\&.uri_passing
-Rules for passing URIs to external commands\&.
+Rules for passing URIs to external commands\&. When one rule is defined the link and tab menu will have a menu item that makes it possible to pass the the link, frame or tab URI to an external command\&. If several rules are defined the link and tab menu will have a submenu of items for each rule\&. Note, this is mostly useful for launching graphical viewers, since there is no support for releasing the terminal while the command runs\&. The action and submenus are also available by binding keys to the frame\-external\-command, the link\-external\-command, and the tab\-external\-command actions\&.
 
 .TP
 document\&.uri_passing\&._template_ <str> (default: "")
@@ -911,7 +942,7 @@ ecmascript
 ECMAScript options\&.
 
 .TP
-ecmascript\&.enable [0|1] (default: 1)
+ecmascript\&.enable [0|1] (default: 0)
 Whether to run those scripts inside of documents\&.
 
 .TP
@@ -1157,18 +1188,6 @@ protocol\&.file
 Options specific to local browsing\&.
 
 .TP
-protocol\&.file\&.cgi
-Local CGI specific options\&.
-
-.TP
-protocol\&.file\&.cgi\&.path <str> (default: "")
-Colon separated list of directories, where CGI scripts are stored\&.
-
-.TP
-protocol\&.file\&.cgi\&.policy [0|1] (default: 0)
-Whether to execute local CGI scripts\&.
-
-.TP
 protocol\&.file\&.allow_special_files [0|1] (default: 0)
 Whether to allow reading from non\-regular files\&. Note this can be dangerous; reading /dev/urandom or /dev/zero can ruin your day!
 
@@ -1179,6 +1198,18 @@ When set to false, files with name starting with a dot will be hidden in local d
 .TP
 protocol\&.file\&.try_encoding_extensions [0|1] (default: 1)
 When set, if we can't open a file named 'filename', we'll try to open 'filename' with some encoding extension appended (ie\&. 'filename\&.gz'); it depends on the supported encodings\&.
+
+.TP
+protocol\&.file\&.cgi
+Local CGI specific options\&.
+
+.TP
+protocol\&.file\&.cgi\&.path <str> (default: "")
+Colon separated list of directories, where CGI scripts are stored\&.
+
+.TP
+protocol\&.file\&.cgi\&.policy [0|1] (default: 0)
+Whether to execute local CGI scripts\&.
 
 .TP
 protocol\&.fsp
@@ -1347,7 +1378,7 @@ Replacement URI for this smartprefix: %c in the string means the current URL %s 
 
 .TP
 protocol\&.rewrite\&.default_template <str> (default: "")
-Default URI template used when the string entered in the goto dialog does not appear to be a URI or a filename (i\&.e\&. contains no '\&.', \fI:\fR or \fI/\fR characters), and does not match any defined prefixes\&. Set the value to "" to disable use of the default template rewrite rule\&.
+Default URI template used when the string entered in the goto dialog does not appear to be a URI or a filename (i\&.e\&. contains no '\&.', \fI:\fR or \fI/\fR characters), and does not match any defined prefixes\&. Set the value to "" to disable use of the default template rewrite rule\&. %c in the template means the current URL %s in the template means the whole string from the goto dialog %0,%1,...,%9 mean the 1st,2nd,...,10th space\-delimited part of %s %% in the template means '%'
 
 .TP
 protocol\&.rewrite\&.enable\-dumb [0|1] (default: 1)
@@ -1356,14 +1387,6 @@ Enable dumb prefixes \- simple URI abbreviations which can be written to the Got
 .TP
 protocol\&.rewrite\&.enable\-smart [0|1] (default: 1)
 Enable smart prefixes \- URI templates triggered by writing given abbreviation to the Goto URL dialog followed by a list of arguments from which the actual URI is composed \- i\&.e\&. 'gg:search keywords' or \fIgn search keywords for news\fR\&.
-
-.TP
-protocol\&.smb
-SAMBA specific options\&.
-
-.TP
-protocol\&.smb\&.credentials <str> (default: "")
-Credentials file passed to smbclient via \-A option\&.
 
 .TP
 protocol\&.user
@@ -1415,11 +1438,11 @@ Terminal type; matters mostly only when drawing frames and dialog box borders:
 
 .TP
 terminal\&._template_\&.m11_hack [0|1] (default: 0)
-Switch fonts when drawing lines, enabling both local characters and lines working at the same time\&. Makes sense only with linux terminal\&.
+Switch fonts when drawing lines, enabling both local characters and lines working at the same time\&. \fIELinks\fR uses this option only if UTF\-8 I/O is disabled and the terminal type is Linux or FreeBSD\&.
 
 .TP
 terminal\&._template_\&.utf_8_io [0|1] (default: 0)
-Enable I/O in UTF8 for Unicode terminals\&. Note that currently, only the subset of UTF8 according to terminal codepage is used\&.
+Enable I/O in UTF\-8 for Unicode terminals\&. Note that currently, only the subset of UTF\-8 according to terminal codepage is used\&. \fIELinks\fR ignores this option if the terminal codepage is UTF\-8\&.
 
 .TP
 terminal\&._template_\&.restrict_852 [0|1] (default: 0)
@@ -1431,7 +1454,7 @@ Move cursor to bottom right corner when done drawing\&. This is particularly use
 
 .TP
 terminal\&._template_\&.colors <num> (default: 0)
-The color mode controls what colors are used and how they are output to the terminal\&. The color modes are:
+The color mode controls what colors are used and how they are output to the terminal\&. Some modes may have been disabled at compile time\&. The Setup \-> Terminal options dialog lists the modes supported by this executable\&. If you select an unsupported mode, \fIELinks\fR uses 16 colors\&. The color modes are:
 
 .RS
 .TP 3
@@ -1442,14 +1465,20 @@ The color mode controls what colors are used and how they are output to the term
 1: is 16 color mode, uses the common ANSI colors
 .TP
 \(bu
-2: is 256 color mode, uses XTerm RGB codes
+2: is 88 color mode, uses XTerm RGB codes
+.TP
+\(bu
+3: is 256 color mode, uses XTerm RGB codes
+.TP
+\(bu
+4: is true color mode, uses konsole RGB codes
 .LP
 .RE
 .IP
 
 .TP
-terminal\&._template_\&.transparency [0|1] (default: 1)
-If we should not set the background to black\&. This is particularly useful when we have a terminal (typically in some windowing environment) with a background image or a transparent background \- it will be visible in \fIELinks\fR as well\&. Note that this option makes sense only when colors are enabled\&.
+terminal\&._template_\&.transparency [0|1] (default: 0)
+If we should not set the background to black\&. This is particularly useful when we have a terminal (typically in some windowing environment) with a background image or a transparent background \- it will be visible in \fIELinks\fR as well (but \fIELinks\fR document color handling will still assume the background is black so if you have a bright background you might experience contrast problems)\&. Note that this option makes sense only when colors are enabled\&.
 
 .TP
 terminal\&._template_\&.underline [0|1] (default: 0)
@@ -2518,6 +2547,10 @@ Show tabs bar on the screen:
 .IP
 
 .TP
+ui\&.tabs\&.top [0|1] (default: 0)
+Whether display tab bar at top like other browsers do\&.
+
+.TP
 ui\&.tabs\&.wraparound [0|1] (default: 1)
 When moving right from the last tab, jump at the first one, and vice versa\&.
 
@@ -2564,6 +2597,10 @@ ui\&.language <language> (default: "System")
 Language of user interface\&. 'System' means that the language will be extracted from the environment dynamically\&.
 
 .TP
+ui\&.show_menu_bar_always [0|1] (default: 0)
+Always show menu bar on the screen\&.
+
+.TP
 ui\&.show_status_bar [0|1] (default: 1)
 Show status bar on the screen\&.
 
@@ -2584,7 +2621,7 @@ ui\&.window_title [0|1] (default: 1)
 Set the window title when running in a windowing environment in an xterm\-like terminal\&. This way the document's title is shown on the window titlebar\&.
 
 
-Generated using output from ELinks version 0\&.11\&.0\&.GIT\&.
+Generated using output from ELinks version 0\&.12\&.GIT\&.
 
 .SH "SEE ALSO"
 

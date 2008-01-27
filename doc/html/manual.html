@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 7.1.2" />
+<meta name="generator" content="AsciiDoc 8.2.2" />
 <style type="text/css">
 /* Debug borders */
 p, li, dt, dd, div, pre, h1, h2, h3, h4, h5, h6 {
@@ -75,7 +75,7 @@ span#author {
   color: #527bbd;
   font-family: sans-serif;
   font-weight: bold;
-  font-size: 1.2em;
+  font-size: 1.1em;
 }
 span#email {
 }
@@ -144,6 +144,9 @@ div.sidebarblock > div.content {
   padding: 0.5em;
 }
 
+div.listingblock {
+  margin-right: 0%;
+}
 div.listingblock > div.content {
   border: 1px solid silver;
   background: #f4f4f4;
@@ -222,6 +225,9 @@ div.hlist {
   margin-top: 0.8em;
   margin-bottom: 0.8em;
 }
+div.hlist td {
+  padding-bottom: 5px;
+}
 td.hlist1 {
   vertical-align: top;
   font-style: italic;
@@ -233,6 +239,32 @@ td.hlist2 {
 
 @media print {
   div#footer-badges { display: none; }
+}
+
+div#toctitle {
+  color: #527bbd;
+  font-family: sans-serif;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
 }
 /* Workarounds for IE6's broken and incomplete CSS2. */
 
@@ -262,6 +294,9 @@ div.exampleblock-content {
   border-left: 2px solid silver;
   padding-left: 0.5em;
 }
+
+/* IE6 sets dynamically generated links as visited. */
+div#toc a:visited { color: blue; }
 </style>
 <title>The ELinks Manual</title>
 </head>
@@ -339,9 +374,10 @@ ELinks source directory:</p>
 ELinks. You might also want to take a look at what libraries and programs are
 required or recommended that you install.</p>
 <h3>Requirements</h3>
-<p>To successfully install ELinks all that is required is GNU make and a C
-compiler. If you want to install directly from GIT it is also required that
-automake and autoconf is installed on your system.</p>
+<p>To successfully install ELinks all that is required is GNU make
+(version 3.78 or later) and a C compiler. If you want to install
+directly from GIT it is also required that automake and autoconf
+is installed on your system.</p>
 <h3>Recommended Libraries and Programs</h3>
 <p>To make use of many of ELinks features you will need to have some external
 libraries and utility programs installed on your system. It is recommended to
@@ -373,7 +409,7 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    GNU zip
+    zlib 1.2.0.2 or later
     </td>
     <td align="left">
     For handling compressed documents both locally and                          sent from server.
@@ -1203,9 +1239,10 @@ support for double-width characters (like Japanese, etc.).</p>
 most visible absence.
 Some features are partially supported. Like line breaking between
 double-width characters. There is no other detection for determining when to
-break or not.</p>
-<p>Note: This UTF-8 support is experimental.</p>
-<p><strong>Default:</strong>  disabled</p>
+break or not.
+Character conversions are still incomplete for ECMAScript strings (bug 805),
+local file names, and IRIs (RFC 3987).</p>
+<p><strong>Default:</strong>  enabled</p>
 <h4><a id="CONFIG-BACKTRACE"></a>Back-trace Printing (<tt>CONFIG_BACKTRACE</tt>)</h4>
 <p>Once upon a time, a disaster happens and ELinks crashes. That is a very sad
 event and it would be very nice to have some means how to diagnose it. In the
@@ -3350,7 +3387,7 @@ documents, rewriting of the URLs entered by user etc. You can even write your
 own bookmarks system with Lua. See also contrib/lua/ for some examples of the
 possibilities of ELinks Lua support.</p>
 <p>Please do not confuse Lua scripting with JavaScript, EcmaScript, VBScript and
-similiar. Those are embedded in page, allowing per-document scripting related
+similar. Those are embedded in page, allowing per-document scripting related
 to its presentation and providing some degree of interactivity etc. On the
 contrary, the current Lua support permits scripts to be embedded to the
 browser directly, changing the behaviour of the browser, not the document.</p>
@@ -3408,14 +3445,18 @@ Run <tt>make; make so; make sobin; make install</tt>.
 </ol>
 <p>On systems without shared object support, simply run <tt>make; make install</tt>
 instead.</p>
+<p>Since ELinks 0.11.0, only version 5.0 of Lua is supported.
+Future versions of ELinks will probably support Lua 5.1 too;
+see <a href="http://bugzilla.elinks.cz/show_bug.cgi?id=742">bug 742</a>.</p>
 <h4>Installing ELinks</h4>
 <p>Follow the instructions for building ELinks (it is the standard
 <tt>./configure; make; make install</tt> procedure).  During the configure
 step make sure that Lua has been detected on your system.</p>
 <h4>Running ELinks with Lua</h4>
 <p>Simply start ELinks as you normally would.  To check you have Lua support
-compiled in, open up the "Help | About" dialog box.  It should list "Lua"
-under "Features".  If not, make sure you do not have other copies of ELinks
+compiled in, open up the "Help | About" dialog box.  It should list
+"Scripting (Lua)" under "Features".
+If not, make sure you do not have other copies of ELinks
 running, or start ELinks again with the "-no-connect" option on the
 command-line.</p>
 <h3>Using ELinks with Lua</h3>
@@ -3462,7 +3503,7 @@ follow_url_hook (url)
 </dt>
 <dd>
 <p>
-        This hook is passed the URL that Links is about to follow.  It should
+        This hook is passed the URL that ELinks is about to follow.  It should
         return a string (the URL modified or unmodified), or <tt>nil</tt> to stop
         ELinks following the URL
 </p>
@@ -3477,6 +3518,17 @@ pre_format_html_hook (url, html)
         downloaded.  It will be passed the URL and HTML text as strings, and
         should return the modified HTML text, or <tt>nil</tt> if there were no
         modifications.
+</p>
+</dd>
+<dt>
+proxy_for_hook (url)
+</dt>
+<dd>
+<p>
+        This hook is called when ELinks is about to load a resource
+        from a URL.  It should return "PROXY:PORT" (e.g. "localhost:8080")
+        to use the specified proxy, "" to contact the origin server
+        directly, or <tt>nil</tt> to use the default proxy of the protocol.
 </p>
 </dd>
 <dt>
@@ -3505,7 +3557,7 @@ lua_console_hook (string)
 </li>
 <li>
 <p>
-<tt>return "goto-url", "http://www.bogus.com"</tt> will ask Links to visit
+<tt>return "goto_url", "http://www.bogus.com"</tt> will ask ELinks to visit
            the URL "http://www.bogus.com".
 </p>
 </li>
@@ -3529,21 +3581,19 @@ quit_hook ()
 <h4>Functions</h4>
 <p>As well as providing hooks, ELinks provides some functions in addition to the
 standard Lua functions.</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">The standard Lua function <tt>os.setlocale</tt> affects ELinks' idea of
+the system locale, which ELinks uses for the "System" charset, for the
+"System" language, and for formatting dates.  This may however have to
+be changed in a future version of ELinks, in order to properly support
+terminal-specific system locales.</td>
+</tr></table>
+</div>
 <dl>
-<dt>
-enable_systems_functions ()
-</dt>
-<dd>
-<p>
-Enable some potentially dangerous functions, as well as some other
-functions which were unfortunate enough to be lumped in the same group.
-</p>
-<p>The functions are: <tt>openfile</tt>, <tt>closefile</tt>, <tt>readfrom</tt>, <tt>writeto</tt>, <tt>appendto</tt>,
-<tt>pipe_read</tt>, <tt>remove</tt>, <tt>rename</tt>, <tt>flush</tt>, <tt>seek</tt>, <tt>tmpname</tt>, <tt>read</tt>, <tt>write</tt>
-<tt>execute</tt>, <tt>exit</tt>, <tt>clock</tt>, <tt>date</tt>, <tt>getenv</tt>, <tt>setlocale</tt>.</p>
-<p>Note: <tt>setlocale</tt> is a standard Lua function and will not affect
-the current ELinks locale.</p>
-</dd>
 <dt>
 current_url ()
 </dt>
@@ -3598,7 +3648,8 @@ pipe_read (command)
 <p>
         Executes <tt>command</tt> and reads in all the data from stdout, until there
         is no more.  This is a hack, because for some reason the standard Lua
-        function <tt>read</tt> seems to crash ELinks when used in pipe-reading mode.
+        function <tt>file:read</tt> seems to crash ELinks when used in pipe-reading
+        mode.
 </p>
 </dd>
 <dt>
@@ -3606,11 +3657,36 @@ execute (string)
 </dt>
 <dd>
 <p>
-        Executes shell commands <tt>string</tt> and returns the exit code.  Beware
+        Executes shell commands <tt>string</tt> without waiting for it to exit.  Beware
         that you must not read or write to stdin and stdout.  And unlike the
-        standard Lua function of the same name, the return value is
-        meaningless.
+        standard Lua function <tt>os.execute</tt>, the return value is meaningless.
 </p>
+</dd>
+<dt>
+tmpname ()
+</dt>
+<dd>
+<p>
+        Returns a unique name for a temporary file, or <tt>nil</tt> if no
+        such name is available.  The returned string includes the
+        directory name.  Unlike the standard Lua function
+        <tt>os.tmpname</tt>, this one generates ELinks-related names
+        (currently with "elinks" at the beginning of the name).
+</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">The <tt>tmpname</tt> function does not create the file and does not
+        guarantee exclusive access to it: the caller must handle the
+        possibility that another process creates the file and begins
+        using it while this function is returning.  Failing to do this
+        may expose you to symlink attacks by other users.  To avoid
+        the risk, use <tt>io.tmpfile</tt> instead; unfortunately, it does not
+        tell you the name of the file.</td>
+</tr></table>
+</div>
 </dd>
 <dt>
 bind_key (keymap, keystroke, function)
@@ -3621,6 +3697,73 @@ bind_key (keymap, keystroke, function)
         keystroke as you would write it in the ELinks config file
         <tt>~/.elinks/elinks.conf</tt>.  The function <tt>function</tt> should take no
         arguments, and should return the same values as <tt>lua_console_hook</tt>.
+</p>
+</dd>
+<dt>
+edit_bookmark_dialog (cat, name, url, function)
+</dt>
+<dd>
+<p>
+        Displays a dialog for editing a bookmark, and returns without
+        waiting for the user to close the dialog.  The return value is
+        <tt>1</tt> if successful, <tt>nil</tt> if arguments are invalid, or nothing
+        at all if out of memory.  The first three arguments
+        must be strings, and the user can then edit them in input
+        fields.  There are also <em>OK</em> and <em>Cancel</em> buttons in the
+        dialog.  If the user presses <em>OK</em>, ELinks calls <tt>function</tt>
+        with the three edited strings as arguments, and it should
+        return similar values as in <tt>lua_console_hook</tt>.
+</p>
+</dd>
+<dt>
+xdialog (string [, more strings&#8230;], function)
+</dt>
+<dd>
+<p>
+        Displays a generic dialog for editing multiple strings, and
+        returns without waiting for the user to close the dialog.
+        The return value is <tt>1</tt> if successful, <tt>nil</tt> if arguments are
+        invalid, or nothing at all if out of memory.  All arguments
+        except the last one must be strings, and ELinks places them
+        in input fields in the dialog.  There can be at most 5 such
+        strings.  There are also <em>OK</em> and <em>Cancel</em> buttons in the
+        dialog.  If the user presses <em>OK</em>, ELinks calls <tt>function</tt>
+        with the edited strings as arguments, and it should return
+        similar values as in <tt>lua_console_hook</tt>.
+</p>
+</dd>
+<dt>
+set_option (option, value)
+</dt>
+<dd>
+<p>
+        Sets an ELinks option.  The first argument <tt>option</tt> must be
+        the name of the option as a string.  ELinks then tries to
+        convert the second argument <tt>value</tt> to match the type of the
+        option.  If successful, <tt>set_option</tt> returns <tt>value</tt>, else
+        <tt>nil</tt>.
+</p>
+</dd>
+<dt>
+get_option (option)
+</dt>
+<dd>
+<p>
+        Returns the value of an ELinks option.  The argument <tt>option</tt>
+        must be the name of the option as a string.  If the option
+        does not exist, <tt>get_option</tt> returns <tt>nil</tt>.
+</p>
+</dd>
+</dl>
+<h4>Variables</h4>
+<dl>
+<dt>
+elinks_home
+</dt>
+<dd>
+<p>
+        The name of the ELinks home directory, as a string.  Typically
+        this is the .elinks subdirectory of the user's home directory.
 </p>
 </dd>
 </dl>
@@ -3654,50 +3797,55 @@ a search term.</p>
 dialog box, and it will convert them to the URL I actually want to visit.  As
 a bonus, it allows me perform some searches on sites like Google without
 loading up the front page first.</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Tip</div>
+</td>
+<td class="content">The &#8220;URI rewriting&#8221; feature of ELinks handles many of the same
+tasks as the Lua hook shown here, and you can conveniently configure
+it via the option manager.  It is not quite as versatile, though.</td>
+</tr></table>
+</div>
 <div class="listingblock">
 <div class="content">
 <pre><tt>function match (prefix, url)
-    return strsub (url, 1, strlen (prefix)) == prefix
+    return string.sub (url, 1, string.len (prefix)) == prefix
 end
 
 function strip (str)
-    return gsub (str, "^%s*(.-)%s*$", "%1")
+    return string.gsub (str, "^%s*(.-)%s*$", "%1")
 end
 
 function plusify (str)
-    return gsub (str, "%s", "+")
+    return string.gsub (str, "%s", "+")
 end
 
 function goto_url_hook (url, current_url)
     -- Google search (e.g. ,gg unix browsers).
     if match (",gg", url) then
-        url = plusify (strip (strsub (url, 4)))
+        url = plusify (strip (string.sub (url, 4)))
         return "http://www.google.com/search?q="..url.."&amp;btnG=Google+Search"
 
     -- Freshmeat search.
     elseif match (",fm", url) then
-        url = plusify (strip (strsub (url, 4)))
+        url = plusify (strip (string.sub (url, 4)))
         return "http://www.freshmeat.net/search/?q="..url
-
-    -- Appwatch search (e.g. ,aw lynx).
-    elseif match (",aw", url) then
-        url = plusify (strip (strsub (url, 4)))
-        return "http://www.appwatch.com/Linux/Users/find?q="..url
 
     -- Dictionary.com search (e.g. ,dict congenial).
     elseif match (",dict", url) then
-        url = plusify (strip (strsub (url, 6)))
+        url = plusify (strip (string.sub (url, 6)))
         return "http://www.dictionary.com/cgi-bin/dict.pl?db=%2A&amp;term="..url
 
     -- RPM search (e.g. ,rpm links).
     elseif match (",rpm", url) then
-        url = plusify (strip (strsub (url, 5)))
+        url = plusify (strip (string.sub (url, 5)))
         return "http://www.rpmfind.net/linux/rpm2html/search.php?query="
                 ..url.."&amp;submit=Search+..."
 
     -- Netcraft.com search (e.g. ,whatis www.google.com).
     elseif match (",whatis", url) then
-        url = plusify (strip (strsub (url, 8)))
+        url = plusify (strip (string.sub (url, 8)))
         return "http://uptime.netcraft.com/up/graph/?host="..url
 
     -- LinuxToday home page.
@@ -3706,7 +3854,7 @@ function goto_url_hook (url, current_url)
 
     -- Weather forecast for Melbourne, Australia.
     elseif match (",forecast", url) then
-        return "http://www.bom.gov.au/cgi-bin/wrap_fwo.pl?IDF02V00.txt"
+        return "http://www.bom.gov.au/cgi-bin/wrap_fwo.pl?IDV10450.txt"
 
     -- Unmatched
     else
@@ -3714,8 +3862,6 @@ function goto_url_hook (url, current_url)
     end
 end</tt></pre>
 </div></div>
-<p>(Note that this was noticably enhanced and rewritten in the ELinks standart
-hooks.)</p>
 <h4>Expanding ~ (tilde)</h4>
 <p>By adding an extra snippet of code to the previous example, we can make ELinks
 expand pathnames such as <tt>~/foo/bar</tt>
@@ -3723,21 +3869,16 @@ and <tt>~user/zappo</tt>, like in the shell
 and other Unix programs.</p>
 <div class="listingblock">
 <div class="content">
-<pre><tt>-- Home directory: If you do not enable system functions, you will need
--- to set the following to your home directory.
-
-home_dir = (getenv and getenv ("HOME")) or "/home/MYSELF"
-
-function goto_url_hook (url, current_url)
+<pre><tt>function goto_url_hook (url, current_url)
                 .
                 .
 
     -- Expand ~ to home directories.
     elseif match ("~", url) then
-        if strsub(url, 2, 2) == "/" then    -- ~/foo
-            return home_dir..strsub(url, 2)
-        else                                -- ~foo/bar
-            return "/home/"..strsub(url, 2)
+        if string.sub(url, 2, 2) == "/" then    -- ~/foo
+            return os.getenv ("HOME")..string.sub(url, 2)
+        else                                    -- ~foo/bar
+            return "/home/"..string.sub(url, 2)
         end
 
                 .
@@ -3749,15 +3890,22 @@ are utterly useless.  If you happen to be viewing the page in a 80x25 screen,
 the text you want to read ends up crammed into a tiny space in the centre.  We
 use ELinks Lua support to manipulate the HTML before it reaches the parser.</p>
 <h5>linuxtoday.com</h5>
-<p>Note: This recipe is out of date.</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">This recipe is out of date for the web site.</td>
+</tr></table>
+</div>
 <p>Linux Today has two problems when viewed in ELinks: the useless columns on the
 left and the right and all the text appears in cyan.  Here is a quick recipe
 to fix that:</p>
 <div class="listingblock">
 <div class="content">
-<pre><tt>-- Plain strfind (no metacharacters)
+<pre><tt>-- Plain string.find (no metacharacters)
 function sstrfind (s, pattern)
-    return strfind (s, pattern, 1, 1)
+    return string.find (s, pattern, 1, true)
 end
 
 function pre_format_html_hook (url, html)
@@ -3765,21 +3913,29 @@ function pre_format_html_hook (url, html)
     -- and change the font colour to white.
     if sstrfind (url, "linuxtoday.com") then
         if sstrfind (url, "news_story") then
-            html = gsub (html, '&lt;TABLE CELLSPACING="0".-&lt;/TABLE&gt;', '', 1)
-            html = gsub (html, '&lt;TR BGCOLOR="#FFF.-&lt;/TR&gt;&lt;/TABLE&gt;', '', 1)
+            html = string.gsub (html, '&lt;TABLE CELLSPACING="0".-&lt;/TABLE&gt;', '', 1)
+            html = string.gsub (html, '&lt;TR BGCOLOR="#FFF.-&lt;/TR&gt;&lt;/TABLE&gt;', '', 1)
         else
-            html = gsub (html, 'WIDTH="120"&gt;\n&lt;TR.+&lt;/TABLE&gt;&lt;/TD&gt;', '&gt;', 1)
+            html = string.gsub (html, 'WIDTH="120"&gt;\n&lt;TR.+&lt;/TABLE&gt;&lt;/TD&gt;', '&gt;', 1)
         end
-        html = gsub (html, '&lt;A HREF="http://www.internet.com.-&lt;/A&gt;', '')
-        html = gsub (html, "&lt;IFRAME.-&lt;/IFRAME&gt;", "")
+        html = string.gsub (html, '&lt;A HREF="http://www.internet.com.-&lt;/A&gt;', '')
+        html = string.gsub (html, "&lt;IFRAME.-&lt;/IFRAME&gt;", "")
         -- emphasis in text is lost
-        return gsub (html, 'text="#002244"', 'text="#001133"', 1)
+        return string.gsub (html, 'text="#002244"', 'text="#001133"', 1)
     end
 
     return nil
 end</tt></pre>
 </div></div>
 <h5>linuxgames.com</h5>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">This recipe is out of date for the web site.</td>
+</tr></table>
+</div>
 <p>Here is a simpler example, for <a href="http://www.linuxgames.com/">http://www.linuxgames.com/</a>.</p>
 <div class="listingblock">
 <div class="content">
@@ -3787,31 +3943,46 @@ end</tt></pre>
                 .
                 .
 
-    elseif strfind (url, "linuxgames.com", 1, 1) then
-        return gsub (html, "&lt;CENTER&gt;.-&lt;/center&gt;", "", 1)
+    elseif string.find (url, "linuxgames.com", 1, true) then
+        return string.gsub (html, "&lt;CENTER&gt;.-&lt;/center&gt;", "", 1)
 
                 .
                 .</tt></pre>
 </div></div>
 <h4>Reading gzipped files</h4>
-<p>Note: ELinks already supports gzipped files natively.</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">ELinks already supports gzipped files natively.</td>
+</tr></table>
+</div>
 <p>Sometimes documents come gzipped in order to save space, but then you need to
 uncompress them to read them with ELinks.  Here is a recipe to handle gzipped
 files on a Unix system.</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">This recipe opens a temporary file insecurely.</td>
+</tr></table>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre><tt>-- This script requires system functions.
-
-function pre_format_html_hook (url, html)
+<pre><tt>function pre_format_html_hook (url, html)
                 .
                 .
 
     -- Handle gzip'd files within reasonable size.
-    if strfind (url, "%.gz$") and strlen (html) &lt; 65536 then
-        local tmp = tmpname ()
-        writeto (tmp) write (html) writeto ()
-        html = pipe_read ("(gzip -dc "..tmp.." || cat "..tmp..") 2&gt;/dev/null")
-        remove (tmp)
+    if string.find (url, "%.gz$") and string.len (html) &lt; 65536 then
+        local name = tmpname ()
+        local file = io.open (name, "wb")
+        file:write (html)
+        file:close ()
+        html = pipe_read ("(gzip -dc "..name.." || cat "..name..") 2&gt;/dev/null")
+        os.remove (name)
         return html
     end
 
@@ -3828,37 +3999,51 @@ line.  Finally, run the processed file through `lpr', then delete it.</p>
 using <tt>lpr' or `enscript'.  Type `lpr()</tt> or <tt>enscript()</tt> in the Lua Console to
 run them.  (In the <tt>hooks.lua</tt>, I have also made it so you can just type <tt>lpr</tt>
 or <tt>enscript</tt>.)</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">The <tt>io.popen</tt> function is not available on all platforms.</td>
+</tr></table>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre><tt>-- This script requires system functions.
-
-function catto (output)
-    writeto (output)
-    write (current_document_formatted (79))
-    writeto ()
+<pre><tt>function pipe_formatted_to (program)
+    local lp, errmsg = io.popen (program, "w")
+    if lp == nil then
+        error (errmsg)
+    else
+        lp:write (current_document_formatted (79))
+        lp:close ()
+    end
 end
 
 -- Send the current document to `lpr'.
 function lpr ()
-    -- You must compile Lua with `popen' support for pipes to work.
-    -- See `config' in the Lua distribution.
-    catto ("|lpr")
+    pipe_formatted_to ("lpr")
 end
 
 -- Send the current document to `enscript'.
 function enscript ()
-    catto ("|enscript -fCourier8")
+    pipe_formatted_to ("enscript -fCourier8")
 end</tt></pre>
 </div></div>
 <h4>Deferring to Netscape</h4>
 <p>If you come across a brain-dead web page that is totally unreadable with
 ELinks, you'd probably want to open it with a graphical browser.  The
 following function opens the current document in Netscape.</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Tip</div>
+</td>
+<td class="content">You can also use the built-in &#8220;URI passing&#8221; feature for this.</td>
+</tr></table>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre><tt>-- This function requires `execute', a system function.
-
--- When starting Netscape: Set to `nil' if you do not want
+<pre><tt>-- When starting Netscape: Set to `nil' if you do not want
 -- to open a new window for each document.
 netscape_new_window = 1
 
@@ -3871,7 +4056,7 @@ end</tt></pre>
 </div></div>
 <h4>Alternative bookmark system</h4>
 <p>Many people would like to have a bookmark system with categories (note that
-ELinks already supports that, marketing name Hiearchical bookmarks), and also
+ELinks already supports that, marketing name Hierarchical bookmarks), and also
 to be able to view them and search for them in an HTML page.  I have written
 an alternative bookmark system (for ELinks), which some people may like better
 than the standard bookmark system.</p>
@@ -3928,7 +4113,7 @@ More things are possible, I'm sure.  If you have an idea that requires
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 17-Mar-2007 21:21:36 EEST
+Last updated 09-Dec-2007 08:41:27 EEST
 </div>
 </div>
 </body>

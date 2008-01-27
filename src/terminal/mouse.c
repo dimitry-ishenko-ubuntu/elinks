@@ -1,4 +1,5 @@
-/* Support for mouse interface */
+/** Support for mouse interface
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -45,8 +46,8 @@ extern struct itrm *ditrm;
 	hard_write(fd, seq, sizeof(seq) - 1)
 
 
-#define INIT_TWIN_MOUSE_SEQ	"\033[?9h"	/* Send MIT Mouse Row & Column on Button Press */
-#define INIT_XWIN_MOUSE_SEQ	"\033[?1000h"	/* Send Mouse X & Y on button press and release */
+#define INIT_TWIN_MOUSE_SEQ	"\033[?9h"	/**< Send MIT Mouse Row & Column on Button Press */
+#define INIT_XWIN_MOUSE_SEQ	"\033[?1000h"	/**< Send Mouse X & Y on button press and release */
 
 void
 send_mouse_init_sequence(int h)
@@ -55,8 +56,8 @@ send_mouse_init_sequence(int h)
 	write_sequence(h, INIT_XWIN_MOUSE_SEQ);
 }
 
-#define DONE_TWIN_MOUSE_SEQ	"\033[?9l"	/* Don't Send MIT Mouse Row & Column on Button Press */
-#define DONE_XWIN_MOUSE_SEQ	"\033[?1000l"	/* Don't Send Mouse X & Y on button press and release */
+#define DONE_TWIN_MOUSE_SEQ	"\033[?9l"	/**< Don't Send MIT Mouse Row & Column on Button Press */
+#define DONE_XWIN_MOUSE_SEQ	"\033[?1000l"	/**< Don't Send Mouse X & Y on button press and release */
 
 void
 send_mouse_done_sequence(int h)
@@ -75,8 +76,10 @@ disable_mouse(void)
 {
 	int h = get_output_handle(); /* XXX: Is this all right? -- Miciah */
 
+	if (!mouse_enabled) return;
+
 	unhandle_mouse(ditrm->mouse_h);
-	send_mouse_done_sequence(h);
+	if (is_xterm()) send_mouse_done_sequence(h);
 
 	mouse_enabled = 0;
 }
@@ -86,7 +89,9 @@ enable_mouse(void)
 {
 	int h = get_output_handle(); /* XXX: Is this all right? -- Miciah */
 
-	send_mouse_init_sequence(h);
+	if (mouse_enabled) return;
+
+	if (is_xterm()) send_mouse_init_sequence(h);
 	ditrm->mouse_h = handle_mouse(0, (void (*)(void *, unsigned char *, int)) itrm_queue_event, ditrm);
 
 	mouse_enabled = 1;
@@ -119,14 +124,14 @@ decode_mouse_position(struct itrm *itrm, int from)
 #define TW_BUTT_MIDDLE	2
 #define TW_BUTT_RIGHT	4
 
-/* Returns length of the escape sequence or -1 if the caller needs to set up
+/** @returns length of the escape sequence or -1 if the caller needs to set up
  * the ESC delay timer. */
 int
-decode_terminal_mouse_escape_sequence(struct itrm *itrm, struct term_event *ev,
+decode_terminal_mouse_escape_sequence(struct itrm *itrm, struct interlink_event *ev,
 				      int el, int v)
 {
 	static int xterm_button = -1;
-	struct term_event_mouse mouse;
+	struct interlink_event_mouse mouse;
 
 	if (itrm->in.queue.len - el < 3)
 		return -1;
@@ -199,7 +204,7 @@ decode_terminal_mouse_escape_sequence(struct itrm *itrm, struct term_event *ev,
 
 	/* Postpone changing of the event type until all sanity
 	 * checks have been done. */
-	set_mouse_term_event(ev, mouse.x, mouse.y, mouse.button);
+	set_mouse_interlink_event(ev, mouse.x, mouse.y, mouse.button);
 
 	return el;
 }

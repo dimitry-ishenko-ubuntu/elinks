@@ -1,4 +1,5 @@
-/* HTML renderer */
+/** HTML renderer
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -39,21 +40,20 @@
 #include "viewer/text/vs.h"
 
 
-static void sort_links(struct document *document);
-
 #ifdef CONFIG_ECMASCRIPT
-/* XXX: This function is de facto obsolete, since we do not need to copy
+/** @todo XXX: This function is de facto obsolete, since we do not need to copy
  * snippets around anymore (we process them in one go after the document is
  * loaded; gradual processing was practically impossible because the snippets
  * could reorder randomly during the loading - consider i.e.
- * <body onLoad><script></body>: first just <body> is loaded, but then the
- * rest of the document is loaded and <script> gets before <body>; do not even
+ * @<body onLoad>@<script>@</body>: first just @<body> is loaded, but then the
+ * rest of the document is loaded and @<script> gets before @<body>; do not even
  * imagine the trouble with rewritten (through scripting hooks) documents;
  * besides, implementing document.write() will be much simpler).
  * But I want to take no risk by reworking that now. --pasky */
 static void
 add_snippets(struct ecmascript_interpreter *interpreter,
-             struct list_head *doc_snippets, struct list_head *queued_snippets)
+             LIST_OF(struct string_list_item) *doc_snippets,
+             LIST_OF(struct string_list_item) *queued_snippets)
 {
 	struct string_list_item *doc_current = doc_snippets->next;
 
@@ -112,7 +112,8 @@ add_snippets(struct ecmascript_interpreter *interpreter,
 
 static void
 process_snippets(struct ecmascript_interpreter *interpreter,
-                 struct list_head *snippets, struct string_list_item **current)
+                 LIST_OF(struct string_list_item) *snippets,
+                 struct string_list_item **current)
 {
 	if (!*current)
 		*current = snippets->next;
@@ -129,7 +130,7 @@ process_snippets(struct ecmascript_interpreter *interpreter,
 
 		if (*string->source != '^') {
 			/* Evaluate <script>code</script> snippet */
-			ecmascript_eval(interpreter, string);
+			ecmascript_eval(interpreter, string, NULL);
 			continue;
 		}
 
@@ -194,7 +195,7 @@ process_snippets(struct ecmascript_interpreter *interpreter,
 		if (fragment) {
 			struct string code = INIT_STRING(fragment->data, fragment->length);
 
-			ecmascript_eval(interpreter, &code);
+			ecmascript_eval(interpreter, &code, NULL);
 		}
 	}
 }
@@ -243,6 +244,7 @@ render_encoded_document(struct cache_entry *cached, struct document *document)
 		if (cached->content_type
 		    && (!strcasecmp("text/html", cached->content_type)
 			|| !strcasecmp("application/xhtml+xml", cached->content_type)
+		        || !strcasecmp("application/docbook+xml", cached->content_type)
 		        || !strcasecmp("application/rss+xml", cached->content_type)
 		        || !strcasecmp("application/xbel+xml", cached->content_type)
 		        || !strcasecmp("application/x-xbel", cached->content_type)
@@ -253,7 +255,13 @@ render_encoded_document(struct cache_entry *cached, struct document *document)
 			render_plain_document(cached, document, &buffer);
 
 	} else {
-		render_html_document(cached, document, &buffer);
+#ifdef CONFIG_DOM
+		if (cached->content_type
+		    && (!strlcasecmp("application/rss+xml", 19, cached->content_type, -1)))
+			render_dom_document(cached, document, &buffer);
+		else
+#endif
+			render_html_document(cached, document, &buffer);
 	}
 
 	if (encoding != ENCODING_NONE) {
@@ -340,8 +348,14 @@ render_document(struct view_state *vs, struct document_view *doc_view,
 			}
 
 			document->title = get_uri_string(document->uri, components);
-			if (document->title)
-				decode_uri_for_display(document->title);
+			if (document->title) {
+#ifdef CONFIG_UTF8
+				if (doc_view->document->options.utf8)
+					decode_uri(document->title);
+				else
+#endif /* CONFIG_UTF8 */
+					decode_uri_for_display(document->title);
+			}
 		}
 
 #ifdef CONFIG_CSS
@@ -425,7 +439,10 @@ render_document_frames(struct session *ses, int no_cache)
 		doc_opts.box.height--;
 	}
 	if (ses->status.show_status_bar) doc_opts.box.height--;
-	if (ses->status.show_tabs_bar) doc_opts.box.height--;
+	if (ses->status.show_tabs_bar) {
+		doc_opts.box.height--;
+		if (ses->status.show_tabs_bar_at_top) doc_opts.box.y++;
+	}
 
 	doc_opts.color_mode = get_opt_int_tree(ses->tab->term->spec, "colors");
 	if (!get_opt_bool_tree(ses->tab->term->spec, "underline"))
@@ -477,15 +494,18 @@ render_document_frames(struct session *ses, int no_cache)
 	}
 }
 
+/* comparison function for qsort() */
 static int
-comp_links(struct link *l1, struct link *l2)
+comp_links(const void *v1, const void *v2)
 {
+	const struct link *l1 = v1, *l2 = v2;
+
 	assert(l1 && l2);
 	if_assert_failed return 0;
 	return (l1->number - l2->number);
 }
 
-static void
+void
 sort_links(struct document *document)
 {
 	int i;
@@ -494,15 +514,18 @@ sort_links(struct document *document)
 	if_assert_failed return;
 	if (!document->nlinks) return;
 
+	if (document->links_sorted) return;
 	assert(document->links);
 	if_assert_failed return;
 
 	qsort(document->links, document->nlinks, sizeof(*document->links),
-	      (void *) comp_links);
+	      comp_links);
 
 	if (!document->height) return;
 
+	mem_free_if(document->lines1);
 	document->lines1 = mem_calloc(document->height, sizeof(*document->lines1));
+	mem_free_if(document->lines2);
 	if (!document->lines1) return;
 	document->lines2 = mem_calloc(document->height, sizeof(*document->lines2));
 	if (!document->lines2) {
@@ -533,6 +556,7 @@ sort_links(struct document *document)
 				document->lines1[j] = &document->links[i];
 		}
 	}
+	document->links_sorted = 1;
 }
 
 struct conv_table *
@@ -566,7 +590,7 @@ get_convert_table(unsigned char *head, int to_cp,
 			mem_free_set(&a, meta);
 		}
 
-		ct_charset = parse_header_param(a, "charset");
+		parse_header_param(a, "charset", &ct_charset);
 		if (ct_charset) {
 			cp_index = get_cp_index(ct_charset);
 			mem_free(ct_charset);

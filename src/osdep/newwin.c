@@ -23,18 +23,26 @@
 #endif
 
 const struct open_in_new open_in_new[] = {
+	/* [gettext_accelerator_context(open_in_new.os2, open_in_new.win32, open_in_new.beos)] */
 	{ ENV_XWIN,	XTERM_CMD,		    N_("~Xterm") },
 	{ ENV_TWIN,	DEFAULT_TWTERM_CMD,	    N_("T~wterm") },
 	{ ENV_SCREEN,	DEFAULT_SCREEN_CMD,	    N_("~Screen") },
-#ifdef CONFIG_OS2
+	/* [gettext_accelerator_context()] */
+#ifdef CONFIG_OS_OS2
+	/* [gettext_accelerator_context(open_in_new.os2)] */
 	{ ENV_OS2VIO,	DEFAULT_OS2_WINDOW_CMD,	    N_("~Window") },
 	{ ENV_OS2VIO,	DEFAULT_OS2_FULLSCREEN_CMD, N_("~Full screen") },
+	/* [gettext_accelerator_context()] */
 #endif
-#ifdef CONFIG_WIN32
+#ifdef CONFIG_OS_WIN32
+	/* [gettext_accelerator_context(open_in_new.win32)] */
 	{ ENV_WIN32,	"",			    N_("~Window") },
+	/* [gettext_accelerator_context()] */
 #endif
-#ifdef CONFIG_BEOS
+#ifdef CONFIG_OS_BEOS
+	/* [gettext_accelerator_context(open_in_new.beos)] */
 	{ ENV_BE,	DEFAULT_BEOS_TERM_CMD,	    N_("~BeOS terminal") },
+	/* [gettext_accelerator_context()] */
 #endif
 	{ 0, NULL, NULL }
 };
@@ -78,9 +86,10 @@ open_new_window(struct terminal *term, unsigned char *exe_name,
 		if (twterm) command = twterm;
 	}
 
-	command = straconcat(command, " ", exe_name, " ", param, NULL);
+	command = straconcat(command, " ", exe_name, " ", param,
+			     (unsigned char *) NULL);
 	if (!command) return;
 
-	exec_on_terminal(term, command, "", 2);
+	exec_on_terminal(term, command, "", TERM_EXEC_NEWWIN);
 	mem_free(command);
 }

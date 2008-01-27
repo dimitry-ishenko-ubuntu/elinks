@@ -11,19 +11,23 @@ docdir = $(datadir)/doc
 # Used by install-doc
 HTML_DIR = $(DESTDIR)$(docdir)/$(PACKAGE)/html
 PDF_DIR  = $(DESTDIR)$(docdir)/$(PACKAGE)/pdf
+TXT_DIR  = $(DESTDIR)$(docdir)/$(PACKAGE)/txt
 
 ASCIIDOC_CONF  = $(srcdir)asciidoc.conf
-ASCIIDOC_FLAGS += -f $(ASCIIDOC_CONF) -a "builddir=$(CURDIR)/"
+ASCIIDOC_FLAGS += -f $(ASCIIDOC_CONF) -a "builddir=$(CURDIR)/" -a asciidoc7compatible
 
 #############################################################################
 # Build files
 
-TXT_DOCS = \
+TXT_DOCS_NOINSTALL = \
  features.txt \
  keymap-actions.txt \
  keymap-defaults.txt \
  option-command.txt \
  option-config.txt
+
+TXT_DOCS_ASIS = \
+ python.txt
 
 HTML_DOCS-$(CONFIG_ASCIIDOC) += \
  elinks.1.html \
@@ -39,6 +43,10 @@ HTML_DOCS-$(CONFIG_POD2HTML) += \
  perl.html \
  perl-hooks.html
 
+# We don't nowadays run pod2html on the po/perl/ scripts, because
+# "make install" does not install them and they do not have the .pl
+# suffix expected by the pod2html rule below.
+
 MAN_DOCS-$(CONFIG_XMLTO) += \
  elinks.1 \
  elinks.conf.5 \
@@ -48,6 +56,8 @@ MAN_DOCS-$(CONFIG_XMLTO) += \
 PDF_DOCS-$(CONFIG_JW) += \
  manual.pdf
 
+API_DOCS-$(CONFIG_DOXYGEN) += \
+ api/doxygen
 
 #############################################################################
 ## Set the default doc rules
@@ -55,11 +65,13 @@ PDF_DOCS-$(CONFIG_JW) += \
 MAN_DOCS  = $(MAN_DOCS-yes)
 HTML_DOCS = $(HTML_DOCS-yes)
 PDF_DOCS  = $(PDF_DOCS-yes)
+API_DOCS  = $(API_DOCS-yes)
 
-txt:  $(TXT_DOCS)
+txt:  $(TXT_DOCS_NOINSTALL)
 html: txt $(HTML_DOCS)
 pdf:  txt $(PDF_DOCS)
 man:  txt $(MAN_DOCS)
+api:  $(API_DOCS)
 
 all-docs: man html pdf
 
@@ -74,20 +86,22 @@ install-doc: all-docs update-man install
 		fi;)
 	@$(foreach doc,$(PDF_DOCS), \
 		$(MKINSTALLDIRS) $(DESTDIR)$(docdir)/$(PACKAGE)/pdf; \
-		$(call ncmd,installdata,$(doc),$(PDF_DIR);))
+		$(call ncmd,installdata,$(doc),$(PDF_DIR));)
+	@$(foreach doc,$(TXT_DOCS_ASIS), \
+		$(MKINSTALLDIRS) $(DESTDIR)$(docdir)/$(PACKAGE)/txt; \
+		$(call ncmd,installdata,$(srcdir)$(doc),$(TXT_DIR));)
 
 update-man: man
 	@$(if $(MAN_DOCS), \
-		$(call ncmd,installdata,elinks.1,man/man1/elinks.1.in); \
-		$(call ncmd,installdata,elinkskeys.5,man/man5/); \
-		$(call ncmd,installdata,elinks.conf.5,man/man5/))
+		$(call ncmd,installdata,elinks.1,$(srcdir)man/man1/elinks.1.in); \
+		$(call ncmd,installdata,elinkskeys.5,$(srcdir)man/man5/); \
+		$(call ncmd,installdata,elinks.conf.5,$(srcdir)man/man5/))
 
 clean-local:
-	@$(RM) -r $(TXT_DOCS) $(MAN_DOCS) $(HTML_DOCS) $(PDF_DOCS) *.tmp *.xml
+	@$(RM) -r api $(TXT_DOCS_NOINSTALL) $(MAN_DOCS) $(HTML_DOCS) $(PDF_DOCS) *.tmp *.xml
 
 # TODO: perl.pod should be pod2ized during make install. --pasky
 install-local:
-
 
 #############################################################################
 # Generated asciidoc files
@@ -115,9 +129,6 @@ quiet_cmd_conf2doc = ' [$(LINK_COLOR)CONF2DOC$(END_COLOR)]   $(RELPATH)$@'
 quiet_cmd_keys2doc = ' [$(LINK_COLOR)KEYS2DOC$(END_COLOR)]   $(RELPATH)$@'
       cmd_keys2doc = $(LOCALES) $(KEYS2DOC) $(KBDBIND) $@ > $@
 
-quiet_cmd_code2doc = ' [$(LINK_COLOR)CODE2DOC$(END_COLOR)]   $(RELPATH)$@'
-      cmd_code2doc = $(LOCALES) $(CODE2DOC) $< > $@
-
 features.txt: $(FEATURES) $(CONF2DOC)
 	$(call cmd,conf2doc)
 
@@ -142,6 +153,9 @@ quiet_cmd_pod2html = ' [$(LINK_COLOR)POD2HTML$(END_COLOR)]   $(RELPATH)$@'
 
 quiet_cmd_asciidoc = ' [$(LINK_COLOR)ASCIIDOC$(END_COLOR)]   $(RELPATH)$@'
       cmd_asciidoc = $(ASCIIDOC) $(ASCIIDOC_FLAGS) -b $(call backend) -d $(call doctype) -o $@ $<
+
+ quiet_cmd_doxygen = ' [$(LINK_COLOR)DOXYGEN$(END_COLOR)]   $(RELPATH)$@'
+       cmd_doxygen = $(DOXYGEN) $(2)
 
 # Based on $@ find out asciidoc doctype or backend + xmlto output dir.
 doctype = $(if $(findstring .1.,$@)$(findstring .5.,$@),manpage,book)
@@ -191,5 +205,11 @@ man_hack = sed "s/^\(\.TH \"ELINKS[^\"]*\" [0-9] \).*/\1\"$(1)\" \"$(MAN_DATE)\"
 perl-%.html: %.pl
 	$(call cmd,pod2html)
 
+Doxyfile: $(srcdir)Doxyfile.in $(top_srcdir)/configure.in
+	cd $(top_builddir) && \
+	CONFIG_FILES="$(RELPATH)$@" CONFIG_HEADERS= $(SHELL) ./config.status
+
+api/doxygen: Doxyfile $(shell find $(top_srcdir)/src/ -name '*.[ch]' -o -name options.inc -o -name 'actions-*.inc' | sort)
+	$(call cmd,doxygen,$<)
 
 include $(top_srcdir)/Makefile.lib

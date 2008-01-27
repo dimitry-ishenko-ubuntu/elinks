@@ -30,7 +30,7 @@ struct widget_info_field {
 struct widget_data_info_field {
 	int vpos;
 	int cpos;
-	struct list_head history;
+	LIST_OF(struct input_history_entry) history;
 	struct input_history_entry *cur_hist;
 };
 
@@ -56,13 +56,13 @@ add_dlg_field_do(struct dialog *dlg, enum widget_type type, unsigned char *label
 	add_dlg_field_do(dlg, WIDGET_FIELD_PASS, label, min, max, handler, len, field, NULL, INPFIELD_FLOAT)
 
 
-extern struct widget_ops field_ops;
-extern struct widget_ops field_pass_ops;
+extern const struct widget_ops field_ops;
+extern const struct widget_ops field_pass_ops;
 
 widget_handler_status_T check_number(struct dialog_data *, struct widget_data *);
 widget_handler_status_T check_nonempty(struct dialog_data *, struct widget_data *);
 
-void dlg_format_field(struct terminal *, struct widget_data *, int, int *, int, int *, enum format_align);
+void dlg_format_field(struct terminal *, struct widget_data *, int, int *, int, int *, enum format_align, int format_only);
 
 void input_field(struct terminal *, struct memory_list *, int, unsigned char *,
 		 unsigned char *, unsigned char *, unsigned char *, void *,

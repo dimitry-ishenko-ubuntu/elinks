@@ -1,4 +1,5 @@
-/* Sessions task management */
+/** Sessions task management
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -55,7 +56,7 @@ abort_preloading(struct session *ses, int interrupt)
 {
 	if (!ses->task.type) return;
 
-	change_connection(&ses->loading, NULL, PRI_CANCEL, interrupt);
+	cancel_download(&ses->loading, interrupt);
 	free_task(ses);
 }
 
@@ -85,8 +86,10 @@ ses_load(struct session *ses, struct uri *uri, unsigned char *target_frame,
 }
 
 static void
-post_yes(struct task *task)
+post_yes(void *task_)
 {
+	struct task *task = task_;
+
 	abort_preloading(task->ses, 0);
 
 	/* XXX: Make the session inherit the URI. */
@@ -96,13 +99,15 @@ post_yes(struct task *task)
 }
 
 static void
-post_no(struct task *task)
+post_no(void *task_)
 {
+	struct task *task = task_;
+
 	reload(task->ses, CACHE_MODE_NORMAL);
 	done_uri(task->uri);
 }
 
-/* Check if the URI is obfuscated (bug 382). The problem is said to occur when
+/** Check if the URI is obfuscated (bug 382). The problem is said to occur when
  * a URI designed to pass access a specific location with a supplied username,
  * contains misleading chars prior to the @ symbol.
  *
@@ -160,6 +165,7 @@ ses_goto(struct session *ses, struct uri *uri, unsigned char *target_frame,
 	 struct location *target_location, enum cache_mode cache_mode,
 	 enum task_type task_type, int redir)
 {
+	/* [gettext_accelerator_context(ses_goto)] */
 	struct task *task;
 	int referrer_incomplete = 0;
 	int malicious_uri = 0;
@@ -265,22 +271,22 @@ ses_goto(struct session *ses, struct uri *uri, unsigned char *target_frame,
 		mem_free_if(uristring);
 	}
 
-	msg_box(ses->tab->term, getml(task, NULL), MSGBOX_FREE_TEXT,
+	msg_box(ses->tab->term, getml(task, (void *) NULL), MSGBOX_FREE_TEXT,
 		N_("Warning"), ALIGN_CENTER,
 		message,
 		task, 2,
-		N_("~Yes"), post_yes, B_ENTER,
-		N_("~No"), post_no, B_ESC);
+		MSG_BOX_BUTTON(N_("~Yes"), post_yes, B_ENTER),
+		MSG_BOX_BUTTON(N_("~No"), post_no, B_ESC));
 }
 
 
-/* If @loaded_in_frame is set, this was called just to indicate a move inside a
- * frameset, and we basically just reset the appropriate frame's view_state in
+/** If @a loaded_in_frame is set, this was called just to indicate a move inside
+ * a frameset, and we basically just reset the appropriate frame's view_state in
  * that case. When clicking on a link inside a frame, the frame URI is somehow
  * updated and added to the files-to-load queue, then ses_forward() is called
- * with @loaded_in_frame unset, duplicating the whole frameset's location, then
- * later the file-to-load callback calls it for the particular frame with
- * @loaded_in_frame set. */
+ * with @a loaded_in_frame unset, duplicating the whole frameset's location,
+ * then later the file-to-load callback calls it for the particular frame with
+ * @a loaded_in_frame set. */
 struct view_state *
 ses_forward(struct session *ses, int loaded_in_frame)
 {
@@ -458,7 +464,7 @@ do_move(struct session *ses, struct download **download_p)
 	struct cache_entry *cached;
 
 	assert(download_p && *download_p);
-	assertm(ses->loading_uri, "no ses->loading_uri");
+	assertm(ses->loading_uri != NULL, "no ses->loading_uri");
 	if_assert_failed return DO_MOVE_ABORT;
 
 	if (ses->loading_uri->protocol == PROTOCOL_UNKNOWN)
@@ -506,7 +512,7 @@ do_move(struct session *ses, struct download **download_p)
 	if (is_in_progress_state((*download_p)->state)) {
 		if (have_location(ses))
 			*download_p = &cur_loc(ses)->download;
-		change_connection(&ses->loading, *download_p, PRI_MAIN, 0);
+		move_download(&ses->loading, *download_p, PRI_MAIN);
 	} else if (have_location(ses)) {
 		cur_loc(ses)->download.state = ses->loading.state;
 	}
@@ -661,6 +667,24 @@ goto_uri_frame(struct session *ses, struct uri *uri,
 	       unsigned char *target, enum cache_mode cache_mode)
 {
 	follow_url(ses, uri, target, TASK_FORWARD, cache_mode, 1);
+}
+
+void
+delayed_goto_uri_frame(void *data)
+{
+	struct delayed_open *deo = data;
+	struct frame *frame;
+
+	assert(deo);
+	frame = ses_find_frame(deo->ses, deo->target);
+	if (frame)
+		goto_uri_frame(deo->ses, deo->uri, frame->name, CACHE_MODE_NORMAL);
+	else {
+		goto_uri_frame(deo->ses, deo->uri, NULL, CACHE_MODE_NORMAL);
+	}
+	done_uri(deo->uri);
+	mem_free(deo->target);
+	mem_free(deo);
 }
 
 /* menu_func_T */

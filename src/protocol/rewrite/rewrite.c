@@ -92,16 +92,21 @@ static struct option_info uri_rewrite_options[] = {
 
 	INIT_OPT_STRING("protocol.rewrite", N_("Default template"),
 		"default_template", 0, "",
+		/* xgettext:no-c-format */
 		N_("Default URI template used when the string entered in\n"
 		"the goto dialog does not appear to be a URI or a filename\n"
 		"(i.e. contains no '.', ':' or '/' characters), and does\n"
 		"not match any defined prefixes. Set the value to \"\" to\n"
-		"disable use of the default template rewrite rule.")),
+		"disable use of the default template rewrite rule.\n"
+		"%c in the template means the current URL\n"
+		"%s in the template means the whole string from the goto dialog\n"
+		"%0,%1,...,%9 mean the 1st,2nd,...,10th space-delimited part of %s\n"
+		"%% in the template means '%'")),
 
 #define INIT_OPT_DUMB_PREFIX(prefix, uri) \
 	INIT_OPT_STRING("protocol.rewrite.dumb", NULL, prefix, 0, uri, NULL)
 
-	INIT_OPT_DUMB_PREFIX("elinks", ELINKS_HOMEPAGE),
+	INIT_OPT_DUMB_PREFIX("elinks", ELINKS_WEBSITE_URL),
 	INIT_OPT_DUMB_PREFIX("documentation", ELINKS_DOC_URL),
 	INIT_OPT_DUMB_PREFIX("bz", ELINKS_BUGS_URL),
 	INIT_OPT_DUMB_PREFIX("bug", ELINKS_BUGS_URL),
@@ -191,7 +196,7 @@ static struct option_info uri_rewrite_options[] = {
 	INIT_OPT_SMART_PREFIX("mw", "http://www.m-w.com/cgi-bin/dictionary?book=Dictionary&va=%s"),
 	INIT_OPT_SMART_PREFIX("mwt", "http://www.m-w.com/cgi-bin/thesaurus?book=Thesaurus&va=%s"),
 	INIT_OPT_SMART_PREFIX("whatis", "http://uptime.netcraft.com/up/graph/?host=%s"),
-	INIT_OPT_SMART_PREFIX("wiki", "http://www.wikipedia.org/w/wiki.phtml?search=%s"),
+	INIT_OPT_SMART_PREFIX("wiki", "http://en.wikipedia.org/w/wiki.phtml?search=%s"),
 	INIT_OPT_SMART_PREFIX("wn", "http://www.cogsci.princeton.edu/cgi-bin/webwn1.7.1?stage=1&word=%s"),
 	/* Search the Free Software Directory */
 	INIT_OPT_SMART_PREFIX("fsd", "http://directory.fsf.org/search/fsd-search.py?q=%s"),

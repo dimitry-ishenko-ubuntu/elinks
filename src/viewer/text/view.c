@@ -1,4 +1,5 @@
-/* HTML viewer (and much more) */
+/** HTML viewer (and much more)
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -59,14 +60,17 @@
 #include "viewer/text/view.h"
 #include "viewer/text/vs.h"
 
-
-
 void
 detach_formatted(struct document_view *doc_view)
 {
 	assert(doc_view);
 	if_assert_failed return;
 
+#ifdef CONFIG_ECMASCRIPT
+	if (doc_view->session) {
+		mem_free_set(&doc_view->session->status.window_status, NULL);
+	}
+#endif
 	if (doc_view->document) {
 		release_document(doc_view->document);
 		doc_view->document = NULL;
@@ -75,19 +79,18 @@ detach_formatted(struct document_view *doc_view)
 		doc_view->vs->doc_view = NULL;
 		doc_view->vs = NULL;
 	}
-	if (doc_view->link_bg) free_link(doc_view);
 	mem_free_set(&doc_view->name, NULL);
 }
 
-/* type == 0 -> PAGE_DOWN
- * type == 1 -> DOWN */
-static enum frame_event_status
+/*! @a type == 0 -> PAGE_DOWN;
+ * @a type == 1 -> DOWN */
+static void
 move_down(struct session *ses, struct document_view *doc_view, int type)
 {
 	int newpos;
 
 	assert(ses && doc_view && doc_view->vs);
-	if_assert_failed return FRAME_EVENT_OK;
+	if_assert_failed return;
 
 	assert(ses->navigate_mode == NAVIGATE_LINKWISE);	/* XXX: drop it at some time. --Zas */
 
@@ -96,73 +99,68 @@ move_down(struct session *ses, struct document_view *doc_view, int type)
 		doc_view->vs->y = newpos;
 
 	if (current_link_is_visible(doc_view))
-		return FRAME_EVENT_REFRESH;
+		return;
 
 	if (type)
 		find_link_down(doc_view);
 	else
 		find_link_page_down(doc_view);
 
-	return FRAME_EVENT_REFRESH;
+	return;
 }
 
 enum frame_event_status
 move_page_down(struct session *ses, struct document_view *doc_view)
 {
-	enum frame_event_status status;
+	int oldy = doc_view->vs->y;
 	int count = eat_kbd_repeat_count(ses);
 
 	ses->navigate_mode = NAVIGATE_LINKWISE;
 
-	do {
-		status = move_down(ses, doc_view, 0);
-		if (status != FRAME_EVENT_REFRESH) break;
-	} while (--count > 0);
+	do move_down(ses, doc_view, 0); while (--count > 0);
 
-	return status;
+	return doc_view->vs->y == oldy ? FRAME_EVENT_OK : FRAME_EVENT_REFRESH;
 }
 
-/* type == 0 -> PAGE_UP
- * type == 1 -> UP */
-static enum frame_event_status
+/*! @a type == 0 -> PAGE_UP;
+ * @a type == 1 -> UP */
+static void
 move_up(struct session *ses, struct document_view *doc_view, int type)
 {
 	assert(ses && doc_view && doc_view->vs);
-	if_assert_failed return FRAME_EVENT_OK;
+	if_assert_failed return;
 
 	assert(ses->navigate_mode == NAVIGATE_LINKWISE);	/* XXX: drop it at some time. --Zas */
 
-	if (doc_view->vs->y == 0) return FRAME_EVENT_OK;
+	if (doc_view->vs->y == 0) return;
 
 	doc_view->vs->y -= doc_view->box.height;
 	int_lower_bound(&doc_view->vs->y, 0);
 
 	if (current_link_is_visible(doc_view))
-		return FRAME_EVENT_REFRESH;
+		return;
 
 	if (type)
 		find_link_up(doc_view);
 	else
 		find_link_page_up(doc_view);
 
-	return FRAME_EVENT_REFRESH;
+	return;
 }
 
 enum frame_event_status
 move_page_up(struct session *ses, struct document_view *doc_view)
 {
-	enum frame_event_status status;
+	int oldy = doc_view->vs->y;
 	int count = eat_kbd_repeat_count(ses);
 
 	ses->navigate_mode = NAVIGATE_LINKWISE;
 
-	do {
-		status = move_up(ses, doc_view, 0);
-		if (status != FRAME_EVENT_REFRESH) break;
-	} while (--count > 0);
+	do move_up(ses, doc_view, 0); while (--count > 0);
 
-	return status;
+	return doc_view->vs->y == oldy ? FRAME_EVENT_OK : FRAME_EVENT_REFRESH;
 }
+
 
 enum frame_event_status
 move_link(struct session *ses, struct document_view *doc_view, int direction,
@@ -264,7 +262,7 @@ move_link_dir(struct session *ses, struct document_view *doc_view, int dir_x, in
 	return FRAME_EVENT_REFRESH;
 }
 
-/* @steps > 0 -> down */
+/*! @a steps > 0 -> down */
 static enum frame_event_status
 vertical_scroll(struct session *ses, struct document_view *doc_view, int steps)
 {
@@ -299,7 +297,7 @@ vertical_scroll(struct session *ses, struct document_view *doc_view, int steps)
 	return FRAME_EVENT_REFRESH;
 }
 
-/* @steps > 0 -> right */
+/*! @a steps > 0 -> right */
 static enum frame_event_status
 horizontal_scroll(struct session *ses, struct document_view *doc_view, int steps)
 {
@@ -496,9 +494,10 @@ toggle_wrap_text(struct session *ses, struct document_view *doc_view, int xxxx)
 	draw_formatted(ses, 1);
 }
 
-/* Move the cursor to the document view co-ordinates provided as @x and @y,
- * scroll the document if necessary, put us in cursor-routing navigation mode if
- * that is not the current mode, and select any link under the cursor. */
+/** Move the cursor to the document view co-ordinates provided
+ * as @a x and @a y, scroll the document if necessary, put us in
+ * cursor-routing navigation mode if that is not the current mode,
+ * and select any link under the cursor. */
 enum frame_event_status
 move_cursor(struct session *ses, struct document_view *doc_view, int x, int y)
 {
@@ -555,18 +554,26 @@ move_cursor(struct session *ses, struct document_view *doc_view, int x, int y)
 	return status;
 }
 
-enum frame_event_status
-move_cursor_rel(struct session *ses, struct document_view *view,
-	        int rx, int ry)
+static enum frame_event_status
+move_cursor_rel_count(struct session *ses, struct document_view *view,
+		      int rx, int ry, int count)
 {
-	int count = eat_kbd_repeat_count(ses);
 	int x, y;
-
-	int_lower_bound(&count, 1);
 
 	x = ses->tab->x + rx*count;
 	y = ses->tab->y + ry*count;
 	return move_cursor(ses, view, x, y);
+}
+
+static enum frame_event_status
+move_cursor_rel(struct session *ses, struct document_view *view,
+	        int rx, int ry)
+{
+	int count = eat_kbd_repeat_count(ses);
+
+	int_lower_bound(&count, 1);
+
+	return move_cursor_rel_count(ses, view, rx, ry, count);
 }
 
 enum frame_event_status
@@ -593,6 +600,306 @@ move_cursor_down(struct session *ses, struct document_view *view)
 	return move_cursor_rel(ses, view, 0, 1);
 }
 
+enum frame_event_status
+move_link_up_line(struct session *ses, struct document_view *doc_view)
+{
+	struct document *document;
+	struct view_state *vs;
+	struct box *box;
+	int min_y, y, y1;
+
+	assert(ses && doc_view && doc_view->vs && doc_view->document);
+	if_assert_failed return FRAME_EVENT_OK;
+	vs = doc_view->vs;
+	document = doc_view->document;
+	box = &doc_view->box;
+	if (!document->lines1) {
+		if (vs->y) {
+			vs->y -= box->height;
+			int_lower_bound(&vs->y, 0);
+			return FRAME_EVENT_REFRESH;
+		}
+		return FRAME_EVENT_OK;
+	}
+	min_y = vs->y - box->height;
+	int_lower_bound(&min_y, 0);
+	y1 = y = vs->y + ses->tab->y - box->y;
+	int_upper_bound(&y, document->height - 1);
+	for (y--; y >= min_y; y--) {
+		struct link *link = document->lines1[y];
+
+		if (!link) continue;
+		for (; link <= document->lines2[y]; link++) {
+			enum frame_event_status status;
+
+			if (link->points[0].y != y) continue;
+			if (y < vs->y) {
+				/* The line is above the visible part
+				 * of the document.  Scroll it by one
+				 * page, but not at all past the
+				 * beginning of the document.  */
+				int mini = int_min(box->height, vs->y);
+
+				/* Before this update, y is the line
+				 * number in the document, and y - y1
+				 * is the number of lines the cursor
+				 * must move in the document.
+				 * Afterwards, y does not make sense,
+				 * but y - y1 is the number of lines
+				 * the cursor must move on the screen.  */
+				vs->y -= mini;
+				y += mini;
+			}
+			status = move_cursor_rel_count(ses, doc_view, 0, y - y1, 1);
+			if (link == get_current_link(doc_view))
+				ses->navigate_mode = NAVIGATE_LINKWISE;
+			return status;
+		}
+	}
+	if (vs->y) {
+		vs->y -= box->height;
+		int_lower_bound(&vs->y, 0);
+		ses->navigate_mode = NAVIGATE_CURSOR_ROUTING;
+		return FRAME_EVENT_REFRESH;
+	}
+	return FRAME_EVENT_OK;
+}
+
+enum frame_event_status
+move_link_down_line(struct session *ses, struct document_view *doc_view)
+{
+	struct document *document;
+	struct view_state *vs;
+	struct box *box;
+	int max_y, y, y1;
+
+	assert(ses && doc_view && doc_view->vs && doc_view->document);
+	if_assert_failed return FRAME_EVENT_OK;
+	vs = doc_view->vs;
+	document = doc_view->document;
+	box = &doc_view->box;
+	if (!document->lines1) {
+		if (vs->y + box->height < document->height) {
+			vs->y += box->height;
+			return FRAME_EVENT_REFRESH;
+		}
+		return FRAME_EVENT_OK;
+	}
+	max_y = vs->y + box->height * 2 - 1;
+	int_upper_bound(&max_y, document->height - 1);
+	y1 = y = vs->y + ses->tab->y - box->y;
+	for (y++; y <= max_y; y++) {
+		struct link *link = document->lines1[y];
+
+		if (!link) continue;
+		for (; link <= document->lines2[y]; link++) {
+			enum frame_event_status status;
+
+			if (link->points[0].y != y) continue;
+			if (y >= vs->y + box->height) {
+				/* The line is below the visible part
+				 * of the document.  Scroll it by one
+				 * page, but keep at least one line of
+				 * the document on the screen.  */
+				int mini = int_min(box->height, document->height - vs->y - 1);
+
+				/* Before this update, y is the line
+				 * number in the document, and y - y1
+				 * is the number of lines the cursor
+				 * must move in the document.
+				 * Afterwards, y does not make sense,
+				 * but y - y1 is the number of lines
+				 * the cursor must move on the screen.  */
+				vs->y += mini;
+				y -= mini;
+			}
+			status = move_cursor_rel_count(ses, doc_view, 0, y - y1, 1);
+			if (link == get_current_link(doc_view))
+				ses->navigate_mode = NAVIGATE_LINKWISE;
+			return status;
+		}
+	}
+	if (vs->y + box->height < document->height) {
+		vs->y += box->height;
+		ses->navigate_mode = NAVIGATE_CURSOR_ROUTING;
+		return FRAME_EVENT_REFRESH;
+	}
+	return FRAME_EVENT_OK;
+}
+
+enum frame_event_status
+move_link_prev_line(struct session *ses, struct document_view *doc_view)
+{
+	struct view_state *vs;
+	struct document *document;
+	struct box *box;
+	struct link *link, *last = NULL;
+	int y1, y, min_y, min_x, max_x, x1;
+
+	assert(ses && doc_view && doc_view->vs && doc_view->document);
+	if_assert_failed return FRAME_EVENT_OK;
+
+	vs = doc_view->vs;
+	document = doc_view->document;
+	box = &doc_view->box;
+	if (!document->lines1) {
+		if (vs->y) {
+			vs->y -= box->height;
+			int_lower_bound(&vs->y, 0);
+			return FRAME_EVENT_REFRESH;
+		}
+		return FRAME_EVENT_OK;
+	}
+	y = y1 = vs->y + ses->tab->y - box->y;
+	x1 = vs->x + ses->tab->x - box->x;
+
+	link = get_current_link(doc_view);
+	if (link) {
+		get_link_x_bounds(link, y1, &min_x, &max_x);		
+	} else {
+		min_x = max_x = x1;
+	}
+	int_upper_bound(&y, document->height - 1);
+	min_y = int_max(0, vs->y - box->height);
+
+	for (; y >= min_y; y--, min_x = INT_MAX) {
+		link = document->lines1[y];
+		if (!link) continue;
+		for (; link <= document->lines2[y]; link++) {
+			if (link->points[0].y != y) continue;
+			if (link->points[0].x >= min_x) continue;
+			if (!last) last = link;
+			else if (link->points[0].x > last->points[0].x) last = link;
+		}
+		if (last) {
+			enum frame_event_status status;
+
+			y = last->points[0].y;
+			if (y < vs->y) {
+				/* The line is above the visible part
+				 * of the document.  Scroll it by one
+				 * page, but not at all past the
+				 * beginning of the document.  */
+				int mini = int_min(box->height, vs->y);
+
+				/* Before this update, y is the line
+				 * number in the document, and y - y1
+				 * is the number of lines the cursor
+				 * must move in the document.
+				 * Afterwards, y does not make sense,
+				 * but y - y1 is the number of lines
+				 * the cursor must move on the screen.  */
+				vs->y -= mini;
+				y += mini;
+			}
+			status = move_cursor_rel_count(ses, doc_view, last->points[0].x - x1, y - y1, 1);
+			if (last == get_current_link(doc_view))
+				ses->navigate_mode = NAVIGATE_LINKWISE;
+			return status;
+		}
+	}
+	if (vs->y) {
+		vs->y -= box->height;
+		int_lower_bound(&vs->y, 0);
+		ses->navigate_mode = NAVIGATE_CURSOR_ROUTING;
+		return FRAME_EVENT_REFRESH;
+	}
+	return FRAME_EVENT_OK;
+}
+
+enum frame_event_status
+move_link_next_line(struct session *ses, struct document_view *doc_view)
+{
+	struct view_state *vs;
+	struct document *document;
+	struct box *box;
+	struct link *link, *last = NULL;
+	int y1, y, max_y, min_x, max_x, x1;
+
+	assert(ses && doc_view && doc_view->vs && doc_view->document);
+	if_assert_failed return FRAME_EVENT_OK;
+
+	vs = doc_view->vs;
+	document = doc_view->document;
+	box = &doc_view->box;
+	if (!document->lines1) {
+		if (vs->y + box->height < document->height) {
+			vs->y += box->height;
+			return FRAME_EVENT_REFRESH;
+		}
+		return FRAME_EVENT_OK;
+	}
+	y = y1 = vs->y + ses->tab->y - box->y;
+	x1 = vs->x + ses->tab->x - box->x;
+
+	link = get_current_link(doc_view);
+	if (link) {
+		get_link_x_bounds(link, y1, &min_x, &max_x);		
+	} else {
+		min_x = max_x = x1;
+	}
+	int_upper_bound(&y, document->height - 1);
+	max_y = int_min(vs->y + 2 * box->height - 1, document->height - 1);
+
+	for (; y <= max_y; y++, min_x = -1) {
+		link = document->lines1[y];
+		if (!link) continue;
+		for (; link <= document->lines2[y]; link++) {
+			if (link->points[0].y != y) continue;
+			if (link->points[0].x <= min_x) continue;
+			if (!last) last = link;
+			else if (link->points[0].x < last->points[0].x) last = link;
+		}
+		if (last) {
+			enum frame_event_status status;
+
+			y = last->points[0].y;
+			if (y >= vs->y + box->height) {
+				/* The line is below the visible part
+				 * of the document.  Scroll it by one
+				 * page, but keep at least one line of
+				 * the document on the screen.  */
+				int mini = int_min(box->height, document->height - vs->y - 1);
+
+				/* Before this update, y is the line
+				 * number in the document, and y - y1
+				 * is the number of lines the cursor
+				 * must move in the document.
+				 * Afterwards, y does not make sense,
+				 * but y - y1 is the number of lines
+				 * the cursor must move on the screen.  */
+				vs->y += mini;
+				y -= mini;
+			}
+			status = move_cursor_rel_count(ses, doc_view, last->points[0].x - x1, y - y1, 1);
+			if (last == get_current_link(doc_view))
+				ses->navigate_mode = NAVIGATE_LINKWISE;
+			return status;
+		}
+	}
+	if (vs->y + box->height < document->height) {
+		vs->y += box->height;
+		ses->navigate_mode = NAVIGATE_CURSOR_ROUTING;
+		return FRAME_EVENT_REFRESH;
+	}
+	return FRAME_EVENT_OK;
+}
+
+enum frame_event_status
+move_cursor_line_start(struct session *ses, struct document_view *doc_view)
+{
+	struct view_state *vs;
+	struct box *box;
+	int x;
+
+	assert(ses && doc_view && doc_view->vs);
+	if_assert_failed return FRAME_EVENT_OK;
+
+	vs = doc_view->vs;
+	box = &doc_view->box;
+	x = vs->x + ses->tab->x - box->x;
+	return move_cursor_rel(ses, doc_view, -x, 0);
+}
 
 enum frame_event_status
 copy_current_link_to_clipboard(struct session *ses,
@@ -644,7 +951,20 @@ enum frame_event_status
 try_mark_key(struct session *ses, struct document_view *doc_view,
 	     struct term_event *ev)
 {
-	unsigned char mark = get_kbd_key(ev);
+	term_event_key_T key = get_kbd_key(ev);
+	unsigned char mark;
+
+	/* set_mark and goto_mark allow only a subset of the ASCII
+	 * character repertoire as mark characters.  If get_kbd_key(ev)
+	 * is something else (i.e. a special key or a non-ASCII
+	 * character), map it to an ASCII character that the functions
+	 * will not accept, so the results are consistent.
+	 * When CONFIG_UTF8 is not defined, this assumes that codes
+	 * 0 to 0x7F in all codepages match ASCII.  */
+	if (key >= 0 && key <= 0x7F)
+		mark = (unsigned char) key;
+	else
+		mark = 0;
 
 	switch (ses->kbdprefix.mark) {
 		case KP_MARK_NOTHING:
@@ -689,6 +1009,9 @@ try_prefix_key(struct session *ses, struct document_view *doc_view,
 		 * the first time by init_session() calloc() call.
 		 * When used, it has to be reset to zero. */
 
+		/* Clear the highlighting for the previous partial prefix. */
+		if (ses->kbdprefix.repeat_count) draw_formatted(ses, 0);
+
 		ses->kbdprefix.repeat_count *= 10;
 		ses->kbdprefix.repeat_count += digit;
 
@@ -696,6 +1019,10 @@ try_prefix_key(struct session *ses, struct document_view *doc_view,
 		 * '0' six times or more will reset the count. */
 		if (ses->kbdprefix.repeat_count > 99999)
 			ses->kbdprefix.repeat_count = 0;
+		else if (ses->kbdprefix.repeat_count)
+			highlight_links_with_prefixes_that_start_with_n(
+			                           ses->tab->term, doc_view,
+			                           ses->kbdprefix.repeat_count);
 
 		return FRAME_EVENT_OK;
 	}
@@ -1007,8 +1334,19 @@ do_mouse_event(struct session *ses, struct term_event *ev,
 	return send_to_frame(ses, doc_view, &evv);
 }
 
-/* Returns the session if event cleanup should be done or NULL if no cleanup is
- * needed. */
+static int
+is_mouse_on_tab_bar(struct session *ses, struct term_event_mouse *mouse)
+{
+	struct terminal *term = ses->tab->term;
+	int y;
+
+	if (ses->status.show_tabs_bar_at_top) y = ses->status.show_title_bar;
+	else y = term->height - 1 - !!ses->status.show_status_bar;
+
+	return mouse->y == y;
+}
+/** @returns the session if event cleanup should be done or NULL if no
+ * cleanup is needed. */
 static struct session *
 send_mouse_event(struct session *ses, struct document_view *doc_view,
 		 struct term_event *ev)
@@ -1029,18 +1367,17 @@ send_mouse_event(struct session *ses, struct document_view *doc_view,
 	}
 
 	/* Handle tabs navigation if tabs bar is displayed. */
-	if (ses->status.show_tabs_bar
-	    && mouse->y == term->height - 1 - !!ses->status.show_status_bar) {
+	if (ses->status.show_tabs_bar && is_mouse_on_tab_bar(ses, mouse)) {
 		int tab_num = get_tab_number_by_xpos(term, mouse->x);
-		struct window *tab = get_current_tab(term);
+		struct window *current_tab = get_current_tab(term);
 
 		if (check_mouse_action(ev, B_UP)) {
 			if (check_mouse_button(ev, B_MIDDLE)
 			    && term->current_tab == tab_num
 			    && mouse->y == term->prev_mouse_event.y) {
-				if (tab->data == ses) ses = NULL;
+				if (current_tab->data == ses) ses = NULL;
 
-				close_tab(term, tab->data);
+				close_tab(term, current_tab->data);
 			}
 
 			return ses;
@@ -1058,7 +1395,7 @@ send_mouse_event(struct session *ses, struct document_view *doc_view,
 			if (check_mouse_button(ev, B_MIDDLE)) {
 				do_not_ignore_next_mouse_event(term);
 			} else if (check_mouse_button(ev, B_RIGHT)) {
-				tab_menu(tab->data, mouse->x, mouse->y, 1);
+				tab_menu(current_tab->data, mouse->x, mouse->y, 1);
 			}
 		}
 
@@ -1108,8 +1445,8 @@ try_typeahead(struct session *ses, struct document_view *doc_view,
 	term_send_event(ses->tab->term, ev);
 }
 
-/* Returns the session if event cleanup should be done or NULL if no cleanup is
- * needed. */
+/** @returns the session if event cleanup should be done or NULL if no
+ * cleanup is needed. */
 static struct session *
 send_kbd_event(struct session *ses, struct document_view *doc_view,
 	       struct term_event *ev)
@@ -1147,7 +1484,8 @@ quit:
 
 	if (check_kbd_key(ev, KBD_CTRL_C)) goto quit;
 
-	if (get_kbd_modifier(ev) & KBD_MOD_ALT) {
+	/* Ctrl-Alt-F should not open the File menu like Alt-f does.  */
+	if (check_kbd_modifier(ev, KBD_MOD_ALT)) {
 		struct window *win;
 
 		get_kbd_modifier(ev) &= ~KBD_MOD_ALT;
@@ -1155,11 +1493,12 @@ quit:
 		win = ses->tab->term->windows.next;
 		win->handler(win, ev);
 		if (ses->tab->term->windows.next == win) {
-			delete_window(win);
-			get_kbd_modifier(ev) |= KBD_MOD_ALT;
-
-			return NULL;
+			deselect_mainmenu(win->term, win->data);
+			print_screen_status(ses);
 		}
+		if (ses->tab != ses->tab->term->windows.next)
+			return NULL;
+		get_kbd_modifier(ev) |= KBD_MOD_ALT;
 
 		if (doc_view
 		    && get_opt_int("document.browse.accesskey"

@@ -14,6 +14,7 @@
 #include "config/options.h"
 #include "document/docdata.h"
 #include "document/document.h"
+#include "document/format.h"
 #include "document/options.h"
 #include "document/plain/renderer.h"
 #include "document/renderer.h"
@@ -92,7 +93,7 @@ add_document_link(struct document *document, unsigned char *uri, int length,
 	link->npoints = length;
 	link->type = LINK_HYPERTEXT;
 	link->where = uri;
-	link->color.background = document->options.default_bg;
+	link->color.background = document->options.default_style.bg;
 	link->color.foreground = document->options.default_link;
 	link->number = document->nlinks;
 
@@ -102,7 +103,7 @@ add_document_link(struct document *document, unsigned char *uri, int length,
 	}
 
 	document->nlinks++;
-
+	document->links_sorted = 0;
 	return link;
 }
 
@@ -123,7 +124,7 @@ check_link_word(struct document *document, unsigned char *uri, int length,
 	uri[length] = 0;
 
 	if (mailto && mailto > uri && mailto - uri < length - 1) {
-		where = straconcat("mailto:", uri, NULL);
+		where = straconcat("mailto:", uri, (unsigned char *) NULL);
 
 	} else if (parse_uri(&test, uri) == URI_ERRNO_OK
 		   && test.protocol != PROTOCOL_UNKNOWN
@@ -175,12 +176,12 @@ get_uri_length(unsigned char *line, int length)
 static int
 print_document_link(struct plain_renderer *renderer, int lineno,
 		    unsigned char *line, int line_pos, int width,
-		    int expanded, struct screen_char *pos)
+		    int expanded, struct screen_char *pos, int cells)
 {
 	struct document *document = renderer->document;
 	unsigned char *start = &line[line_pos];
 	int len = get_uri_length(start, width - line_pos);
-	int screen_column = line_pos + expanded;
+	int screen_column = cells + expanded;
 	struct link *new_link;
 	int link_end = line_pos + len;
 	unsigned char saved_char;
@@ -213,7 +214,7 @@ print_document_link(struct plain_renderer *renderer, int lineno,
 
 	line[link_end] = saved_char;
 
-	new_link->color.background = doc_opts->default_bg;
+	new_link->color.background = doc_opts->default_style.bg;
 
 	set_term_color(&template, &new_link->color,
 		       doc_opts->color_flags, doc_opts->color_mode);
@@ -234,6 +235,10 @@ add_document_line(struct plain_renderer *renderer,
 	struct screen_char *template = &renderer->template;
 	struct screen_char saved_renderer_template = *template;
 	struct screen_char *pos, *startpos;
+#ifdef CONFIG_UTF8
+	int utf8 = document->options.utf8;
+#endif /* CONFIG_UTF8 */
+	int cells = 0;
 	int lineno = renderer->lineno;
 	int expanded = 0;
 	int width = line_width;
@@ -245,13 +250,31 @@ add_document_line(struct plain_renderer *renderer,
 	if (!line) return 0;
 
 	/* Now expand tabs */
-	for (line_pos = 0; line_pos < width; line_pos++) {
+	for (line_pos = 0; line_pos < width;) {
 		unsigned char line_char = line[line_pos];
+		int charlen = 1;
+		int cell = 1;
+#ifdef CONFIG_UTF8
+		unicode_val_T data;
+
+		if (utf8) {
+			unsigned char *line_char2 = &line[line_pos];
+			charlen = utf8charlen(&line_char);
+			data = utf8_to_unicode(&line_char2, &line[width]);
+
+			if (data == UCS_NO_CHAR) {
+				line_pos += charlen;
+				continue;
+			}
+
+			cell = unicode_to_cell(data);
+		}
+#endif /* CONFIG_UTF8 */
 
 		if (line_char == ASCII_TAB
-		    && (line_pos + 1 == width
-			|| line[line_pos + 1] != ASCII_BS)) {
-			int tab_width = 7 - ((line_pos + expanded) & 7);
+		    && (line_pos + charlen == width
+		      	|| line[line_pos + charlen] != ASCII_BS)) {
+		  	int tab_width = 7 - ((cells + expanded) & 7);
 
 			expanded += tab_width;
 		} else if (line_char == ASCII_BS) {
@@ -272,6 +295,8 @@ add_document_line(struct plain_renderer *renderer,
 				expanded--;
 #endif
 		}
+		line_pos += charlen;
+		cells += cell;
 	}
 
 	assert(expanded >= 0);
@@ -282,19 +307,38 @@ add_document_line(struct plain_renderer *renderer,
 		return 0;
 	}
 
+	cells = 0;
 	expanded = 0;
-	for (line_pos = 0; line_pos < width; line_pos++) {
+	for (line_pos = 0; line_pos < width;) {
 		unsigned char line_char = line[line_pos];
 		unsigned char next_char, prev_char;
+		int charlen = 1;
+		int cell = 1;
+#ifdef CONFIG_UTF8
+		unicode_val_T data = UCS_NO_CHAR;
+
+		if (utf8) {
+			unsigned char *line_char2 = &line[line_pos];
+			charlen = utf8charlen(&line_char);
+			data = utf8_to_unicode(&line_char2, &line[width]);
+
+			if (data == UCS_NO_CHAR) {
+				line_pos += charlen;
+				continue;
+			}
+
+			cell = unicode_to_cell(data);
+		}
+#endif /* CONFIG_UTF8 */
 
 		prev_char = line_pos > 0 ? line[line_pos - 1] : '\0';
-		next_char = (line_pos + 1 < width) ? line[line_pos + 1]
-						   : '\0';
+		next_char = (line_pos + charlen < width) ?
+		  		line[line_pos + charlen] : '\0';
 
 		/* Do not expand tabs that precede back-spaces; this saves the
 		 * back-space code some trouble. */
 		if (line_char == ASCII_TAB && next_char != ASCII_BS) {
-			int tab_width = 7 - ((line_pos + expanded) & 7);
+			int tab_width = 7 - ((cells + expanded) & 7);
 
 			expanded += tab_width;
 
@@ -306,11 +350,10 @@ add_document_line(struct plain_renderer *renderer,
 			*template = saved_renderer_template;
 
 		} else if (line_char == ASCII_BS) {
-			if (!(expanded + line_pos)) {
+			if (!(expanded + cells)) {
 				/* We've backspaced to the start of the line */
-				continue;
+				goto next;
 			}
-
 			if (pos > startpos)
 				pos--;  /* Backspace */
 
@@ -320,12 +363,14 @@ add_document_line(struct plain_renderer *renderer,
 				/* x^H_ becomes _^Hx */
 				if (line_pos - 1 >= 0)
 					line[line_pos - 1] = next_char;
-				if (line_pos + 1 < width)
-					line[line_pos + 1] = prev_char;
+				if (line_pos + charlen < width)
+					line[line_pos + charlen] = prev_char;
 
 				/* Go back and reparse the swapped characters */
-				if (line_pos - 2 >= 0)
-					line_pos -= 2;
+				if (line_pos - 2 >= 0) {
+					cells--;
+					line_pos--;
+				}
 				continue;
 			}
 
@@ -381,27 +426,49 @@ add_document_line(struct plain_renderer *renderer,
 								  line_pos,
 								  width,
 								  expanded,
-								  pos);
+								  pos, cells);
 			}
 
 			if (added_chars) {
 				line_pos += added_chars - 1;
+				cells += added_chars - 1;
 				pos += added_chars;
 			} else {
-				if (!isscreensafe(line_char))
-					line_char = '.';
-				template->data = line_char;
-				copy_screen_chars(pos++, template, 1);
+#ifdef CONFIG_UTF8
+				if (utf8) {
+					if (data == UCS_NO_CHAR) {
+						line_pos += charlen;
+						continue;
+					}
 
-				/* Detect copy of nul chars to screen, this
-				 * should not occur. --Zas */
-				assert(line_char);
+					template->data = (unicode_val_T)data;
+					copy_screen_chars(pos++, template, 1);
+
+					if (cell == 2) {
+						template->data = UCS_NO_CHAR;
+						copy_screen_chars(pos++,
+								  template, 1);
+					}
+				} else
+#endif /* CONFIG_UTF8 */
+				{
+					if (!isscreensafe(line_char))
+						line_char = '.';
+					template->data = line_char;
+					copy_screen_chars(pos++, template, 1);
+
+					/* Detect copy of nul chars to screen,
+					 * this should not occur. --Zas */
+					assert(line_char);
+				}
 			}
 
 			*template = saved_renderer_template;
 		}
+next:
+		line_pos += charlen;
+		cells += cell;
 	}
-
 	mem_free(line);
 
 	realloc_line(document, pos - startpos, lineno);
@@ -412,14 +479,7 @@ add_document_line(struct plain_renderer *renderer,
 static void
 init_template(struct screen_char *template, struct document_options *options)
 {
-	color_T background = options->default_bg;
-	color_T foreground = options->default_fg;
-	struct color_pair colors = INIT_COLOR_PAIR(background, foreground);
-
-	template->attr = 0;
-	template->data = ' ';
-	set_term_color(template, &colors,
-		       options->color_flags, options->color_mode);
+	get_screen_char_template(template, options, options->default_style);
 }
 
 static struct node *
@@ -448,17 +508,20 @@ add_document_lines(struct plain_renderer *renderer)
 	int length = renderer->length;
 	int was_empty_line = 0;
 	int was_wrapped = 0;
-
+#ifdef CONFIG_UTF8
+	int utf8 = is_cp_utf8(renderer->document->cp);
+#endif
 	for (; length > 0; renderer->lineno++) {
 		unsigned char *xsource;
 		int width, added, only_spaces = 1, spaces = 0, was_spaces = 0;
 		int last_space = 0;
 		int tab_spaces = 0;
 		int step = 0;
-		int doc_width = int_min(renderer->max_width, length);
+ 		int cells = 0;
 
 		/* End of line detection: We handle \r, \r\n and \n types. */
-		for (width = 0; width + tab_spaces < doc_width; width++) {
+ 		for (width = 0; (width < length) &&
+ 				(cells < renderer->max_width);) {
 			if (source[width] == ASCII_CR)
 				step++;
 			if (source[width + step] == ASCII_LF)
@@ -476,6 +539,22 @@ add_document_lines(struct plain_renderer *renderer)
 			} else {
 				only_spaces = 0;
 				was_spaces = 0;
+			}
+#ifdef CONFIG_UTF8
+			if (utf8) {
+				unsigned char *text = &source[width];
+				unicode_val_T data = utf8_to_unicode(&text,
+							&source[length]);
+
+				if (data == UCS_NO_CHAR) return;
+
+				cells += unicode_to_cell(data);
+				width += utf8charlen(&source[width]);
+			} else
+#endif /* CONFIG_UTF8 */
+			{
+				cells++;
+				width++;
 			}
 		}
 
@@ -504,6 +583,7 @@ add_document_lines(struct plain_renderer *renderer)
 				width -= was_spaces;
 				step += was_spaces;
 			}
+
 			if (!step && (width < length) && last_space) {
 				width = last_space;
 				step = 1;
@@ -557,8 +637,11 @@ render_plain_document(struct cache_entry *cached, struct document *document,
 	renderer.max_width = document->options.wrap ? document->options.box.width
 						    : INT_MAX;
 
-	document->bgcolor = document->options.default_bg;
+	document->bgcolor = document->options.default_style.bg;
 	document->width = 0;
+#ifdef CONFIG_UTF8
+	document->options.utf8 = is_cp_utf8(document->options.cp);
+#endif /* CONFIG_UTF8 */
 
 	/* Setup the style */
 	init_template(&renderer.template, &document->options);

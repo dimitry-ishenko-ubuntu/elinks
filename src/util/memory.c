@@ -1,4 +1,5 @@
-/* Memory allocation manager */
+/** Memory allocation manager
+ * @file */
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE /* MREMAP_MAYMOVE */
@@ -55,8 +56,11 @@ mem_alloc(size_t size)
 {
 	if (size)
 		do {
+#ifdef CONFIG_GC
+			void *p = GC_MALLOC(size);
+#else
 			void *p = malloc(size);
-
+#endif
 			if (p) return p;
 		} while (patience("malloc"));
 
@@ -68,8 +72,11 @@ mem_calloc(size_t count, size_t eltsize)
 {
 	if (eltsize && count)
 		do {
+#ifdef CONFIG_GC
+			void *p = GC_MALLOC(count * eltsize);
+#else
 			void *p = calloc(count, eltsize);
-
+#endif
 			if (p) return p;
 		} while (patience("calloc"));
 
@@ -83,8 +90,11 @@ mem_free(void *p)
 		INTERNAL("mem_free(NULL)");
 		return;
 	}
-
+#ifdef CONFIG_GC
+	p = NULL;
+#else
 	free(p);
+#endif
 }
 
 void *
@@ -94,8 +104,11 @@ mem_realloc(void *p, size_t size)
 
 	if (size)
 		do {
+#ifdef CONFIG_GC
+			void *p2 = GC_REALLOC(p, size);
+#else
 			void *p2 = realloc(p, size);
-
+#endif
 			if (p2) return p2;
 		} while (patience("realloc"));
 	else
@@ -116,8 +129,9 @@ mem_realloc(void *p, size_t size)
 
 static int page_size;
 
-/* This tries to prevent useless reallocations, especially since they are quite
- * expensive in the mremap()-less case. */
+/** Round up to a full page.
+ * This tries to prevent useless reallocations, especially since they
+ * are quite expensive in the mremap()-less case. */
 static size_t
 round_size(size_t size)
 {
@@ -128,7 +142,7 @@ round_size(size_t size)
 	return (size / page_size + 1) * page_size;
 }
 
-/* Some systems may not have MAP_ANON but MAP_ANONYMOUS instead. */
+/** Some systems may not have MAP_ANON but MAP_ANONYMOUS instead. */
 #if defined(MAP_ANONYMOUS) && !defined(MAP_ANON)
 #define MAP_ANON MAP_ANONYMOUS
 #endif

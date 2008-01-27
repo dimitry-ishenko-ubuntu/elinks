@@ -2,6 +2,7 @@
 #ifndef EL__DOCUMENT_HTML_PARSER_H
 #define EL__DOCUMENT_HTML_PARSER_H
 
+#include "document/format.h"
 #include "intl/charsets.h" /* unicode_val_T */
 #include "util/align.h"
 #include "util/color.h"
@@ -16,32 +17,14 @@ struct menu_item;
 struct part;
 struct string;
 struct uri;
+enum html_special_type;
 
 /* XXX: This is just terible - this interface is from 75% only for other HTML
  * files - there's lack of any well defined interface and it's all randomly
  * mixed up :/. */
 
-enum format_attr {
-	AT_BOLD = 1,
-	AT_ITALIC = 2,
-	AT_UNDERLINE = 4,
-	AT_FIXED = 8,
-	AT_GRAPHICS = 16,
-	AT_SUBSCRIPT = 32,
-	AT_SUPERSCRIPT = 64,
-	AT_PREFORMATTED = 128,
-	AT_UPDATE_SUB = 256,
-	AT_UPDATE_SUP = 512,
-};
-
-struct text_attrib_style {
-	enum format_attr attr;
-	color_T fg;
-	color_T bg;
-};
-
 struct text_attrib {
-	struct text_attrib_style style;
+	struct text_style style;
 
 	int fontsize;
 	unsigned char *link;
@@ -55,6 +38,16 @@ struct text_attrib {
 	color_T bookmark_link;
 #endif
 	color_T image_link;
+
+#ifdef CONFIG_CSS
+	/* Bug 766: CSS speedup.  56% of CPU time was going to
+	 * get_attr_value().  Of those calls, 97% were asking for "id"
+	 * or "class".  So cache the results.  start_element() sets up
+	 * these pointers if html_context->options->css_enable;
+	 * otherwise they remain NULL. */
+	unsigned char *id;
+	unsigned char *class;
+#endif
 
 	unsigned char *select;
 	int select_disabled;
@@ -144,23 +137,6 @@ struct html_element {
 #define is_inline_element(e) (e->linebreak == 0)
 #define is_block_element(e) (e->linebreak > 0)
 
-enum html_special_type {
-	SP_TAG,
-	SP_FORM,
-	SP_CONTROL,
-	SP_TABLE,
-	SP_USED,
-	SP_FRAMESET,
-	SP_FRAME,
-	SP_NOWRAP,
-	SP_CACHE_CONTROL,
-	SP_CACHE_EXPIRES,
-	SP_REFRESH,
-	SP_STYLESHEET,
-	SP_COLOR_LINK_LINES,
-	SP_SCRIPT,
-};
-
 /* Interface for the renderer */
 
 struct html_context *
@@ -171,11 +147,10 @@ init_html_parser(struct uri *uri, struct document_options *options,
 		 void (*line_break)(struct html_context *),
 		 void *(*special)(struct html_context *, enum html_special_type,
 		                  ...));
-
 void done_html_parser(struct html_context *html_context);
-struct html_element *init_html_parser_state(struct html_context *html_context, enum html_element_mortality_type type, int align, int margin, int width);
-void done_html_parser_state(struct html_context *html_context,
-                            struct html_element *element);
+
+void *init_html_parser_state(struct html_context *html_context, enum html_element_mortality_type type, int align, int margin, int width);
+void done_html_parser_state(struct html_context *html_context, void *state);
 
 /* Interface for the table handling */
 

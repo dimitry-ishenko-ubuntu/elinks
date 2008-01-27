@@ -73,12 +73,17 @@ sig_tstp(struct terminal *term)
 #ifdef SIGSTOP
 	pid_t pid = getpid();
 
-	block_itrm(0);
+	block_itrm();
 #if defined (SIGCONT) && defined(SIGTTOU)
 	if (!fork()) {
 		sleep(1);
 		kill(pid, SIGCONT);
-		exit(0);
+		/* Use _exit() rather than exit(), so that atexit
+		 * functions are not called, and stdio output buffers
+		 * are not flushed.  Any such things must have been
+		 * inherited from the parent process, which will take
+		 * care of them when appropriate.  */
+		_exit(0);
 	}
 #endif
 	raise(SIGSTOP);
@@ -90,7 +95,7 @@ sig_tstp(struct terminal *term)
 static void
 sig_cont(struct terminal *term)
 {
-	if (!unblock_itrm(0)) resize_terminal();
+	if (!unblock_itrm()) resize_terminal();
 }
 #endif
 

@@ -100,21 +100,26 @@ save_url_as(struct session *ses)
 		     NULL);
 }
 
-void
-really_exit_prog(struct session *ses)
+static void
+really_exit_prog(void *ses_)
 {
+	struct session *ses = ses_;
+
 	register_bottom_half(destroy_terminal, ses->tab->term);
 }
 
 static inline void
-dont_exit_prog(struct session *ses)
+dont_exit_prog(void *ses_)
 {
+	struct session *ses = ses_;
+
 	ses->exit_query = 0;
 }
 
 void
 query_exit(struct session *ses)
 {
+	/* [gettext_accelerator_context(query_exit)] */
 	ses->exit_query = 1;
 	msg_box(ses->tab->term, NULL, 0,
 		N_("Exit ELinks"), ALIGN_CENTER,
@@ -123,8 +128,8 @@ query_exit(struct session *ses)
 		     "(and terminate all downloads)?")
 		: N_("Do you really want to exit ELinks?"),
 		ses, 2,
-		N_("~Yes"), (void (*)(void *)) really_exit_prog, B_ENTER,
-		N_("~No"), (void (*)(void *)) dont_exit_prog, B_ESC);
+		MSG_BOX_BUTTON(N_("~Yes"), really_exit_prog, B_ENTER),
+		MSG_BOX_BUTTON(N_("~No"), dont_exit_prog, B_ESC));
 }
 
 void
@@ -215,8 +220,9 @@ unhistory_menu(struct terminal *term, void *xxx, void *ses_)
 void
 tab_menu(struct session *ses, int x, int y, int place_above_cursor)
 {
+	/* [gettext_accelerator_context(tab_menu)] */
 	struct menu_item *menu;
-	int tabs;
+	int tabs_count;
 #ifdef CONFIG_BOOKMARKS
 	int anonymous = get_cmd_opt_bool("anonymous");
 #endif
@@ -224,7 +230,7 @@ tab_menu(struct session *ses, int x, int y, int place_above_cursor)
 	assert(ses && ses->tab);
 	if_assert_failed return;
 
-	tabs = number_of_tabs(ses->tab->term);
+	tabs_count = number_of_tabs(ses->tab->term);
 	menu = new_menu(FREE_LIST);
 	if (!menu) return;
 
@@ -245,21 +251,22 @@ tab_menu(struct session *ses, int x, int y, int place_above_cursor)
 
 		if (ses->doc_view && document_has_frames(ses->doc_view->document)) {
 			add_menu_action(&menu, N_("Frame at ~full-screen"), ACT_MAIN_FRAME_MAXIMIZE);
-			add_uri_command_to_menu(&menu, PASS_URI_FRAME);
+			add_uri_command_to_menu(&menu, PASS_URI_FRAME,
+						N_("~Pass frame URI to external command"));
 		}
 	}
 
 	/* Keep tab related operations below this separator */
 	add_menu_separator(&menu);
 
-	if (tabs > 1) {
+	if (tabs_count > 1) {
 		add_menu_action(&menu, N_("Nex~t tab"), ACT_MAIN_TAB_NEXT);
 		add_menu_action(&menu, N_("Pre~v tab"), ACT_MAIN_TAB_PREV);
 	}
 
 	add_menu_action(&menu, N_("~Close tab"), ACT_MAIN_TAB_CLOSE);
 
-	if (tabs > 1) {
+	if (tabs_count > 1) {
 		add_menu_action(&menu, N_("C~lose all tabs but the current"),
 				ACT_MAIN_TAB_CLOSE_ALL_BUT_CURRENT);
 #ifdef CONFIG_BOOKMARKS
@@ -270,8 +277,10 @@ tab_menu(struct session *ses, int x, int y, int place_above_cursor)
 #endif
 	}
 
-	if (have_location(ses))
-		add_uri_command_to_menu(&menu, PASS_URI_TAB);
+	if (have_location(ses)) {
+		add_uri_command_to_menu(&menu, PASS_URI_TAB,
+					N_("Pass tab URI to e~xternal command"));
+	}
 
 	/* Adjust the menu position taking the menu frame into account */
 	if (place_above_cursor) {
@@ -297,6 +306,7 @@ do_submenu(struct terminal *term, void *menu_, void *ses_)
 
 
 static struct menu_item file_menu11[] = {
+	/* [gettext_accelerator_context(.file_menu)] */
 	INIT_MENU_ACTION(N_("Open new ~tab"), ACT_MAIN_OPEN_NEW_TAB),
 	INIT_MENU_ACTION(N_("Open new tab in backgroun~d"), ACT_MAIN_OPEN_NEW_TAB_IN_BACKGROUND),
 	INIT_MENU_ACTION(N_("~Go to URL"), ACT_MAIN_GOTO_URL),
@@ -307,6 +317,7 @@ static struct menu_item file_menu11[] = {
 };
 
 static struct menu_item file_menu21[] = {
+	/* [gettext_accelerator_context(.file_menu)] */
 	BAR_MENU_ITEM,
 	INIT_MENU_ACTION(N_("~Save as"), ACT_MAIN_SAVE_AS),
 	INIT_MENU_ACTION(N_("Save UR~L as"), ACT_MAIN_SAVE_URL_AS),
@@ -317,6 +328,7 @@ static struct menu_item file_menu21[] = {
 };
 
 static struct menu_item file_menu22[] = {
+	/* [gettext_accelerator_context(.file_menu)] */
 	BAR_MENU_ITEM,
 	INIT_MENU_ACTION(N_("~Kill background connections"), ACT_MAIN_KILL_BACKGROUNDED_CONNECTIONS),
 	INIT_MENU_ACTION(N_("Flush all ~caches"), ACT_MAIN_CACHE_MINIMIZE),
@@ -325,6 +337,7 @@ static struct menu_item file_menu22[] = {
 };
 
 static struct menu_item file_menu3[] = {
+	/* [gettext_accelerator_context(.file_menu)] */
 	BAR_MENU_ITEM,
 	INIT_MENU_ACTION(N_("E~xit"), ACT_MAIN_QUIT),
 	NULL_MENU_ITEM,
@@ -333,6 +346,7 @@ static struct menu_item file_menu3[] = {
 static void
 do_file_menu(struct terminal *term, void *xxx, void *ses_)
 {
+	/* [gettext_accelerator_context(.file_menu)] */
 	struct menu_item *file_menu, *e, *f;
 	int anonymous = get_cmd_opt_bool("anonymous");
 	int x, o;
@@ -354,7 +368,7 @@ do_file_menu(struct terminal *term, void *xxx, void *ses_)
 	if (o) {
 		SET_MENU_ITEM(e, N_("Open ~new window"), NULL, ACT_MAIN_OPEN_NEW_WINDOW,
 			      open_in_new_window, send_open_new_window,
-			      (o - 1) ? SUBMENU : 0, 0, HKS_SHOW);
+			      (o - 1) ? SUBMENU : 0, HKS_SHOW, 0);
 		e++;
 	}
 
@@ -372,14 +386,14 @@ do_file_menu(struct terminal *term, void *xxx, void *ses_)
 	x = 1;
 	if (!anonymous && can_open_os_shell(term->environment)) {
 		SET_MENU_ITEM(e, N_("~OS shell"), NULL, ACT_MAIN_OPEN_OS_SHELL,
-			      NULL, NULL, 0, 0, HKS_SHOW);
+			      NULL, NULL, 0, HKS_SHOW, 0);
 		e++;
 		x = 0;
 	}
 
 	if (can_resize_window(term->environment)) {
 		SET_MENU_ITEM(e, N_("Resize t~erminal"), NULL, ACT_MAIN_TERMINAL_RESIZE,
-			      NULL, NULL, 0, 0, HKS_SHOW);
+			      NULL, NULL, 0, HKS_SHOW, 0);
 		e++;
 		x = 0;
 	}
@@ -394,6 +408,7 @@ do_file_menu(struct terminal *term, void *xxx, void *ses_)
 }
 
 static struct menu_item view_menu[] = {
+	/* [gettext_accelerator_context(.view_menu)] */
 	INIT_MENU_ACTION(N_("~Search"), ACT_MAIN_SEARCH),
 	INIT_MENU_ACTION(N_("Search ~backward"), ACT_MAIN_SEARCH_BACK),
 	INIT_MENU_ACTION(N_("Find ~next"), ACT_MAIN_FIND_NEXT),
@@ -420,7 +435,8 @@ static struct menu_item view_menu[] = {
 
 
 static struct menu_item help_menu[] = {
-	INIT_MENU_ITEM(N_("~ELinks homepage"), NULL, ACT_MAIN_NONE, menu_url_shortcut, ELINKS_HOMEPAGE, 0),
+	/* [gettext_accelerator_context(.help_menu)] */
+	INIT_MENU_ITEM(N_("~ELinks homepage"), NULL, ACT_MAIN_NONE, menu_url_shortcut, ELINKS_WEBSITE_URL, 0),
 	INIT_MENU_ITEM(N_("~Documentation"), NULL, ACT_MAIN_NONE, menu_url_shortcut, ELINKS_DOC_URL, 0),
 	INIT_MENU_ITEM(N_("~Keys"), NULL, ACT_MAIN_NONE, menu_keys, NULL, 0),
 #ifdef CONFIG_LEDS
@@ -433,12 +449,14 @@ static struct menu_item help_menu[] = {
 #endif
 	BAR_MENU_ITEM,
 	INIT_MENU_ITEM(N_("~Copying"), NULL, ACT_MAIN_NONE, menu_copying, NULL, 0),
+	INIT_MENU_ITEM(N_("Autho~rs"), NULL, ACT_MAIN_NONE, menu_url_shortcut, ELINKS_AUTHORS_URL, 0),
 	INIT_MENU_ITEM(N_("~About"), NULL, ACT_MAIN_NONE, menu_about, NULL, 0),
 	NULL_MENU_ITEM
 };
 
 
 static struct menu_item ext_menu[] = {
+	/* [gettext_accelerator_context(.ext_menu)] */
 	INIT_MENU_ITEM(N_("~Add"), NULL, ACT_MAIN_NONE, menu_add_ext, NULL, 0),
 	INIT_MENU_ITEM(N_("~Modify"), NULL, ACT_MAIN_NONE, menu_list_ext, menu_add_ext, SUBMENU),
 	INIT_MENU_ITEM(N_("~Delete"), NULL, ACT_MAIN_NONE, menu_list_ext, menu_del_ext, SUBMENU),
@@ -446,6 +464,7 @@ static struct menu_item ext_menu[] = {
 };
 
 static struct menu_item setup_menu[] = {
+	/* [gettext_accelerator_context(.setup_menu)] */
 #ifdef CONFIG_NLS
 	INIT_MENU_ITEM(N_("~Language"), NULL, ACT_MAIN_NONE, menu_language_list, NULL, SUBMENU),
 #endif
@@ -460,6 +479,7 @@ static struct menu_item setup_menu[] = {
 };
 
 static struct menu_item setup_menu_anon[] = {
+	/* [gettext_accelerator_context(.setup_menu)] */
 	INIT_MENU_ITEM(N_("~Language"), NULL, ACT_MAIN_NONE, menu_language_list, NULL, SUBMENU),
 	INIT_MENU_ITEM(N_("C~haracter set"), NULL, ACT_MAIN_NONE, charset_list, NULL, SUBMENU),
 	INIT_MENU_ACTION(N_("~Terminal options"), ACT_MAIN_SHOW_TERM_OPTIONS),
@@ -467,6 +487,7 @@ static struct menu_item setup_menu_anon[] = {
 };
 
 static struct menu_item tools_menu[] = {
+	/* [gettext_accelerator_context(.tools_menu)] */
 #ifdef CONFIG_GLOBHIST
 	INIT_MENU_ACTION(N_("Global ~history"), ACT_MAIN_HISTORY_MANAGER),
 #endif
@@ -497,6 +518,7 @@ do_setup_menu(struct terminal *term, void *xxx, void *ses_)
 }
 
 static struct menu_item main_menu[] = {
+	/* [gettext_accelerator_context(.main_menu)] */
 	INIT_MENU_ITEM(N_("~File"), NULL, ACT_MAIN_NONE, do_file_menu, NULL, FREE_LIST | SUBMENU),
 	INIT_MENU_ITEM(N_("~View"), NULL, ACT_MAIN_NONE, do_submenu, view_menu, FREE_LIST | SUBMENU),
 	INIT_MENU_ITEM(N_("~Link"), NULL, ACT_MAIN_NONE, link_menu, NULL, FREE_LIST | SUBMENU),
@@ -564,7 +586,12 @@ query_file(struct session *ses, struct uri *uri, void *data,
 	add_mime_filename_to_string(&def, uri);
 
 	/* Remove the %-ugliness for display */
-	decode_uri_string_for_display(&def);
+#ifdef CONFIG_UTF8
+	if (ses->tab->term->utf8_cp)
+		decode_uri_string(&def);
+	else
+#endif /* CONFIG_UTF8 */
+		decode_uri_string_for_display(&def);
 
 	if (interactive) {
 		input_dialog(ses->tab->term, NULL,
@@ -733,7 +760,7 @@ do_pass_uri_to_command(struct terminal *term, void *command_, void *xxx)
 {
 	unsigned char *command = command_;
 
-	exec_on_terminal(term, command, "", 0);
+	exec_on_terminal(term, command, "", TERM_EXEC_BG);
 	mem_free(command);
 }
 
@@ -786,7 +813,7 @@ enum frame_event_status
 pass_uri_to_command(struct session *ses, struct document_view *doc_view,
 		    int which_type)
 {
-	struct list_head *tree = get_opt_tree("document.uri_passing");
+	LIST_OF(struct option) *tree = get_opt_tree("document.uri_passing");
 	enum pass_uri_type type = which_type;
 	struct menu_item *items;
 	struct option *option;
@@ -855,31 +882,30 @@ pass_uri_to_command(struct session *ses, struct document_view *doc_view,
 	return FRAME_EVENT_OK;
 }
 
+/* The caller provides the text of the menu item, so that it can
+ * choose an available accelerator key. */
 void
-add_uri_command_to_menu(struct menu_item **mi, enum pass_uri_type type)
+add_uri_command_to_menu(struct menu_item **mi, enum pass_uri_type type,
+			unsigned char *text)
 {
-	struct list_head *tree = get_opt_tree("document.uri_passing");
+	LIST_OF(struct option) *tree = get_opt_tree("document.uri_passing");
 	struct option *option;
 	int commands = 0;
 	enum menu_item_flags flags = NO_FLAG;
 	action_id_T action_id;
-	unsigned char *text;
 
 	switch (type) {
 	case PASS_URI_FRAME:
 		action_id = ACT_MAIN_FRAME_EXTERNAL_COMMAND;
-		text = N_("~Pass frame URI to external command");
 		break;
 
 	case PASS_URI_LINK:
 		action_id = ACT_MAIN_LINK_EXTERNAL_COMMAND;
-		text = N_("Pass link URI to e~xternal command");
 		break;
 
 	default:
 	case PASS_URI_TAB:
 		action_id = ACT_MAIN_TAB_EXTERNAL_COMMAND;
-		text = N_("Pass tab URI to e~xternal command");
 	};
 
 	foreach (option, *tree) {

@@ -15,6 +15,7 @@
  * 5. Love thy option system! :) */
 
 static struct option_info config_options_info[] = {
+	/* [gettext_accelerator_context(IGNORE)] */
 	INIT_OPT_TREE("", N_("Configuration system"),
 		"config", 0,
 		N_("Configuration handling options.")),
@@ -102,7 +103,7 @@ static struct option_info config_options_info[] = {
 		"at all unless you are sure what are you doing.\n"
 		"Note that you can also force a given protocol\n"
 		"to be used on a per-connection basis by using an URL\n"
-		"in the style of i.e. http4://elinks.or.cz/.")),
+		"in the style of e.g. http4://elinks.cz/.")),
 #else
 	INIT_OPT_BOOL("connection", N_("Try IPv4 when connecting"),
 		"try_ipv4", 0, 1,
@@ -110,7 +111,7 @@ static struct option_info config_options_info[] = {
 		"Do not touch this option.\n"
 		"Note that you can also force a given protocol\n"
 		"to be used on a per-connection basis by using an URL\n"
-		"in the style of i.e. http4://elinks.or.cz/.")),
+		"in the style of e.g. http4://elinks.cz/.")),
 #endif
 
 #ifdef CONFIG_IPV6
@@ -119,7 +120,7 @@ static struct option_info config_options_info[] = {
 		N_("Whether to try to connect to a host over IPv6.\n"
 		"Note that you can also force a given protocol\n"
 		"to be used on a per-connection basis by using an URL\n"
-		"in the style of i.e. http6://elinks.or.cz/.")),
+		"in the style of e.g. http6://elinks.cz/.")),
 #endif
 
 	INIT_OPT_INT("connection", N_("Timeout for non-restartable connections"),
@@ -501,6 +502,16 @@ static struct option_info config_options_info[] = {
 		"is always cached, even if it is over the memory cache size\n"
 		"threshold. (Then of course no other documents can be cached.)")),
 
+	/* FIXME: Write more. */
+	INIT_OPT_INT("document.cache", N_("Revalidation interval"),
+		"revalidation_interval", 0, -1, 86400, -1,
+		N_("Period in seconds that a cache entry is considered to be\n"
+		"up-to-date. When a document is loaded and this interval has elapsed\n"
+		"since the document was initially loaded or most recently\n"
+		"revalidated with the server, the server will be checked in case\n"
+		"there is a more up-to-date version of the document.\n\n"
+		"A value of -1 disables automatic revalidation.")),
+
 	INIT_OPT_TREE("document.cache", N_("Memory cache"),
 		"memory", 0,
 		N_("Memory cache options.")),
@@ -631,6 +642,26 @@ static struct option_info config_options_info[] = {
 		N_("Codepage used in dump output. 'System' stands for\n"
 		"a codepage determined by a selected locale.")),
 
+	INIT_OPT_INT("document.dump", N_("Color mode"),
+		"color_mode", 0, -1, COLOR_MODES - 1, -1,
+		/* The list of modes must be at the end of this string
+		 * because AsciiDoc 7.1.2 does not support continuing
+		 * an outer list entry after an inner list.
+		 * TRANSLATORS: This restriction applies only to the
+		 * "en" (English) translation.  (See doc/Makefile.)  */
+		N_("Color mode for dumps.\n"
+		"Some modes may have been disabled at compile time. "
+		"The Setup -> Terminal options dialog lists the modes "
+		"supported by this executable. If you select an "
+		"unsupported mode, ELinks uses 16 colors.\n"
+		"The color modes are:\n"
+		"-1 is standard dump mode\n"
+		"0 is mono mode\n"
+		"1 is 16 color mode\n"
+		"2 is 88 color mode\n"
+		"3 is 256 color mode\n"
+		"4 is true color mode")),
+
 	INIT_OPT_STRING("document.dump", N_("Footer"),
 		"footer", 0, "",
 		N_("Footer string used in dumps. %u is substituted by URL.")),
@@ -729,7 +760,7 @@ static struct option_info config_options_info[] = {
 		"an external command. If several rules are defined the link and\n"
 		"tab menu will have a submenu of items for each rule. Note, this\n"
 		"is mostly useful for launching graphical viewers, since there\n"
-		"is not support for releasing the terminal while the command runs.\n"
+		"is no support for releasing the terminal while the command runs.\n"
 		"The action and submenus are also available by binding keys to\n"
 		"the frame-external-command, the link-external-command, and\n"
 		"the tab-external-command actions.")),
@@ -785,6 +816,27 @@ static struct option_info config_options_info[] = {
 		"_template_", 0,
 		N_("Options specific to this terminal type (according to $TERM value).")),
 
+	/* TODO: Incorporate some of the following to the option text.
+	 *
+	 * When UTF-8 I/O is disabled:
+	 * 0 (TERM_DUMB) outputs ASCII -+| characters.
+	 * 1 (TERM_VT100) switches charsets with ^N and ^O.
+	 * 2 (TERM_LINUX) outputs CP437 characters without switching
+	 *   charsets, so it works correctly only if the terminal uses
+	 *   CP437.  Can also be made CP850 and CP852 compatible with
+	 *   the restrict_852 option.
+	 * 3 (TERM_KOI8) outputs KOI8-R characters without switching
+	 *   charsets, so it works correctly only if the terminal uses
+	 *   KOI8-R and the user has selected either KOI8-R or ASCII
+	 *   in ELinks.  It is also mostly compatible with KOI8-U.
+	 * 4 (TERM_FREEBSD) outputs characters in the 0x80...0x9F
+	 *   range, which FreeBSD 4.0 (but not 5.0) treated as
+	 *   graphical.
+	 *
+	 * When UTF-8 I/O is enabled, ELinks outputs (almost) the same
+	 * characters as above but encodes them in UTF-8 and does not
+	 * switch charsets.  So, it will work in any terminal that
+	 * understands UTF-8 and has the characters in its font.  */
 	INIT_OPT_INT("terminal._template_", N_("Type"),
 		"type", 0, 0, 4, 0,
 		N_("Terminal type; matters mostly only when drawing frames and\n"
@@ -798,13 +850,19 @@ static struct option_info config_options_info[] = {
 	INIT_OPT_BOOL("terminal._template_", N_("Switch fonts for line drawing"),
 		"m11_hack", 0, 0,
 		N_("Switch fonts when drawing lines, enabling both local characters\n"
-		"and lines working at the same time. Makes sense only with linux\n"
-		"terminal.")),
+		"and lines working at the same time. ELinks uses this option only if\n"
+		"UTF-8 I/O is disabled and the terminal type is Linux or FreeBSD.")),
 
+	/* When CONFIG_UTF8 is defined, any code that reads the "utf_8_io"
+	 * option should also check whether the "codepage" option is UTF-8,
+	 * and if so, behave as if "utf_8_io" were 1.  (When CONFIG_UTF8 is
+	 * not defined, it should not be possible to set UTF-8 as "codepage";
+	 * please report any such possibilities as bugs.)  */
 	INIT_OPT_BOOL("terminal._template_", N_("UTF-8 I/O"),
 		"utf_8_io", 0, 0,
-		N_("Enable I/O in UTF8 for Unicode terminals. Note that currently,\n"
-		"only the subset of UTF8 according to terminal codepage is used.")),
+		N_("Enable I/O in UTF-8 for Unicode terminals. Note that currently,\n"
+		"only the subset of UTF-8 according to terminal codepage is used.\n"
+		"ELinks ignores this option if the terminal codepage is UTF-8.")),
 
 	INIT_OPT_BOOL("terminal._template_", N_("Restrict frames in cp850/852"),
 		"restrict_852", 0, 0,
@@ -819,18 +877,32 @@ static struct option_info config_options_info[] = {
 
 	INIT_OPT_INT("terminal._template_", N_("Color mode"),
 		"colors", 0, 0, COLOR_MODES - 1, 0,
-		N_("The color mode controls what colors are used and how they are\n"
-		"output to the terminal. The color modes are:\n"
+		/* The list of modes must be at the end of this string
+		 * because AsciiDoc 7.1.2 does not support continuing
+		 * an outer list entry after an inner list.
+		 * TRANSLATORS: This restriction applies only to the
+		 * "en" (English) translation.  (See doc/Makefile.)  */
+		N_("The color mode controls what colors are used and how they are "
+		"output to the terminal.\n"
+		"Some modes may have been disabled at compile time. "
+		"The Setup -> Terminal options dialog lists the modes "
+		"supported by this executable. If you select an "
+		"unsupported mode, ELinks uses 16 colors.\n"
+		"The color modes are:\n"
 		"0 is mono mode, only 2 colors are used\n"
 		"1 is 16 color mode, uses the common ANSI colors\n"
-		"2 is 256 color mode, uses XTerm RGB codes")),
+		"2 is 88 color mode, uses XTerm RGB codes\n"
+		"3 is 256 color mode, uses XTerm RGB codes\n"
+		"4 is true color mode, uses konsole RGB codes")),
 
 	INIT_OPT_BOOL("terminal._template_", N_("Transparency"),
-		"transparency", 0, 1,
+		"transparency", 0, 0,
 		N_("If we should not set the background to black. This is particularly\n"
 		"useful when we have a terminal (typically in some windowing\n"
 		"environment) with a background image or a transparent background -\n"
-		"it will be visible in ELinks as well. Note that this option makes\n"
+		"it will be visible in ELinks as well (but ELinks document color handling\n"
+		"will still assume the background is black so if you have a bright background\n"
+		"you might experience contrast problems). Note that this option makes\n"
 		"sense only when colors are enabled.")),
 
 	INIT_OPT_BOOL("terminal._template_", N_("Underline"),
@@ -1160,6 +1232,10 @@ static struct option_info config_options_info[] = {
 		"1 means only if two or more tabs are open\n"
 		"2 means always")),
 
+	INIT_OPT_BOOL("ui.tabs", N_("Tab bar at top"),
+		"top", 0, 0,
+		N_("Whether display tab bar at top like other browsers do.")),
+
 	INIT_OPT_BOOL("ui.tabs", N_("Wrap-around tabs cycling"),
 		"wraparound", 0, 1,
 		N_("When moving right from the last tab, jump at the first one, and\n"
@@ -1175,6 +1251,10 @@ static struct option_info config_options_info[] = {
 		"language", 0,
 		N_("Language of user interface. 'System' means that the language will\n"
 		"be extracted from the environment dynamically.")),
+
+	INIT_OPT_BOOL("ui", N_("Display menu bar always"),
+		"show_menu_bar_always", 0, 0,
+		N_("Always show menu bar on the screen.")),
 
 	INIT_OPT_BOOL("ui", N_("Display status bar"),
 		"show_status_bar", 0, 1,

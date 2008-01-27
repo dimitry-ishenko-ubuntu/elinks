@@ -49,7 +49,8 @@ test_confdir(unsigned char *home, unsigned char *path,
 	if (!path || !*path) return NULL;
 
 	if (home && *home && !dir_sep(*path))
-		confdir = straconcat(home, "/", path, NULL);
+		confdir = straconcat(home, STRING_DIR_SEP, path,
+				     (unsigned char *) NULL);
 	else
 		confdir = stracpy(path);
 
@@ -110,8 +111,14 @@ get_home(void)
 {
 	unsigned char *home_elinks;
 	unsigned char *envhome = getenv("HOME");
-	unsigned char *home = envhome ? stracpy(envhome)
-				      : elinks_dirname(program.path);
+	unsigned char *home = NULL;
+
+	if (!home && envhome)
+		home = stracpy(envhome);
+	if (!home)
+		home = user_appdata_directory();
+	if (!home)
+		home = elinks_dirname(program.path);
 
 	if (home)
 		strip_trailing_dir_sep(home);
@@ -134,7 +141,7 @@ get_home(void)
 
 end:
 	if (home_elinks)
-		add_to_strn(&home_elinks, "/");
+		add_to_strn(&home_elinks, STRING_DIR_SEP);
 	mem_free_if(home);
 
 	return home_elinks;

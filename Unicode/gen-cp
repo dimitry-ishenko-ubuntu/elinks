@@ -23,21 +23,66 @@ for i in $codepages; do
 	echo "/*** $i ***/"
 	echo
 
-	echo 'struct table_entry table_'$i' [] = {'
+	sed '	# Delete the name and aliases lines.
+		1,2d
+		# Delete comment-only and blank lines.
+		/^[	 ]*\(#.*\)\{,1\}$/d
+		# Copy to the hold space.
+		h
+		# Delete everything except the comment.
+		s/^[^#]*//
+		# If there is a comment, change it to use /* */ delimiters.
+		s!#[	 ]*\(.*\)!/* \1 */!
+		# Exchange spaces; now hold space = comment and pattern space = all.
+		x
+		# Delete the comment. 
+		s/#.*//
+		# Canonicalize case so the strings can be used as lookup keys.
+		y/Xabcdef/xABCDEF/
+		# Delete mappings of bytes 0x00...0x7F.  ELinks assumes those match ASCII. 
+		/^0x[01234567]/d
+		# Delete lines that do not map the byte to exactly one character.
+		/^[ 	]*0x[0123456789ABCDEF]\{2\}[ 	]\{1,\}0x[0123456789ABCDEF]\{1,\}[ 	]*$/!d
+		# Append a newline and the comment from the hold space.
+		G
+		# Delete the newline added by the previous command.
+		s/\n//' "$i.cp" | {
+		for left in 8 9 A B C D E F; do
+			for right in 0 1 2 3 4 5 6 7 8 9 A B C D E F; do
+				eval "high0x$left$right="
+			done
+		done
+		table=
+		highuse=
+	    	while read byte unicode comment; do
+			if eval "[ \"\$high$byte\" ]"; then
+				table="$table	{$byte, $unicode},${comment+ }$comment
+"
+			else
+				eval "high$byte=\"\$unicode,\${comment+ }\$comment\""
+				highuse=1
+			fi
+		done
+		if [ "$highuse" ]; then
+			printf "const uint16_t highhalf_%s [] = {\n" "$i"
+			for left in 8 9 A B C D E F; do
+				for right in 0 1 2 3 4 5 6 7 8 9 A B C D E F; do
+					eval "printf \"\\t/* %s */ %s\\n\" \"0x$left$right\" \"\${high0x$left$right:-0xFFFF,}\""
+				done
+			done
+			printf "};\n\n"
+		else
+			printf "#define highhalf_%s highhalf_NULL\n\n" "$i"
+		fi
+		if [ "$table" ]; then
+			printf "const struct table_entry table_%s [] = {\n%s\t{0, 0}\n};\n" "$i" "$table"
+		else
+			printf "#define table_%s table_NULL\n" "$i"
+		fi
+		printf "\n"
+	}
 
-	# TODO: Comments inside of the structure are ugliness in a pure clean
-	# form, and my aesthetical feeling shivers upon glancing at it. However
-	# we should handle commentless records. A loop with read inside would
-	# be ideal, I suppose. --pasky
-	tail -n +3 $i.cp | sed 's/# *\(.*\) *$/\/* \1 *\/ /' | grep '^0x[89a-zA-Z]' \
-	| sed 's/[ 	][ 	]*/ /g' | sed 's/[ 	]*$/ },/' | sed 's/ /, /' \
-	| sed 's/^[ 	]*/	{/' | grep '.*,.*,'
-
-	echo '	{0, 0}'
-	echo '};'
-	echo
-
-	echo 'unsigned char *aliases_'$i' [] = {'
+	echo 'unsigned char *const aliases_'$i' [] = {'
 	head -n 2 $i.cp | tail -n +2 | sed 's/ \+/ /g; s/ $//; s/\", /\",£/g; s/$/,/' | tr "£" "\n" \
 	| sed 's/^/£/g' | tr "£" "\t" 
 	echo '	NULL
@@ -45,11 +90,21 @@ for i in $codepages; do
 	n=`expr $n + 1`
 done
 
+printf "\n/*** NULL ***/\n\n"
+printf "const uint16_t highhalf_NULL [] = {\n"
+for r in `seq 16`; do
+	printf "\t0xFFFF,0xFFFF,0xFFFF,0xFFFF, 0xFFFF,0xFFFF,0xFFFF,0xFFFF,\n"
+done
+printf "};\n\n"
+printf "const struct table_entry table_NULL [] = {\n"
+printf "\t{0, 0}\n"
+printf "};\n"
+
 echo
-echo 'struct codepage_desc codepages [] = {'
+echo 'const struct codepage_desc codepages [] = {'
 
 for i in $codepages; do
-	echo '	{"'`head -n 1 $i.cp`'", aliases_'$i', table_'$i'},'
+	echo '	{"'`head -n 1 $i.cp`'", aliases_'$i', highhalf_'$i', table_'$i'},'
 done
 
 echo '	{NULL, NULL, NULL}'

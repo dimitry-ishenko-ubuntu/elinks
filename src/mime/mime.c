@@ -64,7 +64,7 @@ get_content_filename(struct uri *uri, struct cache_entry *cached)
 	pos = parse_header(cached->head, "Content-Disposition", NULL);
 	if (!pos) return NULL;
 
-	filename = parse_header_param(pos, "filename");
+	parse_header_param(pos, "filename", &filename);
 	mem_free(pos);
 	if (!filename) return NULL;
 
@@ -110,7 +110,8 @@ check_extension_type(unsigned char *extension)
 	if (!trimmed)
 		return NULL;
 
-	content_type = straconcat("application/x-", trimmed + 1, NULL);
+	content_type = straconcat("application/x-", trimmed + 1,
+				  (unsigned char *) NULL);
 	if (!content_type)
 		return NULL;
 
@@ -130,7 +131,7 @@ static inline unsigned char *
 check_encoding_type(unsigned char *extension)
 {
 	enum stream_encoding encoding = guess_encoding(extension);
-	unsigned char **extension_list;
+	const unsigned char *const *extension_list;
 	unsigned char *last_extension = strrchr(extension, '.');
 
 	if (encoding == ENCODING_NONE || !last_extension)
@@ -228,7 +229,7 @@ get_cache_header_content_type(struct cache_entry *cached)
 	return NULL;
 }
 
-unsigned char *
+static unsigned char *
 get_fragment_content_type(struct cache_entry *cached)
 {
 	struct fragment *fragment;

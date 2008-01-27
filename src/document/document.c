@@ -1,4 +1,5 @@
-/* The document base functionality */
+/** The document base functionality
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -33,7 +34,7 @@
 #include "viewer/text/link.h"
 
 
-static INIT_LIST_HEAD(format_cache);
+static INIT_LIST_OF(struct document, format_cache);
 
 struct document *
 init_document(struct cache_entry *cached, struct document_options *options)
@@ -46,6 +47,7 @@ init_document(struct cache_entry *cached, struct document_options *options)
 
 	object_lock(cached);
 	document->id = cached->id;
+	document->cached = cached;
 
 	init_list(document->forms);
 	init_list(document->tags);
@@ -106,19 +108,14 @@ done_link_members(struct link *link)
 void
 done_document(struct document *document)
 {
-	struct cache_entry *cached;
-
 	assert(document);
 	if_assert_failed return;
 
 	assertm(!is_object_used(document), "Attempt to free locked formatted data.");
 	if_assert_failed return;
 
-	cached = find_in_cache(document->uri);
-	if (!cached)
-		INTERNAL("no cache entry for document");
-	else
-		object_unlock(cached);
+	assert(document->cached);
+	object_unlock(document->cached);
 
 	if (document->uri) done_uri(document->uri);
 	mem_free_if(document->title);
@@ -157,6 +154,7 @@ done_document(struct document *document)
 #ifdef CONFIG_ECMASCRIPT
 	free_string_list(&document->onload_snippets);
 	free_uri_list(&document->ecmascript_imports);
+	kill_timer(&document->timeout);
 #endif
 
 	free_list(document->tags);
@@ -177,8 +175,23 @@ release_document(struct document *document)
 	if_assert_failed return;
 
 	if (document->refresh) kill_document_refresh(document->refresh);
+#ifdef CONFIG_ECMASCRIPT
+	kill_timer(&document->timeout);
+#endif
 	object_unlock(document);
 	move_to_top_of_list(format_cache, document);
+}
+
+int
+find_tag(struct document *document, unsigned char *name, int namelen)
+{
+	struct tag *tag;
+
+	foreach (tag, document->tags)
+		if (!strlcasecmp(tag->name, -1, name, namelen))
+			return tag->y;
+
+	return -1;
 }
 
 /* Formatted document cache management */
@@ -266,17 +279,14 @@ shrink_format_cache(int whole)
 	int format_cache_entries = 0;
 
 	foreachsafe (document, next, format_cache) {
-		struct cache_entry *cached;
-
 		if (is_object_used(document)) continue;
 
 		format_cache_entries++;
 
 		/* Destroy obsolete renderer documents which are already
 		 * out-of-sync. */
-		cached = find_in_cache(document->uri);
-		assertm(cached, "cached formatted document has no cache entry");
-		if (cached->id == document->id) continue;
+		if (document->cached->id == document->id)
+			continue;
 
 		done_document(document);
 		format_cache_entries--;
@@ -285,7 +295,7 @@ shrink_format_cache(int whole)
 	assertm(format_cache_entries >= 0, "format_cache_entries underflow on entry");
 	if_assert_failed format_cache_entries = 0;
 
-	foreachback (document, format_cache) {
+	foreachbacksafe (document, next, format_cache) {
 		if (is_object_used(document)) continue;
 
 		/* If we are not purging the whole format cache, stop
@@ -293,10 +303,7 @@ shrink_format_cache(int whole)
 		if (!whole && format_cache_entries <= format_cache_size)
 			break;
 
-		/* Jump back to already processed entry (or list head), and let
-		 * the foreachback move it to the next entry to go. */
-		document = document->next;
-		done_document(document->prev);
+		done_document(document);
 		format_cache_entries--;
 	}
 
@@ -348,6 +355,9 @@ done_documents(struct module *module)
 }
 
 struct module document_module = struct_module(
+	/* Because this module is listed in main_modules rather than
+	 * in builtin_modules, its name does not appear in the user
+	 * interface and so need not be translatable.  */
 	/* name: */		"Document",
 	/* options: */		NULL,
 	/* hooks: */		NULL,

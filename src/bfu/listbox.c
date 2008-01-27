@@ -24,14 +24,12 @@
 #define VERTICAL_LISTBOX_MARGIN 3
 
 void
-add_dlg_listbox(struct dialog *dlg, int height, void *box_data)
+add_dlg_listbox(struct dialog *dlg, void *box_data)
 {
 	struct widget *widget = &dlg->widgets[dlg->number_of_widgets++];
 
 	widget->type = WIDGET_LISTBOX;
 	widget->data = box_data;
-
-	widget->info.listbox.height = height;
 }
 
 struct listbox_data *
@@ -45,7 +43,7 @@ get_listbox_widget_data(struct widget_data *widget_data)
 void
 dlg_format_listbox(struct terminal *term, struct widget_data *widget_data,
 	           int x, int *y, int w, int max_height, int *rw,
-	           enum format_align align)
+	           enum format_align align, int format_only)
 {
 	int min, optimal_h, height;
 
@@ -409,7 +407,7 @@ display_listbox_item(struct listbox_item *item, void *data_, int *offset)
 					str[1] = BORDER_SDLCORNER;
 				}
 			} else {
-				struct list_head *p = data->box->items;
+				LIST_OF(struct listbox_item) *p = data->box->items;
 
 				if (p->next == item) {
 					str[1] = BORDER_SULCORNER;
@@ -454,7 +452,8 @@ display_listbox_item(struct listbox_item *item, void *data_, int *offset)
 
 	} else {
 		unsigned char *text;
-		struct listbox_ops *ops = data->box->ops;
+		const struct listbox_ops *ops = data->box->ops;
+		int len_bytes;
 
 		assert(ops && ops->get_info);
 
@@ -463,8 +462,14 @@ display_listbox_item(struct listbox_item *item, void *data_, int *offset)
 
 		len = strlen(text);
 		int_upper_bound(&len, int_max(0, data->widget_data->box.width - depth * 5));
+#ifdef CONFIG_UTF8
+		if (data->term->utf8_cp)
+			len_bytes = utf8_cells2bytes(text, len, NULL);
+		else
+#endif /* CONFIG_UTF8 */
+			len_bytes = len;
 
-		draw_text(data->term, x, y, text, len, 0, text_color);
+		draw_text(data->term, x, y, text, len_bytes, 0, text_color);
 
 		mem_free(text);
 	}
@@ -730,7 +735,7 @@ kbd_listbox(struct dialog_data *dlg_data, struct widget_data *widget_data)
 	return EVENT_NOT_PROCESSED;
 }
 
-struct widget_ops listbox_ops = {
+const struct widget_ops listbox_ops = {
 	display_listbox,
 	init_listbox,
 	mouse_listbox,

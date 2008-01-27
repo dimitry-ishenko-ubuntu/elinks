@@ -6,6 +6,7 @@
 #include "main/timer.h" /* timer_id_T */
 #include "network/state.h"
 #include "util/lists.h"
+#include <stdio.h>
 
 struct download;
 struct socket;
@@ -15,7 +16,7 @@ struct uri;
 struct connection {
 	LIST_HEAD(struct connection);
 
-	struct list_head downloads;
+	LIST_OF(struct download) downloads;
 	struct progress *progress;
 
 	/* If no proxy is used uri and proxied_uri are the same. */
@@ -46,17 +47,17 @@ struct connection {
 	struct socket *socket;
 	/* The data socket. It is used, when @socket is used for the control,
 	 * and the actual data is transmitted through a different channel. */
-	/* The only users now is FTP and SMB. */
+	/* The only users now are FTP, FSP, and SMB. */
 	struct socket *data_socket;
 
 	int tries;
 	timer_id_T timer;
-	int cgi_pipes[2];
 	int stream_pipes[2];
 
 	unsigned int running:1;
 	unsigned int unrestartable:1;
 	unsigned int detached:1;
+	unsigned int popen:1;
 
 	/* Each document is downloaded with some priority. When downloading a
 	 * document, the existing connections are checked to see if a
@@ -66,12 +67,22 @@ struct connection {
 	 * the struct download it got to the connection, _and_ updates its @pri
 	 * array by the priority it has thus, sum of values in all fields of
 	 * @pri is also kinda refcount of the connection. */
-	enum connection_priority pri[PRIORITIES];
+	int pri[PRIORITIES];
 
 	/* Private protocol specific info. If non-NULL it is free()d when
 	 * stopping the connection. */
 	void *info;
 };
+
+struct popen_data {
+	LIST_HEAD(struct popen_data);
+
+	int fd;
+	FILE *stream;
+	unsigned char *filename;
+};
+
+extern LIST_OF(struct popen_data) copiousoutput_data;
 
 int register_check_queue(void);
 
@@ -89,8 +100,10 @@ void add_keepalive_connection(struct connection *conn, long timeout_in_seconds,
 void abort_connection(struct connection *, enum connection_state);
 void retry_connection(struct connection *, enum connection_state);
 
-void change_connection(struct download *old, struct download *new,
-		       enum connection_priority newpri, int interrupt);
+void cancel_download(struct download *download, int interrupt);
+void move_download(struct download *old, struct download *new,
+		     enum connection_priority newpri);
+
 void detach_connection(struct download *, off_t);
 void abort_all_connections(void);
 void abort_background_connections(void);

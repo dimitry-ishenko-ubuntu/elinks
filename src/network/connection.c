@@ -4,6 +4,7 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef HAVE_UNISTD_H
@@ -58,9 +59,9 @@ static unsigned int connection_id = 0;
 static int active_connections = 0;
 static timer_id_T keepalive_timeout = TIMER_ID_UNDEF;
 
-static INIT_LIST_HEAD(connection_queue);
-static INIT_LIST_HEAD(host_connections);
-static INIT_LIST_HEAD(keepalive_connections);
+static INIT_LIST_OF(struct connection, connection_queue);
+static INIT_LIST_OF(struct host_connection, host_connections);
+static INIT_LIST_OF(struct keepalive_connection, keepalive_connections);
 
 /* Prototypes */
 static void notify_connection_callbacks(struct connection *conn);
@@ -303,7 +304,6 @@ init_connection(struct uri *uri, struct uri *proxied_uri, struct uri *referrer,
 
 	conn->content_encoding = ENCODING_NONE;
 	conn->stream_pipes[0] = conn->stream_pipes[1] = -1;
-	conn->cgi_pipes[0] = conn->cgi_pipes[1] = -1;
 	init_list(conn->downloads);
 	conn->est_length = -1;
 	conn->timer = TIMER_ID_UNDEF;
@@ -327,10 +327,14 @@ update_connection_progress(struct connection *conn)
 	update_progress(conn->progress, conn->received, conn->est_length, conn->from);
 }
 
+/* Progress timer callback for @conn->progress.  As explained in
+ * @start_update_progress, this function must erase the expired timer
+ * ID from @conn->progress->timer.  */
 static void
 stat_timer(struct connection *conn)
 {
 	update_connection_progress(conn);
+	/* The expired timer ID has now been erased.  */
 	notify_connection_callbacks(conn);
 }
 
@@ -377,6 +381,25 @@ shutdown_connection_stream(struct connection *conn)
 }
 
 static void
+close_popen(int fd)
+{
+	struct popen_data *pop;
+
+	foreach (pop, copiousoutput_data) {
+		if (pop->fd == fd) {
+			del_from_list(pop);
+			fclose(pop->stream);
+			if (pop->filename) {
+				unlink(pop->filename);
+				mem_free(pop->filename);
+			}
+			mem_free(pop);
+			break;
+		}
+	}
+}
+
+static void
 free_connection_data(struct connection *conn)
 {
 	assertm(conn->running, "connection already suspended");
@@ -396,16 +419,11 @@ free_connection_data(struct connection *conn)
 	if (conn->done)
 		conn->done(conn);
 
+	if (conn->popen) close_popen(conn->socket->fd);
 	done_socket(conn->socket);
 	done_socket(conn->data_socket);
 
 	shutdown_connection_stream(conn);
-
-	if (conn->cgi_pipes[0] >= 0)
-		close(conn->cgi_pipes[0]);
-	if (conn->cgi_pipes[1] >= 0)
-		close(conn->cgi_pipes[1]);
-	conn->cgi_pipes[0] = conn->cgi_pipes[1] = -1;
 
 	mem_free_set(&conn->info, NULL);
 
@@ -603,10 +621,13 @@ done:
 	register_check_queue();
 }
 
+/* Timer callback for @keepalive_timeout.  As explained in @install_timer,
+ * this function must erase the expired timer ID from all variables.  */
 static void
 keepalive_timer(void *x)
 {
 	keepalive_timeout = TIMER_ID_UNDEF;
+	/* The expired timer ID has now been erased.  */
 	check_keepalive_connections();
 }
 
@@ -724,6 +745,9 @@ abort_connection(struct connection *conn, enum connection_state state)
 	assertm(is_in_result_state(state),
 		"connection didn't end in result state (%d)", state);
 
+	if (state == S_OK && conn->cached)
+		normalize_cache_entry(conn->cached, conn->from);
+
 	set_connection_state(conn, state);
 
 	if (conn->running) interrupt_connection(conn);
@@ -743,7 +767,7 @@ retry_connection(struct connection *conn, enum connection_state state)
 	set_connection_state(conn, state);
 
 	interrupt_connection(conn);
-	if (conn->uri->post || !max_tries || ++conn->tries >= max_tries) {
+	if (conn->uri->post || (max_tries && ++conn->tries >= max_tries)) {
 		done_connection(conn);
 		register_check_queue();
 	} else {
@@ -964,6 +988,7 @@ load_uri(struct uri *uri, struct uri *referrer, struct download *download,
 		download->progress = conn->progress;
 		download->conn = conn;
 		download->cached = NULL;
+		download->state = S_OK;
 		add_to_list(conn->downloads, download);
 	}
 
@@ -979,48 +1004,36 @@ load_uri(struct uri *uri, struct uri *referrer, struct download *download,
 
 /* FIXME: one object in more connections */
 void
-change_connection(struct download *old, struct download *new,
-		  enum connection_priority newpri, int interrupt)
+cancel_download(struct download *download, int interrupt)
 {
 	struct connection *conn;
 
-	assert(old);
+	assert(download);
 	if_assert_failed return;
 
-	if (is_in_result_state(old->state)) {
-		if (new) {
-			new->cached = old->cached;
-			new->state = old->state;
-			new->prev_error = old->prev_error;
-			if (new->callback)
-				new->callback(new, new->data);
-		}
+	/* Did the connection already end? */
+	if (is_in_result_state(download->state))
 		return;
-	}
+
+	assertm(download->conn != NULL, "last state is %d", download->state);
 
 	check_queue_bugs();
 
-	conn = old->conn;
+	download->state = S_INTERRUPTED;
+	del_from_list(download);
 
-	conn->pri[old->pri]--;
-	assertm(conn->pri[old->pri] >= 0, "priority counter underflow");
-	if_assert_failed conn->pri[old->pri] = 0;
+	conn = download->conn;
 
-	conn->pri[newpri]++;
-	del_from_list(old);
-	old->state = S_INTERRUPTED;
+	conn->pri[download->pri]--;
+	assertm(conn->pri[download->pri] >= 0, "priority counter underflow");
+	if_assert_failed conn->pri[download->pri] = 0;
 
-	if (new) {
-		new->progress = conn->progress;
-		add_to_list(conn->downloads, new);
-		new->state = conn->state;
-		new->prev_error = conn->prev_error;
-		new->pri = newpri;
-		new->conn = conn;
-		new->cached = conn->cached;
+	if (list_empty(conn->downloads)) {
+		/* Necessary because of assertion in get_priority(). */
+		conn->pri[PRI_CANCEL]++;
 
-	} else if (conn->detached || interrupt) {
-		abort_connection(conn, S_INTERRUPTED);
+		if (conn->detached || interrupt)
+			abort_connection(conn, S_INTERRUPTED);
 	}
 
 	sort_queue();
@@ -1028,6 +1041,51 @@ change_connection(struct download *old, struct download *new,
 
 	register_check_queue();
 }
+
+void
+move_download(struct download *old, struct download *new,
+	      enum connection_priority newpri)
+{
+	struct connection *conn;
+
+	assert(old);
+
+	/* The download doesn't necessarily have a connection attached, for
+	 * example the file protocol loads it's object immediately. This is
+	 * catched by the result state check below. */
+
+	conn = old->conn;
+
+	new->conn	= conn;
+	new->cached	= old->cached;
+	new->prev_error	= old->prev_error;
+	new->progress	= old->progress;
+	new->state	= old->state;
+	new->pri	= newpri;
+
+	if (is_in_result_state(old->state)) {
+		/* Ensure that new->conn is always "valid", that is NULL if the
+		 * connection has been detached and non-NULL otherwise. */
+		if (new->callback) {
+			new->conn = NULL;
+			new->progress = NULL;
+			new->callback(new, new->data);
+		}
+		return;
+	}
+
+	assertm(old->conn != NULL, "last state is %d", old->state);
+
+	conn->pri[new->pri]++;
+	add_to_list(conn->downloads, new);
+	/* In principle, we need to sort_queue() only if conn->pri[new->pri]
+	 * just changed from 0 to 1.  But the risk of bugs is smaller if we
+	 * sort every time.  */
+	sort_queue();
+
+	cancel_download(old, 0);
+}
+
 
 /* This will remove 'pos' bytes from the start of the cache for the specified
  * connection, if the cached object is already too big. */
@@ -1080,14 +1138,20 @@ detach_connection(struct download *download, off_t pos)
 	free_entry_to(conn->cached, pos);
 }
 
+/* Timer callback for @conn->timer.  As explained in @install_timer,
+ * this function must erase the expired timer ID from all variables.  */
 static void
 connection_timeout(struct connection *conn)
 {
 	conn->timer = TIMER_ID_UNDEF;
+	/* The expired timer ID has now been erased.  */
 	timeout_socket(conn->socket);
 }
 
-/* Huh, using two timers? Is this to account for changes of c->unrestartable
+/* Timer callback for @conn->timer.  As explained in @install_timer,
+ * this function must erase the expired timer ID from all variables.
+ *
+ * Huh, using two timers? Is this to account for changes of c->unrestartable
  * or can it be reduced? --jonas */
 static void
 connection_timeout_1(struct connection *conn)
@@ -1097,6 +1161,7 @@ connection_timeout_1(struct connection *conn)
 			 ? get_opt_int("connection.unrestartable_receive_timeout")
 			 : get_opt_int("connection.receive_timeout"))
 			* 500), (void (*)(void *)) connection_timeout, conn);
+	/* The expired timer ID has now been erased.  */
 }
 
 void

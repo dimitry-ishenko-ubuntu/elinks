@@ -36,15 +36,16 @@ struct sysmouse_spec {
 static void
 sysmouse_handler(void *data)
 {
-	static struct term_event_mouse prev_mouse;
+	static struct interlink_event_mouse prev_mouse;
 	static int prev_buttons;
 	struct sysmouse_spec *sp = data;
 	void *itrm = sp->itrm;
 	int fd = get_output_handle();
 	int buttons, change;
+	int extended_button;
 	mouse_info_t mi;
-	struct term_event_mouse mouse;
-	struct term_event ev;
+	struct interlink_event_mouse mouse;
+	struct interlink_event ev;
 
 	mi.operation = MOUSE_GETINFO;
 	if (ioctl(fd, CONS_MOUSECTL, &mi) == -1) return;
@@ -63,94 +64,97 @@ sysmouse_handler(void *data)
 	prev_mouse = mouse;
 	/* It's horrible. */
 	switch (buttons) {
+	case 0:
+		switch (prev_buttons) {
 		case 0:
-			switch (prev_buttons) {
-				case 0:
-					return;
-					break;
-				case 1:
-				case 3:
-				case 5:
-				case 7:
-					mouse.button = B_LEFT | B_UP;
-					break;
-				case 2:
-				case 6:
-					mouse.button = B_MIDDLE | B_UP;
-					break;
-				case 4:
-					mouse.button = B_RIGHT | B_UP;
-					break;
-			}
+			extended_button = mi.u.data.buttons & 24;
+			if (!extended_button) return;
+			if (extended_button & 8) mouse.button = B_WHEEL_UP;
+			else mouse.button = B_WHEEL_DOWN;
 			break;
 		case 1:
 		case 3:
 		case 5:
 		case 7:
-			switch (prev_buttons) {
-				case 0:
-				case 2:
-				case 4:
-				case 6:
-					mouse.button = B_LEFT | B_DOWN;
-					break;
-				case 1:
-				case 3:
-				case 5:
-				case 7:
-					if (change)
-						mouse.button = B_LEFT | B_DRAG;
-					else mouse.button = B_LEFT | B_DOWN;
-					break;
-			}
+			mouse.button = B_LEFT | B_UP;
 			break;
 		case 2:
 		case 6:
-			switch (prev_buttons) {
-				case 1:
-				case 3:
-				case 5:
-				case 7:
-					mouse.button = B_LEFT | B_UP;
-		    			break;
-				case 0:
-				case 4:
-					mouse.button = B_MIDDLE | B_DOWN;
-					break;
-				case 2:
-				case 6:
-					if (change)
-					mouse.button = B_MIDDLE | B_DRAG;
-					else mouse.button = B_MIDDLE | B_DOWN;
-					break;
-			}
+			mouse.button = B_MIDDLE | B_UP;
 			break;
 		case 4:
-			switch (prev_buttons) {
-				case 1:
-				case 3:
-				case 5:
-				case 7:
-					mouse.button = B_LEFT | B_UP;
-					break;
-				case 2:
-				case 6:
-					mouse.button = B_MIDDLE | B_UP;
-					break;
-				case 0:
-					mouse.button = B_RIGHT | B_DOWN;
-					break;
-				case 4:
-					if (change)
-						mouse.button = B_RIGHT | B_DRAG;
-					else mouse.button = B_RIGHT | B_DOWN;
-					break;
-			}
+			mouse.button = B_RIGHT | B_UP;
 			break;
+		}
+		break;
+	case 1:
+	case 3:
+	case 5:
+	case 7:
+		switch (prev_buttons) {
+		case 0:
+		case 2:
+		case 4:
+		case 6:
+			mouse.button = B_LEFT | B_DOWN;
+			break;
+		case 1:
+		case 3:
+		case 5:
+		case 7:
+			if (change)
+				mouse.button = B_LEFT | B_DRAG;
+			else mouse.button = B_LEFT | B_DOWN;
+			break;
+		}
+		break;
+	case 2:
+	case 6:
+		switch (prev_buttons) {
+		case 1:
+		case 3:
+		case 5:
+		case 7:
+			mouse.button = B_LEFT | B_UP;
+			break;
+		case 0:
+		case 4:
+			mouse.button = B_MIDDLE | B_DOWN;
+			break;
+		case 2:
+		case 6:
+			if (change)
+				mouse.button = B_MIDDLE | B_DRAG;
+			else mouse.button = B_MIDDLE | B_DOWN;
+			break;
+		}
+		break;
+	case 4:
+		switch (prev_buttons) {
+		case 1:
+		case 3:
+		case 5:
+		case 7:
+			mouse.button = B_LEFT | B_UP;
+			break;
+		case 2:
+		case 6:
+			mouse.button = B_MIDDLE | B_UP;
+			break;
+		case 0:
+			mouse.button = B_RIGHT | B_DOWN;
+			break;
+		case 4:
+			if (change)
+				mouse.button = B_RIGHT | B_DRAG;
+			else mouse.button = B_RIGHT | B_DOWN;
+			break;
+		}
+		break;
 	}
 
 	prev_buttons = buttons;
-	set_mouse_term_event(&ev, mouse.x, mouse.y, mouse.button);
+	set_mouse_interlink_event(&ev, mouse.x, mouse.y, mouse.button);
 	sp->fn(itrm, (unsigned char *)&ev, sizeof(ev));
 }
 
@@ -194,26 +198,43 @@ handle_mouse(int cons, void (*fn)(void *, unsigned char *, int),
 	} else {
 		return NULL;
 	}
-
 }
 
 void
 unhandle_mouse(void *data)
 {
-	if (data) install_signal_handler(SIGUSR2, NULL, NULL, 0);
+	if (data) {
+		mouse_info_t mi;
+		int fd = get_output_handle();
+
+		mi.operation = MOUSE_MODE;
+		mi.u.mode.mode = 0;
+		mi.u.mode.signal = 0;
+		install_signal_handler(SIGUSR2, NULL, NULL, 0);
+		ioctl(fd, CONS_MOUSECTL, &mi);
+	}
 }
 
 void
 suspend_mouse(void *data)
 {
-	if (data) install_signal_handler(SIGUSR2, NULL, NULL, 0);
+	unhandle_mouse(data);
 }
 
 void
 resume_mouse(void *data)
 {
-	if (data) install_signal_handler(SIGUSR2,
+	if (data) {
+		mouse_info_t mi;
+		int fd = get_output_handle();
+
+		mi.operation = MOUSE_MODE;
+		mi.u.mode.mode = 0;
+		mi.u.mode.signal = SIGUSR2;;
+		install_signal_handler(SIGUSR2,
 		(void (*)(void *))sysmouse_signal_handler, data, 0);
+		ioctl(fd, CONS_MOUSECTL, &mi);
+	}
 }
 
 #endif

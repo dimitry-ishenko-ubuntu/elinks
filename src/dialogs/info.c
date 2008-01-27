@@ -58,6 +58,7 @@ push_toggle_keys_display_button(void *data)
 void
 menu_keys(struct terminal *term, void *d_, void *xxx)
 {
+	/* [gettext_accelerator_context(menu_keys)] */
 	int d = (long) d_;
 
 	/* We scale by main mapping because it has the most actions */
@@ -126,12 +127,12 @@ menu_keys(struct terminal *term, void *d_, void *xxx)
 		add_actions_to_string(&keys, action_ids, KEYMAP_MAIN, term);
 	}
 
-	msg_box(term, getml(info, NULL), MSGBOX_FREE_TEXT | MSGBOX_SCROLLABLE,
+	msg_box(term, getml(info, (void *) NULL), MSGBOX_FREE_TEXT | MSGBOX_SCROLLABLE,
 		N_("Keys"), ALIGN_LEFT,
 		keys.source,
 		info, 2,
-		N_("~OK"), NULL, B_ENTER | B_ESC,
-		N_("~Toggle display"), push_toggle_keys_display_button, B_ENTER);
+		MSG_BOX_BUTTON(N_("~OK"), NULL, B_ENTER | B_ESC),
+		MSG_BOX_BUTTON(N_("~Toggle display"), push_toggle_keys_display_button, B_ENTER));
 }
 
 void
@@ -141,16 +142,14 @@ menu_copying(struct terminal *term, void *xxx, void *xxxx)
 		 N_("Copying"), ALIGN_CENTER,
 		 msg_text(term, N_("ELinks %s\n"
 		 	 "\n"
-			 "(C) 1999 - 2002 Mikulas Patocka\n"
-			 "(C) 2001 - 2004 Petr Baudis\n"
-			 "(C) 2002 - 2006 Jonas Fonseca\n"
-			 "and others\n"
+			 "%s"
+			  "et al.\n"
 			 "\n"
 			 "This program is free software; you can redistribute it "
 			 "and/or modify it under the terms of the GNU General Public "
 			 "License as published by the Free Software Foundation, "
 			 "specifically version 2 of the License."),
-			 VERSION_STRING));
+			 VERSION_STRING, COPYRIGHT_STRING));
 }
 
 

@@ -10,17 +10,25 @@
 
 #include "ecmascript/spidermonkey/util.h"
 #include "protocol/uri.h"
+#include "scripting/smjs/elinks_object.h"
 #include "scripting/smjs/view_state_object.h"
 #include "scripting/smjs/core.h"
+#include "session/history.h"
+#include "session/location.h"
+#include "session/session.h"
 #include "util/error.h"
 #include "util/memory.h"
 #include "viewer/text/vs.h"
 
 static const JSClass view_state_class; /* defined below */
 
+/* Tinyids of properties.  Use negative values to distinguish these
+ * from array indexes (even though this object has no array elements).
+ * ECMAScript code should not use these directly as in view_state[-1];
+ * future versions of ELinks may change the numbers.  */
 enum view_state_prop {
-	VIEW_STATE_PLAIN,
-	VIEW_STATE_URI,
+	VIEW_STATE_PLAIN = -1,
+	VIEW_STATE_URI   = -2,
 };
 
 static const JSPropertySpec view_state_props[] = {
@@ -41,7 +49,8 @@ view_state_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	if (!JS_InstanceOf(ctx, obj, (JSClass *) &view_state_class, NULL))
 		return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, obj); /* from @view_state_class */
+	vs = JS_GetInstancePrivate(ctx, obj,
+				   (JSClass *) &view_state_class, NULL);
 
 	undef_to_jsval(ctx, vp);
 
@@ -59,8 +68,8 @@ view_state_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 		return JS_TRUE;
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case
 		 * and leave *@vp unchanged.  Do the same here.
 		 * (Actually not quite the same, as we already used
@@ -81,7 +90,8 @@ view_state_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	if (!JS_InstanceOf(ctx, obj, (JSClass *) &view_state_class, NULL))
 		return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, obj); /* from @view_state_class */
+	vs = JS_GetInstancePrivate(ctx, obj,
+				   (JSClass *) &view_state_class, NULL);
 
 	if (!JSVAL_IS_INT(id))
 		return JS_FALSE;
@@ -93,8 +103,8 @@ view_state_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		return JS_TRUE;
 	}
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case.
 		 * Do the same here.  */
 		return JS_TRUE;
@@ -130,4 +140,36 @@ smjs_get_view_state_object(struct view_state *vs)
 		return NULL;
 
 	return view_state_object;
+}
+
+static JSBool
+smjs_elinks_get_view_state(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
+{
+	JSObject *vs_obj;
+	struct view_state *vs;
+
+	*vp = JSVAL_NULL;
+
+	if (!smjs_ses || !have_location(smjs_ses)) return JS_TRUE;
+
+	vs = &cur_loc(smjs_ses)->vs;
+	if (!vs) return JS_TRUE;
+
+	vs_obj = smjs_get_view_state_object(vs);
+	if (!vs_obj) return JS_TRUE;
+
+	*vp = OBJECT_TO_JSVAL(vs_obj);
+
+	return JS_TRUE;
+}
+
+void
+smjs_init_view_state_interface(void)
+{
+	if (!smjs_ctx || !smjs_elinks_object)
+		return;
+
+	JS_DefineProperty(smjs_ctx, smjs_elinks_object, "vs", JSVAL_NULL,
+	                smjs_elinks_get_view_state, JS_PropertyStub,
+	                JSPROP_ENUMERATE | JSPROP_PERMANENT | JSPROP_READONLY);
 }
