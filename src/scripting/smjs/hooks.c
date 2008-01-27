@@ -22,7 +22,7 @@
 
 
 static enum evhook_status
-script_hook_goto_url(va_list ap, void *data)
+script_hook_url(va_list ap, void *data)
 {
 	unsigned char **url = va_arg(ap, unsigned char **);
 	struct session *ses = va_arg(ap, struct session *);
@@ -35,40 +35,7 @@ script_hook_goto_url(va_list ap, void *data)
 
 	args[0] = STRING_TO_JSVAL(JS_NewStringCopyZ(smjs_ctx, *url));
 
-	if (JS_TRUE == smjs_invoke_elinks_object_method("goto_url_hook",
-	                                                args, 1, &rval)) {
-		if (JSVAL_IS_BOOLEAN(rval)) {
-			if (JS_FALSE == JSVAL_TO_BOOLEAN(rval))
-				ret = EVENT_HOOK_STATUS_LAST;
-		} else {
-			JSString *jsstr = JS_ValueToString(smjs_ctx, rval);
-			unsigned char *str = JS_GetStringBytes(jsstr);
-
-			mem_free_set(url, stracpy(str));
-		}
-	}
-
-	smjs_ses = NULL;
-
-	return ret;
-}
-
-static enum evhook_status
-script_hook_follow_url(va_list ap, void *data)
-{
-	unsigned char **url = va_arg(ap, unsigned char **);
-	struct session *ses = va_arg(ap, struct session *);
-	enum evhook_status ret = EVENT_HOOK_STATUS_NEXT;
-	jsval args[1], rval;
-
-	if (*url == NULL) return EVENT_HOOK_STATUS_NEXT;
-
-	smjs_ses = ses;
-
-	args[0] = STRING_TO_JSVAL(JS_NewStringCopyZ(smjs_ctx, *url));
-
-	if (JS_TRUE == smjs_invoke_elinks_object_method("follow_url_hook",
-	                                                args, 1, &rval)) {
+	if (JS_TRUE == smjs_invoke_elinks_object_method(data, args, 1, &rval)) {
 		if (JSVAL_IS_BOOLEAN(rval)) {
 			if (JS_FALSE == JSVAL_TO_BOOLEAN(rval))
 				ret = EVENT_HOOK_STATUS_LAST;
@@ -122,10 +89,26 @@ end:
 	return ret;
 }
 
+static enum evhook_status
+script_hook_flush_caches(va_list ap, void *data)
+{
+	/* script_hook_pre_format_html() calls smjs_get_cache_entry_object()
+	 * for each struct cache_entry.  The resulting SMJS objects hold
+	 * references to the structs, and these references prevent ELinks
+	 * from freeing the cache entries.  (The resource info dialog shows
+	 * that the entries are "in use".)  SMJS does not immediately collect
+	 * these objects as garbage.  If we're really trying to flush the
+	 * caches then ask SMJS to run a check.  */
+	if (smjs_ctx)
+		JS_GC(smjs_ctx);
+	return EVENT_HOOK_STATUS_NEXT;
+}
+
 struct event_hook_info smjs_scripting_hooks[] = {
-	{ "goto-url", 0, script_hook_goto_url, NULL },
-	{ "follow-url", 0, script_hook_follow_url, NULL },
+	{ "goto-url", 0, script_hook_url, "goto_url_hook" },
+	{ "follow-url", 0, script_hook_url, "follow_url_hook" },
 	{ "pre-format-html", 0, script_hook_pre_format_html, NULL },
+	{ "flush-caches", 0, script_hook_flush_caches, NULL },
 
 	NULL_EVENT_HOOK_INFO,
 };

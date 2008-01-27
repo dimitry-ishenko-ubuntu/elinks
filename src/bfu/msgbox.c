@@ -71,7 +71,7 @@ msg_box(struct terminal *term, struct memory_list *ml, enum msgbox_flags flags,
 		int bflags;
 
 		label = va_arg(ap, unsigned char *);
-		done = va_arg(ap, void *);
+		done = va_arg(ap, done_handler_T *);
 		bflags = va_arg(ap, int);
 
 		if (!label) {
@@ -160,6 +160,7 @@ refreshed_msg_box(struct terminal *term, enum msgbox_flags flags,
 		  unsigned char *(get_info)(struct terminal *, void *),
 		  void *data)
 {
+	/* [gettext_accelerator_context(refreshed_msg_box)] */
 	struct dialog_data *dlg_data;
 	unsigned char *info = get_info(term, data);
 
@@ -169,7 +170,7 @@ refreshed_msg_box(struct terminal *term, enum msgbox_flags flags,
 			   title, align,
 			   info,
 			   data, 1,
-			   N_("~OK"), NULL, B_ENTER | B_ESC);
+			   MSG_BOX_BUTTON(N_("~OK"), NULL, B_ENTER | B_ESC));
 
 	if (!dlg_data) return;
 
@@ -185,6 +186,10 @@ info_box(struct terminal *term, enum msgbox_flags flags,
 	 unsigned char *title, enum format_align align,
 	 unsigned char *text)
 {
-	return msg_box(term, NULL, flags, title, align, text,
-		       NULL, 1, N_("~OK"), NULL, B_ENTER | B_ESC);
+	/* [gettext_accelerator_context(info_box)] */
+	return msg_box(term, NULL, flags,
+		       title, align,
+		       text,
+		       NULL, 1,
+		       MSG_BOX_BUTTON(N_("~OK"), NULL, B_ENTER | B_ESC));
 }

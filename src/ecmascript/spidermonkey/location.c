@@ -136,7 +136,13 @@ const JSClass location_class = {
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
 
-enum location_prop { JSP_LOC_HREF };
+/* Tinyids of properties.  Use negative values to distinguish these
+ * from array indexes (even though this object has no array elements).
+ * ECMAScript code should not use these directly as in location[-1];
+ * future versions of ELinks may change the numbers.  */
+enum location_prop {
+	JSP_LOC_HREF = -1,
+};
 const JSPropertySpec location_props[] = {
 	{ "href",	JSP_LOC_HREF,	JSPROP_ENUMERATE },
 	{ NULL }
@@ -158,7 +164,8 @@ location_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
 	if_assert_failed return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	vs = JS_GetInstancePrivate(ctx, parent_win,
+				   (JSClass *) &window_class, NULL);
 
 	if (!JSVAL_IS_INT(id))
 		return JS_TRUE;
@@ -170,8 +177,8 @@ location_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		astring_to_jsval(ctx, vp, get_uri_string(vs->uri, URI_ORIGINAL));
 		break;
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case
 		 * and leave *@vp unchanged.  Do the same here.
 		 * (Actually not quite the same, as we already used
@@ -199,7 +206,8 @@ location_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
 	if_assert_failed return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	vs = JS_GetInstancePrivate(ctx, parent_win,
+				   (JSClass *) &window_class, NULL);
 	doc_view = vs->doc_view;
 
 	if (!JSVAL_IS_INT(id))

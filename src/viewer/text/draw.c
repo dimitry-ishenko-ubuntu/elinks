@@ -1,4 +1,5 @@
-/* Text mode drawing functions */
+/** Text mode drawing functions
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -16,7 +17,6 @@
 #include "cache/cache.h"
 #include "document/document.h"
 #include "document/html/frames.h"
-#include "document/html/renderer.h"
 #include "document/options.h"
 #include "document/refresh.h"
 #include "document/renderer.h"
@@ -64,9 +64,10 @@ check_document_fragment(struct session *ses, struct document_view *doc_view)
 	/* Omit the leading '#' when calling find_tag. */
 	vy = find_tag(document, fragment.source + 1, fragment.length - 1);
 	if (vy == -1) {
-		struct cache_entry *cached = find_in_cache(document->uri);
+		struct cache_entry *cached = document->cached;
 
-		if (!cached || cached->incomplete || cached->id != document->id) {
+		assert(cached);
+		if (cached->incomplete || cached->id != document->id) {
 			done_string(&fragment);
 			return -2;
 		}
@@ -74,13 +75,9 @@ check_document_fragment(struct session *ses, struct document_view *doc_view)
 		if (get_opt_bool("document.browse.links.missing_fragment")) {
 			info_box(ses->tab->term, MSGBOX_FREE_TEXT,
 			 N_("Missing fragment"), ALIGN_CENTER,
-			 /* fragment_source[0] == '#'.  Skip that character
-			  * and add it back from the format string, so that
-			  * the format string is the same as in ELinks 0.11.2
-			  * and translations need not be changed.  */
 			 msg_text(ses->tab->term, N_("The requested fragment "
-				  "\"#%s\" doesn't exist."),
-				  fragment.source + 1));
+				  "\"%s\" doesn't exist."),
+				  fragment.source));
 		}
 	} else {
 		int_bounds(&vy, 0, document->height - 1);
@@ -179,7 +176,7 @@ draw_view_status(struct session *ses, struct document_view *doc_view, int active
 	}
 }
 
-/* Checks if there is a link under the cursor so it can become the current
+/** Checks if there is a link under the cursor so it can become the current
  * highlighted link. */
 static void
 check_link_under_cursor(struct session *ses, struct document_view *doc_view)
@@ -195,8 +192,8 @@ check_link_under_cursor(struct session *ses, struct document_view *doc_view)
 	}
 }
 
-/* Puts the formatted document on the given terminal's screen. */
-/* @active indicates whether the document is focused -- i.e.,
+/** Puts the formatted document on the given terminal's screen.
+ * @a active indicates whether the document is focused -- i.e.,
  * whether it is displayed in the selected frame or document. */
 static void
 draw_doc(struct session *ses, struct document_view *doc_view, int active)
@@ -274,7 +271,6 @@ draw_doc(struct session *ses, struct document_view *doc_view, int active)
 		draw_view_status(ses, doc_view, active);
 		return;
 	}
-	free_link(doc_view);
 	doc_view->last_x = vx;
 	doc_view->last_y = vy;
 	draw_box(term, box, ' ', 0, &color);
@@ -340,7 +336,7 @@ draw_frames(struct session *ses)
 	};
 }
 
-/* @rerender is ridiciously wound-up. */
+/** @todo @a rerender is ridiciously wound-up. */
 void
 draw_formatted(struct session *ses, int rerender)
 {
@@ -354,13 +350,7 @@ draw_formatted(struct session *ses, int rerender)
 		render_document_frames(ses, rerender);
 
 		/* Rerendering kills the document refreshing so restart it. */
-		if (ses->doc_view
-		    && ses->doc_view->document
-		    && ses->doc_view->document->refresh
-		    && get_opt_bool("document.browse.refresh")) {
-			start_document_refresh(ses->doc_view->document->refresh,
-					       ses);
-		}
+		start_document_refreshes(ses);
 	}
 
 	if (ses->tab != get_current_tab(ses->tab->term))

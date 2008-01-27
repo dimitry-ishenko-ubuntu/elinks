@@ -26,9 +26,11 @@
 /* Backends dynamic area: */
 
 #include "protocol/about.h"
+#include "protocol/auth/auth.h"
 #include "protocol/bittorrent/bittorrent.h"
 #include "protocol/bittorrent/connection.h"
 #include "protocol/data.h"
+#include "protocol/file/cgi.h"
 #include "protocol/file/file.h"
 #include "protocol/finger/finger.h"
 #include "protocol/fsp/fsp.h"
@@ -50,34 +52,35 @@ struct protocol_backend {
 	unsigned int need_slash_after_host:1;
 	unsigned int free_syntax:1;
 	unsigned int need_ssl:1;
+	unsigned int keep_double_slashes:1;
 };
 
 static const struct protocol_backend protocol_backends[] = {
-	{ "about",	   0, about_protocol_handler,		0, 0, 1, 0 },
-	{ "bittorrent",	   0, bittorrent_protocol_handler,	0, 0, 1, 0 },
-	{ "data",	   0, data_protocol_handler,		0, 0, 1, 0 },
-	{ "file",	   0, file_protocol_handler,		1, 0, 0, 0 },
-	{ "finger",	  79, finger_protocol_handler,		1, 1, 0, 0 },
-	{ "fsp",	  21, fsp_protocol_handler,		1, 1, 0, 0 },
-	{ "ftp",	  21, ftp_protocol_handler,		1, 1, 0, 0 },
-	{ "gopher",	  70, gopher_protocol_handler,		1, 1, 0, 0 },
-	{ "http",	  80, http_protocol_handler,		1, 1, 0, 0 },
-	{ "https",	 443, https_protocol_handler,		1, 1, 0, 1 },
-	{ "javascript",	   0, NULL,				0, 0, 1, 0 },
-	{ "news",	   0, news_protocol_handler,		0, 0, 1, 0 },
-	{ "nntp",	 119, nntp_protocol_handler,		1, 1, 0, 0 },
-	{ "nntps",	 563, nntp_protocol_handler,		1, 1, 0, 1 },
-	{ "proxy",	3128, proxy_protocol_handler,		1, 1, 0, 0 },
-	{ "smb",	 139, smb_protocol_handler,		1, 1, 0, 0 },
-	{ "snews",	   0, news_protocol_handler,		0, 0, 1, 0 },
+	{ "about",	   0, about_protocol_handler,		0, 0, 1, 0, 1 },
+	{ "bittorrent",	   0, bittorrent_protocol_handler,	0, 0, 1, 0, 1 },
+	{ "data",	   0, data_protocol_handler,		0, 0, 1, 0, 1 },
+	{ "file",	   0, file_protocol_handler,		1, 0, 0, 0, 0 },
+	{ "finger",	  79, finger_protocol_handler,		1, 1, 0, 0, 1 },
+	{ "fsp",	  21, fsp_protocol_handler,		1, 1, 0, 0, 1 },
+	{ "ftp",	  21, ftp_protocol_handler,		1, 1, 0, 0, 0 },
+	{ "gopher",	  70, gopher_protocol_handler,		1, 1, 0, 0, 1 },
+	{ "http",	  80, http_protocol_handler,		1, 1, 0, 0, 1 },
+	{ "https",	 443, https_protocol_handler,		1, 1, 0, 1, 1 },
+	{ "javascript",	   0, NULL,				0, 0, 1, 0, 1 },
+	{ "news",	   0, news_protocol_handler,		0, 0, 1, 0, 1 },
+	{ "nntp",	 119, nntp_protocol_handler,		1, 1, 0, 0, 0 },
+	{ "nntps",	 563, nntp_protocol_handler,		1, 1, 0, 1, 0 },
+	{ "proxy",	3128, proxy_protocol_handler,		1, 1, 0, 0, 1 },
+	{ "smb",	 139, smb_protocol_handler,		1, 1, 0, 0, 1 },
+	{ "snews",	   0, news_protocol_handler,		0, 0, 1, 0, 1 },
 
 	/* Keep these last! */
-	{ NULL,		   0, NULL,			0, 0, 1, 0 },
+	{ NULL,		   0, NULL,			0, 0, 1, 0, 1 },
 
-	{ "user",	   0, NULL,			0, 0, 0, 0 },
+	{ "user",	   0, NULL,			0, 0, 0, 0, 1 },
 	/* Internal protocol for mapping to protocol.user.* handlers. Placed
 	 * last because it's checked first and else should be ignored. */
-	{ "custom",	   0, NULL,			0, 0, 1, 0 },
+	{ "custom",	   0, NULL,			0, 0, 1, 0, 1 },
 };
 
 
@@ -173,6 +176,14 @@ get_protocol_need_slash_after_host(enum protocol protocol)
 }
 
 int
+get_protocol_keep_double_slashes(enum protocol protocol)
+{
+	assert(VALID_PROTOCOL(protocol));
+	if_assert_failed return 0;
+	return protocol_backends[protocol].keep_double_slashes;
+}
+
+int
 get_protocol_free_syntax(enum protocol protocol)
 {
 	assert(VALID_PROTOCOL(protocol));
@@ -200,6 +211,7 @@ get_protocol_handler(enum protocol protocol)
 static void
 generic_external_protocol_handler(struct session *ses, struct uri *uri)
 {
+	/* [gettext_accelerator_context(generic_external_protocol_handler)] */
 	enum connection_state state;
 
 	switch (uri->protocol) {
@@ -230,7 +242,7 @@ generic_external_protocol_handler(struct session *ses, struct uri *uri)
 				   "%s protocol support"),
 				protocol_backends[uri->protocol].name),
 			ses, 1,
-			N_("~OK"), NULL, B_ENTER | B_ESC);
+			MSG_BOX_BUTTON(N_("~OK"), NULL, B_ENTER | B_ESC));
 		return;
 	}
 
@@ -271,10 +283,14 @@ static struct option_info protocol_options[] = {
 	NULL_OPTION_INFO,
 };
 static struct module *protocol_submodules[] = {
+	&auth_module,
 #ifdef CONFIG_BITTORRENT
 	&bittorrent_protocol_module,
 #endif
 	&file_protocol_module,
+#ifdef CONFIG_CGI
+	&cgi_protocol_module,
+#endif
 #ifdef CONFIG_FINGER
 	&finger_protocol_module,
 #endif

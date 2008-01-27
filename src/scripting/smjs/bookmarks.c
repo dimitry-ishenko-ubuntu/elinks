@@ -59,10 +59,14 @@ bookmark_finalize(JSContext *ctx, JSObject *obj)
 
 /*** bookmark object ***/
 
+/* Tinyids of properties.  Use negative values to distinguish these
+ * from array indexes (even though this object has no array elements).
+ * ECMAScript code should not use these directly as in bookmark[-1];
+ * future versions of ELinks may change the numbers.  */
 enum bookmark_prop {
-	BOOKMARK_TITLE,
-	BOOKMARK_URL,
-	BOOKMARK_CHILDREN,
+	BOOKMARK_TITLE    = -1,
+	BOOKMARK_URL      = -2,
+	BOOKMARK_CHILDREN = -3,
 };
 
 static const JSPropertySpec bookmark_props[] = {
@@ -86,7 +90,8 @@ bookmark_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	if (!JS_InstanceOf(ctx, obj, (JSClass *) &bookmark_class, NULL))
 		return JS_FALSE;
 
-	bookmark = JS_GetPrivate(ctx, obj); /* from @bookmark_class */
+	bookmark = JS_GetInstancePrivate(ctx, obj,
+					 (JSClass *) &bookmark_class, NULL);
 
 	if (!bookmark) return JS_FALSE;
 
@@ -111,8 +116,8 @@ bookmark_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 		return JS_TRUE;
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case
 		 * and leave *@vp unchanged.  Do the same here.
 		 * (Actually not quite the same, as we already used
@@ -133,7 +138,8 @@ bookmark_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	if (!JS_InstanceOf(ctx, obj, (JSClass *) &bookmark_class, NULL))
 		return JS_FALSE;
 
-	bookmark = JS_GetPrivate(ctx, obj); /* from @bookmark_class */
+	bookmark = JS_GetInstancePrivate(ctx, obj,
+					 (JSClass *) &bookmark_class, NULL);
 
 	if (!bookmark) return JS_FALSE;
 
@@ -158,8 +164,8 @@ bookmark_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		return JS_TRUE;
 	}
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case.
 		 * Do the same here.  */
 		return JS_TRUE;
@@ -207,23 +213,18 @@ bookmark_folder_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	if (!JS_InstanceOf(ctx, obj, (JSClass *) &bookmark_folder_class, NULL))
 		return JS_FALSE;
 
-	folder = JS_GetPrivate(ctx, obj); /* from @bookmark_folder_class */
+	folder = JS_GetInstancePrivate(ctx, obj,
+				       (JSClass *) &bookmark_folder_class, NULL);
+
+	*vp = JSVAL_NULL;
 
 	title = JS_GetStringBytes(JS_ValueToString(ctx, id));
-	if (!title) {
-		*vp = JSVAL_NULL;
-
-		return JS_TRUE;
-	}
+	if (!title) return JS_TRUE;
 
 	bookmark = get_bookmark_by_name(folder, title);
-	if (!bookmark) {
-		*vp = JSVAL_NULL;
-
-		return JS_TRUE;
+	if (bookmark) {
+		*vp = OBJECT_TO_JSVAL(smjs_get_bookmark_object(bookmark));
 	}
-
-	*vp = OBJECT_TO_JSVAL(smjs_get_bookmark_object(bookmark));
 
 	return JS_TRUE;
 }

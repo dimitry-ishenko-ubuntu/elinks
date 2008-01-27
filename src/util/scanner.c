@@ -1,4 +1,5 @@
-/* A pretty generic scanner */
+/** A pretty generic scanner
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -16,7 +17,8 @@
 
 int
 map_scanner_string(struct scanner *scanner,
-		   unsigned char *ident, unsigned char *end, int base_type)
+		   const unsigned char *ident, const unsigned char *end,
+		   int base_type)
 {
 	const struct scanner_string_mapping *mappings = scanner->info->mappings;
 	int length = end - ident;
@@ -116,7 +118,8 @@ get_scanner_token_debug(struct scanner *scanner)
 #endif
 
 
-/* Initializers */
+/** @name Initializers
+ * @{ */
 
 static inline void
 init_scanner_info(struct scanner_info *scanner_info)
@@ -170,3 +173,5 @@ init_scanner(struct scanner *scanner, struct scanner_info *scanner_info,
 	scanner->info = scanner_info;
 	scanner->info->scan(scanner);
 }
+
+/** @} */

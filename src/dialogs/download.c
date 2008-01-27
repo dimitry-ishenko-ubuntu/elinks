@@ -145,15 +145,20 @@ download_dialog_layouter(struct dialog_data *dlg_data)
 		mem_free(msg);
 		return;
 	}
-	decode_uri_for_display(url);
+#ifdef CONFIG_UTF8
+	if (term->utf8_cp)
+		decode_uri(url);
+	else
+#endif /* CONFIG_UTF8 */
+		decode_uri_for_display(url);
 	url_len = strlen(url);
 
 	if (show_meter) {
 		int_lower_bound(&w, DOWN_DLG_MIN);
 	}
 
-	dlg_format_text_do(NULL, url, 0, &y, w, &rw,
-			dialog_text_color, ALIGN_LEFT);
+	dlg_format_text_do(term, url, 0, &y, w, &rw,
+			dialog_text_color, ALIGN_LEFT, 1);
 
 	y++;
 	if (show_meter) y += 2;
@@ -161,13 +166,13 @@ download_dialog_layouter(struct dialog_data *dlg_data)
 #if CONFIG_BITTORRENT
 	if (bittorrent) y += 2;
 #endif
-	dlg_format_text_do(NULL, msg, 0, &y, w, &rw,
-			dialog_text_color, ALIGN_LEFT);
+	dlg_format_text_do(term, msg, 0, &y, w, &rw,
+			dialog_text_color, ALIGN_LEFT, 1);
 
 	y++;
-	dlg_format_buttons(NULL, dlg_data->widgets_data,
+	dlg_format_buttons(term, dlg_data->widgets_data,
 			   dlg_data->number_of_widgets, 0, &y, w,
-			   &rw, ALIGN_CENTER);
+			   &rw, ALIGN_CENTER, 1);
 
 	draw_dialog(dlg_data, w, y);
 
@@ -186,7 +191,7 @@ download_dialog_layouter(struct dialog_data *dlg_data)
 	y = dlg_data->box.y + DIALOG_TB + 1;
 	x = dlg_data->box.x + DIALOG_LB;
 	dlg_format_text_do(term, url, x, &y, w, NULL,
-			dialog_text_color, ALIGN_LEFT);
+			dialog_text_color, ALIGN_LEFT, 0);
 
 	if (show_meter) {
 		y++;
@@ -203,12 +208,12 @@ download_dialog_layouter(struct dialog_data *dlg_data)
 #endif
 	y++;
 	dlg_format_text_do(term, msg, x, &y, w, NULL,
-			dialog_text_color, ALIGN_LEFT);
+			dialog_text_color, ALIGN_LEFT, 0);
 
 	y++;
 	dlg_format_buttons(term, dlg_data->widgets_data,
 			   dlg_data->number_of_widgets, x, &y, w,
-			   NULL, ALIGN_CENTER);
+			   NULL, ALIGN_CENTER, 0);
 
 	mem_free(url);
 	mem_free(msg);
@@ -218,6 +223,7 @@ void
 display_download(struct terminal *term, struct file_download *file_download,
 		 struct session *ses)
 {
+	/* [gettext_accelerator_context(display_download)] */
 	struct dialog *dlg;
 
 	if (!is_in_downloads_list(file_download))
@@ -264,7 +270,7 @@ display_download(struct terminal *term, struct file_download *file_download,
 	add_dlg_end(dlg, DOWNLOAD_WIDGETS_COUNT - !!file_download->external_handler);
 #endif
 
-	do_dialog(term, dlg, getml(dlg, NULL));
+	do_dialog(term, dlg, getml(dlg, (void *) NULL));
 }
 
 
@@ -295,7 +301,14 @@ get_file_download_text(struct listbox_item *item, struct terminal *term)
 	unsigned char *uristring;
 
 	uristring = get_uri_string(file_download->uri, URI_PUBLIC);
-	if (uristring) decode_uri_for_display(uristring);
+	if (uristring) {
+#ifdef CONFIG_UTF8
+		if (term->utf8_cp)
+			decode_uri(uristring);
+		else
+#endif /* CONFIG_UTF8 */
+			decode_uri_for_display(uristring);
+	}
 
 	return uristring;
 }
@@ -368,7 +381,7 @@ draw_file_download(struct listbox_item *item, struct listbox_context *context,
 
 	color = get_bfu_color(context->term, stylename);
 
-	text = get_file_download_text(item, NULL);
+	text = get_file_download_text(item, context->term);
 	if (!text) return;
 
 	length = strlen(text);
@@ -424,7 +437,7 @@ static struct listbox_ops_messages download_messages = {
 	NULL,
 	/* delete_item_title */
 	N_("Interrupt download"),
-	/* delete_item */
+	/* delete_item; xgettext:c-format */
 	N_("Interrupt this download?"),
 	/* clear_all_items_title */
 	N_("Interrupt all downloads"),
@@ -432,7 +445,7 @@ static struct listbox_ops_messages download_messages = {
 	N_("Do you really want to interrupt all downloads?"),
 };
 
-static struct listbox_ops downloads_listbox_ops = {
+static const struct listbox_ops downloads_listbox_ops = {
 	lock_file_download,
 	unlock_file_download,
 	is_file_download_used,
@@ -474,7 +487,8 @@ push_info_button(struct dialog_data *dlg_data, struct widget_data *button)
  * - Open button that can be used to set file_download->prog.
  * - Toggle notify button
  */
-static struct hierbox_browser_button download_buttons[] = {
+static const struct hierbox_browser_button download_buttons[] = {
+	/* [gettext_accelerator_context(.download_buttons)] */
 	{ N_("~Info"),                  push_info_button           },
 	{ N_("~Abort"),                 push_hierbox_delete_button },
 #if 0

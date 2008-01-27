@@ -1,4 +1,5 @@
-/* Document (meta) refresh. */
+/** Document (meta) refresh.
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -59,6 +60,9 @@ done_document_refresh(struct document_refresh *refresh)
 	mem_free(refresh);
 }
 
+/** Timer callback for document_refresh.timer.  As explained in
+ * install_timer(), this function must erase the expired timer ID from
+ * all variables.  */
 static void
 do_document_refresh(void *data)
 {
@@ -69,6 +73,7 @@ do_document_refresh(void *data)
 	assert(refresh);
 
 	refresh->timer = TIMER_ID_UNDEF;
+	/* The expired timer ID has now been erased.  */
 
 	/* When refreshing documents that will trigger a download (like
 	 * sourceforge's download pages) make sure that we do not endlessly
@@ -89,7 +94,7 @@ do_document_refresh(void *data)
 	}
 }
 
-void
+static void
 start_document_refresh(struct document_refresh *refresh, struct session *ses)
 {
 	milliseconds_T minimum = (milliseconds_T) get_opt_int("document.browse.minimum_refresh_time");
@@ -114,4 +119,18 @@ start_document_refresh(struct document_refresh *refresh, struct session *ses)
 			return;
 
 	install_timer(&refresh->timer, time, do_document_refresh, ses);
+}
+
+void
+start_document_refreshes(struct session *ses)
+{
+	assert(ses);
+
+	if (!ses->doc_view
+	    || !ses->doc_view->document
+	    || !ses->doc_view->document->refresh
+	    || !get_opt_bool("document.browse.refresh"))
+		return;
+
+	start_document_refresh(ses->doc_view->document->refresh, ses);
 }

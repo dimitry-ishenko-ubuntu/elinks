@@ -59,11 +59,20 @@ const JSClass document_class = {
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
 
-enum document_prop { JSP_DOC_REF, JSP_DOC_TITLE, JSP_DOC_URL };
+/* Tinyids of properties.  Use negative values to distinguish these
+ * from array indexes (even though this object has no array elements).
+ * ECMAScript code should not use these directly as in document[-1];
+ * future versions of ELinks may change the numbers.  */
+enum document_prop {
+	JSP_DOC_LOC   = -1,
+	JSP_DOC_REF   = -2,
+	JSP_DOC_TITLE = -3,
+	JSP_DOC_URL   = -4,
+};
 /* "cookie" is special; it isn't a regular property but we channel it to the
  * cookie-module. XXX: Would it work if "cookie" was defined in this array? */
 const JSPropertySpec document_props[] = {
-	{ "location",	JSP_DOC_URL,	JSPROP_ENUMERATE },
+	{ "location",	JSP_DOC_LOC,	JSPROP_ENUMERATE },
 	{ "referrer",	JSP_DOC_REF,	JSPROP_ENUMERATE | JSPROP_READONLY },
 	{ "title",	JSP_DOC_TITLE,	JSPROP_ENUMERATE }, /* TODO: Charset? */
 	{ "url",	JSP_DOC_URL,	JSPROP_ENUMERATE },
@@ -89,7 +98,8 @@ document_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
 	if_assert_failed return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	vs = JS_GetInstancePrivate(ctx, parent_win,
+				   (JSClass *) &window_class, NULL);
 	doc_view = vs->doc_view;
 	document = doc_view->document;
 	ses = doc_view->session;
@@ -131,6 +141,9 @@ document_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	undef_to_jsval(ctx, vp);
 
 	switch (JSVAL_TO_INT(id)) {
+	case JSP_DOC_LOC:
+		JS_GetProperty(ctx, parent_win, "location", vp);
+		break;
 	case JSP_DOC_REF:
 		switch (get_opt_int("protocol.http.referer.policy")) {
 		case REFERER_NONE:
@@ -161,8 +174,8 @@ document_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		astring_to_jsval(ctx, vp, get_uri_string(document->uri, URI_ORIGINAL));
 		break;
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case
 		 * and leave *@vp unchanged.  Do the same here.
 		 * (Actually not quite the same, as we already used
@@ -191,7 +204,8 @@ document_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
 	if_assert_failed return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	vs = JS_GetInstancePrivate(ctx, parent_win,
+				   (JSClass *) &window_class, NULL);
 	doc_view = vs->doc_view;
 	document = doc_view->document;
 
@@ -215,6 +229,7 @@ document_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		mem_free_set(&document->title, stracpy(jsval_to_string(ctx, vp)));
 		print_screen_status(doc_view->session);
 		break;
+	case JSP_DOC_LOC:
 	case JSP_DOC_URL:
 		/* According to the specs this should be readonly but some
 		 * broken sites still assign to it (i.e.
@@ -228,20 +243,33 @@ document_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 }
 
 static JSBool document_write(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
+static JSBool document_writeln(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
 
 const JSFunctionSpec document_funcs[] = {
 	{ "write",		document_write,		1 },
+	{ "writeln",		document_writeln,	1 },
 	{ NULL }
 };
 
-/* @document_funcs{"write"} */
 static JSBool
-document_write(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+document_write_do(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv,
+                  jsval *rval, int newline)
 {
-#ifdef CONFIG_LEDS
 	struct ecmascript_interpreter *interpreter = JS_GetContextPrivate(ctx);
-#endif
+	struct string *ret = interpreter->ret;
 
+	if (argc >= 1 && ret) {
+		int i = 0;
+
+		for (; i < argc; ++i) {
+			unsigned char *code = jsval_to_string(ctx, &argv[i]);
+
+			add_to_string(ret, code);
+		}
+
+		if (newline)
+			add_char_to_string(ret, '\n');
+	}
 	/* XXX: I don't know about you, but I have *ENOUGH* of those 'Undefined
 	 * function' errors, I want to see just the useful ones. So just
 	 * lighting a led and going away, no muss, no fuss. --pasky */
@@ -256,4 +284,19 @@ document_write(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rv
 	boolean_to_jsval(ctx, rval, 0);
 
 	return JS_TRUE;
+}
+
+/* @document_funcs{"write"} */
+static JSBool
+document_write(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+
+	return document_write_do(ctx, obj, argc, argv, rval, 0);
+}
+
+/* @document_funcs{"writeln"} */
+static JSBool
+document_writeln(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	return document_write_do(ctx, obj, argc, argv, rval, 1);
 }

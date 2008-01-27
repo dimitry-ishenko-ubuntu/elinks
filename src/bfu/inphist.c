@@ -58,11 +58,12 @@ menu_tab_compl(struct terminal *term, void *item_, void *dlg_data_)
 /* Complete to last unambiguous character, and display menu for all possible
  * further completions. */
 void
-do_tab_compl(struct dialog_data *dlg_data, struct list_head *history)
+do_tab_compl(struct dialog_data *dlg_data,
+	     LIST_OF(struct input_history_entry) *history)
 {
 	struct terminal *term = dlg_data->win->term;
 	struct widget_data *widget_data = selected_widget(dlg_data);
-	int cdata_len = strlen(widget_data->cdata);
+	int cpos = widget_data->info.field.cpos;
 	int n = 0;
 	struct input_history_entry *entry;
 	struct menu_item *items = new_menu(FREE_LIST | NO_INTL);
@@ -70,7 +71,7 @@ do_tab_compl(struct dialog_data *dlg_data, struct list_head *history)
 	if (!items) return;
 
 	foreach (entry, *history) {
-		if (strncmp(widget_data->cdata, entry->data, cdata_len))
+		if (strncmp(widget_data->cdata, entry->data, cpos))
 			continue;
 
 		add_to_menu(&items, entry->data, NULL, ACT_MAIN_NONE,
@@ -104,10 +105,12 @@ strcommonlen(unsigned char *a, unsigned char *b)
  * completes `go' to `google.com' and `google.com/' to `google.com/search?q='.
  */
 void
-do_tab_compl_unambiguous(struct dialog_data *dlg_data, struct list_head *history)
+do_tab_compl_unambiguous(struct dialog_data *dlg_data,
+			 LIST_OF(struct input_history_entry) *history)
 {
+	struct string completion;
 	struct widget_data *widget_data = selected_widget(dlg_data);
-	int base_len = strlen(widget_data->cdata);
+	int base_len = widget_data->info.field.cpos;
 	/* Maximum number of characters in a match. Characters after this
 	 * position are varying in other matches. */
 	int longest_common_match = 0;
@@ -139,7 +142,15 @@ do_tab_compl_unambiguous(struct dialog_data *dlg_data, struct list_head *history
 
 	if (!match) return;
 
-	tab_compl_n(dlg_data, match, longest_common_match);
+	if (!init_string(&completion)) return;
+
+	add_bytes_to_string(&completion, match, longest_common_match);
+	add_to_string(&completion, widget_data->cdata
+	                            + widget_data->info.field.cpos);
+
+	tab_compl_n(dlg_data, completion.source, completion.length);
+
+	done_string(&completion);
 }
 
 
@@ -179,7 +190,8 @@ tab_complete_file_menu(struct terminal *term, void *path_, void *dlg_data_)
 }
 
 void
-do_tab_compl_file(struct dialog_data *dlg_data, struct list_head *history)
+do_tab_compl_file(struct dialog_data *dlg_data,
+		  LIST_OF(struct input_history_entry) *history)
 {
 	struct widget_data *widget_data = selected_widget(dlg_data);
 
@@ -280,7 +292,8 @@ load_input_history(struct input_history *history, unsigned char *filename)
 
 	if (get_cmd_opt_bool("anonymous")) return 0;
 	if (elinks_home) {
-		history_file = straconcat(elinks_home, filename, NULL);
+		history_file = straconcat(elinks_home, filename,
+					  (unsigned char *) NULL);
 		if (!history_file) return 0;
 	}
 
@@ -318,7 +331,8 @@ save_input_history(struct input_history *history, unsigned char *filename)
 	    || get_cmd_opt_bool("anonymous"))
 		return 0;
 
-	history_file = straconcat(elinks_home, filename, NULL);
+	history_file = straconcat(elinks_home, filename,
+				  (unsigned char *) NULL);
 	if (!history_file) return -1;
 
 	ssi = secure_open(history_file);

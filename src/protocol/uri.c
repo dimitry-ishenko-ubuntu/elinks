@@ -43,18 +43,41 @@
 static inline int
 end_of_dir(unsigned char c)
 {
-	return c == POST_CHAR || c == '#' || c == ';' || c == '?';
+	/* This used to check for c == ';' as well.  But section 3.3
+	 * of RFC 2396 explicitly says that parameters in a path
+	 * segment "are not significant to the parsing of relative
+	 * references."  */
+	return c == POST_CHAR || c == '#' || c == '?';
 }
 
 static inline int
-is_uri_dir_sep(struct uri *uri, unsigned char pos)
+is_uri_dir_sep(const struct uri *uri, unsigned char pos)
 {
 	return (uri->protocol == PROTOCOL_FILE ? dir_sep(pos) : pos == '/');
 }
 
 
 int
-is_ip_address(unsigned char *address, int addresslen)
+is_in_domain(unsigned char *domain, unsigned char *server, int server_len)
+{
+	int domain_len = strlen(domain);
+	int len;
+
+	if (domain_len > server_len)
+		return 0;
+
+	if (domain_len == server_len)
+		return !strncasecmp(domain, server, server_len);
+
+	len = server_len - domain_len;
+	if (server[len - 1] != '.')
+		return 0;
+
+	return !strncasecmp(domain, server + len, domain_len);
+}
+
+int
+is_ip_address(const unsigned char *address, int addresslen)
 {
 	/* The @address has well defined limits so it would be a shame to
 	 * allocate it. */
@@ -90,10 +113,10 @@ is_ip_address(unsigned char *address, int addresslen)
 
 
 int
-end_with_known_tld(unsigned char *s, int slen)
+end_with_known_tld(const unsigned char *s, int slen)
 {
 	int i;
-	static const unsigned char *tld[] =
+	static const unsigned char *const tld[] =
 	{ "com", "edu", "net",
 	  "org", "gov", "mil",
 	  "int", "biz", "arpa",
@@ -130,28 +153,19 @@ check_whether_file_exists(unsigned char *name)
 	for (i = 0; i < sizeof(chars) - 1; i++) {
 		unsigned char *pos = memchr(name, chars[i], namelen);
 		int exists;
-		
+
 		if (!pos) continue;
 
 		*pos = 0;
 		exists = file_exists(name);
 		*pos = chars[i];
-		
+
 		if (exists) {
 			return pos - name;
 		}
 	}
 
 	return -1;
-}
-
-static int
-check_uri_file(unsigned char *name)
-{
-	/* Check POST_CHAR etc ... */
-	static const unsigned char chars[] = POST_CHAR_S "#?";
-
-	return strcspn(name, chars);
 }
 
 /* Encodes URIs without encoding stuff like fragments and query separators. */
@@ -194,7 +208,7 @@ parse_uri(struct uri *uri, unsigned char *uristring)
 	unsigned char *lbracket, *rbracket;
 #endif
 
-	assertm(uristring, "No uri to parse.");
+	assertm(uristring != NULL, "No uri to parse.");
 	memset(uri, 0, sizeof(*uri));
 
 	/* Nothing to do for an empty url. */
@@ -240,7 +254,7 @@ parse_uri(struct uri *uri, unsigned char *uristring)
 		return URI_ERRNO_OK;
 
 	} else if (uri->protocol == PROTOCOL_FILE) {
-		int datalen = check_uri_file(prefix_end);
+		int datalen = strcspn(prefix_end, "#" POST_CHAR_S);
 		unsigned char *frag_or_post = prefix_end + datalen;
 
 		/* Extract the fragment part. */
@@ -255,6 +269,13 @@ parse_uri(struct uri *uri, unsigned char *uristring)
 			}
 		} else {
 			datalen = strlen(prefix_end);
+		}
+
+		/* A bit of a special case, but using the "normal" host
+		 * parsing seems a bit scary at this point. (see bug 107). */
+		if (datalen > 9 && !strncasecmp(prefix_end, "localhost/", 10)) {
+			prefix_end += 9;
+			datalen -= 9;
 		}
 
 		uri->data = prefix_end;
@@ -402,10 +423,10 @@ parse_uri(struct uri *uri, unsigned char *uristring)
 }
 
 int
-get_uri_port(struct uri *uri)
+get_uri_port(const struct uri *uri)
 {
 	if (uri->port && uri->portlen) {
-		unsigned char *end = uri->port;
+		const unsigned char *end = uri->port;
 		int port = strtol(uri->port, (char **) &end, 10);
 
 		if (end != uri->port) {
@@ -420,7 +441,8 @@ get_uri_port(struct uri *uri)
 #define can_compare_uri_components(comp) !(((comp) & (URI_SPECIAL | URI_IDN)))
 
 static inline int
-compare_component(unsigned char *a, int alen, unsigned char *b, int blen)
+compare_component(const unsigned char *a, int alen,
+		  const unsigned char *b, int blen)
 {
 	/* Check that the length and the strings are both set or unset */
 	if (alen != blen || !!a != !!b) return 0;
@@ -435,7 +457,8 @@ compare_component(unsigned char *a, int alen, unsigned char *b, int blen)
 #define wants(x) (components & (x))
 
 int
-compare_uri(struct uri *a, struct uri *b, enum uri_component components)
+compare_uri(const struct uri *a, const struct uri *b,
+	    enum uri_component components)
 {
 	if (a == b) return 1;
 	if (!components) return 0;
@@ -464,7 +487,7 @@ compare_uri(struct uri *a, struct uri *b, enum uri_component components)
 
 /* We might need something more intelligent than this Swiss army knife. */
 struct string *
-add_uri_to_string(struct string *string, struct uri *uri,
+add_uri_to_string(struct string *string, const struct uri *uri,
 		  enum uri_component components)
 {
 	/* Custom or unknown keep the URI untouched. */
@@ -490,7 +513,10 @@ add_uri_to_string(struct string *string, struct uri *uri,
  		}
 
 		add_char_to_string(string, '@');
- 	}
+
+	} else if (wants(URI_PASSWORD) && uri->passwordlen) {
+		add_bytes_to_string(string, uri->password, uri->passwordlen);
+	}
 
  	if (wants(URI_HOST) && uri->hostlen) {
 		int add_host = 1;
@@ -568,13 +594,16 @@ add_uri_to_string(struct string *string, struct uri *uri,
 	/* We can not test uri->datalen here since we need to always
 	 * add '/'. */
 	if (wants(URI_PATH) || wants(URI_FILENAME)) {
-		unsigned char *filename = uri->data;
-		unsigned char *pos;
+		const unsigned char *filename = uri->data;
+		const unsigned char *pos;
 
 		assertm(!wants(URI_FILENAME) || components == URI_FILENAME,
 			"URI_FILENAME should be used alone %d", components);
 
 		if (wants(URI_PATH) && !is_uri_dir_sep(uri, *filename)) {
+#ifdef CONFIG_OS_WIN32
+			if (uri->protocol != PROTOCOL_FILE)
+#endif
 			/* FIXME: Add correct separator */
 			add_char_to_string(string, '/');
 		}
@@ -589,7 +618,7 @@ add_uri_to_string(struct string *string, struct uri *uri,
 	}
 
 	if (wants(URI_QUERY) && uri->datalen) {
-		unsigned char *query = memchr(uri->data, '?', uri->datalen);
+		const unsigned char *query = memchr(uri->data, '?', uri->datalen);
 
 		assertm(URI_QUERY == components,
 			"URI_QUERY should be used alone %d", components);
@@ -629,7 +658,7 @@ add_uri_to_string(struct string *string, struct uri *uri,
 #undef wants
 
 unsigned char *
-get_uri_string(struct uri *uri, enum uri_component components)
+get_uri_string(const struct uri *uri, enum uri_component components)
 {
 	struct string string;
 
@@ -663,7 +692,7 @@ normalize_uri(struct uri *uri, unsigned char *uristring)
 {
 	unsigned char *parse_string = uristring;
 	unsigned char *src, *dest, *path;
-	int need_slash = 0;
+	int need_slash = 0, keep_dslash = 1;
 	int parse = (uri == NULL);
 	struct uri uri_struct;
 
@@ -691,19 +720,19 @@ normalize_uri(struct uri *uri, unsigned char *uristring)
 	if (get_protocol_free_syntax(uri->protocol))
 		return uristring;
 
-	if (uri->protocol != PROTOCOL_UNKNOWN)
+	if (uri->protocol != PROTOCOL_UNKNOWN) {
 		need_slash = get_protocol_need_slash_after_host(uri->protocol);
+		keep_dslash = get_protocol_keep_double_slashes(uri->protocol);
+	}
 
-	/* We want to start at the first slash to also reduce URIs like
-	 * http://host//index.html to http://host/index.html */
 	path = uri->data - need_slash;
 	dest = src = path;
 
-	/* This loop mangles the URI string by removing directory elevators and
-	 * other cruft. Example: /.././etc////..//usr/ -> /usr/ */
+	/* This loop mangles the URI string by removing ".." and "." segments.
+	 * However it must not alter "//" without reason; see bug 744.  */
 	while (*dest) {
 		/* If the following pieces are the LAST parts of URL, we remove
-		 * them as well. See RFC 1808 for details. */
+		 * them as well. See RFC 2396 section 5.2 for details. */
 
 		if (end_of_dir(src[0])) {
 			/* URL data contains no more path. */
@@ -728,20 +757,25 @@ normalize_uri(struct uri *uri, unsigned char *uristring)
 
 			} else if (src[2] == '.'
 				   && (is_uri_dir_sep(uri, src[3]) || !src[3])) {
-				/* /../ or /.. - skip it and preceding element. */
+				/* /../ or /.. - skip it and preceding element.
+				 *
+				 * <path> "/foo/bar" <dest> ...
+				 * <src> ("/../" or "/..\0") ...
+				 *
+				 * Remove "bar" and the directory
+				 * separator that precedes it.  The
+				 * separator will be added back in the
+				 * next iteration unless another ".."
+				 * follows, in which case it will be
+				 * added later.  "bar" may be empty.  */
 
-				/* First back out the last incrementation of
-				 * @dest (dest++) to get the position that was
-				 * last asigned to. */
-				if (dest > path) dest--;
-
-				/* @dest might be pointing to a dir separator
-				 * so we decrement before any testing. */
 				while (dest > path) {
 					dest--;
 					if (is_uri_dir_sep(uri, *dest)) break;
 				}
 
+				/* <path> "/foo" <dest> "/bar" ...
+				 * <src> ("/../" or "/..\0") ... */
 				if (!src[3]) {
 					/* /.. - add ending slash and stop */
 					*dest++ = *src;
@@ -753,7 +787,7 @@ normalize_uri(struct uri *uri, unsigned char *uristring)
 				continue;
 			}
 
-		} else if (is_uri_dir_sep(uri, src[1])) {
+		} else if (is_uri_dir_sep(uri, src[1]) && !keep_dslash) {
 			/* // - ignore first '/'. */
 			src += 1;
 			continue;
@@ -772,7 +806,7 @@ normalize_uri(struct uri *uri, unsigned char *uristring)
  * backend can understand. No host parts etc, that is what this function is
  * supposed to chew. */
 static struct uri *
-transform_file_url(struct uri *uri, unsigned char *cwd)
+transform_file_url(struct uri *uri, const unsigned char *cwd)
 {
 	unsigned char *path = uri->data;
 
@@ -910,7 +944,7 @@ join_urls(struct uri *base, unsigned char *rel)
 		}
 	}
 
-	assertm(base->data, "bad base url");
+	assertm(base->data != NULL, "bad base url");
 	if_assert_failed return NULL;
 
 	path = base->data;
@@ -1188,7 +1222,7 @@ parse_uri:
 			   ? uri.port + uri.portlen - struri(&uri)
 			   : uri.host + uri.hostlen - struri(&uri) + uri.ipv6 /* ']' */;
 
-		assertm(uri.host, "uri.host not set after no host slash error");
+		assertm(uri.host != NULL, "uri.host not set after no host slash error");
 		insert_in_string(&newurl, offset, "/", 1);
 		goto parse_uri;
 	}
@@ -1313,11 +1347,11 @@ safe_char(unsigned char c)
 }
 
 void
-encode_uri_string(struct string *string, unsigned char *name, int namelen,
+encode_uri_string(struct string *string, const unsigned char *name, int namelen,
 		  int convert_slashes)
 {
 	unsigned char n[4];
-	unsigned char *end;
+	const unsigned char *end;
 
 	n[0] = '%';
 	n[3] = '\0';
@@ -1331,6 +1365,29 @@ encode_uri_string(struct string *string, unsigned char *name, int namelen,
 		else
 #endif
 		if (safe_char(*name) || (!convert_slashes && *name == '/')) {
+			add_char_to_string(string, *name);
+		} else {
+			/* Hex it. */
+			n[1] = hx((((int) *name) & 0xF0) >> 4);
+			n[2] = hx(((int) *name) & 0xF);
+			add_bytes_to_string(string, n, sizeof(n) - 1);
+		}
+	}
+}
+
+void
+encode_win32_uri_string(struct string *string, unsigned char *name, int namelen)
+{
+	unsigned char n[4];
+	unsigned char *end;
+
+	n[0] = '%';
+	n[3] = '\0';
+
+	if (namelen < 0) namelen = strlen(name);
+
+	for (end = name + namelen; name < end; name++) {
+		if (safe_char(*name) || *name == ':' || *name == '\\') {
 			add_char_to_string(string, *name);
 		} else {
 			/* Hex it. */
@@ -1413,7 +1470,7 @@ decode_uri_string_for_display(struct string *string)
 
 #define realloc_uri_list(list) \
 	mem_align_alloc(&(list)->uris, (list)->size, (list)->size + 1, \
-			struct uri *, URI_LIST_GRANULARITY)
+			URI_LIST_GRANULARITY)
 
 struct uri *
 add_to_uri_list(struct uri_list *list, struct uri *uri)
@@ -1525,7 +1582,7 @@ get_uri(unsigned char *string, enum uri_component components)
 	}
 
 	if (!is_object_used(&uri_cache)) {
-		uri_cache.map = init_hash(hash_size(3), strhash);
+		uri_cache.map = init_hash8();
 		if (!uri_cache.map) return NULL;
 		object_nolock(&uri_cache, "uri_cache");
 	}
@@ -1533,7 +1590,7 @@ get_uri(unsigned char *string, enum uri_component components)
 	entry = get_uri_cache_entry(string, strlen(string));
 	if (!entry) {
 		if (!is_object_used(&uri_cache))
-			free_hash(uri_cache.map);
+			free_hash(&uri_cache.map);
 		return NULL;
 	}
 
@@ -1560,12 +1617,12 @@ done_uri(struct uri *uri)
 	item = get_hash_item(uri_cache.map, string, length);
 	entry = item ? item->value : NULL;
 
-	assertm(entry, "Releasing unknown URI [%s]", string);
+	assertm(entry != NULL, "Releasing unknown URI [%s]", string);
 	del_hash_item(uri_cache.map, item);
 	mem_free(entry);
 
 	/* Last URI frees the cache */
 	object_unlock(&uri_cache);
 	if (!is_object_used(&uri_cache))
-		free_hash(uri_cache.map);
+		free_hash(&uri_cache.map);
 }

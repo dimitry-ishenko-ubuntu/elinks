@@ -6,6 +6,7 @@
 
 #include "elinks.h"
 
+#include "bfu/msgbox.h"
 #include "intl/gettext/libintl.h"
 #include "main/module.h"
 #include "scripting/scripting.h"
@@ -23,10 +24,14 @@
 #include "scripting/ruby/ruby.h"
 #include "scripting/smjs/smjs.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 
 /* Error reporting. */
 
-#if defined(CONFIG_RUBY) || defined(CONFIG_SEE) || defined(CONFIG_ECMASCRIPT)
+#if defined(CONFIG_SCRIPTING_RUBY) || defined(CONFIG_SCRIPTING_SPIDERMONKEY) || defined(CONFIG_SCRIPTING_PYTHON)
 void
 report_scripting_error(struct module *module, struct session *ses,
 		       unsigned char *msg)
@@ -36,7 +41,9 @@ report_scripting_error(struct module *module, struct session *ses,
 
 	if (!ses) {
 		if (list_empty(terminals)) {
-			usrerror("[%s error] %s", module->name, msg);
+			usrerror(gettext("[%s error] %s"),
+				 gettext(module->name), msg);
+			sleep(3);
 			return;
 		}
 
@@ -51,7 +58,7 @@ report_scripting_error(struct module *module, struct session *ses,
 
 	add_format_to_string(&string,
 		_("An error occurred while running a %s script", term),
-		module->name);
+		_(module->name, term));
 
 	add_format_to_string(&string, ":\n\n%s", msg);
 
@@ -62,22 +69,22 @@ report_scripting_error(struct module *module, struct session *ses,
 
 
 static struct module *scripting_modules[] = {
-#ifdef CONFIG_LUA
+#ifdef CONFIG_SCRIPTING_LUA
 	&lua_scripting_module,
 #endif
-#ifdef CONFIG_GUILE
+#ifdef CONFIG_SCRIPTING_GUILE
 	&guile_scripting_module,
 #endif
-#ifdef CONFIG_PERL
+#ifdef CONFIG_SCRIPTING_PERL
 	&perl_scripting_module,
 #endif
-#ifdef CONFIG_PYTHON
+#ifdef CONFIG_SCRIPTING_PYTHON
 	&python_scripting_module,
 #endif
-#ifdef CONFIG_RUBY
+#ifdef CONFIG_SCRIPTING_RUBY
 	&ruby_scripting_module,
 #endif
-#ifdef CONFIG_ECMASCRIPT
+#ifdef CONFIG_SCRIPTING_SPIDERMONKEY
 	&smjs_scripting_module,
 #endif
 	NULL,

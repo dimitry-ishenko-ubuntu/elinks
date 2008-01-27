@@ -17,7 +17,7 @@ Adam Golebiowski <adamg@pld-linux.org>
 Adam Harvey <matlhdam@iinet.net.au>
 	Fixed sometimes badly posted form
 
-Alberto García <berto@gpul.org>
+Alberto GarcÃ­a <berto@gpul.org>
 	Galician translation
 
 Aldy Hernandez <aldyh@cygnus.com>
@@ -85,7 +85,7 @@ Bennett Todd <bet@rahul.net>
 Bunch <kisto@go2.pl>
 	HTML renderer hacking
 
-Carles Sadurní Anguita <isard@ctv.es>
+Carles SadurnÃ­ Anguita <isard@ctv.es>
 	Catalan translation
 
 Csaba Raduly <csaba.raduly@sophos.com>
@@ -97,7 +97,7 @@ Christian Biesinger <cbiesinger@gmx.at>
 Christian Cornelssen <ccorn@cs.tu-berlin.de>
 	Lua5 support
 
-Christian Häggström <c00chm@cs.umu.se>
+Christian HÃ¤ggstrÃ¶m <c00chm@cs.umu.se>
 	Fixes in parse_http_date()
 
 Cliff Cunnington <cliff@ccnet.xs4all.nl>
@@ -189,8 +189,11 @@ Flemming Frandsen <ff@partyticket.net>
 	accesskey,tabindex support
 	Referred as 'ff' or 'FF' in the code
 
-Frédéric L. W. Meunier <0@pervalidus.tk>
+FrÃ©dÃ©ric L. W. Meunier <0@pervalidus.tk>
 	Minor documentation updates
+
+Friedel Wolff <fwolff@translate.org.za>
+	Afrikaans translation
 
 Fuzzy European King <james@place.org>
 	Fixed lua stack overflow
@@ -214,6 +217,9 @@ Harold L Hunt II <huntharo@msu.edu>
 Hugo Haas <hugo@larve.net>
 	Minor random hacking
 	debian/watch file
+
+<incoherent@mail.ru>
+	bzip2 decoding fix and rewrite
 
 Ingo Blechschmidt <iblech@web.de>
 	German translation updates
@@ -250,6 +256,9 @@ Jonas Fonseca <fonseca@diku.dk>
 	BFU and document management hacking
 	Random hacking
 
+Jonas KÃ¶lker <jonaskoelker@gnu.org>
+	Handling of <q>quotes</q>.
+
 Jon Shapcott <eden@xibalba.demon.co.uk>
 	Lua 5 retrofits
 
@@ -259,7 +268,7 @@ John <martian202002@yahoo.com>
 Johannes Zellner <johannes@zellner.org>
 	Minor misc hacking
 
-José Luis González González <jlg80@mi.madritel.es>
+JosÃ© Luis GonzÃ¡lez GonzÃ¡lez <jlg80@mi.madritel.es>
 	MIME types documentation
 	Referred as 'Jose'
 
@@ -284,9 +293,10 @@ Karel Kulhavy <clock@atrey.karlin.mff.cuni.cz>
 	One of Links authors; a lot of misc. features & code
 
 Karel Zak <kzak@redhat.com>
+	Support for negotiate-auth based on GSSAPI
 	Minor bug fixes
 
-Karsten Schölzel <kuser@gmx.de>
+Karsten SchÃ¶lzel <kuser@gmx.de>
 	Event system chief engineer
 	Scripting subsystem hacking
 	Regex searches
@@ -316,7 +326,7 @@ Laurent Monin <zas@norz.org>
 Lewis Collard <lewis@lewis.x3fusion.com>
 	Fixed mmap() usage on FreeBSD
 
-Lilja Heiðarsdottir Fjeldsted <lilja@diku.dk>
+Lilja HeiÃ°arsdottir Fjeldsted <lilja@diku.dk>
 	BitTorrent support
 
 Lukasz Dobrek <dobrek@student.ifpan.edu.pl>
@@ -327,6 +337,9 @@ Len Lattanzi <Len_Lattanzi@StanfordAlumni.org>
 
 M. K. Srikant <srix@vsnl.com>
 	Small fix in forms
+
+M. Levinson <levinsm@users.sourceforge.net>
+	Python scripting fixes
 
 Marco Bodrato <bodrato@linuz.sns.it>
 	Twinterm support
@@ -417,6 +430,9 @@ Omar Khayam <omark@cyentec.com>
 <otte@duke.edu>
 	Fix stdin reading on Mac OS X
 
+Pavol Babincak <scroolik@gmail.com>
+	Improved UTF-8 support with double-width chars
+
 Peder Stray <peder@ifi.uio.no>
 	Fix handling of key presses turning up as key prefixes
 
@@ -464,7 +480,7 @@ Pixel <pixel@mandrakesoft.com>
 Radovan Stas <radoone@skmi.science.upjs.sk>
 	Slovak translation
 
-Raúl Núñez de Arenas Coronado <raul@pleyades.net>
+RaÃºl NÃºÃ±ez de Arenas Coronado <raul@pleyades.net>
 	get_unique_name() fix.
 
 Russ Rowan (Apu) <rrowan@dandy.net>
@@ -498,6 +514,9 @@ Sergio R. Velasquez Zeballos <svelasqu@thor.uc.edu.ve>
 
 Simen Graaten <simeng@slarkware.com>
 	Norwegian translation
+
+Simon Josefsson <simon@josefsson.org>
+	GnuTLS improvements
 
 Simon Wilkinson <simon@sxw.org.uk>
 	Support for X509 client certificates
@@ -550,7 +569,7 @@ Uwe Hermann <uh1763@bingo-ev.de>
 Unai Uribarri <unai@telecable.es>
 	History
 
-Varga Balázs <vinnui@ent.hu>
+Varga BalÃ¡zs <vinnui@ent.hu>
 	Hungarian translation updates
 
 Vitaly Lavrov <lve@guap.ru>

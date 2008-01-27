@@ -168,7 +168,7 @@ exe(unsigned char *path)
 
 	if (is_xterm()) flags |= P_BACKGROUND;
 
-	pid = spawnlp(flags, shell, shell, "/c", path, NULL);
+	pid = spawnlp(flags, shell, shell, "/c", path, (char *) NULL);
 	if (pid != -1)
 		waitpid(pid, &ret, 0);
 
@@ -436,9 +436,9 @@ resize_window(int x, int y, int old_width, int old_height)
 #if 0
 	unsigned char cmdline[16];
 	sprintf(cmdline, "mode ");
-	snprint(cmdline + 5, 5, x);
+	ulongcat(cmdline + 5, NULL, x, 5, 0);
 	strcat(cmdline, ",");
-	snprint(cmdline + strlen(cmdline), 5, y);
+	ulongcat(cmdline + strlen(cmdline), NULL, y, 5, 0);
 #endif
 	return 0;
 }
@@ -456,7 +456,7 @@ struct os2_mouse_spec {
 	int p[2];
 	void (*fn)(void *, unsigned char *, int);
 	void *data;
-	unsigned char buffer[sizeof(struct term_event)];
+	unsigned char buffer[sizeof(struct interlink_event)];
 	int bufptr;
 	int terminate;
 };
@@ -483,8 +483,8 @@ mouse_thread(void *p)
 	status = -1;
 
 	while (1) {
-		struct term_event ev;
-		struct term_event_mouse mouse;
+		struct interlink_event ev;
+		struct interlink_event_mouse mouse;
 		int w, ww;
 
 		if (MouReadEventQue(ms, rd, *mh)) break;
@@ -514,7 +514,7 @@ mouse_thread(void *p)
 			status = -1;
 		}
 
-		set_mouse_term_event(&ev, mouse.x, mouse.y, mouse.button);
+		set_mouse_interlink_event(&ev, mouse.x, mouse.y, mouse.button);
 		if (hard_write(oms->p[1], (unsigned char *) &ev, sizeof(ev)) != sizeof(ev)) break;
 	}
 #ifdef HAVE_SYS_FMUTEX_H
@@ -535,7 +535,7 @@ void
 mouse_handle(struct os2_mouse_spec *oms)
 {
 	ssize_t r = safe_read(oms->p[0], oms->buffer + oms->bufptr,
-		          sizeof(struct term_event) - oms->bufptr);
+		          sizeof(struct interlink_event) - oms->bufptr);
 
 	if (r <= 0) {
 		unhandle_mouse(oms);
@@ -543,9 +543,9 @@ mouse_handle(struct os2_mouse_spec *oms)
 	}
 
 	oms->bufptr += r;
-	if (oms->bufptr == sizeof(struct term_event)) {
+	if (oms->bufptr == sizeof(struct interlink_event)) {
 		oms->bufptr = 0;
-		oms->fn(oms->data, oms->buffer, sizeof(struct term_event));
+		oms->fn(oms->data, oms->buffer, sizeof(struct interlink_event));
 	}
 }
 

@@ -107,6 +107,43 @@ The documentation can be installed with:
 
 	$ make install-doc
 
+Building API documentation
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There is some starting effort to make it possible to build HTML documentation
+of the APIs presented by the different modules and subsystems in ELinks. To
+build API documentation run:
+
+	$ make api
+
+in the doc/ directory. The API documentation can then be found in the doc/api/
+directory.
+
+NOTE: Currently only few files provides API docs and there is no over-all
+structure of the various APIs.
+
+The API toolchain uses a Perl script (doc/tools/code2doc) to extract info from
+header files and generate text files with AsciiDoc markup. The text files are
+then converted to HTML with AsciiDoc.
+
+To get an idea of how the code markup works take a look at src/dom/stack.h.
+It has a small tag saying that it provides API docs for the dom-stack module:
+
+	/* API Doc :: dom-stack */
+
+The API doc markup should be pretty straight forward. Here is an example of the
+basic structure:
+
+	/** <title>
+	 *
+	 * <content>
+	 */
+
+Only text in comments starting with '/**' are used. If the comment immediately
+preceeds a declaration of some struct, enum, typedef, function, or macro, the
+name of the declared identifier will be used when creating the output to create
+anchors which can be referred to using ref:[].
+
 
 Contributing
 ------------

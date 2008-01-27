@@ -10,14 +10,14 @@
 /* Define if you want: 88 colors support */
 /* #undef CONFIG_88_COLORS */
 
+/* Define if you want: API Documentation support */
+/* #undef CONFIG_APIDOCS */
+
 /* Define if you want: AsciiDoc support */
 /* #undef CONFIG_ASCIIDOC */
 
 /* Define if you want: Backtrace support */
 #define CONFIG_BACKTRACE 1
-
-/* Define if you want: BEOS support */
-/* #undef CONFIG_BEOS */
 
 /* Define if you want: BitTorrent protocol support */
 /* #undef CONFIG_BITTORRENT */
@@ -49,8 +49,17 @@
 /* Define if you want: DOM engine support */
 /* #undef CONFIG_DOM */
 
+/* Define if you want: Doxygen support */
+/* #undef CONFIG_DOXYGEN */
+
 /* Define if you want: ECMAScript (JavaScript) support */
 /* #undef CONFIG_ECMASCRIPT */
+
+/* Define if you want: SEE support */
+/* #undef CONFIG_ECMASCRIPT_SEE */
+
+/* Define if you want: SpiderMonkey document scripting support */
+/* #undef CONFIG_ECMASCRIPT_SMJS */
 
 /* Define if you want: Exmode interface support */
 /* #undef CONFIG_EXMODE */
@@ -70,6 +79,9 @@
 /* Define if you want: FTP protocol support */
 #define CONFIG_FTP 1
 
+/* Define if you want: gc support */
+/* #undef CONFIG_GC */
+
 /* Define if you want: Global history support */
 #define CONFIG_GLOBHIST 1
 
@@ -85,8 +97,8 @@
 /* Define if you want: gpm support */
 /* #undef CONFIG_GPM */
 
-/* Define if you want: Guile support */
-/* #undef CONFIG_GUILE */
+/* Define if you want: GssApi support */
+/* #undef CONFIG_GSSAPI */
 
 /* Define if you want: zlib support */
 #define CONFIG_GZIP 1
@@ -109,8 +121,8 @@
 /* Define if you want: LEDs support */
 #define CONFIG_LEDS 1
 
-/* Define if you want: Lua support */
-/* #undef CONFIG_LUA */
+/* Define if you want: lzma support */
+/* #undef CONFIG_LZMA */
 
 /* Define if you want: Mailcap support */
 #define CONFIG_MAILCAP 1
@@ -123,9 +135,6 @@
 
 /* Define if you want: Marks support */
 #define CONFIG_MARKS 1
-
-/* Define if you want: Built-in MD5 support */
-/* #undef CONFIG_MD5 */
 
 /* Define if you want: Mimetypes files support */
 #define CONFIG_MIMETYPES 1
@@ -146,47 +155,57 @@
 /* Define if you want: OpenSSL support */
 #define CONFIG_OPENSSL 1
 
+/* Define if you want: BEOS support */
+/* #undef CONFIG_OS_BEOS */
+
 /* Define if you want: EMX support */
-/* #undef CONFIG_OS2 */
+/* #undef CONFIG_OS_OS2 */
+
+/* Define if you want: RISCOS support */
+/* #undef CONFIG_OS_RISCOS */
+
+/* Define if you want: UNIX support */
+#define CONFIG_OS_UNIX 1
+
+/* Define if you want: WIN32 support */
+/* #undef CONFIG_OS_WIN32 */
 
 /* Define if you want: Own libc stubs support */
 /* #undef CONFIG_OWN_LIBC */
 
-/* Define if you want: Perl support */
-/* #undef CONFIG_PERL */
+/* Define if using Perl 5.8.8 or later, where the "POPpx" macro no longer
+   needs an "n_a" variable like it did in 5.8.7 */
+/* #undef CONFIG_PERL_POPPX_WITHOUT_N_A */
 
 /* Define if you want: Pod2HTML support */
 #define CONFIG_POD2HTML 1
 
-/* Define if you want: Python support */
-/* #undef CONFIG_PYTHON */
-
-/* Define if you want: RISCOS support */
-/* #undef CONFIG_RISCOS */
-
-/* Define if you want: Ruby support */
-/* #undef CONFIG_RUBY */
-
-/* Define if you want: Built-in scanner support */
-#define CONFIG_SCANNER 1
-
 /* Define if you want: Browser scripting support */
 /* #undef CONFIG_SCRIPTING */
 
-/* Define if you want: Built-in SHA1 support */
-/* #undef CONFIG_SHA1 */
+/* Define if you want: Guile support */
+/* #undef CONFIG_SCRIPTING_GUILE */
+
+/* Define if you want: Lua support */
+/* #undef CONFIG_SCRIPTING_LUA */
+
+/* Define if you want: Perl support */
+/* #undef CONFIG_SCRIPTING_PERL */
+
+/* Define if you want: Python support */
+/* #undef CONFIG_SCRIPTING_PYTHON */
+
+/* Define if you want: Ruby support */
+/* #undef CONFIG_SCRIPTING_RUBY */
+
+/* Define if you want: SpiderMonkey support */
+/* #undef CONFIG_SCRIPTING_SPIDERMONKEY */
 
 /* Define if you want: Small binary support */
 /* #undef CONFIG_SMALL */
 
-/* Define if you want: SMB protocol support */
+/* Define if you want: Samba protocol support */
 /* #undef CONFIG_SMB */
-
-/* Define if you want: SpiderMonkey support */
-/* #undef CONFIG_SM_SCRIPTING */
-
-/* Define if you want: SpiderMonkey support */
-/* #undef CONFIG_SPIDERMONKEY */
 
 /* Define if you want: SSL support */
 #define CONFIG_SSL 1
@@ -194,14 +213,14 @@
 /* Define if you want: BSD sysmouse support */
 /* #undef CONFIG_SYSMOUSE */
 
-/* Define if you want: UNIX support */
-#define CONFIG_UNIX 1
+/* Define if you want: true color support */
+/* #undef CONFIG_TRUE_COLOR */
 
 /* Define if you want: URI rewriting support */
 #define CONFIG_URI_REWRITE 1
 
-/* Define if you want: WIN32 support */
-/* #undef CONFIG_WIN32 */
+/* Define if you want: UTF-8 support */
+#define CONFIG_UTF8 1
 
 /* Define if you want: XBEL bookmarks support */
 /* #undef CONFIG_XBEL_BOOKMARKS */
@@ -241,6 +260,9 @@
 
 /* Define to 1 if you have the `asprintf' function. */
 #define HAVE_ASPRINTF 1
+
+/* Define to 1 if you have the `atoll' function. */
+#define HAVE_ATOLL 1
 
 /* Define to 1 if you have the `bcopy' function. */
 #define HAVE_BCOPY 1
@@ -299,6 +321,9 @@
 
 /* Define to 1 if you have the `ftello' function. */
 #define HAVE_FTELLO 1
+
+/* Define to 1 if you have the <gc.h> header file. */
+/* #undef HAVE_GC_H */
 
 /* Define to 1 if you have the `getcwd' function. */
 #define HAVE_GETCWD 1
@@ -395,6 +420,9 @@
 
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 /* #undef HAVE_LIBNSL */
+
+/* Define to 1 if you have the <libsmbclient.h> header file. */
+/* #undef HAVE_LIBSMBCLIENT_H */
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 /* #undef HAVE_LIBSOCKET */
@@ -659,8 +687,14 @@
 /* Define to 1 if you have the `vsnprintf' function. */
 #define HAVE_VSNPRINTF 1
 
+/* Define to 1 if you have the <wctype.h> header file. */
+#define HAVE_WCTYPE_H 1
+
 /* Define to 1 if you have the <windows.h> header file. */
 /* #undef HAVE_WINDOWS_H */
+
+/* Define to 1 if you have the <ws2tcpip.h> header file. */
+/* #undef HAVE_WS2TCPIP_H */
 
 /* Define if you have X11 for restoring window titles */
 /* #undef HAVE_X11 */
@@ -755,7 +789,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Package version */
-#define VERSION "0.11.3"
+#define VERSION "0.12.GIT"
 
 /* Define if you have XFree under OS/2 */
 /* #undef X2 */

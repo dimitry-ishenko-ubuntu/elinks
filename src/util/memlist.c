@@ -1,4 +1,5 @@
-/* These routines represent handling of struct memory_list. */
+/** These routines represent handling of struct memory_list.
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -14,7 +15,8 @@
 #include "util/memory.h"
 
 
-/*
+/**
+ * @struct memory_list
  * memory_list is used to track information about all allocated memory
  * belonging to something. Then we can free it when we won't need it
  * anymore, but the one who allocated it won't be able to get control
@@ -23,10 +25,11 @@
 
 #define ML_SIZE(n) (sizeof(struct memory_list) + (n) * sizeof(void *))
 
-/* Create a memory list. If p is NULL or allocation fails, it will
- * returns NULL.
- * It always stops at first NULL element. */
-#ifdef DEBUG_MEMLIST
+/** Create a memory list. If @a p is NULL or allocation fails, it will
+ * return NULL.
+ * It always stops at first NULL element.
+ * @relates memory_list */
+#if defined(DEBUG_MEMLIST) && defined(HAVE_VARIADIC_MACROS)
 struct memory_list *
 debug_getml(unsigned char *file, int line, void *p, ...)
 #else
@@ -65,11 +68,12 @@ getml(void *p, ...)
 	return ml;
 }
 
-/* Add elements to a memory list.
+/** Add elements to a memory list.
  * If memory list exists, it enlarges it, else it creates it.
  * if there's no elements or first element is NULL, it does nothing.
- * It always stops at first NULL element. */
-#ifdef DEBUG_MEMLIST
+ * It always stops at first NULL element.
+ * @relates memory_list */
+#if defined(DEBUG_MEMLIST) && defined(HAVE_VARIADIC_MACROS)
 void
 debug_add_to_ml(unsigned char *file, int line, struct memory_list **ml, ...)
 #else
@@ -89,7 +93,11 @@ add_to_ml(struct memory_list **ml, ...)
 	/* None, so just return. */
 	if (!n) {
 #ifdef DEBUG_MEMLIST
+#ifdef HAVE_VARIADIC_MACROS
 		errline = line, errfile = file;
+#else
+		errline = 0, errfile = "?";
+#endif
 		elinks_error("add_to_ml(%p, NULL, ...)", ml);
 #endif
 		return;
@@ -118,6 +126,7 @@ add_to_ml(struct memory_list **ml, ...)
 	va_end(ap);
 }
 
+/** @relates memory_list */
 #ifdef DEBUG_MEMLIST
 void
 debug_add_one_to_ml(unsigned char *file, int line, struct memory_list **ml, void *p)
@@ -157,8 +166,9 @@ add_one_to_ml(struct memory_list **ml, void *p)
 }
 
 
-/* Free elements and memory list.
- * It returns safely if passed a NULL pointer. */
+/** Free elements and memory list.
+ * It returns safely if passed a NULL pointer.
+ * @relates memory_list */
 void
 freeml(struct memory_list *ml)
 {

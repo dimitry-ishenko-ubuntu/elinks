@@ -29,7 +29,7 @@ struct cache_entry {
 	/* Items in this list are ALLOCATED IN A NON-STANDARD WAY! Thus if you
 	 * are gonna mess with them (you shouldn't), you need to use the
 	 * mmap suite. */
-	struct list_head frag;		/* -> struct fragment */
+	LIST_OF(struct fragment) frag;
 
 	struct uri *uri;		/* Identifier for the cached data */
 	struct uri *proxy_uri;		/* Proxy identifier or same as @uri */
@@ -43,6 +43,8 @@ struct cache_entry {
 	unsigned char *encoding_info;	/* Encoding used during transfer */
 
 	unsigned int id;		/* Change each time entry is modified. */
+
+	time_t seconds;			/* Access time. Used by 'If-Modified-Since' */
 
 	off_t length;			/* The expected and complete size */
 	off_t data_size;		/* The actual size of all fragments */

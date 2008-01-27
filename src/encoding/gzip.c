@@ -33,15 +33,8 @@ gzip_open(struct stream_encoded *stream, int fd)
 static int
 gzip_read(struct stream_encoded *stream, unsigned char *data, int len)
 {
+	gzclearerr((gzFile *) stream->data);
 	return gzread((gzFile *) stream->data, data, len);
-}
-
-static unsigned char *
-gzip_decode(struct stream_encoded *stream, unsigned char *data, int len,
-	    int *new_len)
-{
-	*new_len = len;
-	return data;
 }
 
 
@@ -236,14 +229,13 @@ gzip_close(struct stream_encoded *stream)
 	gzclose((gzFile *) stream->data);
 }
 
-static unsigned char *gzip_extensions[] = { ".gz", ".tgz", NULL };
+static const unsigned char *const gzip_extensions[] = { ".gz", ".tgz", NULL };
 
-struct decoding_backend gzip_decoding_backend = {
+const struct decoding_backend gzip_decoding_backend = {
 	"gzip",
 	gzip_extensions,
 	gzip_open,
 	gzip_read,
-	gzip_decode,
 	gzip_decode_buffer,
 	gzip_close,
 };

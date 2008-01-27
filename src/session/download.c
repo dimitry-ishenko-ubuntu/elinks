@@ -1,4 +1,5 @@
-/* Downloads managment */
+/** Downloads managment
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -31,6 +32,7 @@
 #include "dialogs/menu.h"
 #include "intl/gettext/libintl.h"
 #include "main/object.h"
+#include "main/select.h"
 #include "mime/mime.h"
 #include "network/connection.h"
 #include "network/progress.h"
@@ -61,7 +63,9 @@
 /* TODO: tp_*() should be in separate file, I guess? --pasky */
 
 
-INIT_LIST_HEAD(downloads);
+INIT_LIST_OF(struct file_download, downloads);
+
+INIT_LIST_OF(struct popen_data, copiousoutput_data);
 
 int
 download_is_progressing(struct download *download)
@@ -140,9 +144,7 @@ abort_download(struct file_download *file_download)
 
 	if (file_download->dlg_data)
 		cancel_dialog(file_download->dlg_data, NULL);
-	if (is_in_progress_state(file_download->download.state))
-		change_connection(&file_download->download, NULL, PRI_CANCEL,
-				  file_download->stop);
+	cancel_download(&file_download->download, file_download->stop);
 	if (file_download->uri) done_uri(file_download->uri);
 
 	if (file_download->handle != -1) {
@@ -303,6 +305,33 @@ abort_download_and_beep(struct file_download *file_download, struct terminal *te
 }
 
 static void
+read_from_popen(struct session *ses, unsigned char *handler, unsigned char *filename)
+{
+	FILE *stream = popen(handler, "r");
+
+	if (stream) {
+		int fd = fileno(stream);
+
+		if (fd > 0) {
+			unsigned char buf[48];
+
+			struct popen_data *data = mem_calloc(1, sizeof(*data));
+
+			if (!data) {
+				fclose(stream);
+				return;
+			}
+			data->fd = fd;
+			data->stream = stream;
+			if (filename) data->filename = stracpy(filename);
+			add_to_list(copiousoutput_data, data);
+			snprintf(buf, 48, "file:///dev/fd/%d", fd);
+			goto_url(ses, buf);
+		}
+	}
+}
+
+static void
 download_data_store(struct download *download, struct file_download *file_download)
 {
 	struct terminal *term = file_download->term;
@@ -339,11 +368,19 @@ download_data_store(struct download *download, struct file_download *file_downlo
 		prealloc_truncate(file_download->handle, file_download->seek);
 		close(file_download->handle);
 		file_download->handle = -1;
-		exec_on_terminal(term, file_download->external_handler,
+		if (file_download->copiousoutput) {
+			read_from_popen(file_download->ses,
+					file_download->external_handler,
+					file_download->file);
+			file_download->delete = 0;
+			abort_download_and_beep(file_download, term);
+		} else {
+			exec_on_terminal(term, file_download->external_handler,
 				 file_download->file,
-				 !!file_download->block);
-		file_download->delete = 0;
-		abort_download_and_beep(file_download, term);
+				 file_download->block ? TERM_EXEC_FG : TERM_EXEC_BG);
+			file_download->delete = 0;
+			abort_download_and_beep(file_download, term);
+		}
 		return;
 	}
 
@@ -390,8 +427,7 @@ download_data(struct download *download, struct file_download *file_download)
 		file_download->remotetime = parse_date(&cached->last_modified, NULL, 0, 1);
 
 	if (cached->redirect && file_download->redirect_cnt++ < MAX_REDIRECTS) {
-		if (is_in_progress_state(download->state))
-			change_connection(&file_download->download, NULL, PRI_CANCEL, 0);
+		cancel_download(&file_download->download, 0);
 
 		assertm(compare_uri(cached->uri, file_download->uri, 0),
 			"Redirecting using bad base URI");
@@ -431,33 +467,47 @@ struct lun_hop {
 	void *data;
 };
 
+enum {
+	COMMON_DOWNLOAD_DO = 0,
+	CONTINUE_DOWNLOAD_DO
+};
+
+struct cmdw_hop {
+	int magic; /* Must be first --witekfl */
+	struct session *ses;
+	unsigned char *real_file;
+};
+
+struct codw_hop {
+	int magic; /* must be first --witekfl */
+	struct type_query *type_query;
+	unsigned char *real_file;
+	unsigned char *file;
+};
+
+struct cdf_hop {
+	unsigned char **real_file;
+	int safe;
+
+	void (*callback)(struct terminal *, int, void *, int);
+	void *data;
+};
+
 static void
-lun_alternate(struct lun_hop *lun_hop)
+lun_alternate(void *lun_hop_)
 {
+	struct lun_hop *lun_hop = lun_hop_;
+
 	lun_hop->callback(lun_hop->term, lun_hop->file, lun_hop->data, 0);
 	mem_free_if(lun_hop->ofile);
 	mem_free(lun_hop);
 }
 
 static void
-lun_overwrite(struct lun_hop *lun_hop)
+lun_cancel(void *lun_hop_)
 {
-	lun_hop->callback(lun_hop->term, lun_hop->ofile, lun_hop->data, 0);
-	mem_free_if(lun_hop->file);
-	mem_free(lun_hop);
-}
+	struct lun_hop *lun_hop = lun_hop_;
 
-static void
-lun_resume(struct lun_hop *lun_hop)
-{
-	lun_hop->callback(lun_hop->term, lun_hop->ofile, lun_hop->data, 1);
-	mem_free_if(lun_hop->file);
-	mem_free(lun_hop);
-}
-
-static void
-lun_cancel(struct lun_hop *lun_hop)
-{
 	lun_hop->callback(lun_hop->term, NULL, lun_hop->data, 0);
 	mem_free_if(lun_hop->ofile);
 	mem_free_if(lun_hop->file);
@@ -465,10 +515,61 @@ lun_cancel(struct lun_hop *lun_hop)
 }
 
 static void
+lun_overwrite(void *lun_hop_)
+{
+	struct lun_hop *lun_hop = lun_hop_;
+
+	lun_hop->callback(lun_hop->term, lun_hop->ofile, lun_hop->data, 0);
+	mem_free_if(lun_hop->file);
+	mem_free(lun_hop);
+}
+
+static void common_download_do(struct terminal *term, int fd, void *data, int resume);
+
+static void
+lun_resume(void *lun_hop_)
+{
+	struct lun_hop *lun_hop = lun_hop_;
+	struct cdf_hop *cdf_hop = lun_hop->data;
+
+	int magic = *(int *)cdf_hop->data;
+
+	if (magic == CONTINUE_DOWNLOAD_DO) {
+		struct cmdw_hop *cmdw_hop = mem_calloc(1, sizeof(*cmdw_hop));
+
+		if (!cmdw_hop) {
+			lun_cancel(lun_hop);
+			return;
+		} else {
+			struct codw_hop *codw_hop = cdf_hop->data;
+			struct type_query *type_query = codw_hop->type_query;
+
+			cmdw_hop->magic = COMMON_DOWNLOAD_DO;
+			cmdw_hop->ses = type_query->ses;
+			/* FIXME: Current ses->download_uri is overwritten here --witekfl */
+			cmdw_hop->ses->download_uri = get_uri_reference(type_query->uri);
+
+			if (type_query->external_handler) mem_free_if(codw_hop->file);
+			tp_cancel(type_query);
+			mem_free(codw_hop);
+
+			cdf_hop->real_file = &cmdw_hop->real_file;
+			cdf_hop->data = cmdw_hop;
+			cdf_hop->callback = common_download_do;
+		}
+	}
+	lun_hop->callback(lun_hop->term, lun_hop->ofile, lun_hop->data, 1);
+	mem_free_if(lun_hop->file);
+	mem_free(lun_hop);
+}
+
+
+static void
 lookup_unique_name(struct terminal *term, unsigned char *ofile, int resume,
 		   void (*callback)(struct terminal *, unsigned char *, void *, int),
 		   void *data)
 {
+	/* [gettext_accelerator_context(.lookup_unique_name)] */
 	struct lun_hop *lun_hop;
 	unsigned char *file;
 	int overwrite;
@@ -538,20 +639,13 @@ lookup_unique_name(struct terminal *term, unsigned char *ofile, int resume,
 			empty_string_or_(lun_hop->ofile),
 			empty_string_or_(file)),
 		lun_hop, 4,
-		N_("Sa~ve under the alternative name"), lun_alternate, B_ENTER,
-		N_("~Overwrite the original file"), lun_overwrite, 0,
-		N_("~Resume download of the original file"), lun_resume, 0,
-		N_("~Cancel"), lun_cancel, B_ESC);
+		MSG_BOX_BUTTON(N_("Sa~ve under the alternative name"), lun_alternate, B_ENTER),
+		MSG_BOX_BUTTON(N_("~Overwrite the original file"), lun_overwrite, 0),
+		MSG_BOX_BUTTON(N_("~Resume download of the original file"), lun_resume, 0),
+		MSG_BOX_BUTTON(N_("~Cancel"), lun_cancel, B_ESC));
 }
 
 
-struct cdf_hop {
-	unsigned char **real_file;
-	int safe;
-
-	void (*callback)(struct terminal *, int, void *, int);
-	void *data;
-};
 
 static void
 create_download_file_do(struct terminal *term, unsigned char *file, void *data,
@@ -571,6 +665,9 @@ create_download_file_do(struct terminal *term, unsigned char *file, void *data,
 
 	wd = get_cwd();
 	set_cwd(term->cwd);
+
+	/* Create parent directories if needed. */
+	mkalldirs(file);
 
 	/* O_APPEND means repositioning at the end of file before each write(),
 	 * thus ignoring seek()s and that can hide mysterious bugs. IMHO.
@@ -689,6 +786,9 @@ static unsigned char *
 subst_file(unsigned char *prog, unsigned char *file)
 {
 	struct string name;
+	/* When there is no %s in the mailcap entry, the handler program reads
+	 * data from stdin instead of a file. */
+	int input = 1;
 
 	if (!init_string(&name)) return NULL;
 
@@ -701,6 +801,7 @@ subst_file(unsigned char *prog, unsigned char *file)
 		prog += p;
 
 		if (*prog == '%') {
+			input = 0;
 #if defined(HAVE_CYGWIN_CONV_TO_FULL_WIN32_PATH)
 #ifdef MAX_PATH
 			unsigned char new_path[MAX_PATH];
@@ -717,14 +818,22 @@ subst_file(unsigned char *prog, unsigned char *file)
 		}
 	}
 
+	if (input) {
+		struct string s;
+
+		if (init_string(&s)) {
+			add_to_string(&s, "/bin/cat ");
+			add_shell_quoted_to_string(&s, file, strlen(file));
+			add_to_string(&s, " | ");
+			add_string_to_string(&s, &name);
+			done_string(&name);
+			return s.source;
+		}
+	}
 	return name.source;
 }
 
 
-struct cmdw_hop {
-	struct session *ses;
-	unsigned char *real_file;
-};
 
 static void
 common_download_do(struct terminal *term, int fd, void *data, int resume)
@@ -760,6 +869,7 @@ common_download(struct session *ses, unsigned char *file, int resume)
 	cmdw_hop = mem_calloc(1, sizeof(*cmdw_hop));
 	if (!cmdw_hop) return;
 	cmdw_hop->ses = ses;
+	cmdw_hop->magic = COMMON_DOWNLOAD_DO;
 
 	kill_downloads_to_file(file);
 
@@ -780,11 +890,6 @@ resume_download(void *ses, unsigned char *file)
 }
 
 
-struct codw_hop {
-	struct type_query *type_query;
-	unsigned char *real_file;
-	unsigned char *file;
-};
 
 static void
 continue_download_do(struct terminal *term, int fd, void *data, int resume)
@@ -809,6 +914,7 @@ continue_download_do(struct terminal *term, int fd, void *data, int resume)
 		file_download->external_handler = subst_file(type_query->external_handler,
 							     codw_hop->file);
 		file_download->delete = 1;
+		file_download->copiousoutput = type_query->copiousoutput;
 		mem_free(codw_hop->file);
 		mem_free_set(&type_query->external_handler, NULL);
 	}
@@ -819,7 +925,7 @@ continue_download_do(struct terminal *term, int fd, void *data, int resume)
 	 * handler can become initialized. */
 	display_download(term, file_download, type_query->ses);
 
-	change_connection(&type_query->download, &file_download->download, PRI_DOWNLOAD, 0);
+	move_download(&type_query->download, &file_download->download, PRI_DOWNLOAD);
 	done_type_query(type_query);
 
 	mem_free(codw_hop);
@@ -854,6 +960,7 @@ continue_download(void *data, unsigned char *file)
 
 	codw_hop->type_query = type_query;
 	codw_hop->file = file;
+	codw_hop->magic = CONTINUE_DOWNLOAD_DO;
 
 	kill_downloads_to_file(file);
 
@@ -885,7 +992,7 @@ init_type_query(struct session *ses, struct download *download,
 	type_query->cached = cached;
 	object_lock(type_query->cached);
 
-	change_connection(download, &type_query->download, PRI_MAIN, 0);
+	move_download(download, &type_query->download, PRI_MAIN);
 	download->state = S_OK;
 
 	add_to_list(ses->type_queries, type_query);
@@ -897,8 +1004,7 @@ void
 done_type_query(struct type_query *type_query)
 {
 	/* Unregister any active download */
-	if (is_in_progress_state(type_query->download.state))
-		change_connection(&type_query->download, NULL, PRI_CANCEL, 0);
+	cancel_download(&type_query->download, 0);
 
 	object_unlock(type_query->cached);
 	done_uri(type_query->uri);
@@ -913,8 +1019,9 @@ void
 tp_cancel(void *data)
 {
 	struct type_query *type_query = data;
+
 	/* XXX: Should we really abort? (1 vs 0 as the last param) --pasky */
-	change_connection(&type_query->download, NULL, PRI_CANCEL, 1);
+	cancel_download(&type_query->download, 1);
 	done_type_query(type_query);
 }
 
@@ -926,7 +1033,7 @@ tp_save(struct type_query *type_query)
 	query_file(type_query->ses, type_query->uri, type_query, continue_download, tp_cancel, 1);
 }
 
-/* This button handler uses the add_dlg_button() interface so that pressing
+/** This button handler uses the add_dlg_button() interface so that pressing
  * 'Show header' will not close the type query dialog. */
 static widget_handler_status_T
 tp_show_header(struct dialog_data *dlg_data, struct widget_data *widget_data)
@@ -939,9 +1046,10 @@ tp_show_header(struct dialog_data *dlg_data, struct widget_data *widget_data)
 }
 
 
-/* FIXME: We need to modify this function to take frame data instead, as we
- * want to use this function for frames as well (now, when frame has content
- * type text/plain, it is ignored and displayed as HTML). */
+/** @bug FIXME: We need to modify this function to take frame data
+ * instead, as we want to use this function for frames as well (now,
+ * when frame has content type text/plain, it is ignored and displayed
+ * as HTML). */
 void
 tp_display(struct type_query *type_query)
 {
@@ -964,21 +1072,42 @@ tp_display(struct type_query *type_query)
 		new->callback = (download_callback_T *) doc_loading_callback;
 		new->data = ses;
 
-		if (is_in_progress_state(old->state))
-			change_connection(old, new, PRI_MAIN, 0);
-		else
-			new->state = old->state;
+		move_download(old, new, PRI_MAIN);
 	}
 
 	display_timer(ses);
 	done_type_query(type_query);
 }
 
+
 static void
 tp_open(struct type_query *type_query)
 {
 	if (!type_query->external_handler || !*type_query->external_handler) {
 		tp_display(type_query);
+		return;
+	}
+
+	if (type_query->uri->protocol == PROTOCOL_FILE) {
+		unsigned char *file = get_uri_string(type_query->uri, URI_PATH);
+		unsigned char *handler = NULL;
+
+		if (file) {
+			handler = subst_file(type_query->external_handler, file);
+			mem_free(file);
+		}
+
+		if (handler) {
+			if (type_query->copiousoutput)
+				read_from_popen(type_query->ses, handler, NULL);
+			else
+				exec_on_terminal(type_query->ses->tab->term,
+					 handler, "",
+					 type_query->block ? TERM_EXEC_FG : TERM_EXEC_BG);
+			mem_free(handler);
+		}
+
+		done_type_query(type_query);
 		return;
 	}
 
@@ -989,6 +1118,7 @@ tp_open(struct type_query *type_query)
 static void
 do_type_query(struct type_query *type_query, unsigned char *ct, struct mime_handler *handler)
 {
+	/* [gettext_accelerator_context(.do_type_query)] */
 	struct string filename;
 	unsigned char *description;
 	unsigned char *desc_sep;
@@ -1030,12 +1160,24 @@ do_type_query(struct type_query *type_query, unsigned char *ct, struct mime_hand
 
 		/* Let's make the filename pretty for display & save */
 		/* TODO: The filename can be the empty string here. See bug 396. */
-		decode_uri_string_for_display(&filename);
+#ifdef CONFIG_UTF8
+		if (term->utf8_cp)
+			decode_uri_string(&filename);
+		else
+#endif /* CONFIG_UTF8 */
+			decode_uri_string_for_display(&filename);
 	}
 
 	text = get_dialog_offset(dlg, TYPE_QUERY_WIDGETS_COUNT);
-	format = _("What would you like to do with the file '%s' (type: %s%s%s)?", term);
-	snprintf(text, MAX_STR_LEN, format, filename.source, ct, desc_sep, description);
+	/* For "default directory index pages" with wrong content-type
+	 * the filename can be NULL, e.g. http://www.spamhaus.org in bug 396. */
+	if (filename.length) {
+		format = _("What would you like to do with the file '%s' (type: %s%s%s)?", term);
+		snprintf(text, MAX_STR_LEN, format, filename.source, ct, desc_sep, description);
+	} else {
+		format = _("What would you like to do with the file (type: %s%s%s)?", term);
+		snprintf(text, MAX_STR_LEN, format, ct, desc_sep, description);
+	}
 
 	done_string(&filename);
 
@@ -1057,10 +1199,7 @@ do_type_query(struct type_query *type_query, unsigned char *ct, struct mime_hand
 		}
 
 		if (handler && handler->program) {
-			int programlen = strlen(handler->program);
-
-			programlen = int_max(programlen, MAX_STR_LEN);
-			memcpy(field, handler->program, programlen);
+			safe_strncpy(field, handler->program, MAX_STR_LEN);
 		}
 
 		/* xgettext:no-c-format */
@@ -1068,7 +1207,13 @@ do_type_query(struct type_query *type_query, unsigned char *ct, struct mime_hand
 			0, 0, NULL, MAX_STR_LEN, field, NULL);
 		type_query->external_handler = field;
 
-		add_dlg_radio(dlg, _("Block the terminal", term), 0, 0, &type_query->block);
+		if (type_query->copiousoutput) {
+			add_dlg_text(dlg, _("The output of the program "
+					    "will be shown in the tab", term),
+				     ALIGN_LEFT, 0);
+		} else {
+			add_dlg_radio(dlg, _("Block the terminal", term), 0, 0, &type_query->block);
+		}
 		selected_widget = 3;
 
 	} else if (handler) {
@@ -1123,7 +1268,7 @@ do_type_query(struct type_query *type_query, unsigned char *ct, struct mime_hand
 
 	add_dlg_end(dlg, widgets);
 
-	ml = getml(dlg, NULL);
+	ml = getml(dlg, (void *) NULL);
 	if (!ml) {
 		/* XXX: Assume that the allocated @external_handler will be
 		 * freed when releasing the @type_query. */
@@ -1143,16 +1288,17 @@ do_type_query(struct type_query *type_query, unsigned char *ct, struct mime_hand
 struct {
 	unsigned char *type;
 	unsigned int plain:1;
-} static known_types[] = {
+} static const known_types[] = {
 	{ "text/html",			0 },
+	{ "text/plain",			1 },
 	{ "application/xhtml+xml",	0 }, /* RFC 3236 */
 #if CONFIG_DOM
-	{ "application/rss+xml",	1 },
+	{ "application/docbook+xml",	1 },
+	{ "application/rss+xml",	0 },
 	{ "application/xbel+xml",	1 },
 	{ "application/xbel",		1 },
 	{ "application/x-xbel",		1 },
 #endif
-	{ "text/plain",			1 },
 	{ NULL,				1 },
 };
 
@@ -1188,6 +1334,7 @@ setup_download_handler(struct session *ses, struct download *loading,
 	type_query = init_type_query(ses, loading, cached);
 	if (type_query) {
 		ret = 1;
+		if (handler) type_query->copiousoutput = handler->copiousoutput;
 #ifdef CONFIG_BITTORRENT
 		/* A terrible waste of a good MIME handler here, but we want
 		 * to use the type_query this is easier. */

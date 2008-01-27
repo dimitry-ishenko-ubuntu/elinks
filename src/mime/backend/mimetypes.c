@@ -67,7 +67,6 @@ static struct option_info mimetypes_options[] = {
 
 /* State variables */
 static struct hash *mimetypes_map = NULL;
-static int mimetypes_map_size = 0;
 
 
 static void
@@ -123,10 +122,7 @@ parse_mimetypes_extensions(unsigned char *token, unsigned char *ctype)
 
 		item = add_hash_item(mimetypes_map, entry->extension, extlen,
 				     entry);
-
-		if (item)
-			mimetypes_map_size++;
-		else
+		if (!item)
 			done_mimetypes_entry(entry);
 	}
 }
@@ -171,7 +167,7 @@ init_mimetypes_map(void)
 {
 	unsigned char *path;
 
-	mimetypes_map = init_hash(8, &strhash);
+	mimetypes_map = init_hash8();
 	if (!mimetypes_map)
 		return NULL;
 
@@ -207,9 +203,7 @@ done_mimetypes(struct module *module)
 		}
 	}
 
-	free_hash(mimetypes_map);
-	mimetypes_map = NULL;
-	mimetypes_map_size = 0;
+	free_hash(&mimetypes_map);
 }
 
 static int
@@ -227,7 +221,7 @@ change_hook_mimetypes(struct session *ses, struct option *current, struct option
 static void
 init_mimetypes(struct module *module)
 {
-	struct change_hook_info mimetypes_change_hooks[] = {
+	static const struct change_hook_info mimetypes_change_hooks[] = {
 		{ "mime.mimetypes",		change_hook_mimetypes },
 		{ NULL,				NULL },
 	};
@@ -276,7 +270,7 @@ get_content_type_mimetypes(unsigned char *extension)
 	return NULL;
 }
 
-struct mime_backend mimetypes_mime_backend = {
+const struct mime_backend mimetypes_mime_backend = {
 	/* get_content_type: */	get_content_type_mimetypes,
 	/* get_mime_handler: */	NULL,
 };

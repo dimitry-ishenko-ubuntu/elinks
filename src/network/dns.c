@@ -34,6 +34,7 @@
 #include "main/select.h"
 #include "network/dns.h"
 #include "osdep/osdep.h"
+#include "protocol/uri.h"
 #include "util/error.h"
 #include "util/memory.h"
 #include "util/time.h"
@@ -75,7 +76,7 @@ struct dnsquery {
 static struct dnsquery *dns_queue = NULL;
 #endif
 
-static INIT_LIST_HEAD(dns_cache);
+static INIT_LIST_OF(struct dnsentry, dns_cache);
 
 static void done_dns_lookup(struct dnsquery *query, enum dns_result res);
 
@@ -143,7 +144,7 @@ do_real_lookup(unsigned char *name, struct sockaddr_storage **addrs, int *addrno
 #ifdef CONFIG_IPV6
 	struct addrinfo hint, *ai, *ai_cur;
 #else
-	struct hostent *hostent;
+	struct hostent *hostent = NULL;
 #endif
 	int i;
 
@@ -158,14 +159,19 @@ do_real_lookup(unsigned char *name, struct sockaddr_storage **addrs, int *addrno
 	memset(&hint, 0, sizeof(hint));
 	hint.ai_family = AF_UNSPEC;
 	hint.ai_socktype = SOCK_STREAM;
-	if (getaddrinfo(name, NULL, &hint, &ai) != 0) return -1;
+	if (getaddrinfo(name, NULL, &hint, &ai) != 0) return DNS_ERROR;
 
 #else
 	/* Seems there are problems on Mac, so we first need to try
 	 * gethostbyaddr(), but there are problems with gethostbyaddr on Cygwin,
 	 * so we do not use gethostbyaddr there. */
 #if defined(HAVE_GETHOSTBYADDR) && !defined(HAVE_SYS_CYGWIN_H)
-	hostent = gethostbyaddr(name, strlen(name), AF_INET);
+	{
+		struct in_addr inp;
+
+		if (is_ip_address(name, strlen(name)) && inet_aton(name, &inp))
+			hostent = gethostbyaddr(&inp, sizeof(inp), AF_INET);
+	}
 	if (!hostent)
 #endif
 	{
@@ -190,7 +196,29 @@ do_real_lookup(unsigned char *name, struct sockaddr_storage **addrs, int *addrno
 
 #ifdef CONFIG_IPV6
 	for (i = 0, ai_cur = ai; ai_cur; i++, ai_cur = ai_cur->ai_next) {
-		struct sockaddr_in6 *addr = (struct sockaddr_in6 *) &(*addrs)[i];
+		/* Don't use struct sockaddr_in6 here: because we
+		 * called getaddrinfo with AF_UNSPEC, the address
+		 * might not be for IP at all.  */
+		struct sockaddr_storage *addr = &(*addrs)[i];
+
+		/* RFC 3493 says struct sockaddr_storage is supposed
+		 * to be "Large enough to accommodate all supported
+		 * protocol-specific address structures."  So if
+		 * getaddrinfo supports an address that does not fit
+		 * in struct sockaddr_storage, then it is a bug in the
+		 * library.  In this case, fail the whole lookup, to
+		 * make the bug more likely to be noticed.  */
+		assert(ai_cur->ai_addrlen <= sizeof(*addr));
+		if_assert_failed {
+			freeaddrinfo(ai);
+			if (in_thread)
+				free(*addrs);
+			else
+				mem_free(*addrs);
+			*addrs = NULL;
+			*addrno = 0;
+			return DNS_ERROR;
+		}
 
 		memcpy(addr, ai_cur->ai_addr, ai_cur->ai_addrlen);
 	}
@@ -380,7 +408,7 @@ do_queued_lookup(struct dnsquery *query)
 		assertm(!dns_queue->next_in_queue, "DNS queue corrupted");
 		dns_queue->next_in_queue = query;
 		dns_queue = query;
-		return -1;
+		return DNS_ERROR;
 	}
 
 	dns_queue = query;
@@ -506,7 +534,7 @@ kill_dns_request(void **queryref)
 	assert(query);
 
 	query->done = NULL;
-	done_dns_lookup(query, -1);
+	done_dns_lookup(query, DNS_ERROR);
 }
 
 void

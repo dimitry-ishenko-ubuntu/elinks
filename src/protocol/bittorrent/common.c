@@ -21,6 +21,8 @@
 #include "util/string.h"
 #include "util/snprintf.h"
 
+const bittorrent_id_T BITTORRENT_NULL_ID;
+
 /* Debug function which returns printable peer ID. */
 unsigned char *
 get_peer_id(bittorrent_id_T peer_id)
@@ -211,7 +213,7 @@ get_peer_from_bittorrent_pool(struct bittorrent_connection *bittorrent,
 enum bittorrent_state
 add_peer_to_bittorrent_pool(struct bittorrent_connection *bittorrent,
 			    bittorrent_id_T id, int port,
-			    unsigned char *ip, int iplen)
+			    const unsigned char *ip, int iplen)
 {
 	struct bittorrent_peer *peer;
 
@@ -351,8 +353,7 @@ bittorrent_fetch_callback(struct download *download, void *data)
 		return;
 
 	if (cached->redirect && fetcher->redirects++ < MAX_REDIRECTS) {
-		if (is_in_progress_state(download->state))
-			change_connection(download, NULL, PRI_CANCEL, 0);
+		cancel_download(download, 0);
 
 		download->state = S_WAIT_REDIR;
 
@@ -427,8 +428,7 @@ end_bittorrent_fetch(void *fetcher_data)
 	assert(fetcher && !fetcher->callback);
 
 	/* Stop any running connections. */
-	if (is_in_progress_state(fetcher->download.state))
-		change_connection(&fetcher->download, NULL, PRI_CANCEL, 0);
+	cancel_download(&fetcher->download, 0);
 
 	mem_free(fetcher);
 }
@@ -465,7 +465,7 @@ struct bittorrent_blacklist_item {
 	bittorrent_id_T id;
 };
 
-static INIT_LIST_HEAD(bittorrent_blacklist);
+static INIT_LIST_OF(struct bittorrent_blacklist_item, bittorrent_blacklist);
 
 
 static struct bittorrent_blacklist_item *

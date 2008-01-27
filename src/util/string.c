@@ -1,4 +1,5 @@
-/* String handling functions */
+/** String handling functions
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -40,7 +41,7 @@
 #ifdef DEBUG_MEMLEAK
 
 unsigned char *
-debug_memacpy(unsigned char *f, int l, unsigned char *src, int len)
+debug_memacpy(const unsigned char *f, int l, const unsigned char *src, int len)
 {
 	unsigned char *m;
 
@@ -57,7 +58,7 @@ debug_memacpy(unsigned char *f, int l, unsigned char *src, int len)
 }
 
 unsigned char *
-debug_stracpy(unsigned char *f, int l, unsigned char *src)
+debug_stracpy(const unsigned char *f, int l, const unsigned char *src)
 {
 	string_assert(f, l, src, "stracpy");
 	if_assert_failed return NULL;
@@ -68,7 +69,7 @@ debug_stracpy(unsigned char *f, int l, unsigned char *src)
 #else /* DEBUG_MEMLEAK */
 
 unsigned char *
-memacpy(unsigned char *src, int len)
+memacpy(const unsigned char *src, int len)
 {
 	unsigned char *m;
 
@@ -85,7 +86,7 @@ memacpy(unsigned char *src, int len)
 }
 
 unsigned char *
-stracpy(unsigned char *src)
+stracpy(const unsigned char *src)
 {
 	assertm(src, "[stracpy]");
 	if_assert_failed return NULL;
@@ -97,7 +98,7 @@ stracpy(unsigned char *src)
 
 
 void
-add_to_strn(unsigned char **dst, unsigned char *src)
+add_to_strn(unsigned char **dst, const unsigned char *src)
 {
 	unsigned char *newdst;
 	int dstlen;
@@ -116,7 +117,8 @@ add_to_strn(unsigned char **dst, unsigned char *src)
 }
 
 unsigned char *
-insert_in_string(unsigned char **dst, int pos, unsigned char *seq, int seqlen)
+insert_in_string(unsigned char **dst, int pos,
+		 const unsigned char *seq, int seqlen)
 {
 	int dstlen = strlen(*dst);
 	unsigned char *string = mem_realloc(*dst, dstlen + seqlen + 1);
@@ -131,14 +133,14 @@ insert_in_string(unsigned char **dst, int pos, unsigned char *seq, int seqlen)
 }
 
 unsigned char *
-straconcat(unsigned char *str, ...)
+straconcat(const unsigned char *str, ...)
 {
 	va_list ap;
-	unsigned char *a;
+	const unsigned char *a;
 	unsigned char *s;
 	unsigned int len;
 
-	assertm(str, "[straconcat]");
+	assertm(str != NULL, "[straconcat]");
 	if_assert_failed { return NULL; }
 
 	len = strlen(str);
@@ -148,7 +150,7 @@ straconcat(unsigned char *str, ...)
 	if (len) memcpy(s, str, len);
 
 	va_start(ap, str);
-	while ((a = va_arg(ap, unsigned char *))) {
+	while ((a = va_arg(ap, const unsigned char *))) {
 		unsigned int l = strlen(a);
 		unsigned char *ns;
 
@@ -172,7 +174,7 @@ straconcat(unsigned char *str, ...)
 }
 
 int
-xstrcmp(unsigned char *s1, unsigned char *s2)
+xstrcmp(const unsigned char *s1, const unsigned char *s2)
 {
 	if (!s1) return -!!s2;
 	if (!s2) return 1;
@@ -244,12 +246,12 @@ elinks_strlcasecmp(const unsigned char *s1, size_t n1,
 
 inline struct string *
 #ifdef DEBUG_MEMLEAK
-init_string__(unsigned char *file, int line, struct string *string)
+init_string__(const unsigned char *file, int line, struct string *string)
 #else
 init_string(struct string *string)
 #endif
 {
-	assertm(string, "[init_string]");
+	assertm(string != NULL, "[init_string]");
 	if_assert_failed { return NULL; }
 
 	string->length = 0;
@@ -270,7 +272,7 @@ init_string(struct string *string)
 inline void
 done_string(struct string *string)
 {
-	assertm(string, "[done_string]");
+	assertm(string != NULL, "[done_string]");
 	if_assert_failed { return; }
 
 	if (string->source) {
@@ -285,6 +287,7 @@ done_string(struct string *string)
 	memset(string, 0, sizeof(*string));
 }
 
+/** @relates string */
 inline struct string *
 add_to_string(struct string *string, const unsigned char *source)
 {
@@ -298,10 +301,11 @@ add_to_string(struct string *string, const unsigned char *source)
 	return add_bytes_to_string(string, source, strlen(source));
 }
 
+/** @relates string */
 inline struct string *
 add_crlf_to_string(struct string *string)
 {
-	assertm(string, "[add_crlf_to_string]");
+	assertm(string != NULL, "[add_crlf_to_string]");
 	if_assert_failed { return NULL; }
 
 	check_string_magic(string);
@@ -316,8 +320,9 @@ add_crlf_to_string(struct string *string)
 	return string;
 }
 
+/** @relates string */
 inline struct string *
-add_string_to_string(struct string *string, struct string *from)
+add_string_to_string(struct string *string, const struct string *from)
 {
 	assertm(string && from, "[add_string_to_string]");
 	if_assert_failed { return NULL; }
@@ -330,8 +335,9 @@ add_string_to_string(struct string *string, struct string *from)
 	return add_bytes_to_string(string, from->source, from->length);
 }
 
+/** @relates string */
 struct string *
-add_file_to_string(struct string *string, unsigned char *filename)
+add_file_to_string(struct string *string, const unsigned char *filename)
 {
 	FILE *file;
 	off_t filelen;
@@ -374,15 +380,15 @@ struct string *
 string_concat(struct string *string, ...)
 {
 	va_list ap;
-	unsigned char *source;
+	const unsigned char *source;
 
-	assertm(string, "[string_concat]");
+	assertm(string != NULL, "[string_concat]");
 	if_assert_failed { return NULL; }
 
 	check_string_magic(string);
 
 	va_start(ap, string);
-	while ((source = va_arg(ap, unsigned char *)))
+	while ((source = va_arg(ap, const unsigned char *)))
 		if (*source)
 			add_to_string(string, source);
 
@@ -391,6 +397,7 @@ string_concat(struct string *string, ...)
 	return string;
 }
 
+/** @relates string */
 inline struct string *
 add_char_to_string(struct string *string, unsigned char character)
 {
@@ -431,14 +438,13 @@ add_xchar_to_string(struct string *string, unsigned char character, int times)
 	return string;
 }
 
-/* Add printf-like format string to @string. */
+/** Add printf()-style format string to @a string. */
 struct string *
-add_format_to_string(struct string *string, unsigned char *format, ...)
+add_format_to_string(struct string *string, const unsigned char *format, ...)
 {
 	int newlength;
 	int width;
 	va_list ap;
-	va_list ap2;
 
 	assertm(string && format, "[add_format_to_string]");
 	if_assert_failed { return NULL; }
@@ -446,17 +452,16 @@ add_format_to_string(struct string *string, unsigned char *format, ...)
 	check_string_magic(string);
 
 	va_start(ap, format);
-	VA_COPY(ap2, ap);
-
-	width = vsnprintf(NULL, 0, format, ap2);
+	width = vsnprintf(NULL, 0, format, ap);
+	va_end(ap);
 	if (width <= 0) return NULL;
 
 	newlength = string->length + width;
 	if (!realloc_string(string, newlength))
 		return NULL;
 
+	va_start(ap, format);
 	vsnprintf(&string->source[string->length], width + 1, format, ap);
-
 	va_end(ap);
 
 	string->length = newlength;
@@ -466,8 +471,8 @@ add_format_to_string(struct string *string, unsigned char *format, ...)
 }
 
 struct string *
-add_to_string_list(struct list_head *list, const unsigned char *source,
-		   int length)
+add_to_string_list(LIST_OF(struct string_list_item) *list,
+		   const unsigned char *source, int length)
 {
 	struct string_list_item *item;
 	struct string *string;
@@ -492,10 +497,11 @@ add_to_string_list(struct list_head *list, const unsigned char *source,
 	return string;
 }
 
+/** @relates string_list_item */
 void
-free_string_list(struct list_head *list)
+free_string_list(LIST_OF(struct string_list_item) *list)
 {
-	assertm(list, "[free_string_list]");
+	assertm(list != NULL, "[free_string_list]");
 	if_assert_failed return;
 
 	while (!list_empty(*list)) {

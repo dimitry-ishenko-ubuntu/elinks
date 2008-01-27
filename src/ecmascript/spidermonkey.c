@@ -55,10 +55,6 @@
 
 /* TODO? Are there any which need to be implemented? */
 
-
-
-/*** The ELinks interface */
-
 static JSRuntime *jsrt;
 
 static void
@@ -123,14 +119,7 @@ safeguard(JSContext *ctx, JSScript *script)
 		struct terminal *term = interpreter->vs->doc_view->session->tab->term;
 
 		/* A killer script! Alert! */
-		info_box(term, MSGBOX_FREE_TEXT,
-			 N_("JavaScript Emergency"), ALIGN_LEFT,
-			 msg_text(term,
-				  N_("A script embedded in the current document was running\n"
-				  "for more than %d seconds. This probably means there is\n"
-				  "a bug in the script and it could have halted the whole\n"
-				  "ELinks, so the script execution was interrupted."),
-				  max_exec_time));
+		ecmascript_timeout_dialog(term, max_exec_time);
 		return JS_FALSE;
 	}
 	return JS_TRUE;
@@ -145,8 +134,8 @@ setup_safeguard(struct ecmascript_interpreter *interpreter,
 }
 
 
-void
-spidermonkey_init(void)
+static void
+spidermonkey_init(struct module *xxx)
 {
 	jsrt = JS_NewRuntime(0x400000UL);
 	/* XXX: This is a hack to avoid a crash on exit. SMJS will crash
@@ -156,8 +145,8 @@ spidermonkey_init(void)
 	JS_DestroyContext(JS_NewContext(jsrt, 0));
 }
 
-void
-spidermonkey_done(void)
+static void
+spidermonkey_done(struct module *xxx)
 {
 	JS_DestroyRuntime(jsrt);
 	JS_ShutDown();
@@ -255,7 +244,7 @@ spidermonkey_put_interpreter(struct ecmascript_interpreter *interpreter)
 
 void
 spidermonkey_eval(struct ecmascript_interpreter *interpreter,
-                  struct string *code)
+                  struct string *code, struct string *ret)
 {
 	JSContext *ctx;
 	jsval rval;
@@ -263,6 +252,7 @@ spidermonkey_eval(struct ecmascript_interpreter *interpreter,
 	assert(interpreter);
 	ctx = interpreter->backend_data;
 	setup_safeguard(interpreter, ctx);
+	interpreter->ret = ret;
 	JS_EvaluateScript(ctx, JS_GetGlobalObject(ctx),
 	                  code->source, code->length, "", 0, &rval);
 }
@@ -278,6 +268,7 @@ spidermonkey_eval_stringback(struct ecmascript_interpreter *interpreter,
 	assert(interpreter);
 	ctx = interpreter->backend_data;
 	setup_safeguard(interpreter, ctx);
+	interpreter->ret = NULL;
 	if (JS_EvaluateScript(ctx, JS_GetGlobalObject(ctx),
 			      code->source, code->length, "", 0, &rval)
 	    == JS_FALSE) {
@@ -297,14 +288,20 @@ spidermonkey_eval_boolback(struct ecmascript_interpreter *interpreter,
 			   struct string *code)
 {
 	JSContext *ctx;
+	JSFunction *fun;
 	jsval rval;
 	int ret;
 
 	assert(interpreter);
 	ctx = interpreter->backend_data;
 	setup_safeguard(interpreter, ctx);
-	ret = JS_EvaluateScript(ctx, JS_GetGlobalObject(ctx),
-			  code->source, code->length, "", 0, &rval);
+	interpreter->ret = NULL;
+	fun = JS_CompileFunction(ctx, NULL, "", 0, NULL, code->source,
+				 code->length, "", 0);
+	if (!fun)
+		return -1;
+
+	ret = JS_CallFunction(ctx, NULL, fun, 0, NULL, &rval);
 	if (ret == 2) { /* onClick="history.back()" */
 		return 0;
 	}
@@ -318,3 +315,13 @@ spidermonkey_eval_boolback(struct ecmascript_interpreter *interpreter,
 
 	return jsval_to_boolean(ctx, &rval);
 }
+
+struct module spidermonkey_module = struct_module(
+	/* name: */		N_("SpiderMonkey"),
+	/* options: */		NULL,
+	/* events: */		NULL,
+	/* submodules: */	NULL,
+	/* data: */		NULL,
+	/* init: */		spidermonkey_init,
+	/* done: */		spidermonkey_done
+);

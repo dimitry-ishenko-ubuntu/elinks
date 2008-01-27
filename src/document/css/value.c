@@ -1,4 +1,5 @@
-/* CSS property value parser */
+/** CSS property value parser
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -40,7 +41,7 @@ css_parse_color_value(struct css_property_info *propinfo,
 			/* The first two args are terminated by ',' and the
 			 * last one by ')'. */
 			unsigned char paskynator = shift ? ',' : ')';
-			unsigned char *nstring = token->string;
+			const unsigned char *nstring = token->string;
 			int part;
 
 			/* Are the current and next token valid? */

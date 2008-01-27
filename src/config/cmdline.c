@@ -45,7 +45,7 @@ static unsigned char *remote_url;
 
 static enum retval
 parse_options_(int argc, unsigned char *argv[], struct option *opt,
-               struct list_head *url_list)
+               LIST_OF(struct string_list_item) *url_list)
 {
 	while (argc) {
 		argv++, argc--;
@@ -116,7 +116,8 @@ unknown_option:
 }
 
 enum retval
-parse_options(int argc, unsigned char *argv[], struct list_head *url_list)
+parse_options(int argc, unsigned char *argv[],
+	      LIST_OF(struct string_list_item) *url_list)
 {
 	return parse_options_(argc, argv, cmdline_options, url_list);
 }
@@ -298,9 +299,12 @@ remote_cmd(struct option *o, unsigned char ***argv, int *argc)
 
 		} else {
 			end = strchr(start, ',');
-			if (!end)
+			if (!end) {
 				end = start + strlen(start);
-			arg = end;
+				arg = end;
+			} else {
+				arg = end + 1;
+			}
 			skipback_whitespace(start, end);
 
 			if (start != end)
@@ -704,6 +708,7 @@ printconfigdump_cmd(struct option *option, unsigned char ***argv, int *argc)
 /* Keep options in alphabetical order. */
 
 struct option_info cmdline_options_info[] = {
+	/* [gettext_accelerator_context(IGNORE)] */
 	INIT_OPT_BOOL("", N_("Restrict to anonymous mode"),
 		"anonymous", 0, 0,
 		N_("Restricts ELinks so it can run on an anonymous account.\n"
@@ -764,6 +769,10 @@ struct option_info cmdline_options_info[] = {
 	INIT_OPT_CMDALIAS("", N_("Codepage to use with -dump"),
 		"dump-charset", 0, "document.dump.codepage",
 		N_("Codepage used when formatting dump output.")),
+
+	INIT_OPT_CMDALIAS("", N_("Color mode used with -dump"),
+		"dump-color-mode", 0, "document.dump.color_mode",
+		N_("Color mode used with -dump.")),
 
 	INIT_OPT_CMDALIAS("", N_("Width of document formatted with -dump"),
 		"dump-width", 0, "document.dump.width",

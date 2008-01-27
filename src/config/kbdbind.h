@@ -8,6 +8,7 @@
 #include "util/string.h"
 
 struct listbox_item;
+struct module;
 
 /* Used for holding enum <keymap>_action values. */
 typedef long action_id_T;
@@ -114,9 +115,6 @@ struct keybinding {
 };
 
 
-void init_keymaps(void);
-void free_keymaps(void);
-
 struct keybinding *add_keybinding(enum keymap_id keymap_id, action_id_T action_id, struct term_event_keyboard *kbd, int event);
 int keybinding_exists(enum keymap_id keymap_id, struct term_event_keyboard *kbd, action_id_T *action_id);
 void free_keybinding(struct keybinding *);
@@ -125,7 +123,7 @@ struct action *get_action(enum keymap_id keymap_id, action_id_T action_id);
 unsigned char *get_action_name(enum keymap_id keymap_id, action_id_T action_id);
 action_id_T get_action_from_string(enum keymap_id keymap_id, unsigned char *str);
 unsigned char *get_action_name_from_keystroke(enum keymap_id keymap_id,
-                                              unsigned char *keystroke_str);
+                                              const unsigned char *keystroke_str);
 
 static inline unsigned int
 action_is_anonymous_safe(enum keymap_id keymap_id, action_id_T action_id)
@@ -175,16 +173,23 @@ action_requires_form(enum keymap_id keymap_id, action_id_T action_id)
 	return action && (action->flags & ACTION_REQUIRE_FORM);
 }
 
-long read_key(unsigned char *);
+term_event_key_T read_key(const unsigned char *);
 unsigned char *get_keymap_name(enum keymap_id);
 
-int parse_keystroke(unsigned char *, struct term_event_keyboard *);
+int parse_keystroke(const unsigned char *, struct term_event_keyboard *);
 void add_keystroke_to_string(struct string *str, struct term_event_keyboard *kbd, int escape);
 
+/* void add_accesskey_to_string(struct string *str, unicode_val_T accesskey); */
 #define add_accesskey_to_string(str, accesskey) do { 		\
 	struct term_event_keyboard kbd; 			\
-	kbd.key = accesskey; /* FIXME: unicode_val_T to int */	\
-	kbd.modifier = 0; 					\
+	/* FIXME: #ifndef CONFIG_UTF8, kbd.key is encoded in	\
+	 * the charset of the terminal, so accesskey should be	\
+	 * converted from unicode_val_T to that.		\
+	 * #ifdef CONFIG_UTF8, the code is correct.  */		\
+	kbd.key = accesskey;					\
+	/* try_document_key() recognizes only Alt-accesskey	\
+	 * combos.  */						\
+	kbd.modifier = KBD_MOD_ALT;				\
 	add_keystroke_to_string(str, &kbd, 0); 			\
 } while (0)
 
@@ -192,12 +197,12 @@ action_id_T kbd_action(enum keymap_id, struct term_event *, int *);
 struct keybinding *kbd_ev_lookup(enum keymap_id, struct term_event_keyboard *kbd, int *);
 struct keybinding *kbd_nm_lookup(enum keymap_id, unsigned char *);
 
-int bind_do(unsigned char *, unsigned char *, unsigned char *, int);
-unsigned char *bind_act(unsigned char *, unsigned char *);
+int bind_do(unsigned char *, const unsigned char *, unsigned char *, int);
+unsigned char *bind_act(unsigned char *, const unsigned char *);
 void bind_config_string(struct string *);
 
 #ifdef CONFIG_SCRIPTING
-int bind_key_to_event_name(unsigned char *, unsigned char *, unsigned char *,
+int bind_key_to_event_name(unsigned char *, const unsigned char *, unsigned char *,
 			   unsigned char **);
 #endif
 
@@ -206,5 +211,7 @@ unsigned char *get_keystroke(action_id_T action_id, enum keymap_id keymap_id);
 
 void add_actions_to_string(struct string *string, action_id_T actions[],
 			   enum keymap_id keymap_id, struct terminal *term);
+
+extern struct module kbdbind_module;
 
 #endif

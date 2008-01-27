@@ -206,7 +206,9 @@ support for double-width characters (like Japanese, etc.).</p><p>Some features o
 most visible absence.
 Some features are partially supported. Like line breaking between
 double-width characters. There is no other detection for determining when to
-break or not.</p><p>Note: This UTF-8 support is experimental.</p><p><span class="strong"><strong>Default:</strong></span>  disabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-BACKTRACE"></a>Back-trace Printing (<code class="literal">CONFIG_BACKTRACE</code>)</h3></div></div></div><p>Once upon a time, a disaster happens and ELinks crashes. That is a very sad
+break or not.
+Character conversions are still incomplete for ECMAScript strings (bug 805),
+local file names, and IRIs (RFC 3987).</p><p><span class="strong"><strong>Default:</strong></span>  enabled</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="CONFIG-BACKTRACE"></a>Back-trace Printing (<code class="literal">CONFIG_BACKTRACE</code>)</h3></div></div></div><p>Once upon a time, a disaster happens and ELinks crashes. That is a very sad
 event and it would be very nice to have some means how to diagnose it. In the
 crash handler, ELinks prints out various helpful things, however the truly
 important information is _where_ did it crash. Usually, users do not have gdb

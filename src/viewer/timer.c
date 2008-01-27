@@ -8,6 +8,7 @@
 
 #include "config/kbdbind.h"
 #include "config/options.h"
+#include "intl/gettext/libintl.h"
 #include "main/module.h"
 #include "main/timer.h"
 #include "terminal/event.h"
@@ -28,6 +29,8 @@ get_timer_duration(void)
 	return timer_duration;
 }
 
+/* Timer callback for @countdown.  As explained in @install_timer,
+ * this function must erase the expired timer ID from all variables.  */
 static void
 count_down(void *xxx)
 {
@@ -40,6 +43,7 @@ count_down(void *xxx)
 	} else {
 		countdown = TIMER_ID_UNDEF;
 	}
+	/* The expired timer ID has now been erased.  */
 
 	keybinding = kbd_nm_lookup(KEYMAP_MAIN, get_opt_str("ui.timer.action"));
 	if (keybinding) {
@@ -81,7 +85,7 @@ done_timer(struct module *module)
 }
 
 struct module timer_module = struct_module(
-	/* name: */		"Timer",
+	/* name: */		N_("Timer"),
 	/* options: */		NULL,
 	/* hooks: */		NULL,
 	/* submodules: */	NULL,

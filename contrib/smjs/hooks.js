@@ -56,7 +56,7 @@ function mangle_deb_bugnumbers(cached, vs) {
 	var closes_re = /closes:\s*(?:bug)?\#?\s?\d+(?:,\s*(?:bug)?\#?\s?\d+)*/gi;
 
 	var new_content = cached.content.replace(closes_re, rewrite_closes_fn);
-	if (cached.content_type == 'text/plain') {
+	if (cached.type == 'text/plain') {
 		cached.content = '<pre>' + new_content + '</pre>';
 		vs.plain = "0";
 	} else {
@@ -74,9 +74,13 @@ function block_pr0n(uri) {
 		return "";
 	}
 
-	return true;
+	return uri;
 }
 elinks.follow_url_hooks.push(block_pr0n);
+
+function reload() {
+	do_file(elinks.home + 'hooks.js');
+}
 
 do_file(elinks.home + 'smartprefixes_bookmarks.js');
 do_file(elinks.home + 'smartprefixes_classic.js');

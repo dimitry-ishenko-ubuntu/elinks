@@ -12,21 +12,15 @@ correctly in the DOM tree.
 . "$TEST_LIB"
 
 test_output_equals () {
-	desc="$1"
-	src="$2"
-	out="$3"
+	desc="$1"; shift
+	src="$1"; shift
+	out="$1"; shift
 
-	URI="test:$(echo "$desc" | sed '
-		s/^[ \t]*\[[^]]*\][ \t]*//;
-		s/[:., \t][:., \t]*/-/g;
-		s/_/-/g;
-		# *cough*
-		y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;
-		s/[^a-zA-Z0-9-]//g;')"
+	URI="test:$(normalize "$desc")"
 
-	sgml-parser --uri "$URI" --src "$src" | sed 's/^  //' > output
+	sgml-parser --uri "$URI" --src "$src" > output
 	echo "#document: $URI" > expected
-	echo "$out" | sed -n '2,$p' >> expected
+	printf "%s\n" "$out" | sed -n '2,$p' | sed 's/^/  /' >> expected
 
 	test_expect_success "$desc" 'cmp output expected' 
 }
@@ -56,6 +50,24 @@ element: root
     #text: a'
 
 test_output_equals \
+'Parse tag soup elements. (I)' \
+'<parent attr="value" <child:1></><child:2</>a</parent>' \
+'
+element: parent
+  attribute: attr -> value
+  element: child:1
+  element: child:2
+  #text: a'
+
+test_output_equals \
+'Parse tag soup elements. (II)' \
+'< a >< b < c / >< / >' \
+'
+element: a
+  element: b
+    element: c'
+
+test_output_equals \
 'Parse an enclosed comment.' \
 '<root><!-- Hello World! --></root>' \
 '
@@ -63,7 +75,7 @@ element: root
   #comment:  Hello World! '
 
 test_output_equals \
-'Parse comment combinations.' \
+'Parse comment combinations. (I)' \
 '<root><!-- <!-- -- > --><!--foo--><!----></root>' \
 '
 element: root
@@ -72,10 +84,34 @@ element: root
   #comment: '
 
 test_output_equals \
-'Parse bad comment.' \
+'Parse comment combinations. (II).' \
+'<! -- comment -->s<!-->-->t<!----->u' \
+'
+#comment:  comment 
+#text: s
+#comment: >
+#text: t
+#comment: -
+#text: u'
+
+test_output_equals \
+'Parse bad comment. (I)' \
 '<!--->s' \
 '
 #comment: ->s'
+
+test_output_equals \
+'Parse bad comment. (II)' \
+'<!--a--!>bad comment' \
+'
+#comment: a
+#text: bad comment'
+
+test_output_equals \
+'Parse empty notation.' \
+'<!>s' \
+'
+#text: s'
 
 test_output_equals \
 'Parse an enclosed CDATA section.' \
@@ -167,7 +203,7 @@ test_output_equals \
 '
 proc-instruction: xml -> version="1.0" />
   attribute: version -> 1.0
-proc-instruction: xml -> /'
+proc-instruction: xml -> />-'
 
 test_output_equals \
 'Parse XML stylesheet processing instructions.' \
@@ -189,7 +225,7 @@ proc-instruction:  ->
 #text: -'
 
 test_output_equals \
-'Parse incorrect processing instructions.' \
+'Parse incorrect processing instructions. (I)' \
 '<?js<?>-<?<??>-<?xml <=";&?>-<?' \
 '
 proc-instruction: js -> <

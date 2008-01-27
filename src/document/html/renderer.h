@@ -12,6 +12,27 @@ struct string;
 
 void render_html_document(struct cache_entry *cached, struct document *document, struct string *buffer);
 
+
+/* Interface with parser.c */
+
+enum html_special_type {
+	SP_TAG,
+	SP_FORM,
+	SP_CONTROL,
+	SP_TABLE,
+	SP_USED,
+	SP_FRAMESET,
+	SP_FRAME,
+	SP_NOWRAP,
+	SP_CACHE_CONTROL,
+	SP_CACHE_EXPIRES,
+	SP_REFRESH,
+	SP_STYLESHEET,
+	SP_COLOR_LINK_LINES,
+	SP_SCRIPT,
+};
+
+
 /* Interface with tables.c */
 
 /* This holds some context about what we're currently rendering. We only need
@@ -23,6 +44,10 @@ struct part {
 
 	unsigned char *spaces;
 	int spaces_len;
+#ifdef CONFIG_UTF8
+	unsigned char *char_width;
+#endif
+
 
 	struct box box;
 
@@ -42,7 +67,5 @@ void draw_frame_vchars(struct part *, int, int, int, unsigned char data, color_T
 void free_table_cache(void);
 
 struct part *format_html_part(struct html_context *html_context, unsigned char *, unsigned char *, int, int, int, struct document *, int, int, unsigned char *, int);
-
-int find_tag(struct document *document, unsigned char *name, int namelen);
 
 #endif

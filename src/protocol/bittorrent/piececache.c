@@ -341,7 +341,7 @@ add_piece_to_bittorrent_free_list(struct bittorrent_piece_cache *cache,
 {
 	struct bittorrent_peer_request *request, *next;
 	uint32_t request_length, piece_length, piece_offset;
-	INIT_LIST_HEAD(requests);
+	INIT_LIST_OF(struct bittorrent_peer_request, requests);
 	uint16_t blocks = 0;
 
 	assert(piece <= bittorrent->meta.pieces);
@@ -379,7 +379,7 @@ add_piece_to_bittorrent_free_list(struct bittorrent_piece_cache *cache,
 		return NULL;
 	}
 
-	assertm(piece_offset == piece_length);
+	assert(piece_offset == piece_length);
 	assertm(blocks, "Piece was not divided into blocks");
 	assert(!cache->entries[piece].blocks);
 
@@ -585,28 +585,9 @@ remove_bittorrent_peer_from_piece_cache(struct bittorrent_peer_connection *peer)
 static enum bittorrent_state
 create_bittorrent_path(unsigned char *path)
 {
-	int pos;
+	int ret = mkalldirs(path);
 
-	if (!*path) return BITTORRENT_STATE_ERROR;
-
-	for (pos = 1; path[pos]; pos++) {
-		unsigned char separator = path[pos];
-		int ret;
-
-		if (!dir_sep(separator))
-			continue;
-
-		path[pos] = 0;
-
-		ret = mkdir(path, S_IREAD | S_IWRITE | S_IEXEC);
-
-		path[pos] = separator;
-
-		if (ret < 0 && errno != EEXIST)
-			return BITTORRENT_STATE_ERROR;
-	}
-
-	return BITTORRENT_STATE_OK;
+	return (ret ? BITTORRENT_STATE_ERROR : BITTORRENT_STATE_OK);
 }
 
 /* Complementary to the above rmdir()s each directory in the path. */
@@ -1098,7 +1079,7 @@ bittorrent_resume_writer(void *data, int fd)
 	uint32_t piece;
 
 	memcpy(&metafile.length, data, sizeof(metafile.length));
-	metafile.source = (unsigned char *) data + 4;
+	metafile.source = (unsigned char *) data + sizeof(metafile.length);
 
 	if (parse_bittorrent_metafile(&meta, &metafile) != BITTORRENT_STATE_OK) {
 		done_bittorrent_meta(&meta);
@@ -1240,7 +1221,7 @@ update_bittorrent_piece_cache_state(struct bittorrent_connection *bittorrent)
 	foreachsafe (entry, next, cache->queue) {
 		uint32_t piece_length, piece;
 
-		assertm(entry->data && entry->completed);
+		assert(entry->data && entry->completed);
 
 		piece = entry - cache->entries;
 

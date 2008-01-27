@@ -82,7 +82,7 @@ struct bottom_half {
 	void *data;
 };
 
-static INIT_LIST_HEAD(bottom_halves);
+static INIT_LIST_OF(struct bottom_half, bottom_halves);
 
 int
 register_bottom_half_do(select_handler_T fn, void *data)
@@ -119,11 +119,12 @@ check_bottom_halves(void)
 select_handler_T
 get_handler(int fd, enum select_handler_type tp)
 {
+#ifndef CONFIG_OS_WIN32
 	assertm(fd >= 0 && fd < FD_SETSIZE,
 		"get_handler: handle %d >= FD_SETSIZE %d",
 		fd, FD_SETSIZE);
 	if_assert_failed return NULL;
-
+#endif
 	switch (tp) {
 		case SELECT_HANDLER_READ:	return threads[fd].read_func;
 		case SELECT_HANDLER_WRITE:	return threads[fd].write_func;
@@ -139,11 +140,12 @@ void
 set_handlers(int fd, select_handler_T read_func, select_handler_T write_func,
 	     select_handler_T error_func, void *data)
 {
+#ifndef CONFIG_OS_WIN32
 	assertm(fd >= 0 && fd < FD_SETSIZE,
 		"set_handlers: handle %d >= FD_SETSIZE %d",
 		fd, FD_SETSIZE);
 	if_assert_failed return;
-
+#endif
 	threads[fd].read_func = read_func;
 	threads[fd].write_func = write_func;
 	threads[fd].error_func = error_func;
@@ -243,17 +245,21 @@ select_loop(void (*init)(void))
 #endif
 		if (has_timer) {
 			/* Be sure timeout is not negative. */
-			timeval_limit_to_zero(&t);
+			timeval_limit_to_zero_or_one(&t);
 			timeout = (struct timeval *) &t;
 		}
 
 		n = select(w_max, &x_read, &x_write, &x_error, timeout);
 		if (n < 0) {
+			/* The following calls (especially gettext)
+			 * might change errno.  */
+			const int errno_from_select = errno;
+
 			critical_section = 0;
 			uninstall_alarm();
-			if (errno != EINTR) {
+			if (errno_from_select != EINTR) {
 				ERROR(gettext("The call to %s failed: %d (%s)"),
-				      "select()", errno, (unsigned char *) strerror(errno));
+				      "select()", errno_from_select, (unsigned char *) strerror(errno_from_select));
 				if (++select_errors > 10) /* Infinite loop prevention. */
 					INTERNAL(gettext("%d select() failures."),
 						 select_errors);

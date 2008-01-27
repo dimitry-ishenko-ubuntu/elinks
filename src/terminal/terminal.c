@@ -1,4 +1,5 @@
-/* Terminal interface - low-level displaying implementation. */
+/** Terminal interface - low-level displaying implementation.
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -6,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <sys/types.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -15,8 +17,8 @@
 
 #include "bookmarks/bookmarks.h"
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
 #include "main/main.h"
+#include "main/module.h"
 #include "main/object.h"
 #include "main/select.h"
 #include "osdep/osdep.h"
@@ -35,11 +37,9 @@
 #include "viewer/text/textarea.h"
 
 
-INIT_LIST_HEAD(terminals);
-
+INIT_LIST_OF(struct terminal, terminals);
 
 static void check_if_no_terminal(void);
-
 
 void
 redraw_terminal(struct terminal *term)
@@ -71,6 +71,7 @@ cls_redraw_all_terminals(void)
 struct terminal *
 init_term(int fdin, int fdout)
 {
+	unsigned char name[MAX_TERM_LEN + 9] = "terminal.";
 	struct terminal *term = mem_calloc(1, sizeof(*term));
 
 	if (!term) {
@@ -90,7 +91,9 @@ init_term(int fdin, int fdout)
 	term->fdout = fdout;
 	term->master = (term->fdout == get_output_handle());
 	term->blocked = -1;
-	term->spec = get_opt_rec(config_options, "terminal._template_");
+
+	get_terminal_name(name + 9);
+	term->spec = get_opt_rec(config_options, name);
 	object_lock(term->spec);
 
 	add_to_list(terminals, term);
@@ -115,6 +118,12 @@ destroy_terminal(struct terminal *term)
 #ifdef CONFIG_BOOKMARKS
 	bookmark_auto_save_tabs(term);
 #endif
+
+	/* delete_window doesn't update term->current_tab, but it
+	   calls redraw_terminal, which requires term->current_tab
+	   to be valid if there are any tabs left.  So set a value
+	   that will be valid for that long.  */
+	term->current_tab = 0;
 
 	while (!list_empty(term->windows))
 		delete_window(term->windows.next);
@@ -170,8 +179,8 @@ exec_thread(unsigned char *path, int p)
 {
 	int plen = strlen(path + 1) + 2;
 
-#if defined(HAVE_SETPGID) && !defined(CONFIG_BEOS) && !defined(HAVE_BEGINTHREAD)
-	if (path[0] == 2) setpgid(0, 0);
+#if defined(HAVE_SETPGID) && !defined(CONFIG_OS_BEOS) && !defined(HAVE_BEGINTHREAD)
+	if (path[0] == TERM_EXEC_NEWWIN) setpgid(0, 0);
 #endif
 	exe(path + 1);
 	if (path[plen]) unlink(path + plen);
@@ -191,97 +200,112 @@ unblock_terminal(struct terminal *term)
 	term->blocked = -1;
 	set_handlers(term->fdin, (select_handler_T) in_term, NULL,
 		     (select_handler_T) destroy_terminal, term);
-	unblock_itrm(term->fdin);
+	unblock_itrm();
 	redraw_terminal_cls(term);
 	if (textarea_editor)	/* XXX */
 		textarea_edit(1, NULL, NULL, NULL, NULL);
 }
 
+
+static void
+exec_on_master_terminal(struct terminal *term,
+			unsigned char *path, int plen,
+		 	unsigned char *delete, int dlen,
+			enum term_exec fg)
+{
+	int blockh;
+	int param_size = plen + dlen + 2 /* 2 null char */ + 1 /* fg */;
+	unsigned char *param = fmem_alloc(param_size);
+
+	if (!param) return;
+
+	param[0] = fg;
+	memcpy(param + 1, path, plen + 1);
+	memcpy(param + 1 + plen + 1, delete, dlen + 1);
+
+	if (fg == TERM_EXEC_FG) block_itrm();
+
+	blockh = start_thread((void (*)(void *, int)) exec_thread,
+			      param, param_size);
+	fmem_free(param);
+	if (blockh == -1) {
+		if (fg == TERM_EXEC_FG) unblock_itrm();
+		return;
+	}
+
+	if (fg == TERM_EXEC_FG) {
+		term->blocked = blockh;
+		set_handlers(blockh,
+			     (select_handler_T) unblock_terminal,
+			     NULL,
+			     (select_handler_T) unblock_terminal,
+			     term);
+		set_handlers(term->fdin, NULL, NULL,
+			     (select_handler_T) destroy_terminal,
+			     term);
+
+	} else {
+		set_handlers(blockh, close_handle, NULL,
+			     close_handle, (void *) (long) blockh);
+	}
+}
+
+static void
+exec_on_slave_terminal( struct terminal *term,
+		 	unsigned char *path, int plen,
+		 	unsigned char *delete, int dlen,
+			enum term_exec fg)
+{
+	int data_size = plen + dlen + 1 /* 0 */ + 1 /* fg */ + 2 /* 2 null char */;
+	unsigned char *data = fmem_alloc(data_size);
+
+	if (!data) return;
+
+	data[0] = 0;
+	data[1] = fg;
+	memcpy(data + 2, path, plen + 1);
+	memcpy(data + 2 + plen + 1, delete, dlen + 1);
+	hard_write(term->fdout, data, data_size);
+	fmem_free(data);
+}
+
 void
 exec_on_terminal(struct terminal *term, unsigned char *path,
-		 unsigned char *delete, int fg)
+		 unsigned char *delete, enum term_exec fg)
 {
-	int plen;
-	int dlen = strlen(delete);
-
-	if (path && !*path) return;
-	if (!path) {
-		path = "";
-		plen = 0;
+	if (path) {
+		if (!*path) return;
 	} else {
-		plen = strlen(path);
+		path = "";
 	}
 
 #ifdef NO_FG_EXEC
-	fg = 0;
+	fg = TERM_EXEC_BG;
 #endif
+
 	if (term->master) {
-		if (!*path) dispatch_special(delete);
-		else {
-			int blockh;
-			unsigned char *param;
-			int param_size;
-
-			if (is_blocked() && fg) {
-				unlink(delete);
-				return;
-			}
-
-			param_size = plen + dlen + 2 /* 2 null char */ + 1 /* fg */;
-			param = mem_alloc(param_size);
-			if (!param) return;
-
-			param[0] = fg;
-			memcpy(param + 1, path, plen + 1);
-			memcpy(param + 1 + plen + 1, delete, dlen + 1);
-
-			if (fg == 1) block_itrm(term->fdin);
-
-			blockh = start_thread((void (*)(void *, int)) exec_thread,
-					      param, param_size);
-			if (blockh == -1) {
-				if (fg == 1) unblock_itrm(term->fdin);
-				mem_free(param);
-				return;
-			}
-
-			mem_free(param);
-			if (fg == 1) {
-				term->blocked = blockh;
-				set_handlers(blockh,
-					     (select_handler_T) unblock_terminal,
-					     NULL,
-					     (select_handler_T) unblock_terminal,
-					     term);
-				set_handlers(term->fdin, NULL, NULL,
-					     (select_handler_T) destroy_terminal,
-					     term);
-				/* block_itrm(term->fdin); */
-			} else {
-				set_handlers(blockh, close_handle, NULL,
-					     close_handle, (void *) (long) blockh);
-			}
+		if (!*path) {
+			dispatch_special(delete);
+			return;
 		}
+
+		/* TODO: Should this be changed to allow TERM_EXEC_NEWWIN
+		 * in a blocked terminal?  There is similar code in
+		 * in_sock().  --KON, 2007 */
+		if (fg != TERM_EXEC_BG && is_blocked()) {
+			unlink(delete);
+			return;
+		}
+
+		exec_on_master_terminal(term,
+					path, strlen(path),
+		 			delete, strlen(delete),
+					fg);
 	} else {
-		int data_size = plen + dlen + 1 /* 0 */ + 1 /* fg */ + 2 /* 2 null char */;
-		unsigned char *data = mem_alloc(data_size);
-
-		if (data) {
-			data[0] = 0;
-			data[1] = fg;
-			memcpy(data + 2, path, plen + 1);
-			memcpy(data + 2 + plen + 1, delete, dlen + 1);
-			hard_write(term->fdout, data, data_size);
-			mem_free(data);
-		}
-#if 0
-		char x = 0;
-		hard_write(term->fdout, &x, 1);
-		x = fg;
-		hard_write(term->fdout, &x, 1);
-		hard_write(term->fdout, path, strlen(path) + 1);
-		hard_write(term->fdout, delete, strlen(delete) + 1);
-#endif
+		exec_on_slave_terminal( term,
+					path, strlen(path),
+		 			delete, strlen(delete),
+					fg);
 	}
 }
 
@@ -294,7 +318,7 @@ exec_shell(struct terminal *term)
 
 	sh = get_shell();
 	if (sh && *sh)
-		exec_on_terminal(term, sh, "", 1);
+		exec_on_terminal(term, sh, "", TERM_EXEC_FG);
 }
 
 
@@ -308,7 +332,7 @@ do_terminal_function(struct terminal *term, unsigned char code,
 	if (!x_data) return;
 	x_data[0] = code;
 	memcpy(x_data + 1, data, data_len + 1);
-	exec_on_terminal(term, NULL, x_data, 0);
+	exec_on_terminal(term, NULL, x_data, TERM_EXEC_BG);
 	fmem_free(x_data);
 }
 
@@ -352,3 +376,21 @@ attach_terminal(int in, int out, int ctl, void *info, int len)
 
 	return term;
 }
+
+static struct module *terminal_submodules[] = {
+	&terminal_screen_module,
+	NULL
+};
+
+struct module terminal_module = struct_module(
+	/* Because this module is listed in main_modules rather than
+	 * in builtin_modules, its name does not appear in the user
+	 * interface and so need not be translatable.  */
+	/* name: */		"Terminal",
+	/* options: */		NULL,
+	/* hooks: */		NULL,
+	/* submodules: */	terminal_submodules,
+	/* data: */		NULL,
+	/* init: */		NULL,
+	/* done: */		NULL
+);

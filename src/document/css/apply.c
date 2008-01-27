@@ -1,4 +1,10 @@
-/* CSS style applier */
+/** CSS style applier
+ * @file
+ *
+ * @todo TODO: A way to disable CSS completely, PLUS a way to stop
+ * various property groups from taking effect. (Ie. way to turn out
+ * effect of 'display: none' or aligning or colors but keeping all the
+ * others.) --pasky */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -15,6 +21,7 @@
 #include "document/css/property.h"
 #include "document/css/scanner.h"
 #include "document/css/stylesheet.h"
+#include "document/format.h"
 #include "document/html/parser/parse.h"
 #include "document/options.h"
 #include "util/align.h"
@@ -26,13 +33,6 @@
 
 /* XXX: Some strange dependency makes it necessary to this include last. */
 #include "document/html/internal.h"
-
-/* #define DEBUG_CSS */
-
-
-/* TODO: A way to disable CSS completely, PLUS a way to stop various property
- * groups from taking effect. (Ie. way to turn out effect of 'display: none'
- * or aligning or colors but keeping all the others.) --pasky */
 
 
 typedef void (*css_applier_T)(struct html_context *html_context,
@@ -91,8 +91,9 @@ css_apply_font_attribute(struct html_context *html_context,
 	element->attr.style.attr &= ~prop->value.font_attribute.rem;
 }
 
-/* FIXME: Because the current CSS doesn't provide reasonable defaults for each
- * HTML element this applier will cause bad rendering of <pre> tags. */
+/** @bug FIXME: Because the current CSS doesn't provide reasonable
+ * defaults for each HTML element this applier will cause bad
+ * rendering of @<pre> tags. */
 static void
 css_apply_text_align(struct html_context *html_context,
 		     struct html_element *element, struct css_property *prop)
@@ -101,8 +102,8 @@ css_apply_text_align(struct html_context *html_context,
 	element->parattr.align = prop->value.text_align;
 }
 
-/* XXX: Sort like the css_property_type */
-static css_applier_T css_appliers[CSS_PT_LAST] = {
+/*! XXX: Sort like the css_property_type */
+static const css_applier_T css_appliers[CSS_PT_LAST] = {
 	/* CSS_PT_NONE */		NULL,
 	/* CSS_PT_BACKGROUND */		css_apply_background_color,
 	/* CSS_PT_BACKGROUND_COLOR */	css_apply_background_color,
@@ -115,20 +116,26 @@ static css_applier_T css_appliers[CSS_PT_LAST] = {
 	/* CSS_PT_WHITE_SPACE */	css_apply_font_attribute,
 };
 
-/* This looks for a match in list of selectors. */
+/** This looks for a match in list of selectors. */
 static void
 examine_element(struct html_context *html_context, struct css_selector *base,
 		enum css_selector_type seltype, enum css_selector_relation rel,
-                struct list_head *selectors, struct html_element *element,
-                struct list_head *html_stack)
+		LIST_OF(struct css_selector) *selectors,
+		struct html_element *element)
 {
 	struct css_selector *selector;
-	unsigned char *code;
 
 #ifdef DEBUG_CSS
+	/* Cannot use list_empty() inside the arglist of DBG() because
+	 * GCC 4.1 "warning: operation on `errfile' may be undefined"
+	 * breaks the build with -Werror.  */
+	int dbg_has_leaves, dbg_has_properties;
+
  	DBG("examine_element(%p, %s, %d, %d, %p, %.*s);", html_context, base->name, seltype, rel, selectors, element->namelen, element->name);
 #define dbginfo(sel, type_, base) \
-	DBG("Matched selector %s (rel %d type %d [m%d])! Children %p !!%d, props !!%d", sel->name, sel->relation, sel->type, sel->type == type_, &sel->leaves, !list_empty(sel->leaves), !list_empty(sel->properties))
+	dbg_has_leaves = !list_empty(sel->leaves), \
+	dbg_has_properties = !list_empty(sel->properties), \
+	DBG("Matched selector %s (rel %d type %d [m%d])! Children %p !!%d, props !!%d", sel->name, sel->relation, sel->type, sel->type == type_, &sel->leaves, dbg_has_leaves, dbg_has_properties)
 #else
 #define dbginfo(sel, type, base)
 #endif
@@ -138,7 +145,8 @@ examine_element(struct html_context *html_context, struct css_selector *base,
 		dbginfo(sel, type, base); \
 		merge_css_selectors(base, sel); \
 		/* Ancestor matches? */ \
-		if ((struct list_head *) element->next != html_stack) { \
+		if ((LIST_OF(struct html_element) *) element->next \
+		     != &html_context->stack) { \
 			struct html_element *ancestor; \
 			/* This is less effective than doing reverse iterations,
 			 * first over sel->leaves and then over the HTML stack,
@@ -147,21 +155,20 @@ examine_element(struct html_context *html_context, struct css_selector *base,
 			 * have to duplicate the whole examine_element(), so if
 			 * profiles won't show it really costs... */ \
 			for (ancestor = element->next; \
-			     (struct list_head *) ancestor != html_stack;\
+			     (LIST_OF(struct html_element) *) ancestor	\
+			      != &html_context->stack;\
 			     ancestor = ancestor->next) \
 				examine_element(html_context, base, \
 						CST_ELEMENT, CSR_ANCESTOR, \
-						&sel->leaves, ancestor, \
-						html_stack); \
+						&sel->leaves, ancestor); \
 			examine_element(html_context, base, \
 			                CST_ELEMENT, CSR_PARENT, \
-			                &sel->leaves, element->next, \
-			                html_stack); \
+			                &sel->leaves, element->next); \
 		} \
 		/* More specific matches? */ \
 		examine_element(html_context, base, type + 1, \
 		                CSR_SPECIFITY, \
-		                &sel->leaves, element, html_stack); \
+		                &sel->leaves, element); \
 	}
 
 	if (seltype <= CST_ELEMENT && element->namelen) {
@@ -187,19 +194,27 @@ examine_element(struct html_context *html_context, struct css_selector *base,
 		process_found_selector(selector, CST_PSEUDO, base);
 	}
 
-	code = get_attr_val(element->options, "class", html_context->options);
-	if (code && seltype <= CST_CLASS) {
-		selector = find_css_selector(selectors, CST_CLASS, rel, code, -1);
-		process_found_selector(selector, CST_CLASS, base);
-	}
-	if (code) mem_free(code);
+	if (element->attr.class && seltype <= CST_CLASS) {
+		const unsigned char *class = element->attr.class;
 
-	code = get_attr_val(element->options, "id", html_context->options);
-	if (code && seltype <= CST_ID) {
-		selector = find_css_selector(selectors, CST_ID, rel, code, -1);
+		for (;;) {
+			const unsigned char *begin;
+
+			while (*class == ' ') ++class;
+			if (*class == '\0') break;
+			begin = class;
+			while (*class != ' ' && *class != '\0') ++class;
+
+			selector = find_css_selector(selectors, CST_CLASS, rel,
+						     begin, class - begin);
+			process_found_selector(selector, CST_CLASS, base);
+		}
+	}
+
+	if (element->attr.id && seltype <= CST_ID) {
+		selector = find_css_selector(selectors, CST_ID, rel, element->attr.id, -1);
 		process_found_selector(selector, CST_ID, base);
 	}
-	if (code) mem_free(code);
 
 #undef process_found_selector
 #undef dbginfo
@@ -209,7 +224,7 @@ struct css_selector *
 get_css_selector_for_element(struct html_context *html_context,
 			     struct html_element *element,
 			     struct css_stylesheet *css,
-			     struct list_head *html_stack)
+			     LIST_OF(struct html_element) *html_stack)
 {
 	unsigned char *code;
 	struct css_selector *selector;
@@ -225,13 +240,13 @@ get_css_selector_for_element(struct html_context *html_context,
 #endif
 
 	examine_element(html_context, selector, CST_ELEMENT, CSR_ROOT,
-	                &css->selectors, element, html_stack);
+	                &css->selectors, element);
 
 #ifdef DEBUG_CSS
 	DBG("Element %.*s applied.", element->namelen, element->name);
 #endif
 
-	code = get_attr_val(element->options, "style", html_context->options);
+	code = get_attr_val(element->options, "style", html_context->doc_cp);
 	if (code) {
 		struct css_selector *stylesel;
 		struct scanner scanner;
@@ -269,7 +284,7 @@ apply_css_selector_style(struct html_context *html_context,
 
 void
 css_apply(struct html_context *html_context, struct html_element *element,
-	  struct css_stylesheet *css, struct list_head *html_stack)
+	  struct css_stylesheet *css, LIST_OF(struct html_element) *html_stack)
 {
 	struct css_selector *selector;
 

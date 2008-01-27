@@ -3,12 +3,14 @@
 
 /* Optionally MD5 support can depend on external implementation when linking
  * against a SSL library that supports it. */
-#ifndef CONFIG_MD5
-#if defined(CONFIG_OPENSSL)
+#if defined(CONFIG_OWN_LIBC)
+#define CONFIG_MD5 1
+#elif defined(CONFIG_OPENSSL)
 #include <openssl/md5.h>
 #elif defined(CONFIG_GNUTLS_OPENSSL_COMPAT)
 #include <gnutls/openssl.h>
-#endif
+#else
+#define CONFIG_MD5 1
 #endif
 
 /* GNU TLS doesn't define this */
@@ -35,13 +37,14 @@ void init_md5(struct md5_context *context);
 void update_md5(struct md5_context *context, const unsigned char *data, unsigned long length);
 void done_md5(struct md5_context *context, md5_digest_bin_T digest);
 
-/* Digest the passed @data with the given length and stores the MD5 digest in
- * the @digest parameter. */
+/** Digest the passed @a data with the given length and stores the MD5
+ * digest in the @a digest parameter. */
 unsigned char *
 digest_md5(const unsigned char *data, unsigned long length, md5_digest_bin_T digest);
 
 #ifdef CONFIG_MD5
-/* Provide compatibility with the OpenSSL interface: */
+/** @name Provide compatibility with the OpenSSL interface:
+ * @{ */
 
 typedef struct md5_context MD5_CTX;
 #define MD5_Init(context)		init_md5(context)
@@ -49,6 +52,7 @@ typedef struct md5_context MD5_CTX;
 #define MD5_Final(md5, context)		done_md5(context, md5)
 #define MD5(data, len, md5)		digest_md5(data, len, md5)
 
+/** @} */
 #endif /* CONFIG_MD5 */
 
 #endif

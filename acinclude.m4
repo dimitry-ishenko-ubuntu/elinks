@@ -7,10 +7,7 @@ dnl From Bruno Haible.
 AC_DEFUN([AM_LANGINFO_CODESET],
 [
   AC_CACHE_CHECK([for nl_langinfo and CODESET], am_cv_langinfo_codeset,
-    [AC_TRY_LINK([#include <langinfo.h>],
-      [char* cs = nl_langinfo(CODESET);],
-      am_cv_langinfo_codeset=yes,
-      am_cv_langinfo_codeset=no)
+    [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <langinfo.h>]], [[char* cs = nl_langinfo(CODESET);]])],[am_cv_langinfo_codeset=yes],[am_cv_langinfo_codeset=no])
     ])
   if test $am_cv_langinfo_codeset = yes; then
     AC_DEFINE(HAVE_LANGINFO_CODESET, 1,
@@ -38,7 +35,7 @@ AC_DEFUN([EL_LOG_CONFIG],
 	[msgdots2="`echo $about | sed 's/[0-9]/./g'`"]
 	[msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"]
 	[msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"]
-	[msgdots="`echo $msgdots0 | sed 's/[_ ()]/./g'`"]
+	[msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"]
 	DOTS="................................"
 	dots=`echo $DOTS | sed "s/$msgdots//"`
 
@@ -144,7 +141,7 @@ AC_DEFUN([EL_CHECK_CODE],
 [
 	$2=yes;
 	AC_MSG_CHECKING([for $1])
-	AC_TRY_COMPILE([$3], [$4], [EL_DEFINE($2, [$1])], $2=no)
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[$3]], [[$4]])],[EL_DEFINE($2, [$1])],[$2=no])
 	AC_MSG_RESULT([$]$2)
 ])
 
@@ -153,10 +150,9 @@ AC_DEFUN([EL_CHECK_TYPE],
 [
         EL_CHECK_TYPE_LOCAL=yes;
         AC_MSG_CHECKING([for $1])
-        AC_TRY_COMPILE([
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
-        ], [int a = sizeof($1);],
-        [EL_CHECK_TYPE_LOCAL=yes], [EL_CHECK_TYPE_LOCAL=no])
+        ]], [[int a = sizeof($1);]])],[EL_CHECK_TYPE_LOCAL=yes],[EL_CHECK_TYPE_LOCAL=no])
         AC_MSG_RESULT([$]EL_CHECK_TYPE_LOCAL)
         if test "x[$]EL_CHECK_TYPE_LOCAL" != "xyes"; then
                 AC_DEFINE($1, $2, [Define to $2 if <sys/types.h> doesn't define.])
@@ -479,6 +475,8 @@ AC_DEFUN([AM_ICONV],
   dnl Some systems have iconv in libc, some have it in libiconv (OSF/1 and
   dnl those with the standalone portable GNU libiconv installed).
 
+  EL_SAVE_FLAGS
+
   AC_ARG_WITH([libiconv],
 [  --with-libiconv=DIR     search for libiconv in DIR/include and DIR/lib], [
     for dir in `echo "$withval" | tr : ' '`; do
@@ -490,22 +488,18 @@ AC_DEFUN([AM_ICONV],
   AC_CACHE_CHECK(for iconv, am_cv_func_iconv, [
     am_cv_func_iconv="no, consider installing GNU libiconv"
     am_cv_lib_iconv=no
-    AC_TRY_LINK([#include <stdlib.h>
-#include <iconv.h>],
-      [iconv_t cd = iconv_open("","");
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
+#include <iconv.h>]], [[iconv_t cd = iconv_open("","");
        iconv(cd,NULL,NULL,NULL,NULL);
-       iconv_close(cd);],
-      am_cv_func_iconv=yes)
+       iconv_close(cd);]])],[am_cv_func_iconv=yes],[])
     if test "$am_cv_func_iconv" != yes; then
       am_save_LIBS="$LIBS"
       LIBS="$LIBS -liconv"
-      AC_TRY_LINK([#include <stdlib.h>
-#include <iconv.h>],
-        [iconv_t cd = iconv_open("","");
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
+#include <iconv.h>]], [[iconv_t cd = iconv_open("","");
          iconv(cd,NULL,NULL,NULL,NULL);
-         iconv_close(cd);],
-        am_cv_lib_iconv=yes
-        am_cv_func_iconv=yes)
+         iconv_close(cd);]])],[am_cv_lib_iconv=yes
+        am_cv_func_iconv=yes],[])
       LIBS="$am_save_LIBS"
     fi
   ])
@@ -513,7 +507,7 @@ AC_DEFUN([AM_ICONV],
     AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.])
     AC_MSG_CHECKING([for iconv declaration])
     AC_CACHE_VAL(am_cv_proto_iconv, [
-      AC_TRY_COMPILE([
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdlib.h>
 #include <iconv.h>
 extern
@@ -525,7 +519,7 @@ size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, si
 #else
 size_t iconv();
 #endif
-], [], am_cv_proto_iconv_arg1="", am_cv_proto_iconv_arg1="const")
+]], [[]])],[am_cv_proto_iconv_arg1=""],[am_cv_proto_iconv_arg1="const"])
       am_cv_proto_iconv="extern size_t iconv (iconv_t cd, $am_cv_proto_iconv_arg1 char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);"])
     am_cv_proto_iconv=`echo "[$]am_cv_proto_iconv" | tr -s ' ' | sed -e 's/( /(/'`
     AC_MSG_RESULT([$]{ac_t:-
@@ -536,6 +530,8 @@ size_t iconv();
   LIBICONV=
   if test "$am_cv_lib_iconv" = yes; then
     LIBICONV="-liconv"
+  else
+    EL_RESTORE_FLAGS
   fi
 ])
 #serial 1
@@ -544,8 +540,8 @@ size_t iconv();
 # because gettext's gettext.m4 (distributed in the automake package)
 # still uses it.  Otherwise, the use in gettext.m4 makes autoheader
 # give these diagnostics:
-#   configure.in:556: AC_TRY_COMPILE was called before AC_ISC_POSIX
-#   configure.in:556: AC_TRY_RUN was called before AC_ISC_POSIX
+#   configure.in:556: AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[],[]) was called before AC_ISC_POSIX
+#   configure.in:556: AC_RUN_IFELSE([AC_LANG_SOURCE([[]])],[],[],[]) was called before AC_ISC_POSIX
 
 undefine([AC_ISC_POSIX])
 
@@ -570,23 +566,21 @@ AC_DEFUN([AC_ISC_POSIX],
 AC_DEFUN([AM_LC_MESSAGES],
   [if test $ac_cv_header_locale_h = yes; then
     AC_CACHE_CHECK([for LC_MESSAGES], am_cv_val_LC_MESSAGES,
-      [AC_TRY_LINK([#include <locale.h>], [return LC_MESSAGES],
-       am_cv_val_LC_MESSAGES=yes, am_cv_val_LC_MESSAGES=no)])
+      [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <locale.h>]], [[return LC_MESSAGES]])],[am_cv_val_LC_MESSAGES=yes],[am_cv_val_LC_MESSAGES=no])])
     if test $am_cv_val_LC_MESSAGES = yes; then
       AC_DEFINE(HAVE_LC_MESSAGES, 1,
         [Define if your <locale.h> file defines LC_MESSAGES.])
     fi
   fi])
 
-AC_DEFUN([EL_CONFIG_OS2],
+AC_DEFUN([EL_CONFIG_OS_OS2],
 [
 	AC_MSG_CHECKING([for OS/2 threads])
 
 	EL_SAVE_FLAGS
 	CFLAGS="$CFLAGS -Zmt"
 
-	AC_TRY_LINK([#include <stdlib.h>],
-	            [_beginthread(NULL, NULL, 0, NULL)], cf_result=yes, cf_result=no)
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>]], [[_beginthread(NULL, NULL, 0, NULL)]])],[cf_result=yes],[cf_result=no])
 	AC_MSG_RESULT($cf_result)
 
 	if test "$cf_result" = yes; then
@@ -607,14 +601,10 @@ AC_DEFUN([EL_CONFIG_OS2],
 	if test -n "$X11ROOT"; then
 		CFLAGS="$CFLAGS_X -I$X11ROOT/XFree86/include"
 		LIBS="$LIBS_X -L$X11ROOT/XFree86/lib -lxf86_gcc"
-		AC_TRY_LINK([#include <pty.h>],
-			    [struct winsize win;ptioctl(1, TIOCGWINSZ, &win)],
-			    cf_result=yes, cf_result=no)
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <pty.h>]], [[struct winsize win;ptioctl(1, TIOCGWINSZ, &win)]])],[cf_result=yes],[cf_result=no])
 		if test "$cf_result" = no; then
 			LIBS="$LIBS_X -L$X11ROOT/XFree86/lib -lxf86"
-			AC_TRY_LINK([#include <pty.h>],
-				    [struct winsize win;ptioctl(1, TIOCGWINSZ, &win)],
-				    cf_result=yes, cf_result=no)
+			AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <pty.h>]], [[struct winsize win;ptioctl(1, TIOCGWINSZ, &win)]])],[cf_result=yes],[cf_result=no])
 		fi
 	fi
 
@@ -679,66 +669,66 @@ dnl Thank you very much Vim for this lovely ruby configuration
 dnl The hitchhiked code is from Vim configure.in version 1.98
 
 
-AC_DEFUN([EL_CONFIG_RUBY],
+AC_DEFUN([EL_CONFIG_SCRIPTING_RUBY],
 [
 AC_MSG_CHECKING([for Ruby])
 
-CONFIG_RUBY_WITHVAL="no"
-CONFIG_RUBY="no"
+CONFIG_SCRIPTING_RUBY_WITHVAL="no"
+CONFIG_SCRIPTING_RUBY="no"
 
 EL_SAVE_FLAGS
 
 AC_ARG_WITH(ruby,
 	[  --with-ruby             enable Ruby support],
-	[CONFIG_RUBY_WITHVAL="$withval"])
+	[CONFIG_SCRIPTING_RUBY_WITHVAL="$withval"])
 
-if test "$CONFIG_RUBY_WITHVAL" != no; then
-	CONFIG_RUBY="yes"
+if test "$CONFIG_SCRIPTING_RUBY_WITHVAL" != no; then
+	CONFIG_SCRIPTING_RUBY="yes"
 fi
 
-AC_MSG_RESULT($CONFIG_RUBY)
+AC_MSG_RESULT($CONFIG_SCRIPTING_RUBY)
 
-if test "$CONFIG_RUBY" = "yes"; then
-	if test -d "$CONFIG_RUBY_WITHVAL"; then
-		RUBY_PATH="$CONFIG_RUBY_WITHVAL:$PATH"
+if test "$CONFIG_SCRIPTING_RUBY" = "yes"; then
+	if test -d "$CONFIG_SCRIPTING_RUBY_WITHVAL"; then
+		RUBY_PATH="$CONFIG_SCRIPTING_RUBY_WITHVAL:$PATH"
 	else
 		RUBY_PATH="$PATH"
 	fi
 
-	AC_PATH_PROG(CONFIG_RUBY, ruby, no, $RUBY_PATH)
-	if test "$CONFIG_RUBY" != "no"; then
+	AC_PATH_PROG(CONFIG_SCRIPTING_RUBY, ruby, no, $RUBY_PATH)
+	if test "$CONFIG_SCRIPTING_RUBY" != "no"; then
 
 		AC_MSG_CHECKING(Ruby version)
-		if $CONFIG_RUBY -e '(VERSION rescue RUBY_VERSION) >= "1.6.0" or exit 1' >/dev/null 2>/dev/null; then
-			ruby_version=`$CONFIG_RUBY -e 'puts "#{VERSION rescue RUBY_VERSION}"'`
+		if $CONFIG_SCRIPTING_RUBY -e 'exit((VERSION or RUBY_VERSION) >= "1.6.0")' >/dev/null 2>/dev/null; then
+			ruby_version=`$CONFIG_SCRIPTING_RUBY -e 'puts "#{VERSION rescue RUBY_VERSION}"'`
 			AC_MSG_RESULT($ruby_version)
 
 			AC_MSG_CHECKING(for Ruby header files)
-			rubyhdrdir=`$CONFIG_RUBY -r mkmf -e 'print Config::CONFIG[["archdir"]] || $hdrdir' 2>/dev/null`
+			rubyhdrdir=`$CONFIG_SCRIPTING_RUBY -r mkmf -e 'print Config::CONFIG[["archdir"]] || $hdrdir' 2>/dev/null`
 
 			if test "X$rubyhdrdir" != "X"; then
 				AC_MSG_RESULT($rubyhdrdir)
 				RUBY_CFLAGS="-I$rubyhdrdir"
-				rubylibs=`$CONFIG_RUBY -r rbconfig -e 'print Config::CONFIG[["LIBS"]]'`
+				rubylibs=`$CONFIG_SCRIPTING_RUBY -r rbconfig -e 'print Config::CONFIG[["LIBS"]]'`
 
 				if test "X$rubylibs" != "X"; then
 					RUBY_LIBS="$rubylibs"
 				fi
 
-				librubyarg=`$CONFIG_RUBY -r rbconfig -e 'print Config.expand(Config::CONFIG[["LIBRUBYARG"]])'`
+				librubyarg=`$CONFIG_SCRIPTING_RUBY -r rbconfig -e 'print Config.expand(Config::CONFIG[["LIBRUBYARG"]])'`
 
 				if test -f "$rubyhdrdir/$librubyarg"; then
 					librubyarg="$rubyhdrdir/$librubyarg"
 
 				else
-					rubylibdir=`$CONFIG_RUBY -r rbconfig -e 'print Config.expand(Config::CONFIG[["libdir"]])'`
+					rubylibdir=`$CONFIG_SCRIPTING_RUBY -r rbconfig -e 'print Config.expand(Config::CONFIG[["libdir"]])'`
 					if test -f "$rubylibdir/$librubyarg"; then
 						librubyarg="$rubylibdir/$librubyarg"
 					elif test "$librubyarg" = "libruby.a"; then
 						dnl required on Mac OS 10.3 where libruby.a doesn't exist
 						librubyarg="-lruby"
 					else
-						librubyarg=`$CONFIG_RUBY -r rbconfig -e "print '$librubyarg'.gsub(/-L\./, %'-L#{Config.expand(Config::CONFIG[\"libdir\"])}')"`
+						librubyarg=`$CONFIG_SCRIPTING_RUBY -r rbconfig -e "print '$librubyarg'.gsub(/-L\./, %'-L#{Config.expand(Config::CONFIG[\"libdir\"])}')"`
 					fi
 				fi
 
@@ -746,7 +736,7 @@ if test "$CONFIG_RUBY" = "yes"; then
 					RUBY_LIBS="$librubyarg $RUBY_LIBS"
 				fi
 
-				rubyldflags=`$CONFIG_RUBY -r rbconfig -e 'print Config::CONFIG[["LDFLAGS"]]'`
+				rubyldflags=`$CONFIG_SCRIPTING_RUBY -r rbconfig -e 'print Config::CONFIG[["LDFLAGS"]]'`
 				if test "X$rubyldflags" != "X"; then
 					LDFLAGS="$rubyldflags $LDFLAGS"
 				fi
@@ -755,9 +745,7 @@ if test "$CONFIG_RUBY" = "yes"; then
 				CFLAGS="$RUBY_CFLAGS $CFLAGS"
 				CPPFLAGS="$CPPFLAGS $RUBY_CFLAGS"
 
-				AC_TRY_LINK([#include <ruby.h>],
-					    [ruby_init();],
-					    CONFIG_RUBY=yes, CONFIG_RUBY=no)
+				AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <ruby.h>]], [[ruby_init();]])],[CONFIG_SCRIPTING_RUBY=yes],[CONFIG_SCRIPTING_RUBY=no])
 			else
 				AC_MSG_RESULT([Ruby header files not found])
 			fi
@@ -769,13 +757,13 @@ fi
 
 EL_RESTORE_FLAGS
 
-if test "$CONFIG_RUBY" != "yes"; then
-	if test -n "$CONFIG_RUBY_WITHVAL" &&
-	   test "$CONFIG_RUBY_WITHVAL" != no; then
+if test "$CONFIG_SCRIPTING_RUBY" != "yes"; then
+	if test -n "$CONFIG_SCRIPTING_RUBY_WITHVAL" &&
+	   test "$CONFIG_SCRIPTING_RUBY_WITHVAL" != no; then
 		AC_MSG_ERROR([Ruby not found])
 	fi
 else
-	EL_CONFIG(CONFIG_RUBY, [Ruby])
+	EL_CONFIG(CONFIG_SCRIPTING_RUBY, [Ruby])
 
 	LIBS="$LIBS $RUBY_LIBS"
 	AC_SUBST(RUBY_CFLAGS)
@@ -783,14 +771,13 @@ else
 fi
 ])
 
-AC_DEFUN([EL_CONFIG_WIN32],
+AC_DEFUN([EL_CONFIG_OS_WIN32],
 [
 	AC_MSG_CHECKING([for win32 threads])
 
 	EL_SAVE_FLAGS
 
-	AC_TRY_LINK([#include <stdlib.h>],
-	            [_beginthread(NULL, NULL, 0, NULL)], cf_result=yes, cf_result=no)
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>]], [[_beginthread(NULL, NULL, 0, NULL)]])],[cf_result=yes],[cf_result=no])
 	AC_MSG_RESULT($cf_result)
 
 	if test "$cf_result" = yes; then
@@ -799,7 +786,7 @@ AC_DEFUN([EL_CONFIG_WIN32],
 		EL_RESTORE_FLAGS
 	fi
 
-	AC_CHECK_HEADERS(windows.h)
+	AC_CHECK_HEADERS(windows.h ws2tcpip.h)
 
 	# TODO: Check this?
 	# TODO: Check -lws2_32 for IPv6 support

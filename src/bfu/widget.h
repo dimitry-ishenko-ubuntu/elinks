@@ -30,7 +30,7 @@ struct widget_ops {
 };
 
 struct widget {
-	struct widget_ops *ops;
+	const struct widget_ops *ops;
 
 	unsigned char *text;
 
@@ -42,7 +42,6 @@ struct widget {
 	union {
 		struct widget_info_checkbox checkbox;
 		struct widget_info_field field;
-		struct widget_info_listbox listbox;
 		struct widget_info_button button;
 		struct widget_info_text text;
 	} info;
@@ -52,6 +51,17 @@ struct widget {
 
 struct widget_data {
 	struct widget *widget;
+
+	/* For WIDGET_FIELD: @cdata is in the charset of the terminal.
+	 * (That charset can be UTF-8 only if CONFIG_UTF8 is defined,
+	 * and is assumed to be unibyte otherwise.)  The UTF-8 I/O
+	 * option has no effect here.
+	 *
+	 * For WIDGET_TEXT: @cdata is cast from/to an unsigned char **
+	 * that points to the first element of an array.  Each element
+	 * in this array corresponds to one line of text, and is an
+	 * unsigned char * that points to the first character of that
+	 * line.  The array has @widget_data.info.text.lines elements.  */
 	unsigned char *cdata;
 
 	struct box box;

@@ -42,7 +42,7 @@
 
 struct mailcap_hash_item {
 	/* The entries associated with the type */
-	struct list_head entries; /* -> struct mailcap_entry */
+	LIST_OF(struct mailcap_entry) entries;
 
 	/* The content type of all @entries. Must be last! */
 	unsigned char type[1];
@@ -130,7 +130,6 @@ static struct option_info mailcap_options[] = {
 
 /* State variables */
 static struct hash *mailcap_map = NULL;
-static int mailcap_map_size = 0;
 
 
 static inline void
@@ -195,7 +194,6 @@ add_mailcap_entry(struct mailcap_entry *entry, unsigned char *type, int typelen)
 	}
 
 	add_to_list_end(mitem->entries, entry);
-	mailcap_map_size++;
 }
 
 /* Parsing of a RFC1524 mailcap file */
@@ -283,7 +281,7 @@ parse_optional_fields(struct mailcap_entry *entry, unsigned char *line)
 		if (!field) break;
 
 		if (!strncasecmp(field, "needsterminal", 13)) {
-				entry->needsterminal = 1;
+			entry->needsterminal = 1;
 
 		} else if (!strncasecmp(field, "copiousoutput", 13)) {
 			entry->copiousoutput = 1;
@@ -396,7 +394,7 @@ init_mailcap_map(void)
 	unsigned char *path;
 	unsigned int priority = 0;
 
-	mailcap_map = init_hash(8, &strhash);
+	mailcap_map = init_hash8();
 	if (!mailcap_map) return NULL;
 
 	/* Try to setup mailcap_path */
@@ -438,9 +436,7 @@ done_mailcap(struct module *module)
 		mem_free(mitem);
 	}
 
-	free_hash(mailcap_map);
-	mailcap_map = NULL;
-	mailcap_map_size = 0;
+	free_hash(&mailcap_map);
 }
 
 #ifndef TEST_MAILCAP
@@ -460,7 +456,7 @@ change_hook_mailcap(struct session *ses, struct option *current, struct option *
 static void
 init_mailcap(struct module *module)
 {
-	struct change_hook_info mimetypes_change_hooks[] = {
+	static const struct change_hook_info mimetypes_change_hooks[] = {
 		{ "mime.mailcap",		change_hook_mailcap },
 		{ NULL,				NULL },
 	};
@@ -535,7 +531,7 @@ format_command(unsigned char *command, unsigned char *type, int copiousoutput)
 			}
 		}
 	}
-
+#if 0
 	if (copiousoutput) {
 		unsigned char *pager = getenv("PAGER");
 
@@ -552,7 +548,7 @@ format_command(unsigned char *command, unsigned char *type, int copiousoutput)
 			add_to_string(&cmd, pager);
 		}
 	}
-
+#endif
 	return cmd.source;
 }
 
@@ -658,13 +654,14 @@ get_mime_handler_mailcap(unsigned char *type, int options)
 	handler = init_mime_handler(program, entry->description,
 				    mailcap_mime_module.name,
 				    get_mailcap_ask(), block);
+	if (handler) handler->copiousoutput = entry->copiousoutput;
 	mem_free(program);
 
 	return handler;
 }
 
 
-struct mime_backend mailcap_mime_backend = {
+const struct mime_backend mailcap_mime_backend = {
 	/* get_content_type: */	NULL,
 	/* get_mime_handler: */	get_mime_handler_mailcap,
 };
@@ -681,26 +678,15 @@ struct module mailcap_mime_module = struct_module(
 );
 
 #ifdef TEST_MAILCAP
+
+#include "util/test.h"
+
 /* Some ugly shortcuts for getting defined symbols to work. */
 int default_mime_backend,
     install_signal_handler,
     mimetypes_mime_backend,
     program;
-struct list_head terminals;
-
-void die(const char *msg, ...)
-{
-	va_list args;
-
-	if (msg) {
-		va_start(args, msg);
-		vfprintf(stderr, msg, args);
-		fputs("\n", stderr);
-		va_end(args);
-	}
-
-	exit(1);
-}
+LIST_OF(struct terminal) terminals;
 
 int
 main(int argc, char *argv[])
@@ -717,43 +703,15 @@ main(int argc, char *argv[])
 
 		arg += 2;
 
-		if (!strncmp(arg, "path", 4)) {
-			arg += 4;
-			if (*arg == '=') {
-				arg++;
-				get_mailcap_path() = arg;
-			} else {
-				i++;
-				if (i >= argc)
-					die("--path expects a parameter");
-				get_mailcap_path() = argv[i];
-			}
+		if (get_test_opt(&arg, "path", &i, argc, argv, "a string")) {
+			get_mailcap_path() = arg;
 			done_mailcap(NULL);
 
-		} else if (!strncmp(arg, "format", 6)) {
-			arg += 6;
-			if (*arg == '=') {
-				arg++;
-				format = arg;
-			} else {
-				i++;
-				if (i >= argc)
-					die("--format expects a parameter");
-				format = argv[i];
-			}
+		} else if (get_test_opt(&arg, "format", &i, argc, argv, "a string")) {
+			format = arg;
 
-		} else if (!strncmp(arg, "get", 3)) {
+		} else if (get_test_opt(&arg, "get", &i, argc, argv, "a string")) {
 			struct mime_handler *handler;
-
-			arg += 3;
-			if (*arg == '=') {
-				arg++;
-			} else {
-				i++;
-				if (i >= argc)
-					die("--get expects a parameter");
-				arg = argv[i];
-			}
 
 			if (has_gotten)
 				printf("\n");

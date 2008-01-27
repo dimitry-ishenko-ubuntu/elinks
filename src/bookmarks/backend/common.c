@@ -57,7 +57,8 @@ bookmarks_read(void)
 	file_name = backend->filename(0);
 	if (!file_name) return;
 	if (elinks_home) {
-		file_name = straconcat(elinks_home, file_name, NULL);
+		file_name = straconcat(elinks_home, file_name,
+				       (unsigned char *) NULL);
 		if (!file_name) return;
 	}
 
@@ -73,7 +74,7 @@ bookmarks_read(void)
 }
 
 void
-bookmarks_write(struct list_head *bookmarks_list)
+bookmarks_write(LIST_OF(struct bookmark) *bookmarks_list)
 {
 	int backend_num = get_opt_int("bookmarks.file_format");
 	struct bookmarks_backend *backend = bookmarks_backends[backend_num];
@@ -91,7 +92,7 @@ bookmarks_write(struct list_head *bookmarks_list)
 	 * they would be just truncated to zero by secure_open()). */
 	file_name = backend->filename(1);
 	if (!file_name) return;
-	file_name = straconcat(elinks_home, file_name, NULL);
+	file_name = straconcat(elinks_home, file_name, (unsigned char *) NULL);
 	if (!file_name) return;
 
 	ssi = secure_open(file_name);
