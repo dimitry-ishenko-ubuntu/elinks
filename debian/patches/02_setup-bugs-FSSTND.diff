@@ -1,26 +1,26 @@
 diff --git a/doc/elinks.1.txt b/doc/elinks.1.txt
-index 060336f..485e19b 100644
+index 237176d..9a9c309 100644
 --- a/doc/elinks.1.txt
 +++ b/doc/elinks.1.txt
-@@ -136,9 +136,10 @@ is in state of beta testing.
+@@ -135,9 +135,10 @@ is in state of beta testing.
+ 
  BUGS
  ----
- 
+-
 -Please report any other bugs you find to the either the ELinks mailing list at
 -mailto:elinks-users@linuxfromscratch.org[] or if you prefer enter them into
--http://bugzilla.elinks.or.cz/[the bug tracking system]. More information about
-+Please report any bugs you find to the
++  
++Please report any bugs you find to the submit@bugs.debian.org
 +http://bugs.debian.org/src:elinks[Debian bug tracking] system using the
 +reportbug program, or if you prefer enter them into the upstream elinks 
-+http://bugzilla.elinks.or.cz/[bug tracking system]. More information about
+ http://bugzilla.elinks.cz/[the bug tracking system]. More information about
  how to get in contact with developers and getting help can be found on
- http://elinks.or.cz/community.html[the community page].
- 
+ http://elinks.cz/community.html[the community page].
 diff --git a/doc/html/elinks.conf.5.html b/doc/html/elinks.conf.5.html
-index c7d9ffe..fc819c5 100644
+index 452e8f2..fe3b75f 100644
 --- a/doc/html/elinks.conf.5.html
 +++ b/doc/html/elinks.conf.5.html
-@@ -2194,7 +2194,7 @@ mime.mailcap.enable [0|1] (default: 1)
+@@ -2229,7 +2229,7 @@ mime.mailcap.enable [0|1] (default: 1)
  </p>
  </dd>
  <dt>
@@ -29,7 +29,7 @@ index c7d9ffe..fc819c5 100644
  </dt>
  <dd>
  <p>
-@@ -2265,7 +2265,7 @@ mime.mimetypes.enable [0|1] (default: 1)
+@@ -2300,7 +2300,7 @@ mime.mimetypes.enable [0|1] (default: 1)
  </p>
  </dd>
  <dt>
@@ -39,10 +39,10 @@ index c7d9ffe..fc819c5 100644
  <dd>
  <p>
 diff --git a/doc/man/man5/elinks.conf.5 b/doc/man/man5/elinks.conf.5
-index 1c73edc..3a263c6 100644
+index bc5eae3..95dde6e 100644
 --- a/doc/man/man5/elinks.conf.5
 +++ b/doc/man/man5/elinks.conf.5
-@@ -991,7 +991,7 @@ mime\&.mailcap\&.enable [0|1] (default: 1)
+@@ -1022,7 +1022,7 @@ mime\&.mailcap\&.enable [0|1] (default: 1)
  Enable mailcap support\&.
  
  .TP
@@ -51,7 +51,7 @@ index 1c73edc..3a263c6 100644
  Mailcap search path\&. Colon\-separated list of files\&. Leave as "" to use MAILCAP environment variable instead\&.
  
  .TP
-@@ -1029,7 +1029,7 @@ mime\&.mimetypes\&.enable [0|1] (default: 1)
+@@ -1060,7 +1060,7 @@ mime\&.mimetypes\&.enable [0|1] (default: 1)
  Enable mime\&.types support\&.
  
  .TP
@@ -61,19 +61,19 @@ index 1c73edc..3a263c6 100644
  
  .TP
 diff --git a/src/setup.h b/src/setup.h
-index 8b6e0c0..6489bc5 100644
+index 572610f..9e94b6b 100644
 --- a/src/setup.h
 +++ b/src/setup.h
-@@ -12,7 +12,7 @@
- 
- #define ELINKS_HOMEPAGE			"http://elinks.cz/"
+@@ -17,7 +17,7 @@
+ #define ELINKS_WEBSITE_URL		"http://elinks.cz/"
+ #define ELINKS_AUTHORS_URL		"http://elinks.cz/authors.html"
  #define ELINKS_DOC_URL			"http://elinks.cz/documentation/"
 -#define ELINKS_BUGS_URL			"http://bugzilla.elinks.cz/"
 +#define ELINKS_BUGS_URL			"http://bugs.debian.org/src:elinks"
- #define ELINKS_GITWEB_URL		"http://pasky.or.cz/gitweb.cgi"
+ #define ELINKS_GITWEB_URL		"http://repo.or.cz/w/elinks.git"
  
  #define ELINKS_SOCK_NAME		"socket"
-@@ -81,13 +81,13 @@
+@@ -86,13 +86,13 @@
  #define DEFAULT_PAGER_PATH		"/usr/bin/pager"
  #define DEFAULT_LESS_PATH		"/usr/bin/less"
  #define DEFAULT_MORE_PATH		"/usr/bin/more"
