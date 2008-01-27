@@ -1,3 +1,10 @@
+elinks (0.11.3-4) unstable; urgency=low
+
+  * Update 02_setup-bugs-FSSTND.diff to prevent changing contrib/elinks.conf
+    (it is not used anymore).
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 27 Jan 2008 21:49:04 +0530
+
 elinks (0.11.3-3) unstable; urgency=low
 
   * Remove 06_elinks.conf-parse-error.diff and use a minimal elinks.conf file
