@@ -1,27 +1,3 @@
-Point bugs URL to debian.org and remove FSSTND dir in setup.h
-
-diff --git a/contrib/elinks.conf b/contrib/elinks.conf
-index 6dc251c..d050c95 100644
---- a/contrib/elinks.conf
-+++ b/contrib/elinks.conf
-@@ -865,7 +865,7 @@
-     ## mime.mailcap.path <str>
-     #  Mailcap search path. Colon-separated list of files.
-     #  Leave as "" to use MAILCAP environment variable instead.
--    set mime.mailcap.path = "~/.mailcap:/etc/mailcap:/usr/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap"
-+    set mime.mailcap.path = "~/.mailcap:/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap"
- 
-     ## mime.mailcap.ask [0|1]
-     #  Ask before using the handlers defined by mailcap.
-@@ -897,7 +897,7 @@
- 
-     ## mime.mimetypes.path <str>
-     #  The search path for mime.types files. Colon-separated list of files.
--    set mime.mimetypes.path = "~/.mime.types:/etc/mime.types:/usr/etc/mime.types:/usr/local/etc/mime.types:/usr/share/mime.types:/usr/share/misc/mime.types"
-+    set mime.mimetypes.path = "~/.mime.types:/etc/mime.types:/usr/local/etc/mime.types:/usr/share/mime.types:/usr/share/misc/mime.types"
- 
- 
-   ## mime.type 
 diff --git a/doc/elinks.1.txt b/doc/elinks.1.txt
 index 060336f..485e19b 100644
 --- a/doc/elinks.1.txt
