@@ -1,3 +1,5 @@
+Point bugs URL to debian.org and remove FSSTND dir in setup.h
+
 diff --git a/doc/elinks.1.txt b/doc/elinks.1.txt
 index 237176d..9a9c309 100644
 --- a/doc/elinks.1.txt
