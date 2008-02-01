@@ -1,3 +1,15 @@
+elinks (0.12~20080127-1) experimental; urgency=low
+
+  * Remove patches (fixes already present in 0.12)
+    + 01_asciidoc7compatible.diff
+    + 04_380347-entity_cache-overflow.diff
+    + 05_257762-transparency-off.diff
+  * Refresh and update rest of the patches for 0.12
+  * Modify save-stamp and clean-patched to save/restore files that are
+    modified during build
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 01 Feb 2008 18:37:00 +0530
+
 elinks (0.11.3-4) unstable; urgency=low
 
   * Update 02_setup-bugs-FSSTND.diff to prevent changing contrib/elinks.conf

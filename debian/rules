@@ -105,6 +105,9 @@ ifneq "$(wildcard /usr/share/misc/config.guess)" ""
 endif
 	[ ! -f config.h ] || mv -f config.h config.h.ups
 	[ ! -f Makefile.config ] || mv -f Makefile.config Makefile.config.ups
+	[ ! -f doc/man/man1/elinks.1.in ] || cp -af doc/man/man1/elinks.1.in doc/man/man1/elinks.1.in.ups
+	[ ! -f doc/man/man5/elinks.conf.5 ] || cp -af doc/man/man5/elinks.conf.5 doc/man/man5/elinks.conf.5.ups
+	[ ! -f doc/man/man5/elinkskeys.5 ] || cp -af doc/man/man5/elinkskeys.5 doc/man/man5/elinkskeys.5.ups
 	touch $@
 
 #Architecture 
@@ -134,6 +137,9 @@ clean-patched:
 	rm -f stamp-h.in
 	rm -f build-arch-stamp build-indep-stamp save-stamp
 	rm -rf build-lite build-main
+	[ ! -f doc/man/man5/elinkskeys.5.ups ] || mv -f doc/man/man5/elinkskeys.5.ups doc/man/man5/elinkskeys.5
+	[ ! -f doc/man/man5/elinks.conf.5.ups ] || mv -f doc/man/man5/elinks.conf.5.ups doc/man/man5/elinks.conf.5
+	[ ! -f doc/man/man1/elinks.1.in.ups ] || mv -f doc/man/man1/elinks.1.in.ups doc/man/man1/elinks.1.in
 	[ ! -f Makefile.config.ups ] || mv -f Makefile.config.ups Makefile.config
 	[ ! -f config.h.ups ] || mv -f config.h.ups config.h
 	[ ! -f config/config.guess.ups ] || mv -f config/config.guess.ups config/config.guess
