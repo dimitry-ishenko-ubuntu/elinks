@@ -147,6 +147,7 @@ clean-patched:
 	rm -f debian/elinks-lite.conf
 	rm -f debian/elinks.conf
 	rm -rf debian/tmp.elinks-data
+	rm -rf docbook2html-dir
 	dh_clean 
 
 unpatch:
