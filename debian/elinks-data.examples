@@ -7,5 +7,9 @@ contrib/keybind.conf
 contrib/keybind-full.conf
 contrib/lua/
 contrib/perl/
+contrib/guile/
+contrib/ruby/
+contrib/python/
 contrib/TIPS-AND-TRICKS
 contrib/user.css
+contrib/smjs/

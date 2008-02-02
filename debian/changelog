@@ -1,5 +1,10 @@
 elinks (0.12~20080127-1) experimental; urgency=low
 
+  * Enable support for new protocols SMB and Bittorrent
+  * Enable Guile, Python, Ruby and Javascript scripting functionality
+  * Enable extra debugging support for this experimental release
+  * Enable local CGI and ex mode
+  * Add a warning in README.Debian about experimental features
   * Remove patches (fixes already present in 0.12)
     + 01_asciidoc7compatible.diff
     + 04_380347-entity_cache-overflow.diff
@@ -8,7 +13,7 @@ elinks (0.12~20080127-1) experimental; urgency=low
   * Modify save-stamp and clean-patched to save/restore files that are
     modified during build
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 01 Feb 2008 18:37:00 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sat, 02 Feb 2008 20:55:20 +0530
 
 elinks (0.11.3-4) unstable; urgency=low
 

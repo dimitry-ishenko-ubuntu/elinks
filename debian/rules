@@ -46,9 +46,16 @@ confopts_main = $(confopts) \
 	--enable-256-colors \
 	--enable-leds \
 	--enable-html-highlight \
-	--disable-smb \
+	--enable-smb \
 	--with-perl \
-	--without-spidermonkey
+	--with-guile \
+	--with-python \
+	--with-ruby \
+	--enable-cgi \
+	--enable-exmode \
+	--enable-bittorrent \
+	--enable-debug \
+	--with-spidermonkey
 
 confopts_lite = $(confopts) \
 	--disable-nntp \
