@@ -12,8 +12,10 @@ elinks (0.12~20080127-1) experimental; urgency=low
   * Refresh and update rest of the patches for 0.12
   * Modify save-stamp and clean-patched to save/restore files that are
     modified during build
+  * Remove the get-orig-source target because it doesn't make sense for
+    packages based on snapshots.
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sat, 02 Feb 2008 20:55:20 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 03 Feb 2008 08:17:52 +0530
 
 elinks (0.11.3-4) unstable; urgency=low
 

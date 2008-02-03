@@ -8,14 +8,6 @@ export DH_OPTIONS
 
 export DH_ALWAYS_EXCLUDE=.gitignore
 
-PKG_NAME=elinks
-PKG_VERS=0.11.3
-UPSTR_SITE=http://$(PKG_NAME).or.cz
-UPSTR_DIR=$(PKG_NAME)-$(PKG_VERS)
-UPSTR_FILE=$(UPSTR_DIR).tar.bz2
-ORIG_DIR=$(UPSTR_DIR).orig
-ORIG_TAR=$(PKG_NAME)_$(PKG_VERS).orig.tar
-
 version=`dpkg-parsechangelog -ldebian/changelog | grep 'Version: ' | sed 's/Version: //g'`
 
 # These are used for cross-compiling and for saving the configure script
@@ -241,18 +233,6 @@ binary-indep: build-indep install-indep
 # Build architecture dependant packages using the common target.
 binary-arch: build-arch install-arch
 	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
-
-get-orig-source:
-	wget -q $(UPSTR_SITE)/download/$(UPSTR_FILE)
-	tar -jxf $(UPSTR_FILE)
-	mv $(UPSTR_DIR) $(ORIG_DIR)
-	rm -f $(ORIG_DIR)/{po/*.gmo,config.log,config.status,features.log}
-	rm -rf $(ORIG_DIR)/{debian,po/.deps}
-	tar -cf $(ORIG_TAR) $(ORIG_DIR)
-	gzip --best $(ORIG_TAR)
-	rm -rf $(UPSTR_FILE) $(ORIG_DIR)
-	@echo "Re-packaged source file: $(ORIG_TAR).gz"
-	@ls -l $(ORIG_TAR).gz
 
 binary: binary-arch binary-indep
 .PHONY: build clean binary-indep binary-arch binary install install-indep install-arch patch unpatch get-orig-source save-upstream get-orig-source
