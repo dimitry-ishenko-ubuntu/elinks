@@ -16,10 +16,10 @@ index c7d9ffe..9b7ac3a 100644
  <dd>
  <p>
 diff --git a/doc/man/man5/elinks.conf.5 b/doc/man/man5/elinks.conf.5
-index bc5eae3..7a3f2e6 100644
+index 1c73edc..68ceb10 100644
 --- a/doc/man/man5/elinks.conf.5
 +++ b/doc/man/man5/elinks.conf.5
-@@ -2493,7 +2493,7 @@ ui\&.leds
+@@ -2464,7 +2464,7 @@ ui\&.leds
  LEDs (visual indicators) options\&.
  
  .TP
