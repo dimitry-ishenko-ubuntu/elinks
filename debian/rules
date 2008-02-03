@@ -48,6 +48,7 @@ confopts_main = $(confopts) \
 	--enable-html-highlight \
 	--disable-smb \
 	--with-perl \
+	--with-ruby \
 	--without-spidermonkey
 
 confopts_lite = $(confopts) \
