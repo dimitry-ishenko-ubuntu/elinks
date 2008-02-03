@@ -14,6 +14,8 @@ elinks (0.12~20080127-1) experimental; urgency=low
     modified during build
   * Remove the get-orig-source target because it doesn't make sense for
     packages based on snapshots.
+  * Thanks to أحمد المحمودي (Ahmed El-Mahmoudy) for the push
+    to create experimental packages and the patches at #408610.
 
  -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 03 Feb 2008 08:17:52 +0530
 
