@@ -7,10 +7,10 @@ elinks (0.11.3-4) unstable; urgency=low
   * Enable Ruby scripting support and install contrib/ruby as examples.
   * Enable local CGI support.  That was what 07_local-CGI-query-fix.diff about
     anyway :)
-  * Use dh_install for installing lintian and linda overrides.  This looks
-    cleaner than doing it in debian/rules via the 'install' program.
+  * Use dh_install for installing lintian/linda overrides and desktop file.
+    This is cleaner than doing it in debian/rules via the 'install' program.
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 03 Feb 2008 22:56:18 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 03 Feb 2008 23:50:04 +0530
 
 elinks (0.11.3-3) unstable; urgency=low
 

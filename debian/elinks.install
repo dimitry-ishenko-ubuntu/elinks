@@ -1,2 +1,3 @@
-debian/overrides/lintian/elinks /usr/share/lintian/overrides/
-debian/overrides/linda/elinks /usr/share/linda/overrides/
+debian/elinks.desktop usr/share/applications
+debian/overrides/lintian/elinks usr/share/lintian/overrides
+debian/overrides/linda/elinks usr/share/linda/overrides
