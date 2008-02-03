@@ -175,7 +175,6 @@ install-arch:
 	dh_testdir
 	dh_testroot
 	dh_clean -k -s 
-	dh_installdirs -s
 	# Install elinks binaries and elinks.conf
 	$(MAKE) -C build-main DESTDIR=$(CURDIR)/debian/elinks install
 	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.conf \
