@@ -192,11 +192,6 @@ install-arch:
 		$(CURDIR)/debian/elinks/usr/share/applications/elinks.desktop
 	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.desktop \
 		$(CURDIR)/debian/elinks-lite/usr/share/applications/elinks-lite.desktop
-	# Install lintian and linda over-rides for elinks.1
-	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.lintian \
-		$(CURDIR)/debian/elinks/usr/share/lintian/overrides/elinks
-	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.linda \
-		$(CURDIR)/debian/elinks/usr/share/linda/overrides/elinks
 	dh_link -pelinks usr/share/doc/elinks-data usr/share/doc/elinks
 	dh_install -s
 
