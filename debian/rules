@@ -46,6 +46,7 @@ confopts_main = $(confopts) \
 	--enable-256-colors \
 	--enable-leds \
 	--enable-html-highlight \
+	--enable-cgi \
 	--disable-smb \
 	--with-perl \
 	--with-ruby \

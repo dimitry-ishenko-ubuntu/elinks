@@ -5,8 +5,10 @@ elinks (0.11.3-4) unstable; urgency=low
   * Update 06_459467_ui.leds.enable_0.diff to set leds.enable to default: 0 in
     elinks.conf(5).
   * Enable Ruby scripting support and install contrib/ruby as examples.
+  * Enable local CGI support.  That was what 07_local-CGI-query-fix.diff about
+    anyway :)
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 03 Feb 2008 14:01:42 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 03 Feb 2008 14:53:09 +0530
 
 elinks (0.11.3-3) unstable; urgency=low
 
