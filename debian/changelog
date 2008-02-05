@@ -1,8 +1,10 @@
 elinks (0.12~20080127-2) experimental; urgency=low
 
   * Remove patch 07_local-CGI-query-fix.diff (Closes: #464073)
+  * Add elinks-dbg and elinks-lite-dbg packages with debugging symbols for the
+    experimental packages.
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Tue, 05 Feb 2008 14:59:01 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Tue, 05 Feb 2008 23:00:10 +0530
 
 elinks (0.12~20080127-1) experimental; urgency=low
 
