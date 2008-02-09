@@ -9,8 +9,10 @@ elinks (0.11.3-4) unstable; urgency=low
     anyway :)
   * Use dh_install for installing lintian/linda overrides and desktop file.
     This is cleaner than doing it in debian/rules via the 'install' program.
+  * Add libidn11-dev do Build-Depends, IDN isn't enabled otherwise even if it
+    not disabled by default
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 03 Feb 2008 23:50:04 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sat, 09 Feb 2008 11:25:17 +0530
 
 elinks (0.11.3-3) unstable; urgency=low
 
