@@ -179,7 +179,6 @@ install-arch:
 	dh_testdir
 	dh_testroot
 	dh_clean -k -s 
-	dh_installdirs -s
 	# Install elinks binaries and elinks.conf
 	$(MAKE) -C build-main DESTDIR=$(CURDIR)/debian/elinks install
 	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.conf \
@@ -192,16 +191,6 @@ install-arch:
 	mkdir -p $(CURDIR)/debian/tmp.elinks-data/usr/
 	mv -f $(CURDIR)/debian/elinks/usr/share $(CURDIR)/debian/tmp.elinks-data/usr/
 	rm -f $(CURDIR)/debian/tmp.elinks-data/usr/share/locale/locale.alias
-	# Install desktop files for elinks and elinks-lite
-	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.desktop \
-		$(CURDIR)/debian/elinks/usr/share/applications/elinks.desktop
-	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.desktop \
-		$(CURDIR)/debian/elinks-lite/usr/share/applications/elinks-lite.desktop
-	# Install lintian and linda over-rides for elinks.1
-	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.lintian \
-		$(CURDIR)/debian/elinks/usr/share/lintian/overrides/elinks
-	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.linda \
-		$(CURDIR)/debian/elinks/usr/share/linda/overrides/elinks
 	dh_link -pelinks usr/share/doc/elinks-data usr/share/doc/elinks
 	dh_install -s
 
