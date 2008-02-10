@@ -25,7 +25,7 @@ Description: Advanced text-mode WWW browser
 Package: elinks-dbg
 Architecture: any
 Priority: extra
-Recommends: elinks (= ${binary:Version})
+Depends: elinks (= ${binary:Version})
 Conflicts: elinks-lite-dbg
 Description: Debugging symbols for ELinks - An advanced text-mode WWW browser
  ELinks (Enhanced Links) is a lynx-like character mode browser, created
@@ -83,7 +83,7 @@ Description: Lightweight version of Elinks - An advanced text-mode WWW browser
 Package: elinks-lite-dbg
 Architecture: any
 Priority: extra
-Recommends: elinks-lite (= ${binary:Version})
+Depends: elinks-lite (= ${binary:Version})
 Conflicts: elinks-dbg
 Description: Debugging symbols for ELinks lite - An advanced text-mode WWW browser
  ELinks (Enhanced Links) is a lynx-like character mode browser, created
