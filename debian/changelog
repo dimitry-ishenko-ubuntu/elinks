@@ -5,8 +5,10 @@ elinks (0.12~20080127-2) experimental; urgency=low
     experimental packages.
   * Patch 09_alignof_AMD64_FBTFS.diff to prevent FTBFS on AMD64 because of
     -Werror.  Thanks Kalle Olavi Niemitalo (Closes: #464384)
+  * Patch 10_ppc_ia64_FTBFS.diff to prevent FTBFS on powerpc and ia64 because
+    of -Werror.
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 10 Feb 2008 08:01:45 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 10 Feb 2008 08:36:41 +0530
 
 elinks (0.12~20080127-1) experimental; urgency=low
 
