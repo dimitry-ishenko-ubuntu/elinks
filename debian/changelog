@@ -1,5 +1,6 @@
 elinks (0.11.3-4) unstable; urgency=low
 
+  * Add a DM-Upload-Allowed: yes field
   * Update 02_setup-bugs-FSSTND.diff to prevent changing contrib/elinks.conf
     (it is not used anymore).
   * Update 06_459467_ui.leds.enable_0.diff to set leds.enable to default: 0 in
@@ -12,7 +13,7 @@ elinks (0.11.3-4) unstable; urgency=low
   * Add libidn11-dev do Build-Depends, IDN isn't enabled otherwise even if it
     not disabled by default
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sat, 09 Feb 2008 11:25:17 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Wed, 13 Feb 2008 23:09:08 +0530
 
 elinks (0.11.3-3) unstable; urgency=low
 
