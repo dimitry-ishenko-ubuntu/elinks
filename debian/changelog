@@ -5,10 +5,10 @@ elinks (0.12~20080127-2) experimental; urgency=low
     experimental packages.
   * Patch 09_464384_AMD64_FBTFS.diff to prevent FTBFS on AMD64 because of
     -Werror.  Thanks Kalle Olavi Niemitalo (Closes: #464384)
-  * Patch 10_ppc_s390_FTBFS.diff to prevent FTBFS on powerpc and s390 because
-    of -Werror.
+  * Patch 10_bt_msg_id_FTBFS.diff to prevent FTBFS because of limited range
+    warning and -Werror (Closes: #465719).
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 10 Feb 2008 15:52:33 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 14 Feb 2008 15:17:39 +0530
 
 elinks (0.12~20080127-1) experimental; urgency=low
 
