@@ -1,5 +1,5 @@
-Change char id to enum bittorrent_message_id id to prevent FTBFS on
-powerpc and s390
+Change char id to enum bittorrent_message_id id to prevent FTBFS because
+of the limited range warning.
 
 diff --git a/src/protocol/bittorrent/common.h b/src/protocol/bittorrent/common.h
 index 9d44b76..a656cfd 100644
