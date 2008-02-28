@@ -194,12 +194,6 @@ install-arch:
 	dh_link -pelinks usr/share/doc/elinks-data usr/share/doc/elinks
 	dh_install -s
 
-strip-arch:
-	dh_testdir
-	dh_testroot
-	dh_strip -pelinks --dbg-package=elinks-dbg
-	dh_strip -pelinks-lite --dbg-package=elinks-lite-dbg
-
 # Must not depend on anything. This is to be called by
 # binary-arch/binary-indep
 # in another 'make' thread.
@@ -212,6 +206,7 @@ binary-common:
 	dh_installmenu
 	dh_desktop
 	dh_installmime
+	dh_strip
 	dh_compress 
 	dh_fixperms
 	dh_installdeb
@@ -225,8 +220,8 @@ binary-indep: build-indep install-indep
 	$(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
 
 # Build architecture dependant packages using the common target.
-binary-arch: build-arch install-arch strip-arch
+binary-arch: build-arch install-arch 
 	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
 
 binary: binary-arch binary-indep
-.PHONY: build clean binary-indep binary-arch binary install install-indep install-arch patch strip-arch unpatch get-orig-source save-upstream get-orig-source
+.PHONY: build clean binary-indep binary-arch binary install install-indep install-arch patch unpatch get-orig-source save-upstream get-orig-source

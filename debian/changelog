@@ -1,14 +1,12 @@
 elinks (0.12~20080127-2) experimental; urgency=low
 
   * Remove patch 07_local-CGI-query-fix.diff (Closes: #464073)
-  * Add elinks-dbg and elinks-lite-dbg packages with debugging symbols for the
-    experimental packages.
   * Patch 09_464384_AMD64_FBTFS.diff to prevent FTBFS on AMD64 because of
     -Werror.  Thanks Kalle Olavi Niemitalo (Closes: #464384)
   * Patch 10_bt_msg_id_FTBFS.diff to prevent FTBFS because of limited range
     warning and -Werror (Closes: #465719).
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 14 Feb 2008 15:17:39 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 28 Feb 2008 20:22:34 +0530
 
 elinks (0.12~20080127-1) experimental; urgency=low
 
