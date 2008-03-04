@@ -3,8 +3,10 @@ elinks (0.11.3-5) unstable; urgency=low
   * Pass --enable-88-colors to configure for main build (Closes: #466483)
   * Patch 11_303164_css_display_none.diff to handle display:none in CSS
     (Closes: #303164)
+  * Patch 12_338402_cfmakeraw_exotic_term.diff to fix cfmakeraw() to not
+    disable XON/XOFF flow control (Closes: #338402)
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Tue, 04 Mar 2008 18:16:17 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Tue, 04 Mar 2008 18:33:55 +0530
 
 elinks (0.11.3-4) unstable; urgency=low
 
