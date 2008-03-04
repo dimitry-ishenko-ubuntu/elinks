@@ -67,7 +67,7 @@ index 1d2d81c..1f5c2b1 100644
  	/* Boolean options. */
  #ifdef CONFIG_CSS
  	doo->css_enable = get_opt_bool("document.css.enable");
-+	doo->css_ignore_display_none = get_opt_bool("document.css.ignore_display_none", ses);
++	doo->css_ignore_display_none = get_opt_bool("document.css.ignore_display_none");
  	doo->css_import = get_opt_bool("document.css.import");
  #endif
  
