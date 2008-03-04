@@ -43,6 +43,7 @@ confopts = --prefix=/usr \
 
 confopts_main = $(confopts) \
 	--enable-nntp \
+	--enable-88-colors \
 	--enable-256-colors \
 	--enable-leds \
 	--enable-html-highlight \

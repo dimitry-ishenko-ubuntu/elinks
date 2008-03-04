@@ -1,3 +1,9 @@
+elinks (0.11.3-5) unstable; urgency=low
+
+  * Pass --enable-88-colors to configure for main build (Closes: #466483)
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 28 Feb 2008 22:38:46 +0530
+
 elinks (0.11.3-4) unstable; urgency=low
 
   * Add a DM-Upload-Allowed: yes field
