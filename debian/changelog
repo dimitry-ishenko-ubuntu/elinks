@@ -5,8 +5,9 @@ elinks (0.11.3-5) unstable; urgency=low
     (Closes: #303164)
   * Patch 12_338402_cfmakeraw_exotic_term.diff to fix cfmakeraw() to not
     disable XON/XOFF flow control (Closes: #338402)
+  * Remove linda overrides files
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Tue, 04 Mar 2008 18:33:55 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 06 Mar 2008 12:11:51 +0530
 
 elinks (0.11.3-4) unstable; urgency=low
 
