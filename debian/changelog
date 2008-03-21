@@ -1,3 +1,10 @@
+elinks (0.11.3-6) unstable; urgency=low
+
+  * Remove 11_303164_css_display_none.diff as it is useless without the fix
+    for upstream bug 722.
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 21 Mar 2008 11:52:50 +0530
+
 elinks (0.11.3-5) unstable; urgency=low
 
   * Pass --enable-88-colors to configure for main build (Closes: #466483)
