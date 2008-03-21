@@ -1,5 +1,5 @@
-Patch to prevent FTBFS on AMD64 because of -Werror.  Based on upstream
-commits 3b93dcc, 6555359 and 61019c3
+Patch to prevent FTBFS on AMD64 (alignof and off_t) because of -Werror.
+Based on upstream commits 3b93dcc, 6555359 and 61019c3
 
 diff --git a/NEWS b/NEWS
 index ace3406..6e9bdfc 100644
