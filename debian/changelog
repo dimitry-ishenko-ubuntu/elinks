@@ -1,8 +1,9 @@
 elinks (0.12~20080127-3) experimental; urgency=low
 
   * Rename 09_464384_AMD64_FBTFS.diff as 09_464384_alignof_off_t_FBTFS.diff
+  * Refresh 12_338402_cfmakeraw_exotic_term.diff for 0.12~20080127
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 21 Mar 2008 13:03:09 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 21 Mar 2008 18:17:11 +0530
 
 elinks (0.12~20080127-2) experimental; urgency=low
 

@@ -2,10 +2,10 @@ Fix cfmakeraw() to not disable XON/XOFF flow control.  Based on upstream
 commit bd67e69bcdbcd7a68fbdf7e48da80daa47a679d9 for #338402
 
 diff --git a/src/osdep/osdep.c b/src/osdep/osdep.c
-index 9e1af28..01e8760 100644
+index d7705be..d93ede4 100644
 --- a/src/osdep/osdep.c
 +++ b/src/osdep/osdep.c
-@@ -751,7 +751,21 @@ elinks_cfmakeraw(struct termios *t)
+@@ -811,7 +811,21 @@ elinks_cfmakeraw(struct termios *t)
  	t->c_cc[VMIN] = 1; /* cfmakeraw() is broken on AIX --mikulas */
  #endif
  #else
