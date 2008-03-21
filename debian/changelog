@@ -1,3 +1,9 @@
+elinks (0.12~20080127-3) experimental; urgency=low
+
+  * Rename 09_464384_AMD64_FBTFS.diff as 09_464384_alignof_off_t_FBTFS.diff
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 21 Mar 2008 13:03:09 +0530
+
 elinks (0.12~20080127-2) experimental; urgency=low
 
   * Remove patch 07_local-CGI-query-fix.diff (Closes: #464073)
