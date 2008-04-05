@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Name=ELinks
-Categories=Utility;Network;
+Categories=Network;WebBrowser;
 GenericName=ELinks Web Browser
 Comment=ELinks text mode WWW browser
 Exec=/usr/bin/elinks %u
