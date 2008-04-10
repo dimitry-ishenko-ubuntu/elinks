@@ -5,8 +5,10 @@ elinks (0.11.3-6) unstable; urgency=low
   * Change ELinks category in desktop file from Categories=Utility;Network; to
     Categories=Network;WebBrowser;  Thanks Franklin PIAT <fpiat@bigfoot.com>
     (Closes: #474393)
+  * Steal a few .desktop file improvements and translations from Ubuntu [from
+    Siegfried-Angel Gevatter Pujals (RainCT) <rainct@ubuntu.com>]
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 06 Apr 2008 01:16:01 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 10 Apr 2008 13:00:54 +0530
 
 elinks (0.11.3-5) unstable; urgency=low
 
