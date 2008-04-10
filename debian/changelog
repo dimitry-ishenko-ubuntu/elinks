@@ -43,8 +43,9 @@ elinks (0.11.3-6) unstable; urgency=low
     (Closes: #474393)
   * Steal a few .desktop file improvements and translations from Ubuntu [from
     Siegfried-Angel Gevatter Pujals (RainCT) <rainct@ubuntu.com>]
+  * Much improved packages descriptions
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 10 Apr 2008 13:00:54 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 10 Apr 2008 13:34:13 +0530
 
 elinks (0.11.3-5) unstable; urgency=low
 
