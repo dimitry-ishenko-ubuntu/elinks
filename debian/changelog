@@ -36,6 +36,13 @@ elinks (0.12~20080127-1) experimental; urgency=low
 
  -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 03 Feb 2008 08:17:52 +0530
 
+elinks (0.11.3-7) unstable; urgency=low
+
+  * Use '<<' versioning rather than '<=' for Conflicts/Replaces.  Thanks Colin
+    Watson <cjwatson@ubuntu.com> (Closes: #475520)
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 11 Apr 2008 17:11:14 +0530
+
 elinks (0.11.3-6) unstable; urgency=low
 
   * Change ELinks category in desktop file from Categories=Utility;Network; to

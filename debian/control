@@ -33,8 +33,8 @@ Description: advanced text-mode WWW browser
 Package: elinks-data
 Architecture: all
 Recommends: elinks (= ${source:Version})
-Conflicts: elinks (<= 0.11.1-1.5), elinks-lite
-Replaces: elinks (<= 0.11.1-1.5)
+Conflicts: elinks (<< 0.11.3-1), elinks-lite
+Replaces: elinks (<< 0.11.3-1)
 Description: advanced text-mode WWW browser - data files
  ELinks is a feature-rich program for browsing the web in text mode.  It is
  like enhanced Lynx and Links.  The most noteworthy features of ELinks are:
@@ -55,7 +55,7 @@ Package: elinks-doc
 Section: doc
 Architecture: all
 Suggests: elinks
-Conflicts: elinks (<= 0.11.1-1.5), elinks-lite (<= 0.11.1-1.5)
+Conflicts: elinks (<< 0.11.3-1), elinks-lite (<< 0.11.3-1)
 Description: advanced text-mode WWW browser - documentation
  ELinks is a feature-rich program for browsing the web in text mode.  It is
  like enhanced Lynx and Links.  The most noteworthy features of ELinks are:
@@ -92,3 +92,4 @@ Description: advanced text-mode WWW browser - lightweight version
  .
  This lite version contains no scripting or extra features but doesn't
  depend on other libraries either, so it is useful for small systems.
+
