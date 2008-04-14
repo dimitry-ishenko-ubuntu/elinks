@@ -1,3 +1,10 @@
+elinks (0.11.3-7) unstable; urgency=low
+
+  * Use '<<' versioning rather than '<=' for Conflicts/Replaces.  Thanks Colin
+    Watson <cjwatson@ubuntu.com> (Closes: #475520)
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 11 Apr 2008 17:11:14 +0530
+
 elinks (0.11.3-6) unstable; urgency=low
 
   * Remove 11_303164_css_display_none.diff as it is useless without the fix
@@ -5,8 +12,11 @@ elinks (0.11.3-6) unstable; urgency=low
   * Change ELinks category in desktop file from Categories=Utility;Network; to
     Categories=Network;WebBrowser;  Thanks Franklin PIAT <fpiat@bigfoot.com>
     (Closes: #474393)
+  * Steal a few .desktop file improvements and translations from Ubuntu [from
+    Siegfried-Angel Gevatter Pujals (RainCT) <rainct@ubuntu.com>]
+  * Much improved packages descriptions
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 06 Apr 2008 01:16:01 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 10 Apr 2008 13:34:13 +0530
 
 elinks (0.11.3-5) unstable; urgency=low
 
