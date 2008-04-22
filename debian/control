@@ -23,9 +23,9 @@ Description: advanced text-mode WWW browser
   * Lots of protocols (local files, finger, HTTP(S), FTP, IPv4/6 etc.)
   * Internationalized domain names
   * Persistent cookies, HTTP authentication and proxy authentication
-  * Tabbed browsing, good looking menus and dialogs and key-binding manager
+  * Tabbed browsing, good looking menus and dialogs, and key-binding manager
   * History browsing and typeahead searches
-  * Forms history and completion and history in commonly used input dialogs
+  * Forms history and completion, and history in commonly used input dialogs
   * CSS support and support for browser scripting (Perl, Lua, Guile etc.)
   * Tables and frames rendering, and configurable color support
   * Compressed and background (non-blocking) downloads, and download resuming
@@ -42,9 +42,9 @@ Description: advanced text-mode WWW browser - data files
   * Lots of protocols (local files, finger, HTTP(S), FTP, IPv4/6 etc.)
   * Internationalized domain names
   * Persistent cookies, HTTP authentication and proxy authentication
-  * Tabbed browsing, good looking menus and dialogs and key-binding manager
+  * Tabbed browsing, good looking menus and dialogs, and key-binding manager
   * History browsing and typeahead searches
-  * Forms history and completion and history in commonly used input dialogs
+  * Forms history and completion, and history in commonly used input dialogs
   * CSS support and support for browser scripting (Perl, Lua, Guile etc.)
   * Tables and frames rendering, and configurable color support
   * Compressed and background (non-blocking) downloads, and download resuming
@@ -63,9 +63,9 @@ Description: advanced text-mode WWW browser - documentation
   * Lots of protocols (local files, finger, HTTP(S), FTP, IPv4/6 etc.)
   * Internationalized domain names
   * Persistent cookies, HTTP authentication and proxy authentication
-  * Tabbed browsing, good looking menus and dialogs and key-binding manager
+  * Tabbed browsing, good looking menus and dialogs, and key-binding manager
   * History browsing and typeahead searches
-  * Forms history and completion and history in commonly used input dialogs
+  * Forms history and completion, and history in commonly used input dialogs
   * CSS support and support for browser scripting (Perl, Lua, Guile etc.)
   * Tables and frames rendering, and configurable color support
   * Compressed and background (non-blocking) downloads, and download resuming
@@ -85,7 +85,7 @@ Description: advanced text-mode WWW browser - lightweight version
  .
   * Lots of protocols (local files, finger, HTTP(S), FTP, IPv4/6 etc.)
   * Persistent cookies, HTTP authentication and proxy authentication
-  * Tabbed browsing, good looking menus and dialogs and key-binding manager
+  * Tabbed browsing, good looking menus and dialogs, and key-binding manager
   * History browsing and typeahead searches
   * Tables and frames rendering, and configurable color support
   * Compressed and background (non-blocking) downloads, and download resuming
