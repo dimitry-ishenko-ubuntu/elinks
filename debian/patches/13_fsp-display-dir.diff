@@ -1,0 +1,50 @@
+Fix directory listing display bug in FSP.  Based on upstream commit
+06bcc48487676e0ea113ed7ace63798dc0562694
+
+diff --git a/src/protocol/fsp/fsp.c b/src/protocol/fsp/fsp.c
+index 8725a3c..c65efde 100644
+--- a/src/protocol/fsp/fsp.c
++++ b/src/protocol/fsp/fsp.c
+@@ -90,7 +90,8 @@ compare(FSP_RDENTRY *a, FSP_RDENTRY *b)
+ static void
+ sort_and_display_entries(FSP_DIR *dir)
+ {
+-	FSP_RDENTRY fentry, *fresult, *table = NULL;
++	FSP_RDENTRY fentry, tmp, *table = NULL;
++	FSP_RDENTRY *fresult = &tmp;
+ 	int size = 0;
+ 	int i;
+ 	unsigned char dircolor[8];
+@@ -156,7 +157,9 @@ fsp_directory(FSP_SESSION *ses, struct uri *uri)
+ 	if (get_opt_bool("protocol.fsp.sort")) {
+ 		sort_and_display_entries(dir);
+ 	} else {
+-		FSP_RDENTRY fentry, *fresult;
++		FSP_RDENTRY fentry, tmp;
++		FSP_RDENTRY *fresult = &tmp;
++
+ 		unsigned char dircolor[8];
+ 
+ 		if (get_opt_bool("document.browse.links.color_dirs")) {
+@@ -218,10 +221,18 @@ do_fsp(struct connection *conn)
+ 		fprintf(stderr, "%c", '\0');
+ 		fclose(stderr);
+ 
+-		while ((r = fsp_fread(buf, 1, READ_SIZE, file)) > 0)
+-			if (safe_write(STDOUT_FILENO, buf, r) <= 0)
+-				break;
++		while ((r = fsp_fread(buf, 1, READ_SIZE, file)) > 0) {
++			int off = 0;
++
++			while (r) {
++				int w = safe_write(STDOUT_FILENO, buf + off, r);
+ 
++				if (w == -1) goto out;
++				off += w;
++				r -= w;
++			}
++		}
++out:
+ 		fsp_fclose(file);
+ 		fsp_close_session(ses);
+ 		exit(0);

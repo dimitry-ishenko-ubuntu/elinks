@@ -40,8 +40,10 @@ elinks (0.11.3-7) unstable; urgency=low
 
   * Use '<<' versioning rather than '<=' for Conflicts/Replaces.  Thanks Colin
     Watson <cjwatson@ubuntu.com> (Closes: #475520)
+  * Enable the FSP file transfer protocol (Closes: #478007)
+    + Patch 13_fsp-display-dir.diff to fix bug in directory listing
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 11 Apr 2008 17:11:14 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 27 Apr 2008 01:36:11 +0530
 
 elinks (0.11.3-6) unstable; urgency=low
 
