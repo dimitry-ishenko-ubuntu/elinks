@@ -48,6 +48,7 @@ confopts_main = $(confopts) \
 	--enable-leds \
 	--enable-html-highlight \
 	--enable-cgi \
+	--enable-fsp \
 	--disable-smb \
 	--with-perl \
 	--with-ruby \
@@ -75,7 +76,7 @@ confopts_lite = $(confopts) \
 	--without-zlib \
 	--without-bzlib \
 	--without-idn \
-	--without-lua \
+	--without-lua
 
 save-upstream: patch save-stamp
 patch: patch-stamp
