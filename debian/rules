@@ -225,8 +225,12 @@ get-orig-source:
 	wget -q $(UPSTR_SITE)/download/$(UPSTR_FILE)
 	tar -jxf $(UPSTR_FILE)
 	mv $(UPSTR_DIR) $(ORIG_DIR)
-	rm -f $(ORIG_DIR)/{po/*.gmo,config.log,config.status,features.log}
-	rm -rf $(ORIG_DIR)/{debian,po/.deps}
+	rm -f $(ORIG_DIR)/po/*.gmo
+	rm -f $(ORIG_DIR)/config.log
+	rm -f $(ORIG_DIR)/config.status
+	rm -f $(ORIG_DIR)/features.log
+	rm -rf $(ORIG_DIR)/debian
+	rm -rf $(ORIG_DIR)/po/.deps
 	tar -cf $(ORIG_TAR) $(ORIG_DIR)
 	gzip --best $(ORIG_TAR)
 	rm -rf $(UPSTR_FILE) $(ORIG_DIR)

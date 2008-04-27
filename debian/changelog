@@ -1,3 +1,10 @@
+elinks (0.11.3-8) unstable; urgency=low
+
+  * Fix bash-ism in debian/rules get-orig-source target.  Thanks Raphael
+    Geissert <atomo64@gmail.com> (Closes: #477976)
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 27 Apr 2008 23:31:08 +0530
+
 elinks (0.11.3-7) unstable; urgency=low
 
   * Use '<<' versioning rather than '<=' for Conflicts/Replaces.  Thanks Colin
