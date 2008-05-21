@@ -4,8 +4,9 @@ elinks (0.11.3-8) unstable; urgency=low
     Geissert <atomo64@gmail.com> (Closes: #477976)
   * Update 13_fsp-display-dir.diff to workaround fsplib ABI dependency on
     _FILE_OFFSET_BITS.  Thanks Kalle Olavi Niemitalo <kon@iki.fi>
+  * Remove perl from Build-Depends, it is build-essential
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Mon, 28 Apr 2008 23:31:21 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Wed, 21 May 2008 17:27:46 +0530
 
 elinks (0.11.3-7) unstable; urgency=low
 
