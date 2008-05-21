@@ -54,6 +54,12 @@ elinks (0.12~20080127-1) experimental; urgency=low
 
  -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 03 Feb 2008 08:17:52 +0530
 
+elinks (0.11.3-8) unstable; urgency=low
+
+  * Remove perl from Build-Depends, it is build-essential
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Wed, 21 May 2008 17:27:46 +0530
+
 elinks (0.11.3-7) unstable; urgency=low
 
   * Use '<<' versioning rather than '<=' for Conflicts/Replaces.  Thanks Colin
