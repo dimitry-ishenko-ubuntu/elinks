@@ -9,8 +9,11 @@ elinks (0.12~20080527-1) experimental; urgency=low
     + 02_setup-bugs-FSSTND.diff
     + 06_459467_ui.leds.enable_0.diff
     + 08_436817_nostrip.diff
+  * Disable --enable-debug as it uses -Werror and causes too many FTBFSs.
+    Will look at the build logs manually and file bugs upstream for the
+    warnings that are serious.
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Tue, 27 May 2008 20:37:42 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Tue, 27 May 2008 21:03:09 +0530
 
 elinks (0.12~20080127-3) experimental; urgency=low
 

@@ -48,7 +48,6 @@ confopts_main = $(confopts) \
 	--enable-cgi \
 	--enable-exmode \
 	--enable-bittorrent \
-	--enable-debug \
 	--with-spidermonkey
 
 confopts_lite = $(confopts) \
@@ -135,7 +134,6 @@ clean: clean-patched unpatch
 clean-patched:
 	dh_testdir
 	dh_testroot
-	rm -f stamp-h.in
 	rm -f build-arch-stamp build-indep-stamp save-stamp
 	rm -rf build-lite build-main
 	[ ! -f doc/man/man5/elinkskeys.5.ups ] || mv -f doc/man/man5/elinkskeys.5.ups doc/man/man5/elinkskeys.5
