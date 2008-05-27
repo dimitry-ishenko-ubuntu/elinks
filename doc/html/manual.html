@@ -412,7 +412,7 @@ cellspacing="0" cellpadding="4">
     zlib 1.2.0.2 or later
     </td>
     <td align="left">
-    For handling compressed documents both locally and                          sent from server.
+    For handling gzip or deflate compressed documents                           both locally and sent from server.
     </td>
   </tr>
   <tr>
@@ -420,7 +420,15 @@ cellspacing="0" cellpadding="4">
     bzip2
     </td>
     <td align="left">
-    For handling local compressed documents.
+    Likewise, for bzip2 compressed documents.
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    LZMA Utils
+    </td>
+    <td align="left">
+    Likewise, for LZMA compressed documents.                                    Version 4.32.5 should work.
     </td>
   </tr>
   <tr>
@@ -943,6 +951,31 @@ that, you can still use the internal MIME associations system, though.</p>
 file extensions.</p>
 <p>Basically same thing applies here as for the mailcap support.</p>
 <p><strong>Default:</strong>  enabled</p>
+<h4><a id="CONFIG-GZIP"></a>Gzip and Deflate Decompression (<tt>CONFIG_GZIP</tt>)</h4>
+<p>This makes ELinks send "Accept-Encoding: deflate, gzip" in HTTP
+requests and decompress any documents received in those formats.
+It works with local *.gz files as well.</p>
+<p><strong>Default:</strong>  enabled if zlib is installed and new enough</p>
+<h4><a id="CONFIG-BZIP2"></a>Bzip2 Decompression (<tt>CONFIG_BZIP2</tt>)</h4>
+<p>This makes ELinks decompress local *.bz2 files.
+Also, ELinks sends "Accept-Encoding: bzip2" in HTTP requests
+and decompresses any documents received in that format,
+but this encoding has not been registered at
+<a href="http://www.iana.org/assignments/http-parameters">http://www.iana.org/assignments/http-parameters</a>,
+so most servers probably won't use it.</p>
+<p><strong>Default:</strong>  enabled if the library is installed</p>
+<h4><a id="CONFIG-LZMA"></a>LZMA Decompression (<tt>CONFIG_LZMA</tt>)</h4>
+<p>This makes ELinks decompress local *.lzma files.
+Also, ELinks sends "Accept-Encoding: lzma" in HTTP requests
+and decompresses any documents received in that format,
+but this encoding has not been registered at
+<a href="http://www.iana.org/assignments/http-parameters">http://www.iana.org/assignments/http-parameters</a>,
+so most servers probably won't use it.</p>
+<p>To use this, first install <a href="http://tukaani.org/lzma/">LZMA Utils</a>.
+Version 4.32.5 works; 4.42.2alpha also works and understands a
+newer LZMA file format.  This version of ELinks does not support
+LZMA SDK from 7-Zip.</p>
+<p><strong>Default:</strong>  enabled if the library is installed</p>
 <h4><a id="CONFIG-IPV6"></a>IPv6 Protocol Support (<tt>CONFIG_IPV6</tt>)</h4>
 <p>You know this thing that was designed to obsolete IPv4 but only pasky,
 weirdos and projects supported with big funds really use. ;-)</p>
@@ -1642,7 +1675,7 @@ cellspacing="0" cellpadding="4">
     <em>J</em>
     </td>
     <td align="left">
-    A JavaScript error has occured.
+    A JavaScript error has occurred.
     </td>
   </tr>
   <tr>
@@ -4113,7 +4146,7 @@ More things are possible, I'm sure.  If you have an idea that requires
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 09-Dec-2007 08:41:27 EEST
+Last updated 01-May-2008 12:04:16 EEST
 </div>
 </div>
 </body>

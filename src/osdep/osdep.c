@@ -805,20 +805,25 @@ unblock_stdin(void)
 void
 elinks_cfmakeraw(struct termios *t)
 {
-#ifdef HAVE_CFMAKERAW
-	cfmakeraw(t);
-#ifdef VMIN
-	t->c_cc[VMIN] = 1; /* cfmakeraw() is broken on AIX --mikulas */
-#endif
-#else
-	t->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
+	/* This elinks_cfmakeraw() intentionally leaves the following
+	 * settings unchanged, even though the standard cfmakeraw()
+	 * would change some of them:
+	 *
+	 * - c_cflag & CSIZE: number of bits per character.
+	 *   Bug 54 asked ELinks not to change this.
+	 * - c_cflag & (PARENB | PARODD): parity bit in characters.
+	 *   Bug 54 asked ELinks not to change this.
+	 * - c_iflag & (IXON | IXOFF | IXANY): XON/XOFF flow control.
+	 *
+	 * The reasoning is, if the user has set up unusual values for
+	 * those settings before starting ELinks, then the terminal
+	 * probably expects those values and ELinks should not mess
+	 * with them.  */
+	t->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL);
 	t->c_oflag &= ~OPOST;
 	t->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
-	t->c_cflag &= ~(CSIZE|PARENB);
-	t->c_cflag |= CS8;
 	t->c_cc[VMIN] = 1;
 	t->c_cc[VTIME] = 0;
-#endif
 }
 
 #if !defined(CONFIG_MOUSE) || (!defined(CONFIG_GPM) && !defined(CONFIG_SYSMOUSE) && !defined(OS2_MOUSE))

@@ -276,9 +276,6 @@
 /* Define if you have C99 compliant vsnprintf() */
 #define HAVE_C99_VSNPRINTF 1
 
-/* Define to 1 if you have the `cfmakeraw' function. */
-#define HAVE_CFMAKERAW 1
-
 /* Define to 1 if you have the `chmod' function. */
 #define HAVE_CHMOD 1
 
@@ -435,6 +432,9 @@
 
 /* Define if you have long long */
 #define HAVE_LONG_LONG 1
+
+/* Define to 1 if you have the <lzma.h> header file. */
+/* #undef HAVE_LZMA_H */
 
 /* Define to 1 if you have the <machine/console.h> header file. */
 /* #undef HAVE_MACHINE_CONSOLE_H */

@@ -336,354 +336,98 @@ manual is also hosted.</p>
 <p>Most options can be set in the user interface or config file, so usually you
 do not need to care about them. Note that this list is roughly equivalent to
 the output of running ELinks with the option <tt>--long-help</tt>.</p>
-<dl>
-<dt>
--anonymous [0|1] (default: 0)
-</dt>
-<dd>
-<p>
-        Restricts <em>ELinks</em> so it can run on an anonymous account.
-        Local file browsing, downloads, and modification of options
-        will be disabled. Execution of viewers is allowed, but entries
-        in the association table can't be added or modified.
-</p>
-</dd>
-<dt>
--auto-submit [0|1] (default: 0)
-</dt>
-<dd>
-<p>
-        Automatically submit the first form in the given URLs.
-</p>
-</dd>
-<dt>
--base-session &lt;num&gt; (default: 0)
-</dt>
-<dd>
-<p>
-        Used internally when opening <em>ELinks</em> instances in new windows.
-        The ID maps to information that will be used when creating the
-        new instance. You don't want to use it.
-</p>
-</dd>
-<dt>
--config-dir &lt;str&gt; (default: "")
-</dt>
-<dd>
-<p>
-        Path of the directory <em>ELinks</em> will read and write its
-        config and runtime state files to instead of <tt>~/.elinks</tt>.
-        If the path does not begin with a '/' it is assumed to be
-        relative to your <em>HOME</em> directory.
-</p>
-</dd>
-<dt>
--config-dump
-</dt>
-<dd>
-<p>
-        Print a configuration file with options set to the built-in
-        defaults to stdout.
-</p>
-</dd>
-<dt>
--config-file &lt;str&gt; (default: "elinks.conf")
-</dt>
-<dd>
-<p>
-        Name of the configuration file that all configuration
-        options will be read from and written to. It should be
-        relative to config-dir.
-</p>
-</dd>
-<dt>
--config-help
-</dt>
-<dd>
-<p>
-        Print help for configuration options and exit.
-</p>
-</dd>
-<dt>
--default-mime-type (alias for mime.default_type)
-</dt>
-<dd>
-<p>
-        The default MIME type used for documents of unknown type.
-</p>
-</dd>
-<dt>
--default-keys [0|1] (default: 0)
-</dt>
-<dd>
-<p>
-        When set, all keybindings from configuration files will be
-        ignored. It forces use of default keybindings and will reset
-        user-defined ones on save.
-</p>
-</dd>
-<dt>
--dump [0|1] (default: 0)
-</dt>
-<dd>
-<p>
-        Print formatted plain-text versions of given URLs to stdout.
-</p>
-</dd>
-<dt>
--dump-charset (alias for document.dump.codepage)
-</dt>
-<dd>
-<p>
-        Codepage used when formatting dump output.
-</p>
-</dd>
-<dt>
--dump-color-mode (alias for document.dump.color_mode)
-</dt>
-<dd>
-<p>
-        Color mode used with <tt>-dump</tt>.
-</p>
-</dd>
-<dt>
--dump-width (alias for document.dump.width)
-</dt>
-<dd>
-<p>
-        Width of the dump output.
-</p>
-</dd>
-<dt>
--eval
-</dt>
-<dd>
-<p>
-        Specify configuration file directives on the command-line
-        which will be evaluated after all configuration files has been
-        read. Example usage:
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><tt>-eval 'set protocol.file.allow_special_files = 1'</tt></pre>
-</div></div>
-</dd>
-<dt>
--force-html
-</dt>
-<dd>
-<p>
-        Makes <em>ELinks</em> assume documents of unknown types are HTML.
-        Useful when using <em>ELinks</em> as an external viewer from MUAs.
-        This is equivalent to <tt>-default-mime-type</tt> <tt>text/html</tt>.
-</p>
-</dd>
-<dt>
--?, -h, -help
-</dt>
-<dd>
-<p>
-        Print usage help and exit.
-</p>
-</dd>
-<dt>
--localhost [0|1] (default: 0)
-</dt>
-<dd>
-<p>
-        Restricts <em>ELinks</em> to work offline and only connect to servers
-        with local addresses (ie. 127.0.0.1). No connections to remote
-        servers will be permitted.
-</p>
-</dd>
-<dt>
--long-help
-</dt>
-<dd>
-<p>
-        Print detailed usage help and exit.
-</p>
-</dd>
-<dt>
--lookup
-</dt>
-<dd>
-<p>
-        Look up specified host and print all DNS resolved IP addresses.
-</p>
-</dd>
-<dt>
--no-connect [0|1] (default: 0)
-</dt>
-<dd>
-<p>
-        Run <em>ELinks</em> as a separate instance instead of connecting to an
-        existing instance. Note that normally no runtime state files
-        (bookmarks, history, etc.) are written to the disk when this
-        option is used. See also <tt>-touch-files</tt>.
-</p>
-</dd>
-<dt>
--no-home [0|1] (default: 0)
-</dt>
-<dd>
-<p>
-        Disables creation and use of files in the user specific home
-        configuration directory (<tt>~/.elinks</tt>). It forces default configuration
-        values to be used and disables saving of runtime state files.
-</p>
-</dd>
-<dt>
--no-numbering (alias for document.dump.numbering)
-</dt>
-<dd>
-<p>
-        Prevents printing of link number in dump output.
-        Note that this really affects only <tt>-dump</tt>, nothing else.
-</p>
-</dd>
-<dt>
--no-references (alias for document.dump.references)
-</dt>
-<dd>
-<p>
-        Prevents printing of references (URIs) of document links
-        in dump output.
-        Note that this really affects only <tt>-dump</tt>, nothing else.
-</p>
-</dd>
-<dt>
--remote
-</dt>
-<dd>
-<p>
-        Control a remote <em>ELinks</em> instance by passing commands to it.
-        The option takes an additional argument containing the method
-        which should be invoked and any parameters that should be passed
-        to it. For ease of use, the additional method argument can be
-        omitted in which case any URL arguments will be opened in new
-        tabs in the remote instance.
-        Following is a list of the supported methods:
-</p>
-<ul>
-<li>
-<p>
-<tt>ping()</tt>: look for a remote instance
-</p>
-</li>
-<li>
-<p>
-<tt>openURL()</tt>: prompt URL in current tab
-</p>
-</li>
-<li>
-<p>
-<tt>openURL(URL)</tt>: open URL in current tab
-</p>
-</li>
-<li>
-<p>
-<tt>openURL(URL, new-tab)</tt>: open URL in new tab
-</p>
-</li>
-<li>
-<p>
-<tt>openURL(URL, new-window)</tt>: open URL in new window
-</p>
-</li>
-<li>
-<p>
-<tt>addBookmark(URL)</tt>: bookmark URL
-</p>
-</li>
-<li>
-<p>
-<tt>infoBox(text)</tt>: show text in a message box
-</p>
-</li>
-<li>
-<p>
-<tt>xfeDoCommand(openBrowser)</tt>: open new window
-</p>
-</li>
-</ul>
-</dd>
-<dt>
--session-ring &lt;num&gt; (default: 0)
-</dt>
-<dd>
-<p>
-        ID of session ring this <em>ELinks</em> session should connect to. <em>ELinks</em>
-        works in so-called session rings, whereby all instances of <em>ELinks</em>
-        are interconnected and share state (cache, bookmarks, cookies,
-        and so on). By default, all <em>ELinks</em> instances connect to session
-        ring 0. You can change that behaviour with this switch and form as
-        many session rings as you want. Obviously, if the session-ring with
-        this number doesn't exist yet, it's created and this 'ELinks' instance
-        will become the master instance (that usually doesn't matter for you
-        as a user much). Note that you usually don't want to use this unless
-        you're a developer and you want to do some testing - if you want the
-        <em>ELinks</em> instances each running standalone, rather use the <tt>-no-connect</tt>
-        command-line option. Also note that normally no runtime state files
-        are written to the disk when this option is used. See also
-        <tt>-touch-files</tt>.
-</p>
-</dd>
-<dt>
--source [0|1] (default: 0)
-</dt>
-<dd>
-<p>
-        Print given URLs in source form to stdout.
-</p>
-</dd>
-<dt>
--touch-files [0|1] (default: 0)
-</dt>
-<dd>
-<p>
-        When enabled, runtime state files (bookmarks, history, etc.) are
-        written to disk, even when <tt>-no-connect</tt> or <tt>-session-ring</tt> is used.
-        The option has no effect if not used in conjunction with any of
-        these options.
-</p>
-</dd>
-<dt>
--verbose &lt;num&gt; (default: 1)
-</dt>
-<dd>
-<p>
-        The verbose level controls what messages are shown at
-        start up and while running:
-</p>
-<ul>
-<li>
-<p>
-0:    means only show serious errors
-</p>
-</li>
-<li>
-<p>
-1:    means show serious errors and warnings
-</p>
-</li>
-<li>
-<p>
-2:    means show all messages
-</p>
-</li>
-</ul>
-</dd>
-<dt>
--version
-</dt>
-<dd>
-<p>
-        Print <em>ELinks</em> version information and exit.
-</p>
-</dd>
-</dl>
-<p>Generated using output from ELinks version 0.12.GIT.</p>
+<dl><dt><span id="cmdopt:anonymous">-anonymous</span> [0|1] (default: 0)</dt><dd>Restricts <em>ELinks</em> so it can run on an anonymous account.
+Local file browsing, downloads, and modification of options
+will be disabled. Execution of viewers is allowed, but entries
+in the association table can't be added or modified.
+</dd><dt><span id="cmdopt:auto-submit">-auto-submit</span> [0|1] (default: 0)</dt><dd>Automatically submit the first form in the given URLs.
+</dd><dt><span id="cmdopt:base-session">-base-session</span> &#60;num&#62; (default: 0)</dt><dd>Used internally when opening <em>ELinks</em> instances in new windows.
+The ID maps to information that will be used when creating the
+new instance. You don't want to use it.
+</dd><dt><span id="cmdopt:config-dir">-config-dir</span> &#60;str&#62; (default: "")</dt><dd>Path of the directory <em>ELinks</em> will read and write its
+config and runtime state files to instead of <tt>~/.elinks</tt>.
+If the path does not begin with a '/' it is assumed to be
+relative to your <tt>HOME</tt> directory.
+</dd><dt><span id="cmdopt:config-dump">-config-dump</span></dt><dd>Print a configuration file with options set to the built-in
+defaults to stdout.
+</dd><dt><span id="cmdopt:config-file">-config-file</span> &#60;str&#62; (default: "elinks.conf")</dt><dd>Name of the configuration file that all configuration
+options will be read from and written to. It should be
+relative to <a href="#cmdopt:config-dir">config-dir</a>.
+</dd><dt><span id="cmdopt:config-help">-config-help</span></dt><dd>Print help for configuration options and exit.
+</dd><dt><span id="cmdopt:default-mime-type">-default-mime-type</span> (alias for <a href="elinks.conf.5.html#mime.default_type">mime.default_type</a>)</dt><dd>The default MIME type used for documents of unknown type.
+</dd><dt><span id="cmdopt:default-keys">-default-keys</span> [0|1] (default: 0)</dt><dd>When set, all keybindings from configuration files will be
+ignored. It forces use of default keybindings and will reset
+user-defined ones on save.
+</dd><dt><span id="cmdopt:dump">-dump</span> [0|1] (default: 0)</dt><dd>Print formatted plain-text versions of given URLs to stdout.
+</dd><dt><span id="cmdopt:dump-charset">-dump-charset</span> (alias for <a href="elinks.conf.5.html#document.dump.codepage">document.dump.codepage</a>)</dt><dd>Codepage used when formatting dump output.
+</dd><dt><span id="cmdopt:dump-color-mode">-dump-color-mode</span> (alias for <a href="elinks.conf.5.html#document.dump.color_mode">document.dump.color_mode</a>)</dt><dd>Color mode used with <a href="#cmdopt:dump">-dump</a>.
+</dd><dt><span id="cmdopt:dump-width">-dump-width</span> (alias for <a href="elinks.conf.5.html#document.dump.width">document.dump.width</a>)</dt><dd>Width of the dump output.
+</dd><dt><span id="cmdopt:eval">-eval</span></dt><dd>Specify configuration file directives on the command-line
+which will be evaluated after all configuration files has been
+read. Example usage:
+<blockquote><p><kbd>-eval 'set protocol.file.allow_special_files = 1'</kbd></p></blockquote>
+</dd><dt><span id="cmdopt:force-html">-force-html</span></dt><dd>Makes <em>ELinks</em> assume documents of unknown types are HTML.
+Useful when using <em>ELinks</em> as an external viewer from MUAs.
+This is equivalent to <kbd><a href="#cmdopt:default-mime-type">-default-mime-type</a> text/html</kbd>.
+</dd><dt><span id="cmdopt:_63">-?</span>, <span id="cmdopt:h">-h</span>, <span id="cmdopt:help">-help</span></dt><dd>Print usage help and exit.
+</dd><dt><span id="cmdopt:localhost">-localhost</span> [0|1] (default: 0)</dt><dd>Restricts <em>ELinks</em> to work offline and only connect to servers
+with local addresses (ie. 127.0.0.1). No connections to remote
+servers will be permitted.
+</dd><dt><span id="cmdopt:long-help">-long-help</span></dt><dd>Print detailed usage help and exit.
+</dd><dt><span id="cmdopt:lookup">-lookup</span></dt><dd>Look up specified host and print all DNS resolved IP addresses.
+</dd><dt><span id="cmdopt:no-connect">-no-connect</span> [0|1] (default: 0)</dt><dd>Run <em>ELinks</em> as a separate instance instead of connecting to an
+existing instance. Note that normally no runtime state files
+(bookmarks, history, etc.) are written to the disk when this
+option is used. See also <a href="#cmdopt:touch-files">-touch-files</a>.
+</dd><dt><span id="cmdopt:no-home">-no-home</span> [0|1] (default: 0)</dt><dd>Disables creation and use of files in the user specific home
+configuration directory (<tt>~/.elinks</tt>). It forces default configuration
+values to be used and disables saving of runtime state files.
+</dd><dt><span id="cmdopt:no-numbering">-no-numbering</span> (alias for <a href="elinks.conf.5.html#document.dump.numbering">document.dump.numbering</a>)</dt><dd>Prevents printing of link number in dump output.
+Note that this really affects only <a href="#cmdopt:dump">-dump</a>, nothing else.
+</dd><dt><span id="cmdopt:no-references">-no-references</span> (alias for <a href="elinks.conf.5.html#document.dump.references">document.dump.references</a>)</dt><dd>Prevents printing of references (URIs) of document links
+in dump output.
+Note that this really affects only <a href="#cmdopt:dump">-dump</a>, nothing else.
+</dd><dt><span id="cmdopt:remote">-remote</span></dt><dd>Control a remote <em>ELinks</em> instance by passing commands to it.
+The option takes an additional argument containing the method
+which should be invoked and any parameters that should be passed
+to it. For ease of use, the additional method argument can be
+omitted in which case any URL arguments will be opened in new
+tabs in the remote instance.
+Following is a list of the supported methods:
+<ul><li><kbd>ping()</kbd>: look for a remote instance</li>
+<li><kbd>openURL()</kbd>: prompt URL in current tab</li>
+<li><kbd>openURL(<var>URL</var>)</kbd>: open URL in current tab</li>
+<li><kbd>openURL(<var>URL</var>, new-tab)</kbd>: open URL in new tab</li>
+<li><kbd>openURL(<var>URL</var>, new-window)</kbd>: open URL in new window</li>
+<li><kbd>addBookmark(<var>URL</var>)</kbd>: bookmark URL</li>
+<li><kbd>infoBox(<var>text</var>)</kbd>: show text in a message box</li>
+<li><kbd>xfeDoCommand(openBrowser)</kbd>: open new window</li>
+</ul></dd><dt><span id="cmdopt:session-ring">-session-ring</span> &#60;num&#62; (default: 0)</dt><dd>ID of session ring this <em>ELinks</em> session should connect to. <em>ELinks</em>
+works in so-called session rings, whereby all instances of <em>ELinks</em>
+are interconnected and share state (cache, bookmarks, cookies,
+and so on). By default, all <em>ELinks</em> instances connect to session
+ring 0. You can change that behaviour with this switch and form as
+many session rings as you want. Obviously, if the session-ring with
+this number doesn't exist yet, it's created and this <em>ELinks</em> instance
+will become the master instance (that usually doesn't matter for you
+as a user much). Note that you usually don't want to use this unless
+you're a developer and you want to do some testing - if you want the
+<em>ELinks</em> instances each running standalone, rather use the <a href="#cmdopt:no-connect">-no-connect</a>
+command-line option. Also note that normally no runtime state files
+are written to the disk when this option is used. See also
+<a href="#cmdopt:touch-files">-touch-files</a>.
+</dd><dt><span id="cmdopt:source">-source</span> [0|1] (default: 0)</dt><dd>Print given URLs in source form to stdout.
+</dd><dt><span id="cmdopt:touch-files">-touch-files</span> [0|1] (default: 0)</dt><dd>When enabled, runtime state files (bookmarks, history, etc.) are
+written to disk, even when <a href="#cmdopt:no-connect">-no-connect</a> or <a href="#cmdopt:session-ring">-session-ring</a> is used.
+The option has no effect if not used in conjunction with any of
+these options.
+</dd><dt><span id="cmdopt:verbose">-verbose</span> &#60;num&#62; (default: 1)</dt><dd>The verbose level controls what messages are shown at
+start up and while running:
+<ul><li>0 means only show serious errors</li>
+<li>1 means show serious errors and warnings</li>
+<li>2 means show all messages</li>
+</ul></dd><dt><span id="cmdopt:version">-version</span></dt><dd>Print <em>ELinks</em> version information and exit.
+</dd></dl><p>Generated using output from ELinks version 0.12.GIT.</p>
 </div>
 <h2>ENVIRONMENT VARIABLES</h2>
 <div class="sectionbody">
@@ -720,7 +464,7 @@ ELINKS_TWTERM, LINKS_TWTERM
 <dd>
 <p>
         The command to run when selecting File -&gt; New window and if
-        <tt>TWDISPLAY</tt> is defined (default <tt>twterm -e</tt>)
+        <tt>TWDISPLAY</tt> is defined (default <tt>twterm -e</tt>).
 </p>
 </dd>
 <dt>
@@ -729,7 +473,7 @@ ELINKS_XTERM, LINKS_XTERM
 <dd>
 <p>
         The command to run when selecting File -&gt; New window and if <tt>DISPLAY</tt>
-        is defined (default <tt>xterm -e</tt>)
+        is defined (default <tt>xterm -e</tt>).
 </p>
 </dd>
 <dt>
@@ -768,6 +512,10 @@ WWW_HOME
 </div>
 <h2>FILES</h2>
 <div class="sectionbody">
+<p>Configuration files controlled by ELinks are located in the user
+configuration directory, defaulting to <em>~/.elinks/</em>. In addition to the
+files listed below, a user defined CSS stylesheet can be defined using
+the <em>document.css.stylesheet</em> option.</p>
 <dl>
 <dt>
 @sysconfdir@/elinks.conf
@@ -858,7 +606,7 @@ WWW_HOME
 </p>
 </dd>
 <dt>
-~/.mailcap
+~/.mailcap, /etc/mailcap
 </dt>
 <dd>
 <p>
@@ -866,7 +614,7 @@ WWW_HOME
 </p>
 </dd>
 <dt>
-~/.mime.types
+~/.mime.types, /etc/mime.types
 </dt>
 <dd>
 <p>
@@ -874,15 +622,6 @@ WWW_HOME
 </p>
 </dd>
 </dl>
-<p>Other files that ELinks uses from <em>~/.elinks/</em> includes the user defined CSS
-stylesheet. The name of the file can set in the <em>document.css.stylesheet</em>
-option.</p>
-</div>
-<h2>PLATFORMS</h2>
-<div class="sectionbody">
-<p><em>ELinks</em> is known to work on <em>Linux</em>, <em>FreeBSD</em>, <em>OpenBSD</em>, <em>Solaris</em>, <em>IRIX</em>,
-<em>HPUX</em>, <em>Digital Unix</em>, <em>AIX</em>, <em>OS/2</em>, <em>BeOS</em> and <em>RISC OS</em>. Port for <em>Win32</em>
-is in state of beta testing.</p>
 </div>
 <h2>BUGS</h2>
 <div class="sectionbody">
@@ -913,12 +652,12 @@ was done by Jonas Fonseca <a href="mailto:fonseca@diku.dk">fonseca@diku.dk</a>.<
 </div>
 <h2>SEE ALSO</h2>
 <div class="sectionbody">
-<p><a href="elinkskeys.5.html">elinkskeys(5)</a>, <a href="elinks.conf.5.html">elinks.conf(5)</a>, <b>links(1)</b>, <b>lynx(1)</b>, <b>w3m(1)</b>,
-<b>wget(1)</b></p>
+<p><a href="elinkskeys.5.html">elinkskeys(5)</a>, <a href="elinks.conf.5.html">elinks.conf(5)</a>, <b>links(1)</b>, <b>lynx(1)</b>,
+<b>w3m(1)</b>, <b>wget(1)</b></p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 09-Dec-2007 08:41:09 EEST
+Last updated 03-May-2008 20:31:52 EEST
 </div>
 </div>
 </body>
