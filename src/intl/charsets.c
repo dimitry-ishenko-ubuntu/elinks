@@ -1024,7 +1024,7 @@ get_entity_string(const unsigned char *str, const int strlen, int encoding)
 
 	/* Check if cached. A test on many websites (freshmeat.net + whole ELinks website
 	 * + google + slashdot + websites that result from a search for test on google,
-	 * + various ones) show a quite impressive improvment:
+	 * + various ones) show quite impressive improvment:
 	 * Top ten is:
 	 * 0: hits=2459 l=4 st='nbsp'
 	 * 1: hits=2152 l=6 st='eacute'
@@ -1308,7 +1308,7 @@ flush:
 
 #ifndef USE_FASTFIND
 int
-get_cp_index(unsigned char *name)
+get_cp_index(const unsigned char *name)
 {
 	int i, a;
 	int syscp = 0;
@@ -1389,7 +1389,7 @@ static struct fastfind_index ff_charsets_index
 /* It searchs for a charset named @name or one of its aliases and
  * returns index for it or -1 if not found. */
 int
-get_cp_index(unsigned char *name)
+get_cp_index(const unsigned char *name)
 {
 	const struct codepage_desc *codepage;
 	int syscp = 0;

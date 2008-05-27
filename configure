@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION ACLOCAL AUTOCONF AUTOHEADER MAKE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AWK RANLIB ac_ct_RANLIB INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CG_COMMIT_ID SPARSE ASCIIDOC XMLTO JW POD2HTML DOXYGEN api_srcdir ASCIIDOC_FLAGS CONFIG_ASCIIDOC CONFIG_DOXYGEN CONFIG_POD2HTML CONFIG_XMLTO CONFIG_JW CONFIG_DOC CONFIG_MANUAL CONFIG_MANPAGE CONFIG_APIDOCS CONFIG_OS_BEOS CONFIG_OS_RISCOS CONFIG_OS_WIN32 CONFIG_OS_OS2 CONFIG_OS_UNIX CPP EGREP CONFIG_INTERLINK LIBOBJS CONFIG_GPM CONFIG_GZIP CONFIG_BZIP2 CONFIG_IDN CONFIG_GC CONFIG_LZMA CONFIG_GSSAPI CONFIG_BOOKMARKS CONFIG_XBEL_BOOKMARKS SEE_CONFIG SEE_CFLAGS CONFIG_ECMASCRIPT CONFIG_ECMASCRIPT_SEE CONFIG_ECMASCRIPT_SMJS SPIDERMONKEY_LIBS SPIDERMONKEY_CFLAGS CONFIG_SPIDERMONKEY GUILE_CONFIG GUILE_CFLAGS PERL_LIBS PERL_CFLAGS PYTHON PYTHON_LIBS PYTHON_CFLAGS LUA_LIBS LUA_CFLAGS CONFIG_SCRIPTING_RUBY RUBY_CFLAGS RUBY_LIBS CONFIG_SCRIPTING CONFIG_SCRIPTING_GUILE CONFIG_SCRIPTING_LUA CONFIG_SCRIPTING_PERL CONFIG_SCRIPTING_PYTHON CONFIG_SCRIPTING_SPIDERMONKEY OPENSSL_CFLAGS LIBGNUTLS_CONFIG GNUTLS_CFLAGS CONFIG_SSL CONFIG_GNUTLS_OPENSSL_COMPAT CONFIG_OPENSSL CONFIG_GNUTLS X_CFLAGS SET_MAKE build build_cpu build_vendor build_os host host_cpu host_vendor host_os ALLOCA GLIBC21 CONFIG_NLS CONFIG_NLS_TRUE CONFIG_NLS_FALSE MSGFMT GMSGFMT XGETTEXT INTLBISON CATALOGS GMOFILES MKINSTALLDIRS INTL_LIBTOOL_SUFFIX_PREFIX CONFIG_COOKIES CONFIG_FORMHIST CONFIG_GLOBHIST CONFIG_MAILCAP CONFIG_MIMETYPES CONFIG_IPV6 CONFIG_BITTORRENT CONFIG_DATA CONFIG_URI_REWRITE CONFIG_CGI CONFIG_FINGER CONFIG_FSP CONFIG_FTP CONFIG_GOPHER CONFIG_NNTP CONFIG_SMB CONFIG_MOUSE CONFIG_SYSMOUSE CONFIG_88_COLORS CONFIG_256_COLORS CONFIG_TRUE_COLOR CONFIG_EXMODE CONFIG_LEDS CONFIG_MARKS CONFIG_CSS CONFIG_HTML_HIGHLIGHT CONFIG_DOM CONFIG_BACKTRACE CONFIG_NO_ROOT_EXEC CONFIG_DEBUG CONFIG_FASTMEM CONFIG_OWN_LIBC CONFIG_SMALL CONFIG_UTF8 CONFDIR LOCALEDIR LIBDIR MAKE_COLOR LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION ACLOCAL AUTOCONF AUTOHEADER MAKE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AWK RANLIB ac_ct_RANLIB INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA GIT SPARSE ASCIIDOC XMLTO JW POD2HTML DOXYGEN api_srcdir ASCIIDOC_FLAGS CONFIG_ASCIIDOC CONFIG_DOXYGEN CONFIG_POD2HTML CONFIG_XMLTO CONFIG_JW CONFIG_DOC CONFIG_MANUAL CONFIG_MANPAGE CONFIG_APIDOCS CONFIG_OS_BEOS CONFIG_OS_RISCOS CONFIG_OS_WIN32 CONFIG_OS_OS2 CONFIG_OS_UNIX CPP EGREP CONFIG_INTERLINK LIBOBJS CONFIG_GPM CONFIG_GZIP CONFIG_BZIP2 CONFIG_IDN CONFIG_GC CONFIG_LZMA CONFIG_GSSAPI CONFIG_BOOKMARKS CONFIG_XBEL_BOOKMARKS SEE_CONFIG SEE_CFLAGS CONFIG_ECMASCRIPT CONFIG_ECMASCRIPT_SEE CONFIG_ECMASCRIPT_SMJS SPIDERMONKEY_LIBS SPIDERMONKEY_CFLAGS CONFIG_SPIDERMONKEY GUILE_CONFIG GUILE_CFLAGS PERL_LIBS PERL_CFLAGS PYTHON PYTHON_LIBS PYTHON_CFLAGS LUA_LIBS LUA_CFLAGS CONFIG_SCRIPTING_RUBY RUBY_CFLAGS RUBY_LIBS CONFIG_SCRIPTING CONFIG_SCRIPTING_GUILE CONFIG_SCRIPTING_LUA CONFIG_SCRIPTING_PERL CONFIG_SCRIPTING_PYTHON CONFIG_SCRIPTING_SPIDERMONKEY OPENSSL_CFLAGS LIBGNUTLS_CONFIG GNUTLS_CFLAGS CONFIG_SSL CONFIG_GNUTLS_OPENSSL_COMPAT CONFIG_OPENSSL CONFIG_GNUTLS X_CFLAGS SET_MAKE build build_cpu build_vendor build_os host host_cpu host_vendor host_os ALLOCA GLIBC21 CONFIG_NLS CONFIG_NLS_TRUE CONFIG_NLS_FALSE MSGFMT GMSGFMT XGETTEXT INTLBISON CATALOGS GMOFILES MKINSTALLDIRS INTL_LIBTOOL_SUFFIX_PREFIX CONFIG_COOKIES CONFIG_FORMHIST CONFIG_GLOBHIST CONFIG_MAILCAP CONFIG_MIMETYPES CONFIG_IPV6 CONFIG_BITTORRENT CONFIG_DATA CONFIG_URI_REWRITE CONFIG_CGI CONFIG_FINGER CONFIG_FSP CONFIG_FTP CONFIG_GOPHER CONFIG_NNTP CONFIG_SMB CONFIG_MOUSE CONFIG_SYSMOUSE CONFIG_88_COLORS CONFIG_256_COLORS CONFIG_TRUE_COLOR CONFIG_EXMODE CONFIG_LEDS CONFIG_MARKS CONFIG_CSS CONFIG_HTML_HIGHLIGHT CONFIG_DOM CONFIG_BACKTRACE CONFIG_NO_ROOT_EXEC CONFIG_DEBUG CONFIG_FASTMEM CONFIG_OWN_LIBC CONFIG_SMALL CONFIG_UTF8 CONFDIR LOCALEDIR LIBDIR MAKE_COLOR LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -849,7 +849,6 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-largefile     omit support for large files
-  --enable-lzma           enable lzma encoding support
   --disable-bookmarks     disable bookmark support
   --disable-xbel          disable XBEL bookmark support (requires expat)
   --disable-sm-scripting  ECMAScript browser scripting (requires Spidermonkey)
@@ -900,6 +899,7 @@ Optional Packages:
   --without-bzlib         disable bzlib support
   --without-idn           disable international domain names support
   --with-gc               enable Boehm's garbage collector
+  --without-lzma          disable lzma encoding support
   --with-gssapi           enable GSSAPI support
   --with-see              enable Simple Ecmascript Engine (SEE) support
   --without-spidermonkey  disable SpiderMonkey Mozilla JavaScript engine support
@@ -1577,6 +1577,9 @@ echo $ECHO_N "checking for previous build to clean... $ECHO_C" >&6
 echo "${ECHO_T}done" >&6
 fi
 
+# ===================================================================
+# Load feature configuration file and start logging features.
+# ===================================================================
 
 features="features.conf"
 as_ac_File=`echo "ac_cv_file_"$srcdir/$features"" | $as_tr_sh`
@@ -1625,6 +1628,9 @@ fi
 
 echo "Feature summary:" > features.log
 
+# ===================================================================
+# Checks for programs.
+# ===================================================================
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -2800,18 +2806,18 @@ test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
 test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
 
-for ac_prog in "cg-commit-id"
+for ac_prog in "git"
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_path_CG_COMMIT_ID+set}" = set; then
+if test "${ac_cv_path_GIT+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  case $CG_COMMIT_ID in
+  case $GIT in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_CG_COMMIT_ID="$CG_COMMIT_ID" # Let the user override the test with a path.
+  ac_cv_path_GIT="$GIT" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -2821,7 +2827,7 @@ do
   test -z "$as_dir" && as_dir=.
   for ac_exec_ext in '' $ac_executable_extensions; do
   if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_CG_COMMIT_ID="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_GIT="$as_dir/$ac_word$ac_exec_ext"
     echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -2831,17 +2837,17 @@ done
   ;;
 esac
 fi
-CG_COMMIT_ID=$ac_cv_path_CG_COMMIT_ID
+GIT=$ac_cv_path_GIT
 
-if test -n "$CG_COMMIT_ID"; then
-  echo "$as_me:$LINENO: result: $CG_COMMIT_ID" >&5
-echo "${ECHO_T}$CG_COMMIT_ID" >&6
+if test -n "$GIT"; then
+  echo "$as_me:$LINENO: result: $GIT" >&5
+echo "${ECHO_T}$GIT" >&6
 else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
-  test -n "$CG_COMMIT_ID" && break
+  test -n "$GIT" && break
 done
 
 for ac_prog in "sparse"
@@ -3443,10 +3449,17 @@ _ACEOF
 
 
 
+# gcc specific options (to be continued at the bottom of configure)
 if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
-        CFLAGS="$CFLAGS -Wall"
+  # We want to see all warnings and live with none.
+  # We can't set up -Werror here as there may be some warnings in test
+  # suite of configure, and we don't want to fail them.
+  CFLAGS="$CFLAGS -Wall"
 fi
 
+# ===================================================================
+# Checks for special OSes.
+# ===================================================================
 
 
 
@@ -3753,6 +3766,9 @@ echo "$as_me:$LINENO: result: $CONFIG_OS_UNIX" >&5
 echo "${ECHO_T}$CONFIG_OS_UNIX" >&6
 
 
+# ===================================================================
+# Checks for header files.
+# ===================================================================
 
 
 
@@ -7735,6 +7751,9 @@ done
 
 
 
+# ===================================================================
+# Checks for typedefs, structures, and compiler characteristics.
+# ===================================================================
 
 echo "$as_me:$LINENO: checking whether struct tm is in sys/time.h or time.h" >&5
 echo $ECHO_N "checking whether struct tm is in sys/time.h or time.h... $ECHO_C" >&6
@@ -11409,6 +11428,7 @@ _ACEOF
 
 
 
+# Check for variadic macros
 
 	HAVE_VARIADIC_MACROS=yes;
 	echo "$as_me:$LINENO: checking for variadic macros" >&5
@@ -11467,6 +11487,35 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$HAVE_VARIADIC_MACROS" >&6
 
 
+# Check for -rdynamic
+#
+# gcc -rdynamic calls ld -export-dynamic, which adds all symbols of
+# the executable to its dynamic symbol table.  ELinks uses this for
+# two purposes:
+#
+# 1. If ELinks detects a bug, it can try to display a backtrace by
+#    calling backtrace_symbols_fd() in the GNU libc.  The glibc-2.3.6
+#    manual states users of GNU ld must pass -rdynamic to make the
+#    symbols available to the program.
+#
+# 2. It would eventually be nice to dynamically load shared
+#    libraries as plugins (bug 73).  The plugins must be able to
+#    call ELinks functions.  This can be implemented either by
+#    registering all callable functions in ELinks-specific data
+#    structures, or by letting the dynamic linker handle them.
+#    The latter way requires something equivalent to -rdynamic.
+#
+# Because backtraces are not needed for correct operation, and bug
+# 73 is not yet being fixed, the configure script and makefiles
+# should not complain to the user if they find that -rdynamic does
+# not work.  Besides, it was reported at elinks-users on 2006-09-12
+# that gcc-3.4.2 with "ld: Software Generation Utilities - Solaris
+# Link Editors: 5.8-1.284" on Sun Solaris 8 Sparc does not support
+# -rdynamic but does something equivalent automatically.  (This was
+# tested with "nm -D elinks | grep redraw_from_window".)
+#
+# FIXME: This check doesn't work. Something to do with the compiler
+# happily ignoring it and stderr not being checked for error messages.
 echo "$as_me:$LINENO: checking for -rdynamic" >&5
 echo $ECHO_N "checking for -rdynamic... $ECHO_C" >&6
 LDFLAGS_X="$LDFLAGS"
@@ -11521,6 +11570,9 @@ test "$have_rdynamic" = no && LDFLAGS="$LDFLAGS_X"
 echo "$as_me:$LINENO: result: $have_rdynamic" >&5
 echo "${ECHO_T}$have_rdynamic" >&6
 
+# ===================================================================
+# Check for POSIX <regex.h>
+# ===================================================================
 
 
 
@@ -11584,6 +11636,9 @@ echo "${ECHO_T}$HAVE_REGEX_H" >&6
 
 
 
+# ===================================================================
+# Checks for library functions.
+# ===================================================================
 
 if test $ac_cv_c_compiler_gnu = yes; then
     echo "$as_me:$LINENO: checking whether $CC needs -traditional" >&5
@@ -12324,8 +12379,7 @@ done
 
 
 
-
-for ac_func in atoll cfmakeraw gethostbyaddr herror strerror
+for ac_func in atoll gethostbyaddr herror strerror
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -13581,6 +13635,9 @@ fi
 done
 
 
+# These aren't probably needed now, as they are commented in links.h.
+# I've no idea about their historical background, but I keep them here
+# just in the case they will help later. --pasky
 
 for ac_func in getpid
 do
@@ -14211,6 +14268,7 @@ _ACEOF
 
 fi
 
+# OpenSSL and Lua frequently need dlopen
 
 echo "$as_me:$LINENO: checking for dlopen in -ldl" >&5
 echo $ECHO_N "checking for dlopen in -ldl... $ECHO_C" >&6
@@ -14284,8 +14342,11 @@ _ACEOF
   LIBS="-ldl $LIBS"
 
 fi
- # OpenSSL and Lua frequently needs it
 
+
+# ===================================================================
+# Checks for libraries.
+# ===================================================================
 
 echo "$as_me:$LINENO: checking for socket" >&5
 echo $ECHO_N "checking for socket... $ECHO_C" >&6
@@ -14880,6 +14941,9 @@ fi
 	fi
 fi
 
+# ===================================================================
+# Checks for packaging specific options.
+# ===================================================================
 
 
 # Check whether --with-xterm or --without-xterm was given.
@@ -14894,6 +14958,9 @@ _ACEOF
 	      fi
 fi;
 
+# ===================================================================
+# Checks for a libraries, optional even if installed.
+# ===================================================================
 
 
 
@@ -15222,6 +15289,11 @@ echo "${ECHO_T}disabled" >&6
 
 
 
+# ELinks calls deflateInit2 with windowBits = MAX_WBITS | 32, to
+# enable automatic decoding of both zlib and gzip headers.  This
+# feature was added in zlib 1.2.0.2; earlier versions return an error.
+# The gzclearerr function was also added in zlib 1.2.0.2, so check for
+# that, even though ELinks does not actually call gzclearerr.
 
 	CONFIG_GZIP=yes
 	WITHVAL_CONFIG_GZIP=
@@ -16517,16 +16589,275 @@ echo "${ECHO_T}disabled" >&6
 fi
 
 
-	# Check whether --enable-lzma or --disable-lzma was given.
-if test "${enable_lzma+set}" = set; then
-  enableval="$enable_lzma"
+	CONFIG_LZMA=yes
+	WITHVAL_CONFIG_LZMA=
 
-		if test "$enableval" != no; then enableval="yes"; fi
-		CONFIG_LZMA="$enableval";
 
+# Check whether --with-lzma or --without-lzma was given.
+if test "${with_lzma+set}" = set; then
+  withval="$with_lzma"
+  WITHVAL_CONFIG_LZMA="$withval"
 fi;
+	if test "x$WITHVAL_CONFIG_LZMA" = xno; then CONFIG_LZMA=no; fi
 
-	if test "x$CONFIG_LZMA" = xyes; then
+
+	echo "$as_me:$LINENO: checking for lzma support" >&5
+echo $ECHO_N "checking for lzma support... $ECHO_C" >&6
+
+	if test "$CONFIG_LZMA" != no; then
+		echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+	CFLAGS_X="$CFLAGS";
+	CPPFLAGS_X="$CPPFLAGS";
+	LDFLAGS_X="$LDFLAGS";
+	LIBS_X="$LIBS";
+
+		if test -n "$withval" && test -d "$withval"; then
+			# Be a little more careful when setting
+			# include and lib directories. This way
+			# $withval will work when includes are
+			# there but the library is in the common
+			# /usr/lib ... Does the right thing when
+			# looking for gc on Debian.
+			if test -d "$withval/include"; then
+				CFLAGS="$CFLAGS -I$withval/include"
+				CPPFLAGS="$CPPFLAGS -I$withval/include"
+			else
+				CFLAGS="$CFLAGS -I$withval"
+				CPPFLAGS="$CPPFLAGS -I$withval"
+			fi
+			if test -d "$withval/lib"; then
+				LDFLAGS="$LDFLAGS -L$withval/lib"
+			fi
+		fi
+
+
+for ac_header in lzma.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ------------------------------------------ ##
+## Report this to the AC_PACKAGE_NAME lists.  ##
+## ------------------------------------------ ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ CONFIG_LZMA=yes
+else
+  CONFIG_LZMA=no; break;
+fi
+
+done
+
+		if test "$CONFIG_LZMA" = yes; then
+			echo "$as_me:$LINENO: checking for lzma_code in -llzma" >&5
+echo $ECHO_N "checking for lzma_code in -llzma... $ECHO_C" >&6
+if test "${ac_cv_lib_lzma_lzma_code+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-llzma  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char lzma_code ();
+int
+main ()
+{
+lzma_code ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_lzma_lzma_code=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_lzma_lzma_code=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_lzma_lzma_code" >&5
+echo "${ECHO_T}$ac_cv_lib_lzma_lzma_code" >&6
+if test $ac_cv_lib_lzma_lzma_code = yes; then
+  CONFIG_LZMA=yes
+else
+  CONFIG_LZMA=no
+fi
+
+		fi
+
+		if test "$CONFIG_LZMA" = yes; then
 
 	  CONFIG_LZMA=yes
 	  ABOUT_CONFIG_LZMA="lzma"
@@ -16535,9 +16866,27 @@ cat >>confdefs.h <<\_ACEOF
 #define CONFIG_LZMA 1
 _ACEOF
 
+			LIBS="$LIBS -llzma"
+		else
+			if test -n "$WITHVAL_CONFIG_LZMA" &&
+			   test "$WITHVAL_CONFIG_LZMA" != xno; then
+				{ { echo "$as_me:$LINENO: error: lzma not found" >&5
+echo "$as_me: error: lzma not found" >&2;}
+   { (exit 1); exit 1; }; }
+			fi
+
+	CFLAGS="$CFLAGS_X";
+	CPPFLAGS="$CPPFLAGS_X";
+	LDFLAGS="$LDFLAGS_X";
+	LIBS="$LIBS_X";
+
+		fi
 	else
-		CONFIG_LZMA=no
+		echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
 	fi
+
+
 
 	about="lzma"
 	value=""
@@ -16562,6 +16911,9 @@ _ACEOF
 
 
 
+# ===================================================================
+# Check for GSSAPI, optional even if installed.
+# ===================================================================
 
 enable_gssapi="no";
 
@@ -16597,6 +16949,9 @@ fi
 
 
 
+# ===================================================================
+# Bookmark and XBEL support
+# ===================================================================
 
 
 	CFLAGS_X="$CFLAGS";
@@ -16957,6 +17312,9 @@ if test "$CONFIG_XBEL_BOOKMARKS" != yes; then
 
 fi
 
+# ===================================================================
+# Checks for BSD sysmouse
+# ===================================================================
 
 HAVE_SYSMOUSE_HEADER="no"
 
@@ -17113,6 +17471,9 @@ fi
 done
 
 
+# ===================================================================
+# Checks for OS/2
+# ===================================================================
 
 if test "$CONFIG_OS_OS2" = yes; then
 
@@ -17520,6 +17881,9 @@ echo "${ECHO_T}$cf_result" >&6
 
 fi
 
+# ===================================================================
+# Checks for Win32
+# ===================================================================
 
 if test "$CONFIG_OS_WIN32" = yes; then
 
@@ -17755,6 +18119,9 @@ done
 
 fi
 
+# ===================================================================
+# Check for SEE (Simple Ecmascript Engine)
+# ===================================================================
 
 # Check whether --with-see or --without-see was given.
 if test "${with_see+set}" = set; then
@@ -17910,6 +18277,9 @@ echo "$as_me: WARNING: SEE support disabled" >&2;}
 	fi
 fi
 
+# ===================================================================
+# Check for SpiderMonkey, optional even if installed.
+# ===================================================================
 
 
 # Check whether --with-spidermonkey or --without-spidermonkey was given.
@@ -18079,6 +18449,9 @@ _ACEOF
 
 
 
+# ===================================================================
+# Optional Spidermonkey-based ECMAScript browser scripting
+# ===================================================================
 
 # Check whether --enable-sm-scripting or --disable-sm-scripting was given.
 if test "${enable_sm_scripting+set}" = set; then
@@ -18109,6 +18482,9 @@ if test "x$CONFIG_ECMASCRIPT_SMJS" = xyes ||
 
 fi
 
+# ===================================================================
+# Check for Guile, optional even if installed.
+# ===================================================================
 
 enable_guile="no";
 
@@ -18219,6 +18595,9 @@ else
 echo "${ECHO_T}no" >&6;
 fi
 
+# ===================================================================
+# Check for Perl
+# ===================================================================
 enable_perl="no";
 
 
@@ -18390,6 +18769,9 @@ _ACEOF
 
 fi
 
+# ===================================================================
+# Check for Python
+# ===================================================================
 enable_python="no";
 
 
@@ -18559,7 +18941,12 @@ echo "${ECHO_T}no" >&6;
 fi
 
 
+# ===================================================================
+# Check for Lua, optional even if installed.
+# ===================================================================
 
+# Do this the long way, as FreeBSD reportedly needs -L<dir> for
+# anything other than /usr/lib, and Lua is very often in /usr/local/lib.
 
 
 # Check whether --with-lua or --without-lua was given.
@@ -18583,7 +18970,7 @@ if test -z "$disable_lua"; then
 		withval="";
 	fi
 	for luadir in "$withval" "" /usr /usr/local; do
-		for suffix in "" 50 51; do
+		for suffix in "" 50; do
 			if test "$cf_result" = no && ( test -f "$luadir/include/lua.h" || \
 			   test -f "$luadir/include/lua$suffix/lua.h" ) ; then
 				LUA_LIBS="-L$luadir/lib -llua$suffix -llualib$suffix -lm"
@@ -18830,6 +19217,9 @@ done
 fi
 
 
+# ===================================================================
+# Check for Ruby, optional even if installed.
+# ===================================================================
 
 
 echo "$as_me:$LINENO: checking for Ruby" >&5
@@ -19045,6 +19435,9 @@ _ACEOF
 fi
 
 
+# ===================================================================
+# Setup global scripting
+# ===================================================================
 
 
 	CONFIG_SCRIPTING=no
@@ -19109,8 +19502,14 @@ _ACEOF
 
 
 
+# ===================================================================
+# Check for SSL support.
+# ===================================================================
 
+# We by default use OpenSSL, and we always prefer it. However, when GNUTLS
+# is enabled, we won't try to use OpenSSL anymore.
 
+# For wiping SSL hooks..
 #ifdef CONFIG_SSL
 
 disable_openssl=""
@@ -19149,6 +19548,7 @@ if test "${with_openssl+set}" = set; then
 fi;
 openssl_withval="$withval"
 
+# ---- OpenSSL
 
 echo "$as_me:$LINENO: checking for OpenSSL" >&5
 echo $ECHO_N "checking for OpenSSL... $ECHO_C" >&6
@@ -19310,6 +19710,7 @@ echo "$as_me:$LINENO: result: $cf_result" >&5
 echo "${ECHO_T}$cf_result" >&6
 
 CONFIG_GNUTLS_OPENSSL_COMPAT=no
+# ---- GNU TLS
 
 if test "$cf_result" = yes; then
 	cf_result="not used"
@@ -19759,6 +20160,7 @@ echo $ECHO_N "checking for GNU TLS (1.2 or later)... $ECHO_C" >&6
 echo "$as_me:$LINENO: result: $cf_result" >&5
 echo "${ECHO_T}$cf_result" >&6
 
+# Final SSL setup
 
 
 	CONFIG_SSL=no
@@ -19825,6 +20227,9 @@ echo $ECHO_N "checking whether to be or not to be... $ECHO_C" >&6
 echo "$as_me:$LINENO: result: needs to be determined experimentally" >&5
 echo "${ECHO_T}needs to be determined experimentally" >&6
 
+# ===================================================================
+# Check for IPv6 support and related functions.
+# ===================================================================
 
 
 
@@ -20198,6 +20603,9 @@ fi
 fi
 
 
+# ===================================================================
+# Checking for X11 (window title restoring).
+# ===================================================================
 
 echo "$as_me:$LINENO: checking for X" >&5
 echo $ECHO_N "checking for X... $ECHO_C" >&6
@@ -20516,6 +20924,9 @@ _ACEOF
 fi
 
 
+# ===================================================================
+# Backtraces displaying support.
+# ===================================================================
 
 
 for ac_header in execinfo.h
@@ -20672,6 +21083,9 @@ done
 # possible checks for other system-specific means go here
 
 
+# ===================================================================
+# Gettext grey zone. Beware.
+# ===================================================================
 
 ALL_LINGUAS="af be bg ca cs da de el es et fi fr gl hr hu id is it lt nl nb pl pt pt_BR ro ru sk sr sv tr uk"
 
@@ -22196,6 +22610,9 @@ echo "${ECHO_T}$LINGUAS" >&6
 
 
 
+# ===================================================================
+# Compile-time features control
+# ===================================================================
 
 
 	# Check whether --enable-cookies or --disable-cookies was given.
@@ -22741,6 +23158,9 @@ _ACEOF
 
 
 
+# ===================================================================
+# FSP protocol
+# ===================================================================
 
 	CFLAGS_X="$CFLAGS";
 	CPPFLAGS_X="$CPPFLAGS";
@@ -23264,6 +23684,9 @@ _ACEOF
 
 
 
+# ===================================================================
+# SMB protocol support.
+# ===================================================================
 
 	CFLAGS_X="$CFLAGS";
 	CPPFLAGS_X="$CPPFLAGS";
@@ -24075,6 +24498,8 @@ _ACEOF
 
 
 
+# Everything in the tree already uses CONFIG_DOM
+# so resolve CONFIG_HTML_HIGHLIGHT to CONFIG_DOM
 
 	CONFIG_DOM=no
 	el_value=
@@ -24517,11 +24942,15 @@ echo "$as_me: error: Are you strange" >&2;}
 fi;
 
 
+# == EMX hack
 
 test "$CONFIG_OS_OS2" = yes && LDFLAGS="$LDFLAGS -Zexe"
 test "$CONFIG_OS_OS2" = yes && LDFLAGS=`echo "$LDFLAGS" | sed "s/-Zbin-files//g"`
 
 
+# ===================================================================
+# Export directory paths
+# ===================================================================
 
 # Set up the ``entry points'' if they were not supplied by builder
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -24615,10 +25044,14 @@ _ACEOF
 
 
 
+# ===================================================================
+# A little fine tuning of gcc specific options (continued)
+# ===================================================================
 
 if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
   if test "$CONFIG_DEBUG" = "yes"; then
-        CFLAGS="$CFLAGS -Werror"
+    # We want to see all warnings and live with none (in debug mode).
+    CFLAGS="$CFLAGS -Werror"
   fi
 
   case "`$CC -dumpversion`" in
@@ -24660,6 +25093,116 @@ echo $ECHO_N "checking whether $CC accepts $warning_flag... $ECHO_C" >&6
 	LIBS_X="$LIBS";
 
     CFLAGS="$CFLAGS $warning_flag"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+       break
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+
+	CFLAGS="$CFLAGS_X";
+	CPPFLAGS="$CPPFLAGS_X";
+	LDFLAGS="$LDFLAGS_X";
+	LIBS="$LIBS_X";
+
+  done
+
+  # Bug 1012: Some parts of ELinks do arithmetic with signed integers
+  # in such a way that an overflow is possible.  GCC 4.2.1 warns
+  # "warning: assuming signed overflow does not occur when assuming
+  # that (X + c) > X is always true", which may be an incorrect
+  # optimization (although allowed by the standard), and breaks the
+  # build with -Werror.
+  #
+  # All of the following tests included -S -Wall -Wextra:
+  #
+  # GCC: (GNU) 4.0.4 20060507 (prerelease) (Debian 4.0.3-3)
+  # * gcc-4.0 -O0: OK, compares the values
+  # * gcc-4.0 -O2: assumes no overflow, does not warn
+  # * gcc-4.0 -O0 -fno-strict-overflow: unrecognized command line option
+  # * gcc-4.0 -O0 -fwrapv: OK, compares the values
+  # * gcc-4.0 -O2 -fwrapv: OK, compares the values
+  # * gcc-4.0 -O0 -ftrapv: OK, calls __addvsi3
+  # * gcc-4.0 -O2 -ftrapv: assumes no overflow, does not warn
+  # * gcc-4.0 -O0 -fwrapv -ftrapv: OK, calls __addvsi3
+  # * gcc-4.0 -O2 -fwrapv -ftrapv: compares the values
+  #
+  # GCC: (GNU) 4.1.3 20070812 (prerelease) (Debian 4.1.2-15)
+  # * gcc-4.1 -O0: assumes no overflow, does not warn
+  # * gcc-4.1 -O2: assumes no overflow, does not warn
+  # * gcc-4.1 -O0 -fno-strict-overflow: unrecognized command line option
+  # * gcc-4.1 -O0 -fwrapv: OK, compares the values
+  # * gcc-4.1 -O2 -fwrapv: OK, compares the values
+  # * gcc-4.1 -O0 -ftrapv: OK, calls __addvsi3
+  # * gcc-4.1 -O2 -ftrapv: compares the values
+  # * gcc-4.1 -O0 -fwrapv -ftrapv: OK, calls __addvsi3
+  # * gcc-4.1 -O2 -fwrapv -ftrapv: compares the values
+  #
+  # GCC: (GNU) 4.2.1 (Debian 4.2.1-5)
+  # * gcc-4.2 -O0: OK, compares the values
+  # * gcc-4.2 -O2: assumes no overflow, warns about it
+  # * gcc-4.2 -O0 -fno-strict-overflow: OK, compares the values
+  # * gcc-4.2 -O2 -fno-strict-overflow: OK, compares the values
+  # * gcc-4.2 -O0 -fwrapv: OK, compares the values
+  # * gcc-4.2 -O2 -fwrapv: OK, compares the values
+  # * gcc-4.2 -O0 -ftrapv: OK, calls __addvsi3
+  # * gcc-4.2 -O2 -ftrapv: compares the values
+  # * gcc-4.2 -O0 -fwrapv -ftrapv: OK, calls __addvsi3
+  # * gcc-4.2 -O2 -fwrapv -ftrapv: compares the values
+  #
+  # Apparently, -ftrapv does not work reliably at all.
+  for overflow_flag in -fno-strict-overflow -fwrapv; do
+    echo "$as_me:$LINENO: checking whether $CC accepts $overflow_flag" >&5
+echo $ECHO_N "checking whether $CC accepts $overflow_flag... $ECHO_C" >&6
+
+	CFLAGS_X="$CFLAGS";
+	CPPFLAGS_X="$CPPFLAGS";
+	LDFLAGS_X="$LDFLAGS";
+	LIBS_X="$LIBS";
+
+    CFLAGS="$CFLAGS $overflow_flag"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -24806,12 +25349,18 @@ fi
 
 
 
+# ===================================================================
+# Colored make output
+# ===================================================================
 
 if test $(`which tput` colors) -ge 4; then
 	MAKE_COLOR=1
 
 fi
 
+# ===================================================================
+# Generated files
+# ===================================================================
 
                                                                                 ac_config_files="$ac_config_files Makefile.config contrib/elinks.spec contrib/lua/hooks.lua contrib/conv/w3m2links.awk doc/Doxyfile doc/man/man1/elinks.1 src/intl/gettext/ref-add.sed src/intl/gettext/ref-del.sed"
 
@@ -25452,7 +26001,7 @@ s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
 s,@INSTALL_PROGRAM@,$INSTALL_PROGRAM,;t t
 s,@INSTALL_SCRIPT@,$INSTALL_SCRIPT,;t t
 s,@INSTALL_DATA@,$INSTALL_DATA,;t t
-s,@CG_COMMIT_ID@,$CG_COMMIT_ID,;t t
+s,@GIT@,$GIT,;t t
 s,@SPARSE@,$SPARSE,;t t
 s,@ASCIIDOC@,$ASCIIDOC,;t t
 s,@XMLTO@,$XMLTO,;t t
@@ -26086,6 +26635,9 @@ if test "$abs_srcdir" != "$builddir"; then
 	echo "*" > "$builddir/.gitignore"
 fi
 
+# ===================================================================
+# Configuration summary
+# ===================================================================
 
 echo "$as_me:$LINENO: result: The following feature summary has been saved to features.log" >&5
 echo "${ECHO_T}The following feature summary has been saved to features.log" >&6
