@@ -1,3 +1,17 @@
+elinks (0.12~20080527-1) experimental; urgency=low
+
+  * Update orig to new upstream snapshot as of 20080527 (Closes: #478156)
+  * Delete patches not necessary for 12~20080527
+    + 09_464384_alignof_off_t_FBTFS.diff
+    + 10_bt_msg_id_FTBFS.diff
+    + 12_338402_cfmakeraw_exotic_term.diff
+  * Refresh patches for 12~20080527
+    + 02_setup-bugs-FSSTND.diff
+    + 06_459467_ui.leds.enable_0.diff
+    + 08_436817_nostrip.diff
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Tue, 27 May 2008 20:37:42 +0530
+
 elinks (0.12~20080127-3) experimental; urgency=low
 
   * Rename 09_464384_AMD64_FBTFS.diff as 09_464384_alignof_off_t_FBTFS.diff
