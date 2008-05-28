@@ -48,6 +48,7 @@ confopts_main = $(confopts) \
 	--enable-cgi \
 	--enable-exmode \
 	--enable-bittorrent \
+	--enable-debug \
 	--with-spidermonkey
 
 confopts_lite = $(confopts) \

@@ -1,3 +1,10 @@
+elinks (0.12~20080527-2) experimental; urgency=low
+
+  * Re-enable --enable-debug (it is recommended for development versions of
+    ELinks and adds extra checks etc.) but remove -Werror explicitly.
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Wed, 28 May 2008 20:24:53 +0530
+
 elinks (0.12~20080527-1) experimental; urgency=low
 
   * Update orig to new upstream snapshot as of 20080527 (Closes: #478156)
