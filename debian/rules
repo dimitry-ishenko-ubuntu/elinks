@@ -67,6 +67,7 @@ confopts_lite = $(confopts) \
 	--disable-marks \
 	--disable-css \
 	--disable-backtrace \
+	--disable-sm-scripting \
 	--enable-fastmem \
 	--enable-small \
 	--without-gpm \
