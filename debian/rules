@@ -45,6 +45,7 @@ confopts_main = $(confopts) \
 	--with-guile \
 	--with-python \
 	--with-ruby \
+	--with-gssapi \
 	--enable-cgi \
 	--enable-exmode \
 	--enable-bittorrent \
