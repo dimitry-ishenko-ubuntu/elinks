@@ -29,6 +29,7 @@ confopts = --prefix=/usr \
 	--mandir=\$${prefix}/share/man \
 	--infodir=\$${prefix}/share/info \
 	--sysconfdir=/etc/elinks \
+	--without-lzma \
 	--without-openssl \
 	--without-x \
 	--with-gnutls=/usr
