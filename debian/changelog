@@ -1,10 +1,12 @@
 elinks (0.12~20080527-2) experimental; urgency=low
 
   * Re-enable --enable-debug (it is recommended for development versions of
-    ELinks and adds extra checks etc.) but remove -Werror explicitly.
+    ELinks and adds extra checks etc.)
+  * Patch 14_debug_disable_Werror.diff to remove -Werror explicitly because we
+    now use --enable-debug.
   * Enable GSSAPI (Closes: #483403)
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 29 May 2008 08:45:34 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 29 May 2008 14:05:28 +0530
 
 elinks (0.12~20080527-1) experimental; urgency=low
 
