@@ -1,3 +1,16 @@
+elinks (0.11.4-1) unstable; urgency=low
+
+  * New upstream release:
+    - Drop 01_asciidoc7compatible.diff, merged upstream
+    - Drop 03_417789-CVE-2007-2027.diff, merged upstream
+    - Drop 04_380347-entity_cache-overflow.diff, merged upstream
+    - Drop 07_local-CGI-query-fix.diff, merged upstream
+    - Drop 12_338402_cfmakeraw_exotic_term.diff, merged upstream
+    - Drop 13_fsp-display-dir.diff, merged upstream
+    - Update and renumber the remaining patches
+	
+ -- Moritz Muehlenhoff <jmm@debian.org>  Sat, 21 Jun 2008 17:01:47 +0200
+
 elinks (0.11.3-8) unstable; urgency=low
 
   * Fix bash-ism in debian/rules get-orig-source target.  Thanks Raphael
