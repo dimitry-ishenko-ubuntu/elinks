@@ -1,79 +1,54 @@
-diff --git a/doc/elinks.1.txt b/doc/elinks.1.txt
-index 060336f..485e19b 100644
---- a/doc/elinks.1.txt
-+++ b/doc/elinks.1.txt
-@@ -136,9 +136,10 @@ is in state of beta testing.
+diff -Naur elinks-0.11.4.orig/doc/elinks.1.txt elinks-0.11.4/doc/elinks.1.txt
+--- elinks-0.11.4.orig/doc/elinks.1.txt	2008-06-21 21:20:22.000000000 +0200
++++ elinks-0.11.4/doc/elinks.1.txt	2008-06-21 21:23:02.000000000 +0200
+@@ -141,9 +141,10 @@
  BUGS
  ----
  
 -Please report any other bugs you find to the either the ELinks mailing list at
 -mailto:elinks-users@linuxfromscratch.org[] or if you prefer enter them into
--http://bugzilla.elinks.or.cz/[the bug tracking system]. More information about
+-http://bugzilla.elinks.cz/[the bug tracking system]. More information about
 +Please report any bugs you find to the
 +http://bugs.debian.org/src:elinks[Debian bug tracking] system using the
 +reportbug program, or if you prefer enter them into the upstream elinks 
 +http://bugzilla.elinks.or.cz/[bug tracking system]. More information about
  how to get in contact with developers and getting help can be found on
- http://elinks.or.cz/community.html[the community page].
+ http://elinks.cz/community.html[the community page].
  
-diff --git a/doc/html/elinks.conf.5.html b/doc/html/elinks.conf.5.html
-index c7d9ffe..fc819c5 100644
---- a/doc/html/elinks.conf.5.html
-+++ b/doc/html/elinks.conf.5.html
-@@ -2194,7 +2194,7 @@ mime.mailcap.enable [0|1] (default: 1)
- </p>
- </dd>
- <dt>
--mime.mailcap.path &lt;str&gt; (default: "~/.mailcap:/etc/mailcap:/usr/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap")
-+mime.mailcap.path &lt;str&gt; (default: "~/.mailcap:/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap")
- </dt>
- <dd>
- <p>
-@@ -2265,7 +2265,7 @@ mime.mimetypes.enable [0|1] (default: 1)
- </p>
- </dd>
- <dt>
--mime.mimetypes.path &lt;str&gt; (default: "~/.mime.types:/etc/mime.types:/usr/etc/mime.types:/usr/local/etc/mime.types:/usr/share/mime.types:/usr/share/misc/mime.types")
-+mime.mimetypes.path &lt;str&gt; (default: "~/.mime.types:/etc/mime.types:/usr/local/etc/mime.types:/usr/share/mime.types:/usr/share/misc/mime.types")
- </dt>
- <dd>
- <p>
-diff --git a/doc/man/man5/elinks.conf.5 b/doc/man/man5/elinks.conf.5
-index 1c73edc..3a263c6 100644
---- a/doc/man/man5/elinks.conf.5
-+++ b/doc/man/man5/elinks.conf.5
-@@ -991,7 +991,7 @@ mime\&.mailcap\&.enable [0|1] (default: 1)
- Enable mailcap support\&.
- 
- .TP
--mime\&.mailcap\&.path <str> (default: "~/\&.mailcap:/etc/mailcap:/usr/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap")
+diff -Naur elinks-0.11.4.orig/doc/man/man5/elinks.conf.5 elinks-0.11.4/doc/man/man5/elinks.conf.5
+--- elinks-0.11.4.orig/doc/man/man5/elinks.conf.5	2008-06-21 21:20:22.000000000 +0200
++++ elinks-0.11.4/doc/man/man5/elinks.conf.5	2008-06-21 21:26:29.000000000 +0200
+@@ -1128,7 +1128,7 @@
+ Enable mailcap support\.
+ .RE
+ .PP
+-mime\.mailcap\.path <str> (default: "~/\.mailcap:/etc/mailcap:/usr/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap")
 +mime\&.mailcap\&.path <str> (default: "~/\&.mailcap:/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap")
- Mailcap search path\&. Colon\-separated list of files\&. Leave as "" to use MAILCAP environment variable instead\&.
- 
- .TP
-@@ -1029,7 +1029,7 @@ mime\&.mimetypes\&.enable [0|1] (default: 1)
- Enable mime\&.types support\&.
- 
- .TP
--mime\&.mimetypes\&.path <str> (default: "~/\&.mime\&.types:/etc/mime\&.types:/usr/etc/mime\&.types:/usr/local/etc/mime\&.types:/usr/share/mime\&.types:/usr/share/misc/mime\&.types")
+ .RS 4
+ Mailcap search path\. Colon\-separated list of files\. Leave as "" to use MAILCAP environment variable instead\.
+ .RE
+@@ -1170,7 +1170,7 @@
+ Enable mime\.types support\.
+ .RE
+ .PP
+-mime\.mimetypes\.path <str> (default: "~/\.mime\.types:/etc/mime\.types:/usr/etc/mime\.types:/usr/local/etc/mime\.types:/usr/share/mime\.types:/usr/share/misc/mime\.types")
 +mime\&.mimetypes\&.path <str> (default: "~/\&.mime\&.types:/etc/mime\&.types:/usr/local/etc/mime\&.types:/usr/share/mime\&.types:/usr/share/misc/mime\&.types")
- The search path for mime\&.types files\&. Colon\-separated list of files\&.
- 
- .TP
-diff --git a/src/setup.h b/src/setup.h
-index 8b6e0c0..6489bc5 100644
---- a/src/setup.h
-+++ b/src/setup.h
+ .RS 4
+ The search path for mime\.types files\. Colon\-separated list of files\.
+ .RE
+diff -Naur elinks-0.11.4.orig/src/setup.h elinks-0.11.4/src/setup.h
+--- elinks-0.11.4.orig/src/setup.h	2008-06-21 21:20:22.000000000 +0200
++++ elinks-0.11.4/src/setup.h	2008-06-21 21:25:01.000000000 +0200
 @@ -12,7 +12,7 @@
  
  #define ELINKS_HOMEPAGE			"http://elinks.cz/"
  #define ELINKS_DOC_URL			"http://elinks.cz/documentation/"
 -#define ELINKS_BUGS_URL			"http://bugzilla.elinks.cz/"
 +#define ELINKS_BUGS_URL			"http://bugs.debian.org/src:elinks"
- #define ELINKS_GITWEB_URL		"http://pasky.or.cz/gitweb.cgi"
+ #define ELINKS_GITWEB_URL		"http://repo.or.cz/w/elinks.git"
  
  #define ELINKS_SOCK_NAME		"socket"
-@@ -81,13 +81,13 @@
+@@ -81,13 +81,14 @@
  #define DEFAULT_PAGER_PATH		"/usr/bin/pager"
  #define DEFAULT_LESS_PATH		"/usr/bin/less"
  #define DEFAULT_MORE_PATH		"/usr/bin/more"
@@ -81,6 +56,7 @@ index 8b6e0c0..6489bc5 100644
 -#define DEFAULT_MIMETYPES_PATH		"~/.mime.types:/etc/mime.types:/usr/etc/mime.types:/usr/local/etc/mime.types:/usr/share/mime.types:/usr/share/misc/mime.types"
 +#define DEFAULT_MAILCAP_PATH		"~/.mailcap:/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap"
 +#define DEFAULT_MIMETYPES_PATH		"~/.mime.types:/etc/mime.types:/usr/local/etc/mime.types:/usr/share/mime.types:/usr/share/misc/mime.types"
++
  
  /* Default external commands (see osdep/newwin.c and/or system-specific osdep/
   * files) */

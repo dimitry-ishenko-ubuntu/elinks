@@ -1,38 +1,35 @@
 Set ui.leds.enable to 0 by default for #459467.  No frequent wakeups on
 laptops and desktop folks can enable this if they like it.  Patch based
-on suggestion from أحمد المحمودي (Ahmed El-Mahmoudy).
+on suggestion from Ahmed El-Mahmoudy.
 
-diff --git a/doc/html/elinks.conf.5.html b/doc/html/elinks.conf.5.html
-index c7d9ffe..9b7ac3a 100644
---- a/doc/html/elinks.conf.5.html
-+++ b/doc/html/elinks.conf.5.html
-@@ -5239,7 +5239,7 @@ ui.leds
- </p>
- </dd>
- <dt>
--ui.leds.enable [0|1] (default: 1)
-+ui.leds.enable [0|1] (default: 0)
- </dt>
- <dd>
- <p>
-diff --git a/doc/man/man5/elinks.conf.5 b/doc/man/man5/elinks.conf.5
-index 1c73edc..68ceb10 100644
---- a/doc/man/man5/elinks.conf.5
-+++ b/doc/man/man5/elinks.conf.5
-@@ -2464,7 +2464,7 @@ ui\&.leds
- LEDs (visual indicators) options\&.
- 
- .TP
--ui\&.leds\&.enable [0|1] (default: 1)
-+ui\&.leds\&.enable [0|1] (default: 0)
- Enable LEDs\&. These visual indicators will inform you about various states\&.
- 
- .TP
-diff --git a/src/bfu/leds.c b/src/bfu/leds.c
-index 3ec76ef..f59ce0a 100644
---- a/src/bfu/leds.c
-+++ b/src/bfu/leds.c
-@@ -92,7 +92,7 @@ static struct option_info led_options[] = {
+diff -aur elinks-0.11.4.orig/doc/html/elinks.conf.5.html elinks-0.11.4/doc/html/elinks.conf.5.html
+--- elinks-0.11.4.orig/doc/html/elinks.conf.5.html	2008-06-21 21:20:22.000000000 +0200
++++ elinks-0.11.4/doc/html/elinks.conf.5.html	2008-06-21 21:30:32.000000000 +0200
+@@ -1466,7 +1466,7 @@
+ visible. Requires that underlining is enabled for the terminal.
+ </dd></dl><h3 id="ui.leds">ui.leds (LEDs)</h3>
+ <p>LEDs (visual indicators) options.
+-</p><dl><dt id="ui.leds.enable">ui.leds.enable [0|1] (default: 1)</dt><dd>Enable LEDs.
++</p><dl><dt id="ui.leds.enable">ui.leds.enable [0|1] (default: 0)</dt><dd>Enable LEDs.
+ These visual indicators will inform you about various states.
+ </dd></dl><h3 id="ui.sessions">ui.sessions (Sessions)</h3>
+ <p>Sessions settings.
+diff -aur elinks-0.11.4.orig/doc/man/man5/elinks.conf.5 elinks-0.11.4/doc/man/man5/elinks.conf.5
+--- elinks-0.11.4.orig/doc/man/man5/elinks.conf.5	2008-06-21 21:20:22.000000000 +0200
++++ elinks-0.11.4/doc/man/man5/elinks.conf.5	2008-06-21 21:30:59.000000000 +0200
+@@ -2952,7 +2952,7 @@
+ LEDs (visual indicators) options\.
+ .RE
+ .PP
+-ui\.leds\.enable [0|1] (default: 1)
++ui\.leds\.enable [0|1] (default: 0)
+ .RS 4
+ Enable LEDs\. These visual indicators will inform you about various states\.
+ .RE
+diff -aur elinks-0.11.4.orig/src/bfu/leds.c elinks-0.11.4/src/bfu/leds.c
+--- elinks-0.11.4.orig/src/bfu/leds.c	2008-06-21 21:20:22.000000000 +0200
++++ elinks-0.11.4/src/bfu/leds.c	2008-06-21 21:31:31.000000000 +0200
+@@ -92,7 +92,7 @@
  		N_("LEDs (visual indicators) options.")),
  
  	INIT_OPT_BOOL("ui.leds", N_("Enable"),
@@ -41,3 +38,4 @@ index 3ec76ef..f59ce0a 100644
  		N_("Enable LEDs.\n"
  		   "These visual indicators will inform you about various states.")),
  
+
