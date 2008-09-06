@@ -154,6 +154,10 @@
 /* Define if you want: Perl support */
 #undef CONFIG_PERL
 
+/* Define if using Perl 5.8.8 or later, where the "POPpx" macro no longer
+   needs an "n_a" variable like it did in 5.8.7 */
+#undef CONFIG_PERL_POPPX_WITHOUT_N_A
+
 /* Define if you want: Pod2HTML support */
 #undef CONFIG_POD2HTML
 
@@ -252,9 +256,6 @@
 
 /* Define if you have C99 compliant vsnprintf() */
 #undef HAVE_C99_VSNPRINTF
-
-/* Define to 1 if you have the `cfmakeraw' function. */
-#undef HAVE_CFMAKERAW
 
 /* Define to 1 if you have the `chmod' function. */
 #undef HAVE_CHMOD

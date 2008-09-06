@@ -149,7 +149,7 @@ static int
 check_uri_file(unsigned char *name)
 {
 	/* Check POST_CHAR etc ... */
-	static const unsigned char chars[] = POST_CHAR_S "#?";
+	static const unsigned char chars[] = POST_CHAR_S "#";
 
 	return strcspn(name, chars);
 }
@@ -161,6 +161,7 @@ encode_file_uri_string(struct string *string, unsigned char *uristring)
 	int filenamelen = check_whether_file_exists(uristring);
 
 	encode_uri_string(string, uristring, filenamelen, 0);
+	if (filenamelen > 0) add_to_string(string, uristring + filenamelen);
 }
 
 

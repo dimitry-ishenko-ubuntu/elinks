@@ -21,6 +21,7 @@ exec_prefix = @exec_prefix@
 bindir = @bindir@
 sbindir = @sbindir@
 libexecdir = @libexecdir@
+datarootdir = @datarootdir@
 datadir = @datadir@
 sysconfdir = @sysconfdir@
 sharedstatedir = @sharedstatedir@
@@ -38,7 +39,10 @@ ACLOCAL = @ACLOCAL@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 
-INSTALL = @INSTALL@
+# The INSTALL substituted by configure can be either absolute or
+# relative to the top build directory.  Adjust it so that it can
+# be used in build subdirectories.
+INSTALL = $(if $(patsubst /%,,$(firstword @INSTALL@)),$(top_builddir)/)@INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -50,7 +54,7 @@ ASCIIDOC_FLAGS = @ASCIIDOC_FLAGS@
 AWK = @AWK@
 CATALOGS = @CATALOGS@
 CC = @CC@
-CG_COMMIT_ID = @CG_COMMIT_ID@
+GIT = @GIT@
 CONFDIR = @CONFDIR@
 GLIBC21 = @GLIBC21@
 GMOFILES = @GMOFILES@
@@ -158,7 +162,7 @@ LIBS = @LIBS@
 
 INCLUDES = -I$(top_builddir) -I$(top_srcdir)/src
 
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CFLAGS) $(CFLAGS)
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 
 MAKE_COLOR = @MAKE_COLOR@
 

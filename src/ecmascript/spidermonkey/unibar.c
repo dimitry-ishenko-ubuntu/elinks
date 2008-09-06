@@ -92,7 +92,8 @@ unibar_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
 	if_assert_failed return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	vs = JS_GetInstancePrivate(ctx, parent_win,
+				   (JSClass *) &window_class, NULL);
 	doc_view = vs->doc_view;
 	status = &doc_view->session->status;
 	bar = JS_GetPrivate(ctx, obj); /* from @menubar_class or @statusbar_class */
@@ -120,8 +121,8 @@ unibar_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 #undef unibar_fetch
 		break;
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case
 		 * and leave *@vp unchanged.  Do the same here.  */
 		break;
@@ -150,7 +151,8 @@ unibar_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	assert(JS_InstanceOf(ctx, parent_win, (JSClass *) &window_class, NULL));
 	if_assert_failed return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, parent_win); /* from @window_class */
+	vs = JS_GetInstancePrivate(ctx, parent_win,
+				   (JSClass *) &window_class, NULL);
 	doc_view = vs->doc_view;
 	status = &doc_view->session->status;
 	bar = JS_GetPrivate(ctx, obj); /* from @menubar_class or @statusbar_class */
@@ -173,8 +175,8 @@ unibar_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		register_bottom_half(update_status, NULL);
 		break;
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case.
 		 * Do the same here.  */
 		return JS_TRUE;

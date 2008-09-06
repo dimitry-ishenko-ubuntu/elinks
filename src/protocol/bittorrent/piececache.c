@@ -950,7 +950,7 @@ add_to_bittorrent_piece_cache(struct bittorrent_peer_connection *peer,
 		cache->rejected_pieces++;
 		mem_mmap_free(entry->data, piece_length);
 		entry->data = NULL;
-		update_bittorrent_connection_stats(bittorrent, (off_t) -piece_length, 0, 0);
+		update_bittorrent_connection_stats(bittorrent, -(off_t)piece_length, 0, 0);
 		set_bittorrent_piece_cache_remaining(cache, piece, 1);
 		if (bittorrent->mode == BITTORRENT_MODE_END_GAME)
 			bittorrent->mode = BITTORRENT_MODE_NORMAL;
@@ -1098,7 +1098,7 @@ bittorrent_resume_writer(void *data, int fd)
 	uint32_t piece;
 
 	memcpy(&metafile.length, data, sizeof(metafile.length));
-	metafile.source = (unsigned char *) data + 4;
+	metafile.source = (unsigned char *) data + sizeof(metafile.length);
 
 	if (parse_bittorrent_metafile(&meta, &metafile) != BITTORRENT_STATE_OK) {
 		done_bittorrent_meta(&meta);

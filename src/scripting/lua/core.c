@@ -70,7 +70,13 @@ static void handle_ref(LS, struct session *ses, int func_ref,
 static int
 l_alert(LS)
 {
-	alert_lua_error((unsigned char *) lua_tostring(S, 1));
+	unsigned char *msg = (unsigned char *) lua_tostring(S, 1);
+
+	/* Don't crash if a script calls e.g. error(nil) or error(error).  */
+	if (msg == NULL)
+		msg = "(cannot convert the error message to a string)";
+
+	alert_lua_error(msg);
 	return 0;
 }
 
@@ -197,8 +203,10 @@ l_pipe_read(LS)
 		size_t l = fread(buf, 1, sizeof(buf), fp);
 
 		if (l > 0) {
-			s = mem_realloc(s, len + l);
-			if (!s) goto lua_error;
+			unsigned char *news = mem_realloc(s, len + l);
+
+			if (!news) goto lua_error;
+			s = news;
 			memcpy(s + len, buf, l);
 			len += l;
 

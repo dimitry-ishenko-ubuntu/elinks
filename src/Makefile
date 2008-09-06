@@ -28,18 +28,19 @@ SUBDIRS = \
  viewer
 
 # Get the GIT HEAD ID if possible
-ifdef CG_COMMIT_ID
-BUILD_ID=$(shell GIT_DIR=$(top_srcdir)/.git $(CG_COMMIT_ID) 2> /dev/null)
+ifdef GIT
+GITDESC  = $(shell $(GIT) --git-dir=$(top_srcdir)/.git describe 2>/dev/null)
+WTDIRTY  = $(shell $(GIT) --git-dir=$(top_srcdir)/.git diff-index HEAD 2>/dev/null)
+BUILD_ID = $(subst elinks-,,$(GITDESC))$(if $(WTDIRTY),-dirty)
 endif
 INCLUDES += -DBUILD_ID="\"$(BUILD_ID)\""
 
-OBJS = vernum.o
-vernum.o: FORCE
-FORCE:
+vernum.o: $(LIB_O_NAME)
 
-elinks: $(LIB_O_NAME)
+elinks: $(LIB_O_NAME) vernum.o
 	$(call cmd,link)
 
 PROGS = elinks
+CLEAN = vernum.o
 
 include $(top_srcdir)/Makefile.lib

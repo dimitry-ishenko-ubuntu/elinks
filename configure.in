@@ -1,11 +1,14 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.13)
+dnl Autoconf 2.13 generates an incomplete config.h.in; see ELinks bug 936.
+dnl Autoconf 2.59 is installed in the computer that generates our nightly
+dnl snapshots, so we need to be compatible with that.
+AC_PREREQ(2.59)
 AC_INIT(src/main/main.c)
 AC_CONFIG_AUX_DIR(config)
 
 PACKAGE=elinks
-VERSION=0.11.3
+VERSION=0.11.4
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Package version])
@@ -52,7 +55,7 @@ AC_PATH_PROGS(AWK, "$AWK")
 AC_PROG_RANLIB
 AC_PROG_INSTALL
 
-AC_PATH_PROGS(CG_COMMIT_ID, "cg-commit-id")
+AC_PATH_PROGS(GIT, "git")
 AC_PATH_PROGS(SPARSE, "sparse")
 
 CONFIG_ASCIIDOC="no"
@@ -250,7 +253,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS(cfmakeraw gethostbyaddr herror strerror)
+AC_CHECK_FUNCS(gethostbyaddr herror strerror)
 AC_CHECK_FUNCS(popen uname access chmod alarm timegm mremap)
 AC_CHECK_FUNCS(strcasecmp strncasecmp strcasestr strstr strchr strrchr)
 AC_CHECK_FUNCS(memmove bcopy stpcpy strdup index isdigit mempcpy memrchr)
@@ -505,8 +508,8 @@ if test -z "$disable_spidermonkey"; then
 		withval="";
 	fi
 	for spidermonkeydir in "$withval" "" /usr /usr/local /opt/spidermonkey /opt/js; do
-		for spidermonkeyinclude in "/include" "/include/js" "/include/smjs"; do
-			for spidermonkeylib in js smjs; do
+		for spidermonkeyinclude in "/include" "/include/js" "/include/smjs" "/include/mozjs"; do
+			for spidermonkeylib in js smjs mozjs; do
 				if test "$cf_result" = no; then
 					SPIDERMONKEY_LIBS="-l$spidermonkeylib"
 
@@ -640,6 +643,21 @@ if test "$enable_perl" = "yes"; then
 		    cf_result=yes, cf_result=no)
 fi
 
+if test "$cf_result"; then AC_MSG_RESULT($cf_result); fi
+
+AC_MSG_CHECKING([whether POPpx works without an n_a variable])
+AC_TRY_COMPILE([
+#include <EXTERN.h>
+#include <perl.h>
+extern PerlInterpreter *my_perl;
+],
+	[dSP; (void) POPpx;],
+	[AC_MSG_RESULT([yes])
+AC_DEFINE([CONFIG_PERL_POPPX_WITHOUT_N_A], [1],
+		[Define if using Perl 5.8.8 or later, where the "POPpx" macro
+no longer needs an "n_a" variable like it did in 5.8.7])],
+	[AC_MSG_RESULT([no])])
+
 if test "$cf_result" != "yes"; then
 	EL_RESTORE_FLAGS
 else
@@ -650,7 +668,6 @@ else
 	AC_SUBST(PERL_CFLAGS)
 fi
 
-if test "$cf_result"; then AC_MSG_RESULT($cf_result); fi
 dnl ===================================================================
 dnl Check for Python
 dnl ===================================================================
@@ -725,7 +742,7 @@ if test -z "$disable_lua"; then
 		withval="";
 	fi
 	for luadir in "$withval" "" /usr /usr/local; do
-		for suffix in "" 50 51; do
+		for suffix in "" 50; do
 			if test "$cf_result" = no; then
 				LUA_LIBS="-llua$suffix -llualib$suffix -lm"
 
@@ -991,6 +1008,7 @@ dnl ===================================================================
 
 AC_PATH_X
 if test x"$no_x" != xyes; then
+	EL_SAVE_FLAGS
 	if test -n "$x_includes"; then
 		X_CFLAGS="-I$x_includes"
 		CPPFLAGS="$CPPFLAGS -I$x_includes"
@@ -999,8 +1017,17 @@ if test x"$no_x" != xyes; then
 		LDFLAGS="$LDFLAGS -L$x_libraries"
 	fi
 	LIBS="-lX11 $LIBS"
-	EL_DEFINE(HAVE_X11, [X11 for restoring window titles])
-	AC_SUBST(X_CFLAGS)
+	AC_TRY_LINK([#include <X11/Xlib.h>],[XrmInitialize()],
+		cf_result=yes, cf_result=no)
+	EL_RESTORE_FLAGS
+	if test "$cf_result" = yes; then
+		if test -n "$x_libraries"; then
+			LDFLAGS="$LDFLAGS -L$x_libraries"
+		fi
+		LIBS="-lX11 $LIBS"
+		EL_DEFINE(HAVE_X11, [X11 for restoring window titles])
+		AC_SUBST(X_CFLAGS)
+	fi
 fi
 
 
@@ -1114,7 +1141,7 @@ EL_ARG_ENABLE(CONFIG_NNTP, nntp, [NNTP protocol],
 dnl Force disable SMB before EL_ARG_DEPEND so that it logs the correct value.
 if test "${enable_smb-no}" != no || test "${CONFIG_SMB-no}" != no; then
   AC_MSG_WARN([Forcing --disable-smb because of vulnerability CVE-2006-5925.
-If you want to use SMB, please vote for bug 844 or post a patch.])
+If you want to use SMB, please wait for ELinks 0.12.0 or see bug 844.])
 fi
 enable_smb=no
 CONFIG_SMB=no
@@ -1248,7 +1275,9 @@ AC_DEFINE_UNQUOTED(CONFDIR, "$CONFDIR", [Directory containing default config])
 AC_SUBST(CONFDIR)
 
 # Create LOCALEDIR #define for config.h
-LOCALEDIR=`eval echo "$datadir/locale"`
+test -z "$localedir" && localedir="$datadir/locale"
+localedir0=`eval echo "$localedir"`
+LOCALEDIR=`eval echo "$localedir0"`
 AC_DEFINE_UNQUOTED(LOCALEDIR, "$LOCALEDIR", [Directory containing locales])
 AC_SUBST(LOCALEDIR)
 
@@ -1290,6 +1319,80 @@ if test "x$ac_cv_prog_gcc" = "xyes"; then
       # These should be ok using -Werror
       ;;
   esac
+
+  # GCC 4.2.1 warns if we use the address of an object in Boolean context:
+  # warning: the address of `builtin_modules' will always evaluate as `true'
+  # This hits the object_lock and foreach_module macros in particular.
+  # It would be okay to put something in the macros to avoid the warning,
+  # but currently this seems to require defining parallel macros that skip
+  # the NULL check, and that's too ugly.  So we instead disable the warning.
+  # GCC 4.2.1 needs -Wno-address, but GCC 4.2 snapshots need -Wno-always-true.
+  # GCC 4.1.3 recognizes neither and exits with code 1 if they are given.
+  for warning_flag in -Wno-address -Wno-always-true; do
+    AC_MSG_CHECKING([whether $CC accepts $warning_flag])
+    EL_SAVE_FLAGS
+    CFLAGS="$CFLAGS $warning_flag"
+    AC_TRY_COMPILE([], [],
+      [AC_MSG_RESULT([yes])
+       break],
+      [AC_MSG_RESULT([no])])
+    EL_RESTORE_FLAGS
+  done
+
+  # Bug 1012: Some parts of ELinks do arithmetic with signed integers
+  # in such a way that an overflow is possible.  GCC 4.2.1 warns
+  # "warning: assuming signed overflow does not occur when assuming
+  # that (X + c) > X is always true", which may be an incorrect
+  # optimization (although allowed by the standard), and breaks the
+  # build with -Werror.
+  #
+  # All of the following tests included -S -Wall -Wextra:
+  #
+  # GCC: (GNU) 4.0.4 20060507 (prerelease) (Debian 4.0.3-3)
+  # * gcc-4.0 -O0: OK, compares the values
+  # * gcc-4.0 -O2: assumes no overflow, does not warn
+  # * gcc-4.0 -O0 -fno-strict-overflow: unrecognized command line option
+  # * gcc-4.0 -O0 -fwrapv: OK, compares the values
+  # * gcc-4.0 -O2 -fwrapv: OK, compares the values
+  # * gcc-4.0 -O0 -ftrapv: OK, calls __addvsi3
+  # * gcc-4.0 -O2 -ftrapv: assumes no overflow, does not warn
+  # * gcc-4.0 -O0 -fwrapv -ftrapv: OK, calls __addvsi3
+  # * gcc-4.0 -O2 -fwrapv -ftrapv: compares the values
+  #
+  # GCC: (GNU) 4.1.3 20070812 (prerelease) (Debian 4.1.2-15)
+  # * gcc-4.1 -O0: assumes no overflow, does not warn
+  # * gcc-4.1 -O2: assumes no overflow, does not warn
+  # * gcc-4.1 -O0 -fno-strict-overflow: unrecognized command line option
+  # * gcc-4.1 -O0 -fwrapv: OK, compares the values
+  # * gcc-4.1 -O2 -fwrapv: OK, compares the values
+  # * gcc-4.1 -O0 -ftrapv: OK, calls __addvsi3
+  # * gcc-4.1 -O2 -ftrapv: compares the values
+  # * gcc-4.1 -O0 -fwrapv -ftrapv: OK, calls __addvsi3
+  # * gcc-4.1 -O2 -fwrapv -ftrapv: compares the values
+  #
+  # GCC: (GNU) 4.2.1 (Debian 4.2.1-5)
+  # * gcc-4.2 -O0: OK, compares the values
+  # * gcc-4.2 -O2: assumes no overflow, warns about it
+  # * gcc-4.2 -O0 -fno-strict-overflow: OK, compares the values
+  # * gcc-4.2 -O2 -fno-strict-overflow: OK, compares the values
+  # * gcc-4.2 -O0 -fwrapv: OK, compares the values
+  # * gcc-4.2 -O2 -fwrapv: OK, compares the values
+  # * gcc-4.2 -O0 -ftrapv: OK, calls __addvsi3
+  # * gcc-4.2 -O2 -ftrapv: compares the values
+  # * gcc-4.2 -O0 -fwrapv -ftrapv: OK, calls __addvsi3
+  # * gcc-4.2 -O2 -fwrapv -ftrapv: compares the values
+  #
+  # Apparently, -ftrapv does not work reliably at all.
+  for overflow_flag in -fno-strict-overflow -fwrapv; do
+    AC_MSG_CHECKING([whether $CC accepts $overflow_flag])
+    EL_SAVE_FLAGS
+    CFLAGS="$CFLAGS $overflow_flag"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+      [AC_MSG_RESULT([yes])
+       break],
+      [AC_MSG_RESULT([no])])
+    EL_RESTORE_FLAGS
+  done
 fi
 
 # CFLAGS doesn't contain all compile flags. Some will be added only when

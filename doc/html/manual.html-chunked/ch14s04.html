@@ -1,4 +1,4 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Example recipes</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"><link rel="start" href="index.html" title="The ELinks Manual"><link rel="up" href="ch14.html" title="Chapter 14. Scripting ELinks with Lua"><link rel="prev" href="ch14s03.html" title="Using ELinks with Lua"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Example recipes</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch14s03.html">Prev</a> </td><th width="60%" align="center">Chapter 14. Scripting ELinks with Lua</th><td width="20%" align="right"> </td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id2523202"></a>Example recipes</h2></div></div></div><p>This chapter contains some example scripts that you can use.  All of them come
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Example recipes</title><meta name="generator" content="DocBook XSL Stylesheets V1.72.0"><link rel="start" href="index.html" title="The ELinks Manual"><link rel="up" href="ch14.html" title="Chapter 14. Scripting ELinks with Lua"><link rel="prev" href="ch14s03.html" title="Using ELinks with Lua"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Example recipes</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch14s03.html">Prev</a> </td><th width="60%" align="center">Chapter 14. Scripting ELinks with Lua</th><td width="20%" align="right"> </td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id2558717"></a>Example recipes</h2></div></div></div><p>This chapter contains some example scripts that you can use.  All of them come
 from <code class="literal">contrib/lua/hooks.lua</code>.  I really recommend you to see it directly
 instead of copying code out of this document.  Also, not everything in there is
 covered here.</p><p>If you would like to contribute scripts, that would be great!  Please send
@@ -8,54 +8,51 @@ ideas, you'll just have to be a little creative :-)</p><p>Also take a look at th
 Note that Peter and Cliff don't maintain the Lua support intensively anymore,
 thus it would be probably nice to Cc me (<a href="mailto:pasky@ucw.cz" target="_top">pasky@ucw.cz</a>) if you want
 to contribute some patch, so that I would be able to add it to the ELinks
-distribution.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2523264"></a>Go to URL on steroids</h3></div></div></div><p>There are some web sites that I visit often.  Bookmarks are okay, but they are
+distribution.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2558779"></a>Go to URL on steroids</h3></div></div></div><p>There are some web sites that I visit often.  Bookmarks are okay, but they are
 separate from the "Go to URL" dialog box, so I keep forgetting to use them.
 Also, when I visit a search engine home page, all I really want to do is enter
 a search term.</p><p>The following script allows me to type certain strings into the "Go to URL"
 dialog box, and it will convert them to the URL I actually want to visit.  As
 a bonus, it allows me perform some searches on sites like Google without
-loading up the front page first.</p><pre class="screen">function match (prefix, url)
-    return strsub (url, 1, strlen (prefix)) == prefix
+loading up the front page first.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Tip</h3><p>The “URI rewriting” feature of ELinks handles many of the same
+tasks as the Lua hook shown here, and you can conveniently configure
+it via the option manager.  It is not quite as versatile, though.</p></div><pre class="screen">function match (prefix, url)
+    return string.sub (url, 1, string.len (prefix)) == prefix
 end
 
 function strip (str)
-    return gsub (str, "^%s*(.-)%s*$", "%1")
+    return string.gsub (str, "^%s*(.-)%s*$", "%1")
 end
 
 function plusify (str)
-    return gsub (str, "%s", "+")
+    return string.gsub (str, "%s", "+")
 end
 
 function goto_url_hook (url, current_url)
     -- Google search (e.g. ,gg unix browsers).
     if match (",gg", url) then
-        url = plusify (strip (strsub (url, 4)))
+        url = plusify (strip (string.sub (url, 4)))
         return "http://www.google.com/search?q="..url.."&amp;btnG=Google+Search"
 
     -- Freshmeat search.
     elseif match (",fm", url) then
-        url = plusify (strip (strsub (url, 4)))
+        url = plusify (strip (string.sub (url, 4)))
         return "http://www.freshmeat.net/search/?q="..url
-
-    -- Appwatch search (e.g. ,aw lynx).
-    elseif match (",aw", url) then
-        url = plusify (strip (strsub (url, 4)))
-        return "http://www.appwatch.com/Linux/Users/find?q="..url
 
     -- Dictionary.com search (e.g. ,dict congenial).
     elseif match (",dict", url) then
-        url = plusify (strip (strsub (url, 6)))
+        url = plusify (strip (string.sub (url, 6)))
         return "http://www.dictionary.com/cgi-bin/dict.pl?db=%2A&amp;term="..url
 
     -- RPM search (e.g. ,rpm links).
     elseif match (",rpm", url) then
-        url = plusify (strip (strsub (url, 5)))
+        url = plusify (strip (string.sub (url, 5)))
         return "http://www.rpmfind.net/linux/rpm2html/search.php?query="
                 ..url.."&amp;submit=Search+..."
 
     -- Netcraft.com search (e.g. ,whatis www.google.com).
     elseif match (",whatis", url) then
-        url = plusify (strip (strsub (url, 8)))
+        url = plusify (strip (string.sub (url, 8)))
         return "http://uptime.netcraft.com/up/graph/?host="..url
 
     -- LinuxToday home page.
@@ -64,42 +61,36 @@ function goto_url_hook (url, current_url)
 
     -- Weather forecast for Melbourne, Australia.
     elseif match (",forecast", url) then
-        return "http://www.bom.gov.au/cgi-bin/wrap_fwo.pl?IDF02V00.txt"
+        return "http://www.bom.gov.au/cgi-bin/wrap_fwo.pl?IDV10450.txt"
 
     -- Unmatched
     else
         return url
     end
-end</pre><p>(Note that this was noticably enhanced and rewritten in the ELinks standart
-hooks.)</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2523340"></a>Expanding ~ (tilde)</h3></div></div></div><p>By adding an extra snippet of code to the previous example, we can make ELinks
+end</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2558857"></a>Expanding ~ (tilde)</h3></div></div></div><p>By adding an extra snippet of code to the previous example, we can make ELinks
 expand pathnames such as <code class="literal">~/foo/bar</code>
 and <code class="literal">~user/zappo</code>, like in the shell
-and other Unix programs.</p><pre class="screen">-- Home directory: If you do not enable system functions, you will need
--- to set the following to your home directory.
-
-home_dir = (getenv and getenv ("HOME")) or "/home/MYSELF"
-
-function goto_url_hook (url, current_url)
+and other Unix programs.</p><pre class="screen">function goto_url_hook (url, current_url)
                 .
                 .
 
     -- Expand ~ to home directories.
     elseif match ("~", url) then
-        if strsub(url, 2, 2) == "/" then    -- ~/foo
-            return home_dir..strsub(url, 2)
-        else                                -- ~foo/bar
-            return "/home/"..strsub(url, 2)
+        if string.sub(url, 2, 2) == "/" then    -- ~/foo
+            return os.getenv ("HOME")..string.sub(url, 2)
+        else                                    -- ~foo/bar
+            return "/home/"..string.sub(url, 2)
         end
 
                 .
-                .</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2523391"></a>Filtering crap</h3></div></div></div><p>Many web pages nowadays have columns to the left and right of the text, which
+                .</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2558904"></a>Filtering crap</h3></div></div></div><p>Many web pages nowadays have columns to the left and right of the text, which
 are utterly useless.  If you happen to be viewing the page in a 80x25 screen,
 the text you want to read ends up crammed into a tiny space in the centre.  We
-use ELinks Lua support to manipulate the HTML before it reaches the parser.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2523406"></a>linuxtoday.com</h4></div></div></div><p>Note: This recipe is out of date.</p><p>Linux Today has two problems when viewed in ELinks: the useless columns on the
+use ELinks Lua support to manipulate the HTML before it reaches the parser.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2558918"></a>linuxtoday.com</h4></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>This recipe is out of date for the web site.</p></div><p>Linux Today has two problems when viewed in ELinks: the useless columns on the
 left and the right and all the text appears in cyan.  Here is a quick recipe
-to fix that:</p><pre class="screen">-- Plain strfind (no metacharacters)
+to fix that:</p><pre class="screen">-- Plain string.find (no metacharacters)
 function sstrfind (s, pattern)
-    return strfind (s, pattern, 1, 1)
+    return string.find (s, pattern, 1, true)
 end
 
 function pre_format_html_hook (url, html)
@@ -107,74 +98,72 @@ function pre_format_html_hook (url, html)
     -- and change the font colour to white.
     if sstrfind (url, "linuxtoday.com") then
         if sstrfind (url, "news_story") then
-            html = gsub (html, '&lt;TABLE CELLSPACING="0".-&lt;/TABLE&gt;', '', 1)
-            html = gsub (html, '&lt;TR BGCOLOR="#FFF.-&lt;/TR&gt;&lt;/TABLE&gt;', '', 1)
+            html = string.gsub (html, '&lt;TABLE CELLSPACING="0".-&lt;/TABLE&gt;', '', 1)
+            html = string.gsub (html, '&lt;TR BGCOLOR="#FFF.-&lt;/TR&gt;&lt;/TABLE&gt;', '', 1)
         else
-            html = gsub (html, 'WIDTH="120"&gt;\n&lt;TR.+&lt;/TABLE&gt;&lt;/TD&gt;', '&gt;', 1)
+            html = string.gsub (html, 'WIDTH="120"&gt;\n&lt;TR.+&lt;/TABLE&gt;&lt;/TD&gt;', '&gt;', 1)
         end
-        html = gsub (html, '&lt;A HREF="http://www.internet.com.-&lt;/A&gt;', '')
-        html = gsub (html, "&lt;IFRAME.-&lt;/IFRAME&gt;", "")
+        html = string.gsub (html, '&lt;A HREF="http://www.internet.com.-&lt;/A&gt;', '')
+        html = string.gsub (html, "&lt;IFRAME.-&lt;/IFRAME&gt;", "")
         -- emphasis in text is lost
-        return gsub (html, 'text="#002244"', 'text="#001133"', 1)
+        return string.gsub (html, 'text="#002244"', 'text="#001133"', 1)
     end
 
     return nil
-end</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2523461"></a>linuxgames.com</h4></div></div></div><p>Here is a simpler example, for <a href="http://www.linuxgames.com/" target="_top">http://www.linuxgames.com/</a>.</p><pre class="screen">function pre_format_html_hook (url, html)
+end</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2558975"></a>linuxgames.com</h4></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>This recipe is out of date for the web site.</p></div><p>Here is a simpler example, for <a href="http://www.linuxgames.com/" target="_top">http://www.linuxgames.com/</a>.</p><pre class="screen">function pre_format_html_hook (url, html)
                 .
                 .
 
-    elseif strfind (url, "linuxgames.com", 1, 1) then
-        return gsub (html, "&lt;CENTER&gt;.-&lt;/center&gt;", "", 1)
+    elseif string.find (url, "linuxgames.com", 1, true) then
+        return string.gsub (html, "&lt;CENTER&gt;.-&lt;/center&gt;", "", 1)
 
                 .
-                .</pre></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2523492"></a>Reading gzipped files</h3></div></div></div><p>Note: ELinks already supports gzipped files natively.</p><p>Sometimes documents come gzipped in order to save space, but then you need to
+                .</pre></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2559012"></a>Reading gzipped files</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>ELinks already supports gzipped files natively.</p></div><p>Sometimes documents come gzipped in order to save space, but then you need to
 uncompress them to read them with ELinks.  Here is a recipe to handle gzipped
-files on a Unix system.</p><pre class="screen">-- This script requires system functions.
-
-function pre_format_html_hook (url, html)
+files on a Unix system.</p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>This recipe opens a temporary file insecurely.</p></div><pre class="screen">function pre_format_html_hook (url, html)
                 .
                 .
 
     -- Handle gzip'd files within reasonable size.
-    if strfind (url, "%.gz$") and strlen (html) &lt; 65536 then
-        local tmp = tmpname ()
-        writeto (tmp) write (html) writeto ()
-        html = pipe_read ("(gzip -dc "..tmp.." || cat "..tmp..") 2&gt;/dev/null")
-        remove (tmp)
+    if string.find (url, "%.gz$") and string.len (html) &lt; 65536 then
+        local name = tmpname ()
+        local file = io.open (name, "wb")
+        file:write (html)
+        file:close ()
+        html = pipe_read ("(gzip -dc "..name.." || cat "..name..") 2&gt;/dev/null")
+        os.remove (name)
         return html
     end
 
                 .
-                .</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2523534"></a>Printing</h3></div></div></div><p>Printing a web page with ELinks usually involves quite a few steps: Save the
+                .</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2559060"></a>Printing</h3></div></div></div><p>Printing a web page with ELinks usually involves quite a few steps: Save the
 current document onto disk.  Run it through ELinks on the command-line (so it
 fits into 80 columns) to generate a plain text version.  Remove the 80th
 column from the text version, as it will make printers wrap down to the next
 line.  Finally, run the processed file through `lpr', then delete it.</p><p>The following functions allow you to print web pages directly from ELinks,
 using <code class="literal">lpr' or `enscript'.  Type `lpr()</code> or <code class="literal">enscript()</code> in the Lua Console to
 run them.  (In the <code class="literal">hooks.lua</code>, I have also made it so you can just type <code class="literal">lpr</code>
-or <code class="literal">enscript</code>.)</p><pre class="screen">-- This script requires system functions.
-
-function catto (output)
-    writeto (output)
-    write (current_document_formatted (79))
-    writeto ()
+or <code class="literal">enscript</code>.)</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>The <code class="literal">io.popen</code> function is not available on all platforms.</p></div><pre class="screen">function pipe_formatted_to (program)
+    local lp, errmsg = io.popen (program, "w")
+    if lp == nil then
+        error (errmsg)
+    else
+        lp:write (current_document_formatted (79))
+        lp:close ()
+    end
 end
 
 -- Send the current document to `lpr'.
 function lpr ()
-    -- You must compile Lua with `popen' support for pipes to work.
-    -- See `config' in the Lua distribution.
-    catto ("|lpr")
+    pipe_formatted_to ("lpr")
 end
 
 -- Send the current document to `enscript'.
 function enscript ()
-    catto ("|enscript -fCourier8")
-end</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2523612"></a>Deferring to Netscape</h3></div></div></div><p>If you come across a brain-dead web page that is totally unreadable with
+    pipe_formatted_to ("enscript -fCourier8")
+end</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2559145"></a>Deferring to Netscape</h3></div></div></div><p>If you come across a brain-dead web page that is totally unreadable with
 ELinks, you'd probably want to open it with a graphical browser.  The
-following function opens the current document in Netscape.</p><pre class="screen">-- This function requires `execute', a system function.
-
--- When starting Netscape: Set to `nil' if you do not want
+following function opens the current document in Netscape.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Tip</h3><p>You can also use the built-in “URI passing” feature for this.</p></div><pre class="screen">-- When starting Netscape: Set to `nil' if you do not want
 -- to open a new window for each document.
 netscape_new_window = 1
 
@@ -183,11 +172,11 @@ function netscape ()
     local new = netscape_new_window and ",new_window" or ""
     execute ("( netscape -remote 'openURL("..current_url ()..new..")'"
              .." || netscape '"..current_url ().."' ) 2&gt;/dev/null &amp;")
-end</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2523645"></a>Alternative bookmark system</h3></div></div></div><p>Many people would like to have a bookmark system with categories (note that
-ELinks already supports that, marketing name Hiearchical bookmarks), and also
+end</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2559187"></a>Alternative bookmark system</h3></div></div></div><p>Many people would like to have a bookmark system with categories (note that
+ELinks already supports that, marketing name Hierarchical bookmarks), and also
 to be able to view them and search for them in an HTML page.  I have written
 an alternative bookmark system (for ELinks), which some people may like better
-than the standard bookmark system.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2523666"></a>More ideas</h3></div></div></div><div class="itemizedlist"><ul type="disc"><li>
+than the standard bookmark system.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2559210"></a>More ideas</h3></div></div></div><div class="itemizedlist"><ul type="disc"><li>
 The Lua interface needs to be redesigned to provide more flexible, coherent
    and usable interface to the scripts.
 </li><li>
