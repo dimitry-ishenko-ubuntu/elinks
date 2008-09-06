@@ -1,3 +1,10 @@
+elinks (0.11.4-2) unstable; urgency=low
+
+  * Don't let xmlto validate the XML files, just produce the manpage.
+    (Closes: #491820)
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Tue, 29 Jul 2008 22:39:55 +0200
+
 elinks (0.11.4-1) unstable; urgency=low
 
   * New upstream release:

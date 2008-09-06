@@ -1,0 +1,12 @@
+diff -Naur elinks-0.11.4.orig/doc/Makefile elinks-0.11.4/doc/Makefile
+--- elinks-0.11.4.orig/doc/Makefile	2008-06-20 22:19:53.000000000 +0200
++++ elinks-0.11.4/doc/Makefile	2008-07-29 22:42:32.000000000 +0200
+@@ -138,7 +138,7 @@
+             cmd_jw = $(JW) -b $(2) $<
+ 
+    quiet_cmd_xmlto = '    [$(LINK_COLOR)XMLTO$(END_COLOR)]   $(RELPATH)$@'
+-         cmd_xmlto = $(XMLTO) -o $(call outdir) $(3) $(2) $<
++         cmd_xmlto = $(XMLTO) --skip-validation -o $(call outdir) $(3) $(2) $<
+ 
+ quiet_cmd_pod2html = ' [$(LINK_COLOR)POD2HTML$(END_COLOR)]   $(RELPATH)$@'
+       cmd_pod2html = $(POD2HTML) --outfile=$@ < $<
