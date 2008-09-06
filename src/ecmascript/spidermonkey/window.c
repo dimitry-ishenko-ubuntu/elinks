@@ -126,7 +126,7 @@ window_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	if (!JS_InstanceOf(ctx, obj, (JSClass *) &window_class, NULL))
 		return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, obj); /* from @window_class */
+	vs = JS_GetInstancePrivate(ctx, obj, (JSClass *) &window_class, NULL);
 
 	/* No need for special window.location measurements - when
 	 * location is then evaluated in string context, toString()
@@ -230,8 +230,8 @@ found_parent:
 		break;
 	}
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case
 		 * and leave *@vp unchanged.  Do the same here.
 		 * (Actually not quite the same, as we already used
@@ -256,7 +256,7 @@ window_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	if (!JS_InstanceOf(ctx, obj, (JSClass *) &window_class, NULL))
 		return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, obj); /* from @window_class */
+	vs = JS_GetInstancePrivate(ctx, obj, (JSClass *) &window_class, NULL);
 
 	if (JSVAL_IS_STRING(id)) {
 		if (!strcmp(jsval_to_string(ctx, &id), "location")) {
@@ -275,8 +275,8 @@ window_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 	switch (JSVAL_TO_INT(id)) {
 	default:
-		/* Unrecognized property ID; someone is using the
-		 * object as an array.  SMJS builtin classes (e.g.
+		/* Unrecognized integer property ID; someone is using
+		 * the object as an array.  SMJS builtin classes (e.g.
 		 * js_RegExpClass) just return JS_TRUE in this case.
 		 * Do the same here.  */
 		return JS_TRUE;
@@ -289,7 +289,7 @@ window_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 static JSBool window_alert(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
 static JSBool window_open(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
 
-const JSFunctionSpec window_funcs[] = {
+const spidermonkeyFunctionSpec window_funcs[] = {
 	{ "alert",	window_alert,		1 },
 	{ "open",	window_open,		3 },
 	{ NULL }
@@ -304,7 +304,7 @@ window_alert(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 
 	if (!JS_InstanceOf(ctx, obj, (JSClass *) &window_class, argv)) return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, obj); /* from @window_class */
+	vs = JS_GetInstancePrivate(ctx, obj, (JSClass *) &window_class, argv);
 
 	if (argc != 1)
 		return JS_TRUE;
@@ -363,7 +363,7 @@ window_open(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 
 	if (!JS_InstanceOf(ctx, obj, (JSClass *) &window_class, argv)) return JS_FALSE;
 
-	vs = JS_GetPrivate(ctx, obj); /* from @window_class */
+	vs = JS_GetInstancePrivate(ctx, obj, (JSClass *) &window_class, argv);
 	doc_view = vs->doc_view;
 	ses = doc_view->session;
 

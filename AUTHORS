@@ -328,6 +328,9 @@ Len Lattanzi <Len_Lattanzi@StanfordAlumni.org>
 M. K. Srikant <srix@vsnl.com>
 	Small fix in forms
 
+Malcolm Parsons <malcolm.parsons@gmail.com>
+	Typo fixes
+
 Marco Bodrato <bodrato@linuz.sns.it>
 	Twinterm support
 
@@ -417,6 +420,9 @@ Omar Khayam <omark@cyentec.com>
 <otte@duke.edu>
 	Fix stdin reading on Mac OS X
 
+Paul B. Mahol <onemda@gmail.com>
+	Recognize Insert key on cons25 (FreeBSD console)
+
 Peder Stray <peder@ifi.uio.no>
 	Fix handling of key presses turning up as key prefixes
 
@@ -498,6 +504,9 @@ Sergio R. Velasquez Zeballos <svelasqu@thor.uc.edu.ve>
 
 Simen Graaten <simeng@slarkware.com>
 	Norwegian translation
+
+Simon Josefsson <simon@josefsson.org>
+	GnuTLS improvements
 
 Simon Wilkinson <simon@sxw.org.uk>
 	Support for X509 client certificates

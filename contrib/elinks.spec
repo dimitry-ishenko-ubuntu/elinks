@@ -31,7 +31,7 @@
 
 Summary:	Enhanced version of Links (Lynx-like text WWW browser)
 Name:		elinks
-Version:	0.11.3
+Version:	0.11.4
 Release:	1
 License:	GPL
 Vendor:		ELinks project <elinks-users@linuxfromscratch.org>

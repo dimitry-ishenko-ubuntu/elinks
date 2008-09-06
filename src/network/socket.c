@@ -279,6 +279,7 @@ get_pasv_socket(struct socket *ctrl_socket, struct sockaddr_storage *addr)
 	struct sockaddr *pasv_addr = (struct sockaddr *) addr;
 	size_t addrlen;
 	int sock = -1;
+	int syspf; /* Protocol Family given to system, not EL_PF_... */
 	socklen_t len;
 #ifdef CONFIG_IPV6
 	struct sockaddr_in6 bind_addr6;
@@ -286,15 +287,17 @@ get_pasv_socket(struct socket *ctrl_socket, struct sockaddr_storage *addr)
 	if (ctrl_socket->protocol_family == EL_PF_INET6) {
 		bind_addr = (struct sockaddr *) &bind_addr6;
 		addrlen   = sizeof(bind_addr6);
+		syspf     = PF_INET6;
 	} else
 #endif
 	{
 		bind_addr = (struct sockaddr *) &bind_addr4;
 		addrlen   = sizeof(bind_addr4);
+		syspf     = PF_INET;
 	}
 
-	memset(pasv_addr, 0, sizeof(addrlen));
-	memset(bind_addr, 0, sizeof(addrlen));
+	memset(pasv_addr, 0, addrlen);
+	memset(bind_addr, 0, addrlen);
 
 	/* Get our endpoint of the control socket */
 	len = addrlen;
@@ -307,7 +310,7 @@ sock_error:
 
 	/* Get a passive socket */
 
-	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	sock = socket(syspf, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0)
 		goto sock_error;
 
@@ -583,23 +586,24 @@ connect_socket(struct socket *csocket, enum connection_state state)
 		 * will fail, as we will use it only when it will be successfully
 		 * established. At least I hope that noone else will want to do
 		 * something else ;-). --pasky */
+		/* And in fact we must set it early, because of EINPROGRESS.  */
 
 #ifdef CONFIG_IPV6
 		if (addr.sin6_family == AF_INET6) {
+			csocket->protocol_family = EL_PF_INET6;
 			if (connect(sock, (struct sockaddr *) &addr,
 					sizeof(struct sockaddr_in6)) == 0) {
 				/* Success */
-				csocket->protocol_family = EL_PF_INET6;
 				complete_connect_socket(csocket, NULL, NULL);
 				return;
 			}
 		} else
 #endif
 		{
+			csocket->protocol_family = EL_PF_INET;
 			if (connect(sock, (struct sockaddr *) &addr,
 					sizeof(struct sockaddr_in)) == 0) {
 				/* Success */
-				csocket->protocol_family = EL_PF_INET;
 				complete_connect_socket(csocket, NULL, NULL);
 				return;
 			}

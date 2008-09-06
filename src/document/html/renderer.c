@@ -172,7 +172,8 @@ realloc_line(struct html_context *html_context, struct document *document,
 	end->data = ' ';
 	end->attr = 0;
 	set_screen_char_color(end, par_format.bgcolor, 0x0,
-			      0, document->options.color_mode);
+			      COLOR_ENSURE_CONTRAST, /* for bug 461 */
+			      document->options.color_mode);
 
 	for (pos = &line->chars[line->length]; pos < end; pos++) {
 		copy_screen_chars(pos, end, 1);
@@ -250,7 +251,8 @@ clear_hchars(struct html_context *html_context, int x, int y, int width)
 	end->data = ' ';
 	end->attr = 0;
 	set_screen_char_color(end, par_format.bgcolor, 0x0,
-			      0, part->document->options.color_mode);
+			      COLOR_ENSURE_CONTRAST, /* for bug 461 */
+			      part->document->options.color_mode);
 
 	while (pos < end)
 		copy_screen_chars(pos++, end, 1);
@@ -438,7 +440,11 @@ set_hline(struct html_context *html_context, unsigned char *chars, int charslen,
 		}
 	} else {
 		for (; charslen > 0; charslen--, x++, chars++) {
-			part->spaces[x] = (*chars == ' ');
+			if (*chars == NBSP_CHAR) {
+				part->spaces[x] = html_context->options->wrap_nbsp;
+			} else {
+				part->spaces[x] = (*chars == ' ');
+			}
 		}
 	}
 }
@@ -1591,8 +1597,8 @@ check_html_form_hierarchy(struct part *part)
 	foreachsafe (fc, next, form_controls) {
 
 		foreach (form, document->forms) {
-			if (fc->position < form->form_num
-			    || form->form_end < fc->position)
+			if (form->form_num <= fc->position
+			    && fc->position <= form->form_end)
 				continue;
 
 			fc->form = form;

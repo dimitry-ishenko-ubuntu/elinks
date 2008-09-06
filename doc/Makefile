@@ -13,7 +13,10 @@ HTML_DIR = $(DESTDIR)$(docdir)/$(PACKAGE)/html
 PDF_DIR  = $(DESTDIR)$(docdir)/$(PACKAGE)/pdf
 
 ASCIIDOC_CONF  = $(srcdir)asciidoc.conf
-ASCIIDOC_FLAGS += -f $(ASCIIDOC_CONF) -a "builddir=$(CURDIR)/"
+ASCIIDOC_FLAGS += -f $(ASCIIDOC_CONF) \
+		  -a "builddir=$(CURDIR)/" \
+		  -a asciidoc7compatible \
+		  -a elinks_version=$(VERSION)
 
 #############################################################################
 # Build files
@@ -78,9 +81,9 @@ install-doc: all-docs update-man install
 
 update-man: man
 	@$(if $(MAN_DOCS), \
-		$(call ncmd,installdata,elinks.1,man/man1/elinks.1.in); \
-		$(call ncmd,installdata,elinkskeys.5,man/man5/); \
-		$(call ncmd,installdata,elinks.conf.5,man/man5/))
+		$(call ncmd,installdata,elinks.1,$(srcdir)man/man1/elinks.1.in); \
+		$(call ncmd,installdata,elinkskeys.5,$(srcdir)man/man5/); \
+		$(call ncmd,installdata,elinks.conf.5,$(srcdir)man/man5/))
 
 clean-local:
 	@$(RM) -r $(TXT_DOCS) $(MAN_DOCS) $(HTML_DOCS) $(PDF_DOCS) *.tmp *.xml
@@ -153,12 +156,6 @@ asciidoc_dep = sed -n 's/[{]builddir}//g;s@include::\(.*\)\[.*@$@: $< \1@p' < $<
 
 -include .deps/*.asciidoc
 
-# Do a little post-processing of man pages. Inserting title headers and date.
-MAN_DATE = $(shell date -I)
-man_desc = `sed -n 's/:Description:\s*\(.*\)/\1/p' < $(srcdir)$(subst .xml,.txt,$(<F))`
-man_hack = sed "s/^\(\.TH \"ELINKS[^\"]*\" [0-9] \).*/\1\"$(1)\" \"$(MAN_DATE)\" \"$(1)\"/" < $@ | \
-	   sed "s/@squote@/\\\\'/g" > $@.tmp && mv $@.tmp $@
-
 
 #############################################################################
 # Build recipies
@@ -173,11 +170,9 @@ man_hack = sed "s/^\(\.TH \"ELINKS[^\"]*\" [0-9] \).*/\1\"$(1)\" \"$(MAN_DATE)\"
 
 %.1: %.1.xml
 	$(call cmd,xmlto,man)
-	@$(call man_hack,$(call man_desc))
 
 %.5: %.5.xml
 	$(call cmd,xmlto,man)
-	@$(call man_hack,$(call man_desc))
 
 %.html-chunked: %.xml
 	$(call cmd,xmlto,html)

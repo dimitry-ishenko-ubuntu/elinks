@@ -1,12 +1,74 @@
 Release info
 ============
 
-You can see the complete list of recent changes, bugfixes and new features in
-the link:http://pasky.or.cz/gitweb.cgi[gitweb interface]. See the ChangeLog
+You can see the complete list of recent changes, bugfixes and new features
+in the http://repo.or.cz/w/elinks.git[gitweb interface]. See the ChangeLog
 file for details.
+
+ELinks 0.11.4:
+-----------------
+
+* critical bug 755: fix crashes due to dangling pointers to struct
+  form_state
+* critical bugs 613, 714, 961: ``assertion list_empty(form_controls)
+  failed''
+* critical bug 945: don't crash if a Lua script calls e.g. error(nil)
+* critical bug 1003: don't crash if a smart URI rewrite template gets
+  too few parameters
+* critical bug 1016: avoid JSFunctionSpec for better compatibility
+  across versions of SpiderMonkey
+* critical bugs 674, 956: don't reuse pointers to SpiderMonkey objects
+  that may have been collected as garbage.  This fix causes bug 954.
+* CVE-2007-2027: check if the program path contains "src/" before
+  using ../po files
+* important Debian bug 380347: prevent a buffer overflow in entity_cache
+  and a possible subsequent crash
+* major bug 788: don't read STRLEN n_a, which isn't initialized by
+  POPpx of Perl v5.8.8 and later
+* fix query parsing in file: URIs for local CGI (was broken in 0.11.3)
+* bug 451: fix incompatible pointer type in PERL_SYS_INIT3 call
+* bug 691: don't look up bogus IPv4 addresses based on characters of a
+  hostname
+* bug 712: GnuTLS works on https://www-s.uiuc.edu/[]
+* fix active and passive FTP over IPv6
+* bug 938: elinks -remote no longer needs a controlling tty
+* bug 939: fix FSP directory listing (some compiler options left it empty)
+* bug 978: Python's webbrowser.open_new_tab(URL) works since now
+* bug 1012: compile with -fno-strict-overflow or -fwrapv if available
+* bug 1014: fix incompatible pointer type in Perl_sys_init3 call
+* minor bug 54, Debian bug 338402: don't force the terminal to 8 bits
+  with no parity, and don't disable XON/XOFF flow control either
+* minor bug 951 in user SMJS: garbage-collect SMJS objects on 'File ->
+  Flush all caches' to work around their holding cache entries busy
+* minor bug 396: never show empty filename in the what-to-do dialog
+* minor bug 461: ensure contrast in blank areas, to keep the cursor visible
+* minor bug 928: properly display no-break spaces in a UTF-8 document
+  if the terminal uses some other charset
+* minor bug 987: English spelling and grammar corrections
+* minor bug 1000: preserve any query and fragment when converting a
+  file name to a file:// URL
+* minor: don't assume sizeof(int)==4 in bittorrent
+* trivial bug 947: document.html.wrap_nbsp also affects text in tables
+* trivial bug 997: fix unlikely stack corruption in active FTP
+* build bug 1002: fix ``comparison is always true due to limited range
+  of data type'' warning on PowerPC and s390
+* build bug 950: fix ``config/install-sh: No such file or directory''
+  on SunOS
+* build bug 936: fix errors about undefined off_t (autoheader
+  incompatibility)
+* build bug 959: test in configure whether -lX11 works
+* build: update SpiderMonkey configure check Debian compatibility
+* build: use $(CPPFLAGS) rather than $(AM_CFLAGS)
+* build: disable GCC 4.2 warning about builtin_modules
+* build: move debian/ to contrib/debian/
+* minor build bug 989: AsciiDoc 8.2.2 compatibility
+* minor build bug 960: fix errors in loadmsgcat.c if mmap() exists but
+  munmap() doesn't
 
 ELinks 0.11.3:
 --------------
+
+Released on 2007-04-15.
 
 * critical bugs 846, 870: fix crashes in web ECMAScripts and SMJS user
   scripting
@@ -27,12 +89,12 @@ ELinks 0.11.3:
 * critical: fix SMJS null pointer crash on exit
 * critical bug 880 in experimental Python scripting: fix null pointer
   crash with -no-home
-* major Gentoo 121247: fix segfaults in Ruby user scripting
+* major Gentoo bug 121247: fix segfaults in Ruby user scripting
 * major bug 908: don't write to freed memory when the user pushes a
   radio button
-* major bug 937: don't send the entire HTTPS request to a CONNECT
-  proxy
-* bug 899, Debian 403139: recognize >2GB files in FTP directory
+* major bug 937, CVE-2007-5034: don't send the entire HTTPS request to
+  a CONNECT proxy
+* bug 899, Debian bug 403139: recognize >2GB files in FTP directory
   listing, if off_t is large enough
 * bug 942: encode/decode file names in FTP URLs, so they can contain
   spaces
@@ -43,13 +105,13 @@ ELinks 0.11.3:
 * remove a garbage character from the end of the authentication prompt
 * bugs 872, 886: editing or deleting cookies in the cookie manager
   should cause a save
-* secure file saving: restore umask after _all_ failure conditions
+* secure file saving: restore umask after *all* failure conditions
 * decode the fragment identifier extracted from the URI when looking
   it up
 * bug 768 in experimental Python scripting: link with e.g. -lpython2.4
   rather than -lpython
 * minor bugs 830, 831: changes in parsing of -remote arguments
-* minor Debian 313696 and other translation updates
+* minor Debian bug 313696 and other translation updates
 * enhancement 24: fix searching past unselectable elements in menus
 * enhancement: recognize function keys and backspace/delete on FreeBSD
 * enhancement 772: recognize Shift-Tab on XTerm
@@ -63,6 +125,8 @@ ELinks 0.11.3:
 ELinks 0.11.2:
 --------------
 
+Released on 2006-11-19.
+
 * critical bug 841, CVE-2006-5925: prevent enabling the SMB protocol
 * critical bug 786: fix crash when following a link in frames
 * print off_t with custom OFF_T_FORMAT instead of PRId64
@@ -70,6 +134,8 @@ ELinks 0.11.2:
 
 ELinks 0.11.1:
 --------------
+
+Released on 2006-01-29.
 
 * work around null pointer crashes in HTTP digest authentication
 * fix assertion failure with document.plain.display_links and
@@ -91,6 +157,8 @@ ELinks 0.11.1:
 ELinks 0.11.0 (Elated):
 -----------------------
 
+Released on 2006-01-01.
+
 * SSL support via GNUTLS now requires 1.2 or higher
 * support for Lua 4.x was dropped, we only support Lua 5.x now
 * Python scripting back-end (experimental)
@@ -109,10 +177,14 @@ ELinks 0.11.0 (Elated):
 ELinks 0.10.6:
 --------------
 
+Released on 2005-09-15.
+
 * external editor is configurable at run-time
 
 ELinks 0.10.4:
 --------------
+
+Released on 2005-04-06.
 
 * explicit keyboard accelerators were defined for buttons in dialogue boxes and
   are now highlighted
@@ -120,12 +192,17 @@ ELinks 0.10.4:
 ELinks 0.10.2:
 --------------
 
+Released on 2005-01-30.
+
 * Ruby scripting back-end (experimental)
 * Debian package files (apt-get install devscripts && debuild -uc -us)
 
 ELinks 0.10.0 (Thelma):
 -----------------------
 
+Released on 2004-12-24.
+
+* licensed under GPLv2 only
 * simple CSS
 * simple JavaScript/ECMAScript support by the SpiderMonkey Mozilla JS engine
 * plain-text mark-up (_^Hx to underline, x^Hx to embolden)
@@ -140,12 +217,12 @@ ELinks 0.10.0 (Thelma):
 * incremental searching (press '#/')
 * Perl scripting back-end (experimental)
 * build-time configurability and feature documentation through features.conf
-* Mozilla-compatible -remote option (http://www.mozilla.org/unix/remote.html)
-* support for specifying IP family as protocol postfix (i.e. http4 or ftp6)
+* Mozilla-compatible -remote option (http://www.mozilla.org/unix/remote.html[])
+* support for specifying IP family as protocol postfix (e.g. http4 or ftp6)
 * internationalized domain names via libidn (RFC 3490)
 * data URI protocol (RFC 2397)
 * gopher protocol (RFC 1436)
-* NNTP protocol (RFC 977 and 2980) (experimental)
+* NNTP protocol (RFC 977 and RFC 2980) (experimental)
 * build system fine-tuned to use automake conditionals
 * -localhost option to block connections to remote hosts
 * -verbose option to control messages printed at startup
@@ -157,12 +234,16 @@ ELinks 0.10.0 (Thelma):
 ELinks 0.9.2:
 -------------
 
+Released on 2004-09-24.
+
 * directional links navigation
 * 'unset' configuration directive, which can be used, e.g., to delete default
   MIME type settings or external protocol handlers.
 
 ELinks 0.9.1:
 -------------
+
+Released on 2004-01-23.
 
 * support <object> tags by displaying a link to the data
 * add beginning-of-buffer and end-of-buffer actions for text fields
@@ -175,6 +256,8 @@ ELinks 0.9.1:
 
 ELinks 0.9.0 (Skyrider):
 ------------------------
+
+Released on 2003-12-24.
 
 * used gettext for internationalization
 * support for background document colors
@@ -196,6 +279,8 @@ ELinks 0.9.0 (Skyrider):
 
 ELinks 0.4.0 (Iceberg):
 -----------------------
+
+Released on 2002-12-24.
 
 * merged HTTP_AUTH
 * basic proxy auth support
@@ -229,6 +314,8 @@ ELinks 0.4.0 (Iceberg):
 ELinks 0.3.0:
 -------------
 
+Released on 2002-03-02.
+
 * unhistory
 * external textarea editor
 * DNS rewrite - we handle multi RR per host correctly
@@ -241,6 +328,8 @@ ELinks 0.3.0:
 Links 0.96-pb3:
 ---------------
 
+Released on 2001-10-26.
+
 * secured cookies file creation
 * support for title attribute of img tag
 * Catalan translation
@@ -250,6 +339,8 @@ Links 0.96-pb3:
 
 Links 0.96-pb2:
 ---------------
+
+Released on 2001-10-06.
 
 * cookies expiration, saving and resaving
 * do NOT strip everything after ? in form action

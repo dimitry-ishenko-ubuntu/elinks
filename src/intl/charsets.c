@@ -141,8 +141,9 @@ u2cp_(unicode_val_T u, int to, int no_nbsp_hack)
 
 	if (u < 128) return strings[u];
 	/* To mark non breaking spaces, we use a special char NBSP_CHAR. */
-	if (u == 0xa0) return no_nbsp_hack ? " " : NBSP_CHAR_STRING;
-	if (u == 0xad) return "";
+	if (u == UCS_NO_BREAK_SPACE)
+		return no_nbsp_hack ? " " : NBSP_CHAR_STRING;
+	if (u == UCS_SOFT_HYPHEN) return "";
 
 	if (u < 0xa0) {
 		unicode_val_T strange = strange_chars[u - 0x80];
@@ -342,6 +343,10 @@ get_translation_table(int from, int to)
 	if (codepages[from].table == table_utf_8) {
 		int i;
 
+		/* Map U+00A0 and U+00AD the same way as u2cp() would.  */
+		add_utf_8(table, UCS_NO_BREAK_SPACE, strings[NBSP_CHAR]);
+		add_utf_8(table, UCS_SOFT_HYPHEN, "");
+
 		for (i = 0; codepages[to].table[i].c; i++)
 			add_utf_8(table, codepages[to].table[i].u,
 				  strings[codepages[to].table[i].c]);
@@ -442,7 +447,7 @@ get_entity_string(const unsigned char *str, const int strlen, int encoding)
 
 	/* Check if cached. A test on many websites (freshmeat.net + whole ELinks website
 	 * + google + slashdot + websites that result from a search for test on google,
-	 * + various ones) show a quite impressive improvment:
+	 * + various ones) show quite impressive improvment:
 	 * Top ten is:
 	 * 0: hits=2459 l=4 st='nbsp'
 	 * 1: hits=2152 l=6 st='eacute'
@@ -543,7 +548,17 @@ get_entity_string(const unsigned char *str, const int strlen, int encoding)
 end:
 	/* Take care of potential buffer overflow. */
 	if (strlen < sizeof(entity_cache[slen][0].str)) {
-		struct entity_cache *ece = &entity_cache[slen][nb_entity_cache[slen]];
+		struct entity_cache *ece;
+
+		/* Sort entries by hit order. */
+		if (nb_entity_cache[slen] > 1)
+			qsort(&entity_cache[slen][0], nb_entity_cache[slen],
+			      sizeof(entity_cache[slen][0]), (void *) hits_cmp);
+
+		/* Increment number of cache entries if possible.
+		 * Else, just replace the least used entry.  */
+		if (nb_entity_cache[slen] < ENTITY_CACHE_SIZE) nb_entity_cache[slen]++;
+		ece = &entity_cache[slen][nb_entity_cache[slen] - 1];
 
 		/* Copy new entry to cache. */
 		ece->hits = 1;
@@ -553,21 +568,11 @@ end:
 		memcpy(ece->str, str, strlen);
 		ece->str[strlen] = '\0';
 
-		/* Increment number of cache entries if possible. */
-		if (nb_entity_cache[slen] < ENTITY_CACHE_SIZE) nb_entity_cache[slen]++;
 
 #ifdef DEBUG_ENTITY_CACHE
 		fprintf(stderr, "Added in [%u]: l=%d st='%s'\n", slen,
 				entity_cache[slen][0].strlen, entity_cache[slen][0].str);
 
-#endif
-
-		/* Sort entries by hit order. */
-		if (nb_entity_cache[slen] > 1)
-			qsort(&entity_cache[slen][0], nb_entity_cache[slen],
-			      sizeof(entity_cache[slen][0]), (void *) hits_cmp);
-
-#ifdef DEBUG_ENTITY_CACHE
 	{
 		unsigned int i;
 
@@ -578,7 +583,7 @@ end:
 				entity_cache[slen][i].str);
 		fprintf(stderr, "-----------------\n");
 	}
-#endif
+#endif	/* DEBUG_ENTITY_CACHE */
 	}
 	return result;
 }
