@@ -1,4 +1,5 @@
-/* BFU display helpers. */
+/** BFU style/color cache
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -41,7 +42,7 @@ get_bfu_color(struct terminal *term, unsigned char *stylename)
 
 	if (!bfu_colors) {
 		/* Initialize the style hash. */
-		bfu_colors = init_hash(8, &strhash);
+		bfu_colors = init_hash8();
 		if (!bfu_colors) return NULL;
 
 		last_color_mode = color_mode;
@@ -68,7 +69,8 @@ get_bfu_color(struct terminal *term, unsigned char *stylename)
 		struct option *opt;
 
 		/* Construct the color entry. */
-		opt = get_opt_rec_real(config_options, color_mode
+		opt = get_opt_rec_real(config_options,
+				       color_mode != COLOR_MODE_MONO
 				       ? "ui.colors.color" : "ui.colors.mono");
 		if (!opt) return NULL;
 
@@ -108,6 +110,5 @@ done_bfu_colors(void)
 		mem_free_if(item->value);
 	}
 
-	free_hash(bfu_colors);
-	bfu_colors = NULL;
+	free_hash(&bfu_colors);
 };

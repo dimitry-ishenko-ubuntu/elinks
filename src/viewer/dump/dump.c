@@ -26,6 +26,7 @@
 #include "document/options.h"
 #include "document/renderer.h"
 #include "document/view.h"
+#include "intl/charsets.h"
 #include "intl/gettext/libintl.h"
 #include "main/select.h"
 #include "main/main.h"
@@ -50,6 +51,13 @@ static int dump_pos;
 static struct download dump_download;
 static int dump_redir_count = 0;
 
+static int dump_to_file_16(struct document *document, int fd);
+#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
+static int dump_to_file_256(struct document *document, int fd);
+#endif
+#ifdef CONFIG_TRUE_COLOR
+static int dump_to_file_true_color(struct document *document, int fd);
+#endif
 
 /* This dumps the given @cached's source onto @fd nothing more. It returns 0 if it
  * all went fine and 1 if something isn't quite right and we should terminate
@@ -111,7 +119,7 @@ dump_formatted(int fd, struct download *download, struct cache_entry *cached)
 	set_box(&o.box, 0, 1, width, DEFAULT_TERMINAL_HEIGHT);
 
 	o.cp = get_opt_codepage("document.dump.codepage");
-	o.color_mode = COLOR_MODE_DUMP;
+	o.color_mode = get_opt_int("document.dump.color_mode");
 	o.plain = 0;
 	o.frames = 0;
 	o.links_numbering = get_opt_bool("document.dump.numbering");
@@ -119,7 +127,33 @@ dump_formatted(int fd, struct download *download, struct cache_entry *cached)
 	init_vs(&vs, cached->uri, -1);
 
 	render_document(&vs, &formatted, &o);
-	dump_to_file(formatted.document, fd);
+	switch(o.color_mode) {
+	case COLOR_MODE_DUMP:
+	case COLOR_MODE_MONO: /* FIXME: inversion */
+		dump_to_file(formatted.document, fd);
+		break;
+	default:
+		/* If the desired color mode was not compiled in,
+		 * use 16 colors.  */
+	case COLOR_MODE_16:
+		dump_to_file_16(formatted.document, fd);
+		break;
+#ifdef CONFIG_88_COLORS
+	case COLOR_MODE_88:
+		dump_to_file_256(formatted.document, fd);
+		break;
+#endif
+#ifdef CONFIG_256_COLORS
+	case COLOR_MODE_256:
+		dump_to_file_256(formatted.document, fd);
+		break;
+#endif
+#ifdef CONFIG_TRUE_COLOR
+	case COLOR_MODE_TRUE_COLOR:
+		dump_to_file_true_color(formatted.document, fd);
+		break;
+#endif
+	}
 
 	detach_formatted(&formatted);
 	destroy_vs(&vs, 1);
@@ -206,8 +240,7 @@ dump_loading_callback(struct download *download, void *p)
 	if (cached && cached->redirect && dump_redir_count++ < MAX_REDIRECTS) {
 		struct uri *uri = cached->redirect;
 
-		if (is_in_progress_state(download->state))
-			change_connection(download, NULL, PRI_CANCEL, 0);
+		cancel_download(download, 0);
 
 		load_uri(uri, cached->uri, download, PRI_MAIN, 0, -1);
 		return;
@@ -268,10 +301,10 @@ terminate:
 }
 
 void
-dump_next(struct list_head *url_list)
+dump_next(LIST_OF(struct string_list_item) *url_list)
 {
-	static INIT_LIST_HEAD(todo_list);
-	static INIT_LIST_HEAD(done_list);
+	static INIT_LIST_OF(struct string_list_item, todo_list);
+	static INIT_LIST_OF(struct string_list_item, done_list);
 	struct string_list_item *item;
 
 	if (url_list) {
@@ -323,6 +356,11 @@ add_document_to_string(struct string *string, struct document *document)
 	assert(string && document);
 	if_assert_failed return NULL;
 
+#ifdef CONFIG_UTF8
+	if (is_cp_utf8(document->options.cp))
+		goto utf8;
+#endif /* CONFIG_UTF8 */
+
 	for (y = 0; y < document->height; y++) {
 		int white = 0;
 		int x;
@@ -355,7 +393,46 @@ add_document_to_string(struct string *string, struct document *document)
 
 		add_char_to_string(string, '\n');
 	}
+#ifdef CONFIG_UTF8
+	goto end;
+utf8:
+	for (y = 0; y < document->height; y++) {
+		int white = 0;
+		int x;
 
+		for (x = 0; x < document->data[y].length; x++) {
+			struct screen_char *pos = &document->data[y].chars[x];
+			unicode_val_T data = pos->data;
+			unsigned int frame = (pos->attr & SCREEN_ATTR_FRAME);
+
+			if (!isscreensafe_ucs(data)) {
+				white++;
+				continue;
+			} else {
+				if (frame && data >= 176 && data < 224)
+					data = frame_dumb[data - 176];
+
+				if (data <= ' ') {
+					/* Count spaces. */
+					white++;
+				} else if (data == UCS_NO_CHAR) {
+					/* This is the second cell of
+					 * a double-cell character.  */
+				} else {
+					/* Print spaces if any. */
+					if (white) {
+						add_xchar_to_string(string, ' ', white);
+						white = 0;
+					}
+					add_to_string(string, encode_utf8(data));
+				}
+			}
+		}
+
+		add_char_to_string(string, '\n');
+	}
+end:
+#endif /* CONFIG_UTF8 */
 	return string;
 }
 
@@ -374,6 +451,397 @@ write_char(unsigned char c, int fd, unsigned char *buf, int *bptr)
 	return 0;
 }
 
+static int
+write_color_16(unsigned char color, int fd, unsigned char *buf, int *bptr)
+{
+	unsigned char bufor[] = "\033[0;30;40m";
+	unsigned char *data = bufor;
+	int background = (color >> 4) & 7;
+	int foreground = color & 7;
+
+	bufor[5] += foreground;
+	if (background)	bufor[8] += background;
+	else {
+		bufor[6] = 'm';
+		bufor[7] = '\0';
+	}
+	while(*data) {
+		if (write_char(*data++, fd, buf, bptr)) return -1;
+	}
+	return 0;
+}
+
+
+static int
+dump_to_file_16(struct document *document, int fd)
+{
+	int y;
+	int bptr = 0;
+	unsigned char *buf = mem_alloc(D_BUF);
+	unsigned char color = 0;
+	int width = get_opt_int("document.dump.width");
+
+	if (!buf) return -1;
+
+	for (y = 0; y < document->height; y++) {
+		int white = 0;
+		int x;
+
+		write_color_16(color, fd, buf, &bptr);
+		for (x = 0; x < document->data[y].length; x++) {
+			unsigned char c;
+			unsigned char attr = document->data[y].chars[x].attr;
+			unsigned char color1 = document->data[y].chars[x].color[0];
+
+			if (color != color1) {
+				color = color1;
+				if (write_color_16(color, fd, buf, &bptr))
+					goto fail;
+			}
+
+			c = document->data[y].chars[x].data;
+
+			if ((attr & SCREEN_ATTR_FRAME)
+			    && c >= 176 && c < 224)
+				c = frame_dumb[c - 176];
+
+			if (c <= ' ') {
+				/* Count spaces. */
+				white++;
+				continue;
+			}
+
+			/* Print spaces if any. */
+			while (white) {
+				if (write_char(' ', fd, buf, &bptr))
+					goto fail;
+				white--;
+			}
+
+			/* Print normal char. */
+			if (write_char(c, fd, buf, &bptr))
+				goto fail;
+		}
+		for (;x < width; x++) {
+			if (write_char(' ', fd, buf, &bptr))
+				goto fail;
+		}
+
+		/* Print end of line. */
+		if (write_char('\n', fd, buf, &bptr))
+			goto fail;
+	}
+
+	if (hard_write(fd, buf, bptr) != bptr) {
+fail:
+		mem_free(buf);
+		return -1;
+	}
+
+	if (document->nlinks && get_opt_bool("document.dump.references")) {
+		int x;
+		unsigned char *header = "\nReferences\n\n   Visible links\n";
+		int headlen = strlen(header);
+
+		if (hard_write(fd, header, headlen) != headlen)
+			goto fail;
+
+		for (x = 0; x < document->nlinks; x++) {
+			struct link *link = &document->links[x];
+			unsigned char *where = link->where;
+
+			if (!where) continue;
+
+			if (document->options.links_numbering) {
+				if (link->title && *link->title)
+					snprintf(buf, D_BUF, "%4d. %s\n\t%s\n",
+						 x + 1, link->title, where);
+				else
+					snprintf(buf, D_BUF, "%4d. %s\n",
+						 x + 1, where);
+			} else {
+				if (link->title && *link->title)
+					snprintf(buf, D_BUF, "   . %s\n\t%s\n",
+						 link->title, where);
+				else
+					snprintf(buf, D_BUF, "   . %s\n", where);
+			}
+
+			bptr = strlen(buf);
+			if (hard_write(fd, buf, bptr) != bptr)
+				goto fail;
+		}
+	}
+
+	mem_free(buf);
+	return 0;
+}
+
+/* configure --enable-debug uses gcc -Wall -Werror, and -Wall includes
+ * -Wunused-function, so declaring or defining any unused function
+ * would break the build. */
+#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
+
+static int
+write_color_256(unsigned char *str, unsigned char color, int fd, unsigned char *buf, int *bptr)
+{
+	unsigned char bufor[16];
+	unsigned char *data = bufor;
+
+	snprintf(bufor, 16, "\033[%s;5;%dm", str, color);
+	while(*data) {
+		if (write_char(*data++, fd, buf, bptr)) return -1;
+	}
+	return 0;
+}
+
+static int
+dump_to_file_256(struct document *document, int fd)
+{
+	int y;
+	int bptr = 0;
+	unsigned char *buf = mem_alloc(D_BUF);
+	unsigned char foreground = 0;
+	unsigned char background = 0;
+	int width = get_opt_int("document.dump.width");
+
+	if (!buf) return -1;
+
+	for (y = 0; y < document->height; y++) {
+		int white = 0;
+		int x;
+		write_color_256("38", foreground, fd, buf, &bptr);
+		write_color_256("48", background, fd, buf, &bptr);
+
+		for (x = 0; x < document->data[y].length; x++) {
+			unsigned char c;
+			unsigned char attr = document->data[y].chars[x].attr;
+			unsigned char color1 = document->data[y].chars[x].color[0];
+			unsigned char color2 = document->data[y].chars[x].color[1];
+
+			if (foreground != color1) {
+				foreground = color1;
+				if (write_color_256("38", foreground, fd, buf, &bptr))
+					goto fail;
+			}
+
+			if (background != color2) {
+				background = color2;
+				if (write_color_256("48", background, fd, buf, &bptr))
+					goto fail;
+			}
+
+			c = document->data[y].chars[x].data;
+
+			if ((attr & SCREEN_ATTR_FRAME)
+			    && c >= 176 && c < 224)
+				c = frame_dumb[c - 176];
+
+			if (c <= ' ') {
+				/* Count spaces. */
+				white++;
+				continue;
+			}
+
+			/* Print spaces if any. */
+			while (white) {
+				if (write_char(' ', fd, buf, &bptr))
+					goto fail;
+				white--;
+			}
+
+			/* Print normal char. */
+			if (write_char(c, fd, buf, &bptr))
+				goto fail;
+		}
+		for (;x < width; x++) {
+			if (write_char(' ', fd, buf, &bptr))
+				goto fail;
+		}
+
+		/* Print end of line. */
+		if (write_char('\n', fd, buf, &bptr))
+			goto fail;
+	}
+
+	if (hard_write(fd, buf, bptr) != bptr) {
+fail:
+		mem_free(buf);
+		return -1;
+	}
+
+	if (document->nlinks && get_opt_bool("document.dump.references")) {
+		int x;
+		unsigned char *header = "\nReferences\n\n   Visible links\n";
+		int headlen = strlen(header);
+
+		if (hard_write(fd, header, headlen) != headlen)
+			goto fail;
+
+		for (x = 0; x < document->nlinks; x++) {
+			struct link *link = &document->links[x];
+			unsigned char *where = link->where;
+
+			if (!where) continue;
+
+			if (document->options.links_numbering) {
+				if (link->title && *link->title)
+					snprintf(buf, D_BUF, "%4d. %s\n\t%s\n",
+						 x + 1, link->title, where);
+				else
+					snprintf(buf, D_BUF, "%4d. %s\n",
+						 x + 1, where);
+			} else {
+				if (link->title && *link->title)
+					snprintf(buf, D_BUF, "   . %s\n\t%s\n",
+						 link->title, where);
+				else
+					snprintf(buf, D_BUF, "   . %s\n", where);
+			}
+
+			bptr = strlen(buf);
+			if (hard_write(fd, buf, bptr) != bptr)
+				goto fail;
+		}
+	}
+
+	mem_free(buf);
+	return 0;
+}
+
+#endif /* defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS) */
+
+#ifdef CONFIG_TRUE_COLOR
+
+static int
+write_true_color(unsigned char *str, unsigned char *color, int fd, unsigned char *buf, int *bptr)
+{
+	unsigned char bufor[24];
+	unsigned char *data = bufor;
+
+	snprintf(bufor, 24, "\033[%s;2;%d;%d;%dm", str, color[0], color[1], color[2]);
+	while(*data) {
+		if (write_char(*data++, fd, buf, bptr)) return -1;
+	}
+	return 0;
+}
+
+static int
+dump_to_file_true_color(struct document *document, int fd)
+{
+	static unsigned char color[6] = {255, 255, 255, 0, 0, 0};
+	int y;
+	int bptr = 0;
+	unsigned char *buf = mem_alloc(D_BUF);
+	unsigned char *foreground = &color[0];
+	unsigned char *background = &color[3];
+	int width = get_opt_int("document.dump.width");
+
+	if (!buf) return -1;
+
+	for (y = 0; y < document->height; y++) {
+		int white = 0;
+		int x;
+		write_true_color("38", foreground, fd, buf, &bptr);
+		write_true_color("48", background, fd, buf, &bptr);
+
+		for (x = 0; x < document->data[y].length; x++) {
+			unsigned char c;
+			unsigned char attr = document->data[y].chars[x].attr;
+			unsigned char *new_foreground = &document->data[y].chars[x].color[0];
+			unsigned char *new_background = &document->data[y].chars[x].color[3];
+
+			if (memcmp(foreground, new_foreground, 3)) {
+				foreground = new_foreground;
+				if (write_true_color("38", foreground, fd, buf, &bptr))
+					goto fail;
+			}
+
+			if (memcmp(background, new_background, 3)) {
+				background = new_background;
+				if (write_true_color("48", background, fd, buf, &bptr))
+					goto fail;
+			}
+
+			c = document->data[y].chars[x].data;
+
+			if ((attr & SCREEN_ATTR_FRAME)
+			    && c >= 176 && c < 224)
+				c = frame_dumb[c - 176];
+
+			if (c <= ' ') {
+				/* Count spaces. */
+				white++;
+				continue;
+			}
+
+			/* Print spaces if any. */
+			while (white) {
+				if (write_char(' ', fd, buf, &bptr))
+					goto fail;
+				white--;
+			}
+
+			/* Print normal char. */
+			if (write_char(c, fd, buf, &bptr))
+				goto fail;
+		}
+		for (;x < width; x++) {
+			if (write_char(' ', fd, buf, &bptr))
+				goto fail;
+		}
+
+		/* Print end of line. */
+		if (write_char('\n', fd, buf, &bptr))
+			goto fail;
+	}
+
+	if (hard_write(fd, buf, bptr) != bptr) {
+fail:
+		mem_free(buf);
+		return -1;
+	}
+
+	if (document->nlinks && get_opt_bool("document.dump.references")) {
+		int x;
+		unsigned char *header = "\nReferences\n\n   Visible links\n";
+		int headlen = strlen(header);
+
+		if (hard_write(fd, header, headlen) != headlen)
+			goto fail;
+
+		for (x = 0; x < document->nlinks; x++) {
+			struct link *link = &document->links[x];
+			unsigned char *where = link->where;
+
+			if (!where) continue;
+
+			if (document->options.links_numbering) {
+				if (link->title && *link->title)
+					snprintf(buf, D_BUF, "%4d. %s\n\t%s\n",
+						 x + 1, link->title, where);
+				else
+					snprintf(buf, D_BUF, "%4d. %s\n",
+						 x + 1, where);
+			} else {
+				if (link->title && *link->title)
+					snprintf(buf, D_BUF, "   . %s\n\t%s\n",
+						 link->title, where);
+				else
+					snprintf(buf, D_BUF, "   . %s\n", where);
+			}
+
+			bptr = strlen(buf);
+			if (hard_write(fd, buf, bptr) != bptr)
+				goto fail;
+		}
+	}
+
+	mem_free(buf);
+	return 0;
+}
+
+#endif /* CONFIG_TRUE_COLOR */
 int
 dump_to_file(struct document *document, int fd)
 {
@@ -382,6 +850,11 @@ dump_to_file(struct document *document, int fd)
 	unsigned char *buf = mem_alloc(D_BUF);
 
 	if (!buf) return -1;
+
+#ifdef CONFIG_UTF8
+	if (is_cp_utf8(document->options.cp))
+		goto utf8;
+#endif /* CONFIG_UTF8 */
 
 	for (y = 0; y < document->height; y++) {
 		int white = 0;
@@ -419,6 +892,59 @@ dump_to_file(struct document *document, int fd)
 		if (write_char('\n', fd, buf, &bptr))
 			goto fail;
 	}
+#ifdef CONFIG_UTF8
+	goto ref;
+utf8:
+	for (y = 0; y < document->height; y++) {
+		int white = 0;
+		int x;
+
+		for (x = 0; x < document->data[y].length; x++) {
+			unicode_val_T c;
+			unsigned char attr = document->data[y].chars[x].attr;
+
+			c = document->data[y].chars[x].data;
+
+			if ((attr & SCREEN_ATTR_FRAME)
+			    && c >= 176 && c < 224)
+				c = frame_dumb[c - 176];
+			else {
+				unsigned char *utf8_buf = encode_utf8(c);
+
+				while (*utf8_buf) {
+					if (write_char(*utf8_buf++,
+						fd, buf, &bptr)) goto fail;
+				}
+
+				x += unicode_to_cell(c) - 1;
+
+				continue;
+			}
+
+			if (c <= ' ') {
+				/* Count spaces. */
+				white++;
+				continue;
+			}
+
+			/* Print spaces if any. */
+			while (white) {
+				if (write_char(' ', fd, buf, &bptr))
+					goto fail;
+				white--;
+			}
+
+			/* Print normal char. */
+			if (write_char(c, fd, buf, &bptr))
+				goto fail;
+		}
+
+		/* Print end of line. */
+		if (write_char('\n', fd, buf, &bptr))
+			goto fail;
+	}
+ref:
+#endif /* CONFIG_UTF8 */
 
 	if (hard_write(fd, buf, bptr) != bptr) {
 fail:

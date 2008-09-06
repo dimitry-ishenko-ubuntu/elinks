@@ -148,12 +148,13 @@ document_info_dialog(struct session *ses)
 
 	add_char_to_string(&msg, '\n');
 
-	cached = find_in_cache(location->vs.uri);
+	cached = doc_view->document->cached;
 	if (cached) {
 		unsigned char *a;
 
-		add_format_to_string(&msg, "\n%s: %" OFF_T_FORMAT,
-				     _("Size", term), cached->length);
+		add_format_to_string(&msg, "\n%s: %" OFF_PRINT_FORMAT,
+				     _("Size", term),
+				     (off_print_T) cached->length);
 
 		if (cached->incomplete) {
 			add_format_to_string(&msg, " (%s)", _("incomplete", term));
@@ -317,5 +318,6 @@ protocol_header_dialog(struct session *ses)
 		return;
 	}
 
-	cached_header_dialog(ses, find_in_cache(cur_loc(ses)->vs.uri));
+	if (ses->doc_view && ses->doc_view->document)
+		cached_header_dialog(ses, ses->doc_view->document->cached);
 }

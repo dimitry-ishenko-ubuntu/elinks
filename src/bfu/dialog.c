@@ -12,6 +12,7 @@
 #include "bfu/dialog.h"
 #include "config/kbdbind.h"
 #include "config/options.h"
+#include "intl/charsets.h"
 #include "intl/gettext/libintl.h"
 #include "terminal/draw.h"
 #include "main/timer.h"
@@ -96,13 +97,32 @@ redraw_dialog(struct dialog_data *dlg_data, int layout)
 		title_color = get_bfu_color(term, "dialog.title");
 		if (title_color && box.width > 2) {
 			unsigned char *title = dlg_data->dlg->title;
-			int titlelen = int_min(box.width - 2, strlen(title));
-			int x = (box.width - titlelen) / 2 + box.x;
-			int y = box.y - 1;
+			int titlelen = strlen(title);
+			int titlecells = titlelen;
+			int x, y;
+
+#ifdef CONFIG_UTF8
+			if (term->utf8_cp)
+				titlecells = utf8_ptr2cells(title,
+							    &title[titlelen]);
+#endif /* CONFIG_UTF8 */
+
+			titlecells = int_min(box.width - 2, titlecells);
+
+#ifdef CONFIG_UTF8
+			if (term->utf8_cp)
+				titlelen = utf8_cells2bytes(title, titlecells,
+							    NULL);
+#endif /* CONFIG_UTF8 */
+
+			x = (box.width - titlecells) / 2 + box.x;
+			y = box.y - 1;
+
 
 			draw_text(term, x - 1, y, " ", 1, 0, title_color);
 			draw_text(term, x, y, title, titlelen, 0, title_color);
-			draw_text(term, x + titlelen, y, " ", 1, 0, title_color);
+			draw_text(term, x + titlecells, y, " ", 1, 0,
+				  title_color);
 		}
 	}
 
@@ -120,7 +140,7 @@ select_dlg_item(struct dialog_data *dlg_data, struct widget_data *widget_data)
 		widget_data->widget->ops->select(dlg_data, widget_data);
 }
 
-static struct widget_ops *widget_type_to_ops[] = {
+static const struct widget_ops *const widget_type_to_ops[] = {
 	&checkbox_ops,
 	&field_ops,
 	&field_pass_ops,
@@ -265,34 +285,58 @@ select_button_by_flag(struct dialog_data *dlg_data, int flag)
 static void
 select_button_by_key(struct dialog_data *dlg_data)
 {
-	unsigned char key;
+	term_event_char_T key;
+#ifdef CONFIG_UTF8
+	int codepage;
+#endif
+
 	struct widget_data *widget_data;
 	struct term_event *ev = dlg_data->term_event;
 
 	if (!check_kbd_label_key(ev)) return;
 
+#ifdef CONFIG_UTF8
+	key = unicode_fold_label_case(get_kbd_key(ev));
+	codepage = get_opt_codepage_tree(dlg_data->win->term->spec, "charset");
+#else
 	key = toupper(get_kbd_key(ev));
+#endif
 
 	foreach_widget(dlg_data, widget_data) {
 		int hk_pos;
+		unsigned char *hk_ptr;
+		term_event_char_T hk_char;
 
 		if (widget_data->widget->type != WIDGET_BUTTON)
+			continue;
+
+		hk_ptr = widget_data->widget->text;
+		if (!*hk_ptr)
 			continue;
 
 		/* We first try to match marked hotkey if there is
 		 * one else we fallback to first character in button
 		 * name. */
 		hk_pos = widget_data->widget->info.button.hotkey_pos;
-		if (hk_pos >= 0) {
-			if (toupper(widget_data->widget->text[hk_pos + 1]) != key)
-				continue;
-		} else {
-			if (toupper(widget_data->widget->text[0]) != key)
-				continue;
-		}
+		if (hk_pos >= 0)
+			hk_ptr += hk_pos + 1;
 
-		select_dlg_item(dlg_data, widget_data);
-		break;
+#ifdef CONFIG_UTF8
+		hk_char = cp_to_unicode(codepage, &hk_ptr,
+					strchr(hk_ptr, '\0'));
+		/* hk_char can be UCS_NO_CHAR only if the text of the
+		 * widget is not in the expected codepage.  */
+		assert(hk_char != UCS_NO_CHAR);
+		if_assert_failed continue;
+		hk_char = unicode_fold_label_case(hk_char);
+#else
+		hk_char = toupper(*hk_ptr);
+#endif
+
+		if (hk_char == key) {
+			select_dlg_item(dlg_data, widget_data);
+			break;
+		}
 	}
 }
 
@@ -300,7 +344,7 @@ static void
 dialog_ev_kbd(struct dialog_data *dlg_data)
 {
 	struct widget_data *widget_data = selected_widget(dlg_data);
-	struct widget_ops *ops = widget_data->widget->ops;
+	const struct widget_ops *ops = widget_data->widget->ops;
 	/* XXX: KEYMAP_EDIT ? --pasky */
 	enum menu_action action_id;
 	struct term_event *ev = dlg_data->term_event;
@@ -430,7 +474,8 @@ check_dialog(struct dialog_data *dlg_data)
 			continue;
 
 		if (widget_data->widget->handler &&
-		    widget_data->widget->handler(dlg_data, widget_data)) {
+		    widget_data->widget->handler(dlg_data, widget_data)
+		     == EVENT_NOT_PROCESSED) {
 			select_widget(dlg_data, widget_data);
 			redraw_dialog(dlg_data, 0);
 			return 1;
@@ -499,7 +544,7 @@ clear_dialog(struct dialog_data *dlg_data, struct widget_data *xxx)
 
 static void
 format_widgets(struct terminal *term, struct dialog_data *dlg_data,
-	       int x, int *y, int w, int h, int *rw)
+	       int x, int *y, int w, int h, int *rw, int format_only)
 {
 	struct widget_data *wdata = dlg_data->widgets_data;
 	int widgets = dlg_data->number_of_widgets;
@@ -509,15 +554,18 @@ format_widgets(struct terminal *term, struct dialog_data *dlg_data,
 		switch (wdata->widget->type) {
 		case WIDGET_FIELD_PASS:
 		case WIDGET_FIELD:
-			dlg_format_field(term, wdata, x, y, w, rw, ALIGN_LEFT);
+			dlg_format_field(term, wdata, x, y, w, rw, ALIGN_LEFT,
+					 format_only);
 			break;
 
 		case WIDGET_LISTBOX:
-			dlg_format_listbox(term, wdata, x, y, w, h, rw, ALIGN_LEFT);
+			dlg_format_listbox(term, wdata, x, y, w, h, rw,
+					   ALIGN_LEFT, format_only);
 			break;
 
 		case WIDGET_TEXT:
-			dlg_format_text(term, wdata, x, y, w, rw, h);
+			dlg_format_text(term, wdata, x, y, w, rw, h,
+					format_only);
 			break;
 
 		case WIDGET_CHECKBOX:
@@ -535,14 +583,16 @@ format_widgets(struct terminal *term, struct dialog_data *dlg_data,
 						break;
 				}
 
-				dlg_format_group(term, wdata, size, x, y, w, rw);
+				dlg_format_group(term, wdata, size, x, y, w, rw,
+						 format_only);
 				wdata += size - 1;
 
 			} else {
 
 				/* No horizontal space between checkboxes belonging to
 				 * the same group. */
-				dlg_format_checkbox(term, wdata, x, y, w, rw, ALIGN_LEFT);
+				dlg_format_checkbox(term, wdata, x, y, w, rw,
+						    ALIGN_LEFT, format_only);
 				if (widgets > 1
 				    && group == widget_has_group(&wdata[1]))
 					(*y)--;
@@ -554,7 +604,7 @@ format_widgets(struct terminal *term, struct dialog_data *dlg_data,
 		 * of the dialog. */
 		case WIDGET_BUTTON:
 			dlg_format_buttons(term, wdata, widgets,
-					   x, y, w, rw, ALIGN_CENTER);
+					   x, y, w, rw, ALIGN_CENTER, format_only);
 			return;
 		}
 	}
@@ -566,11 +616,17 @@ generic_dialog_layouter(struct dialog_data *dlg_data)
 	struct terminal *term = dlg_data->win->term;
 	int w = dialog_max_width(term);
 	int height = dialog_max_height(term);
-	int rw = int_min(w, strlen(dlg_data->dlg->title));
-	int y = dlg_data->dlg->layout.padding_top ? 0 : -1;
-	int x = 0;
+	int x = 0, y, rw;
 
-	format_widgets(NULL, dlg_data, x, &y, w, height, &rw);
+#ifdef CONFIG_UTF8
+	if (term->utf8_cp)
+		rw = int_min(w, utf8_ptr2cells(dlg_data->dlg->title, NULL));
+	else
+#endif /* CONFIG_UTF8 */
+		rw = int_min(w, strlen(dlg_data->dlg->title));
+	y = dlg_data->dlg->layout.padding_top ? 0 : -1;
+
+	format_widgets(term, dlg_data, x, &y, w, height, &rw, 1);
 
 	/* Update the width to respond to the required minimum width */
 	if (dlg_data->dlg->layout.fit_datalen) {
@@ -585,7 +641,7 @@ generic_dialog_layouter(struct dialog_data *dlg_data)
 	y = dlg_data->box.y + DIALOG_TB + dlg_data->dlg->layout.padding_top;
 	x = dlg_data->box.x + DIALOG_LB;
 
-	format_widgets(term, dlg_data, x, &y, w, height, NULL);
+	format_widgets(term, dlg_data, x, &y, w, height, NULL, 0);
 }
 
 
@@ -607,9 +663,19 @@ draw_dialog(struct dialog_data *dlg_data, int width, int height)
 		/* Draw shadow */
 		draw_shadow(term, &dlg_data->box,
 			    get_bfu_color(term, "dialog.shadow"), 2, 1);
+#ifdef CONFIG_UTF8
+		if (term->utf8_cp)
+			fix_dwchar_around_box(term, &dlg_data->box, 0, 2, 1);
+#endif /* CONFIG_UTF8 */
 	}
+#ifdef CONFIG_UTF8
+	else if (term->utf8_cp)
+		fix_dwchar_around_box(term, &dlg_data->box, 0, 0, 0);
+#endif /* CONFIG_UTF8 */
 }
 
+/* Timer callback for @refresh->timer.  As explained in @install_timer,
+ * this function must erase the expired timer ID from all variables.  */
 static void
 do_refresh_dialog(struct dialog_data *dlg_data)
 {
@@ -636,6 +702,7 @@ do_refresh_dialog(struct dialog_data *dlg_data)
 
 	install_timer(&refresh->timer, RESOURCE_INFO_REFRESH,
 		      (void (*)(void *)) do_refresh_dialog, dlg_data);
+	/* The expired timer ID has now been erased.  */
 }
 
 void

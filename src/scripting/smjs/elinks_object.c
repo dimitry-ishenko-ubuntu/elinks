@@ -6,15 +6,21 @@
 
 #include "elinks.h"
 
+#include "bfu/msgbox.h"
 #include "config/home.h"
 #include "ecmascript/spidermonkey/util.h"
+#include "intl/gettext/libintl.h"
 #include "protocol/uri.h"
 #include "scripting/scripting.h"
+#include "scripting/smjs/action_object.h"
 #include "scripting/smjs/bookmarks.h"
 #include "scripting/smjs/core.h"
 #include "scripting/smjs/elinks_object.h"
 #include "scripting/smjs/global_object.h"
+#include "scripting/smjs/globhist.h"
 #include "scripting/smjs/keybinding.h"
+#include "scripting/smjs/load_uri.h"
+#include "scripting/smjs/view_state_object.h"
 #include "session/location.h"
 #include "session/session.h"
 #include "session/task.h"
@@ -76,8 +82,28 @@ elinks_alert(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	if (!*string)
 		return JS_TRUE;
 
-	alert_smjs_error(string);
+	info_box(smjs_ses->tab->term, MSGBOX_NO_TEXT_INTL,
+	         N_("User script alert"), ALIGN_LEFT, string);
 
+	undef_to_jsval(ctx, rval);
+
+	return JS_TRUE;
+}
+
+/* function "execute" in the object returned by smjs_get_elinks_object() */
+static JSBool
+elinks_execute(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	unsigned char *string;
+
+	if (argc != 1)
+		return JS_TRUE;
+
+	string = jsval_to_string(ctx, &argv[0]);
+	if (!*string)
+		return JS_TRUE;
+
+	exec_on_terminal(smjs_ses->tab->term, string, "", TERM_EXEC_BG);
 	undef_to_jsval(ctx, rval);
 
 	return JS_TRUE;
@@ -116,6 +142,7 @@ smjs_get_elinks_object(void)
 	 * keep the modules independent, elinks/src/scripting/smjs/
 	 * does not use that.  */
 	JS_DefineFunction(smjs_ctx, jsobj, "alert", elinks_alert, 1, 0);
+	JS_DefineFunction(smjs_ctx, jsobj, "execute", elinks_execute, 1, 0);
 
 	JS_DefineProperty(smjs_ctx, jsobj, "location", JSVAL_NULL,
 	                  elinks_get_location, elinks_set_location,
@@ -135,8 +162,12 @@ smjs_init_elinks_object(void)
 {
 	smjs_elinks_object = smjs_get_elinks_object();
 
+	smjs_init_action_interface();
 	smjs_init_bookmarks_interface();
+	smjs_init_globhist_interface();
 	smjs_init_keybinding_interface();
+	smjs_init_load_uri_interface();
+	smjs_init_view_state_interface();
 }
 
 /* If elinks.<method> is defined, call it with the given arguments,
@@ -160,7 +191,7 @@ smjs_invoke_elinks_object_method(unsigned char *method, jsval argv[], int argc,
 		return JS_FALSE;
 
 	func = JS_ValueToFunction(smjs_ctx, *rval);
-	assert(func);
+	if (!func) return JS_FALSE;
 
 	return JS_CallFunction(smjs_ctx, smjs_elinks_object,
 		               func, argc, argv, rval);

@@ -35,6 +35,30 @@
 #include "util/env.h"
 #include "util/string.h"
 
+static struct option_info cgi_options[] = {
+	INIT_OPT_TREE("protocol.file", N_("Local CGI"),
+		"cgi", 0,
+		N_("Local CGI specific options.")),
+
+	INIT_OPT_STRING("protocol.file.cgi", N_("Path"),
+		"path", 0, "",
+		N_("Colon separated list of directories, where CGI scripts are stored.")),
+
+	INIT_OPT_BOOL("protocol.file.cgi", N_("Allow local CGI"),
+		"policy", 0, 0,
+		N_("Whether to execute local CGI scripts.")),
+	NULL_OPTION_INFO,
+};
+
+struct module cgi_protocol_module = struct_module(
+	/* name: */		N_("CGI"),
+	/* options: */		cgi_options,
+	/* hooks: */		NULL,
+	/* submodules: */	NULL,
+	/* data: */		NULL,
+	/* init: */		NULL,
+	/* done: */		NULL
+);
 
 static void
 close_pipe_and_read(struct socket *data_socket)
@@ -49,8 +73,8 @@ close_pipe_and_read(struct socket *data_socket)
 	rb->freespace -= 17;
 
 	conn->unrestartable = 1;
-	close(conn->cgi_pipes[1]);
-	data_socket->fd = conn->cgi_pipes[1] = -1;
+	close(data_socket->fd);
+	data_socket->fd = -1;
 
 	conn->socket->state = SOCKET_END_ONCLOSE;
 	read_from_socket(conn->socket, rb, S_SENT, http_got_header);
@@ -95,9 +119,6 @@ send_post_data(struct connection *conn)
 	if (n)
 		add_bytes_to_string(&data, buffer, n);
 
-	/* Use data socket for passing the pipe. It will be cleaned up in
-	 * close_pipe_and_read(). */
-	conn->data_socket->fd = conn->cgi_pipes[1];
 
 	/* If we're submitting a form whose controls do not have
 	 * names, then the POST has a Content-Type but empty data,
@@ -367,11 +388,14 @@ execute_cgi(struct connection *conn)
 		}
 
 		close(pipe_read[1]); close(pipe_write[0]);
-		conn->cgi_pipes[0] = pipe_read[0];
-		conn->cgi_pipes[1] = pipe_write[1];
-		set_nonblocking_fd(conn->cgi_pipes[0]);
-		set_nonblocking_fd(conn->cgi_pipes[1]);
-		conn->socket->fd = conn->cgi_pipes[0];
+		conn->socket->fd = pipe_read[0];
+
+		/* Use data socket for passing the pipe. It will be cleaned up in
+	 	* close_pipe_and_read(). */
+		conn->data_socket->fd = pipe_write[1];
+		conn->cgi = 1;
+		set_nonblocking_fd(conn->socket->fd);
+		set_nonblocking_fd(conn->data_socket->fd);
 
 		send_request(conn);
 		return 0;

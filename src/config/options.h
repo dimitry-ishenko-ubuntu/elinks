@@ -24,15 +24,33 @@ enum option_flags {
 	 * this category when adding an option. The 'template' for the added
 	 * hiearchy piece (category) is stored as "_template_" category. */
 	OPT_AUTOCREATE = 2,
-	/* This is used just for marking various options for some very dark,
-	 * nasty and dirty purposes. This watermarking should be kept inside
-	 * some very closed and clearly bounded piece of ELinks module, not
-	 * spreaded along whole ELinks code, and you should clear it everytime
-	 * when sneaking outside of the module (except some trivial common
-	 * utility functions). Basically, you don't want to use this flag
-	 * normally ;). It doesn't affect how the option is handled by common
-	 * option handling functions in any way. */
-	OPT_WATERMARK = 4,
+	/* The option has been modified in some way and must be saved
+	 * to elinks.conf.  ELinks uses this flag only while it is
+	 * saving the options.  When the config.saving_style option
+	 * has value 3, saving works like this:
+	 * - First, ELinks sets OPT_MUST_SAVE in the options that have
+	 *   OPT_TOUCHED or OPT_DELETED, and clears it in the rest.
+	 * - ELinks then parses the old configuration file and any
+	 *   files named in "include" commands.
+	 * - If the old configuration file contains a "set" or "unset"
+	 *   command for this option, ELinks rewrites the command and
+	 *   clears OPT_MUST_SAVE.
+	 * - If an included file contains a "set" or "unset" command
+	 *   for this option, ELinks compares the value of the option
+	 *   to the value given in the command.  ELinks clears
+	 *   OPT_MUST_SAVE if the values match, or sets it if they
+	 *   differ.
+	 * - After ELinks has rewritten the configuration file and
+	 *   parsed the included files, it appends the options that
+	 *   still have the OPT_MUST_SAVE flag.
+	 * Other saving styles are variants of this:
+	 * - 0: ELinks does not append any options to the
+	 *   configuration file.  So OPT_MUST_SAVE has no effect.
+	 * - 1: ELinks initially sets OPT_MUST_SAVE in all options,
+	 *   regardless of OPT_TOUCHED and OPT_DELETED.
+	 * - 2: ELinks initially sets OPT_MUST_SAVE in all options,
+	 *   and does not read any configuration files.  */
+	OPT_MUST_SAVE = 4,
 	/* This is used to mark options modified after the last save. That's
 	 * being useful if you want to save only the options whose value
 	 * changed. */
@@ -77,15 +95,14 @@ enum option_type {
 	OPT_TREE,
 };
 
-/* Defined in bfu/listbox.h, later and session/session.h */
-struct listbox_item;
-struct option;
-struct session;
+struct listbox_item; /* bfu/listbox.h */
+struct option; /* defined later in this file */
+struct session; /* session/session.h */
 
 union option_value {
 	/* XXX: Keep first to make @options_root initialization possible. */
 	/* The OPT_TREE list_head is allocated. */
-	struct list_head *tree;
+	LIST_OF(struct option) *tree;
 
 	/* Used by OPT_BOOL, OPT_INT, OPT_CODEPAGE and OPT_LANGUAGE */
 	int number;
@@ -106,7 +123,19 @@ union option_value {
 	unsigned char *string;
 };
 
-typedef int (*change_hook_T)(struct session *, struct option *current,
+
+/* @session is the session via which the user changed the options,
+ * or NULL if not known.  Because the options are currently not
+ * session-specific, it is best to ignore this parameter.  In a future
+ * version of ELinks, this parameter might mean the session to which
+ * the changed options apply.
+ *
+ * @current is the option whose change hook is being called.  It is
+ * never NULL.
+ *
+ * @changed is the option that was changed, or NULL if multiple
+ * descendants of @current may have been changed.  */
+typedef int (*change_hook_T)(struct session *session, struct option *current,
 			     struct option *changed);
 
 struct option {
@@ -131,7 +160,7 @@ struct option {
 };
 
 #define INIT_OPTION(name, flags, type, min, max, value, desc, capt) \
-	{ NULL_LIST_HEAD, INIT_OBJECT("option"), name, flags, type, min, max, { (struct list_head *) (value) }, desc, capt }
+	{ NULL_LIST_HEAD, INIT_OBJECT("option"), name, flags, type, min, max, { (LIST_OF(struct option) *) (value) }, desc, capt }
 
 extern struct option *config_options;
 extern struct option *cmdline_options;
@@ -146,15 +175,17 @@ struct change_hook_info {
 	change_hook_T change_hook;
 };
 
-extern void register_change_hooks(struct change_hook_info *change_hooks);
+extern void register_change_hooks(const struct change_hook_info *change_hooks);
 
 
-extern struct list_head *init_options_tree(void);
-extern void unmark_options_tree(struct list_head *);
-void watermark_deleted_options(struct list_head *);
+extern LIST_OF(struct option) *init_options_tree(void);
+extern void prepare_mustsave_flags(LIST_OF(struct option) *, int set_all);
+extern void untouch_options(LIST_OF(struct option) *);
 
-extern void smart_config_string(struct string *, int, int, struct list_head *, unsigned char *, int,
-				void (*)(struct string *, struct option *, unsigned char *, int, int, int, int));
+extern void smart_config_string(struct string *, int, int,
+				LIST_OF(struct option) *, unsigned char *, int,
+				void (*)(struct string *, struct option *,
+					 unsigned char *, int, int, int, int));
 
 extern struct option *copy_option(struct option *);
 extern void delete_option(struct option *);
@@ -181,8 +212,7 @@ void call_change_hooks(struct session *ses, struct option *current,
 
 /* Do proper bookkeeping after an option has changed - call this every time
  * you change an option value. */
-void option_changed(struct session *ses, struct option *current,
-                    struct option *option);
+void option_changed(struct session *ses, struct option *option);
 
 extern int commit_option_values(struct option_resolver *resolvers,
 				struct option *root,
@@ -198,8 +228,9 @@ extern void checkout_option_values(struct option_resolver *resolvers,
  * use get_opt_type() and add_opt_type(). For command line options, you want to
  * use get_opt_type_tree(cmdline_options, "option"). */
 
-extern struct option *get_opt_rec(struct option *, unsigned char *);
-extern struct option *get_opt_rec_real(struct option *, unsigned char *);
+extern struct option *get_opt_rec(struct option *, const unsigned char *);
+extern struct option *get_opt_rec_real(struct option *, const unsigned char *);
+struct option *indirect_option(struct option *);
 #ifdef CONFIG_DEBUG
 extern union option_value *get_opt_(unsigned char *, int, enum option_type, struct option *, unsigned char *);
 #define get_opt(tree, name, type) get_opt_(__FILE__, __LINE__, type, tree, name)
@@ -234,7 +265,7 @@ extern union option_value *get_opt_(struct option *, unsigned char *);
 
 extern struct option *add_opt(struct option *, unsigned char *, unsigned char *,
 			      unsigned char *, enum option_flags, enum option_type,
-			      int, int, void *, unsigned char *);
+			      long, long, longptr_T, unsigned char *);
 
 /* Hack which permit to disable option descriptions, to reduce elinks binary size.
  * It may of some use for people wanting a very small static non-i18n elinks binary,
@@ -247,38 +278,38 @@ extern struct option *add_opt(struct option *, unsigned char *, unsigned char *,
 
 
 #define add_opt_bool_tree(tree, path, capt, name, flags, def, desc) \
-	add_opt(tree, path, capt, name, flags, OPT_BOOL, 0, 1, (void *) def, DESC(desc))
+	add_opt(tree, path, capt, name, flags, OPT_BOOL, 0, 1, (longptr_T) def, DESC(desc))
 
 #define add_opt_int_tree(tree, path, capt, name, flags, min, max, def, desc) \
-	add_opt(tree, path, capt, name, flags, OPT_INT, min, max, (void *) def, DESC(desc))
+	add_opt(tree, path, capt, name, flags, OPT_INT, min, max, (longptr_T) def, DESC(desc))
 
 #define add_opt_long_tree(tree, path, capt, name, flags, min, max, def, desc) \
-	add_opt(tree, path, capt, name, flags, OPT_LONG, min, max, (void *) def, DESC(desc))
+	add_opt(tree, path, capt, name, flags, OPT_LONG, min, max, (longptr_T) def, DESC(desc))
 
 #define add_opt_str_tree(tree, path, capt, name, flags, def, desc) \
 do { \
 	unsigned char *ptr = mem_alloc(MAX_STR_LEN); \
 	safe_strncpy(ptr, def, MAX_STR_LEN); \
-	add_opt(tree, path, capt, name, flags, OPT_STRING, 0, MAX_STR_LEN, ptr, DESC(desc)); \
+	add_opt(tree, path, capt, name, flags, OPT_STRING, 0, MAX_STR_LEN, (longptr_T) ptr, DESC(desc)); \
 } while (0)
 
 #define add_opt_codepage_tree(tree, path, capt, name, flags, def, desc) \
-	add_opt(tree, path, capt, name, flags, OPT_CODEPAGE, 0, 0, (void *) get_cp_index(def), DESC(desc))
+	add_opt(tree, path, capt, name, flags, OPT_CODEPAGE, 0, 0, (longptr_T) get_cp_index(def), DESC(desc))
 
 #define add_opt_lang_tree(tree, path, capt, name, flags, desc) \
-	add_opt(tree, path, capt, name, flags, OPT_LANGUAGE, 0, 0, NULL, DESC(desc))
+	add_opt(tree, path, capt, name, flags, OPT_LANGUAGE, 0, 0, (longptr_T) 0, DESC(desc))
 
 #define add_opt_color_tree(tree, path, capt, name, flags, def, desc) \
-	add_opt(tree, path, capt, name, flags, OPT_COLOR, 0, 0, def, DESC(desc))
+	add_opt(tree, path, capt, name, flags, OPT_COLOR, 0, 0, (longptr_T) def, DESC(desc))
 
 #define add_opt_command_tree(tree, path, capt, name, flags, cmd, desc) \
-	add_opt(tree, path, capt, name, flags, OPT_COMMAND, 0, 0, cmd, DESC(desc));
+	add_opt(tree, path, capt, name, flags, OPT_COMMAND, 0, 0, (longptr_T) cmd, DESC(desc));
 
 #define add_opt_alias_tree(tree, path, capt, name, flags, def, desc) \
-	add_opt(tree, path, capt, name, flags, OPT_ALIAS, 0, strlen(def), def, DESC(desc))
+	add_opt(tree, path, capt, name, flags, OPT_ALIAS, 0, strlen(def), (longptr_T) def, DESC(desc))
 
 #define add_opt_tree_tree(tree, path, capt, name, flags, desc) \
-	add_opt(tree, path, capt, name, flags, OPT_TREE, 0, 0, init_options_tree(), DESC(desc));
+	add_opt(tree, path, capt, name, flags, OPT_TREE, 0, 0, (longptr_T) init_options_tree(), DESC(desc));
 
 
 /* Builtin options */

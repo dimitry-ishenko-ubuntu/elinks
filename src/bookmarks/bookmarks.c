@@ -12,6 +12,7 @@
 
 #include "bfu/dialog.h"
 #include "bfu/hierbox.h"
+#include "bfu/listbox.h"
 #include "bookmarks/backend/common.h"
 #include "bookmarks/bookmarks.h"
 #include "bookmarks/dialogs.h"
@@ -31,7 +32,7 @@
 #include "util/string.h"
 
 /* The list of bookmarks */
-INIT_LIST_HEAD(bookmarks);
+INIT_LIST_OF(struct bookmark, bookmarks);
 
 /* Set to 1, if bookmarks have changed. */
 static int bookmarks_dirty = 0;
@@ -53,13 +54,13 @@ static struct option_info bookmark_options_info[] = {
 		"file_format", 0, 0, 1, 0,
 		N_("File format for bookmarks (affects both reading and saving):\n"
 		"0 is the default native ELinks format\n"
-		"1 is XBEL universal XML bookmarks format (NO NATIONAL CHARS SUPPORT!)")),
+		"1 is XBEL universal XML bookmarks format (ELinks bug 153: NO NATIONAL CHARS SUPPORT!)")),
 #else
 	INIT_OPT_INT("bookmarks", N_("File format"),
 		"file_format", 0, 0, 1, 0,
 		N_("File format for bookmarks (affects both reading and saving):\n"
 		"0 is the default native ELinks format\n"
-		"1 is XBEL universal XML bookmarks format (NO NATIONAL CHARS SUPPORT!)"
+		"1 is XBEL universal XML bookmarks format (ELinks bug 153: NO NATIONAL CHARS SUPPORT!)"
 		"  (DISABLED)")),
 #endif
 
@@ -118,8 +119,6 @@ bookmark_write_hook(va_list ap, void *data)
 }
 
 
-void bookmarks_set_dirty(void);
-
 static int
 change_hook_folder_state(struct session *ses, struct option *current,
 			 struct option *changed)
@@ -136,7 +135,7 @@ change_hook_folder_state(struct session *ses, struct option *current,
 static void
 init_bookmarks(struct module *module)
 {
-	struct change_hook_info bookmarks_change_hooks[] = {
+	static const struct change_hook_info bookmarks_change_hooks[] = {
 		{ "bookmarks.folder_state", change_hook_folder_state },
 		{ NULL,			    NULL },
 	};
@@ -148,8 +147,8 @@ init_bookmarks(struct module *module)
 
 /* Clears the bookmark list */
 static void
-free_bookmarks(struct list_head *bookmarks_list,
-	       struct list_head *box_items)
+free_bookmarks(LIST_OF(struct bookmark) *bookmarks_list,
+	       LIST_OF(struct listbox_item) *box_items)
 {
 	struct bookmark *bm;
 
@@ -162,10 +161,7 @@ free_bookmarks(struct list_head *bookmarks_list,
 
 	free_list(*box_items);
 	free_list(*bookmarks_list);
-	if (bookmark_cache) {
-		free_hash(bookmark_cache);
-		bookmark_cache = NULL;
-	}
+	if (bookmark_cache) free_hash(&bookmark_cache);
 }
 
 /* Does final cleanup and saving of bookmarks */
@@ -247,7 +243,6 @@ done_bookmark(struct bookmark *bm)
 	mem_free(bm);
 }
 
-/* Deletes a bookmark. Returns 0 on failure (no such bm), 1 on success. */
 void
 delete_bookmark(struct bookmark *bm)
 {
@@ -339,7 +334,7 @@ add_bookmark_item_to_bookmarks(struct bookmark *bm, struct bookmark *root, int p
 
 	/* Hash creation if needed. */
 	if (!bookmark_cache)
-		bookmark_cache = init_hash(8, &strhash);
+		bookmark_cache = init_hash8();
 
 	/* Create a new entry. */
 	if (check_bookmark_cache(bm->url))
@@ -366,7 +361,6 @@ add_bookmark(struct bookmark *root, int place, unsigned char *title,
 		type = BI_FOLDER;
 	}
 
-	/* Setup box_item */
 	bm->box_item = add_listbox_item(&bookmark_browser,
 					root ? root->box_item : NULL,
 					type,
@@ -417,8 +411,7 @@ update_bookmark(struct bookmark *bm, unsigned char *title,
 	trigger_event(update_bookmark_event_id, bm, title2, url2);
 
 	if (title2) {
-		mem_free(bm->title);
-		bm->title = title2;
+		mem_free_set(&bm->title, title2);
 	}
 
 	if (url2) {
@@ -434,8 +427,7 @@ update_bookmark(struct bookmark *bm, unsigned char *title,
 			add_hash_item(bookmark_cache, url2, strlen(url2), bm);
 		}
 
-		mem_free(bm->url);
-		bm->url = url2;
+		mem_free_set(&bm->url, url2);
 	}
 
 	bookmarks_set_dirty();
@@ -449,7 +441,7 @@ struct bookmark *
 get_bookmark_by_name(struct bookmark *folder, unsigned char *title)
 {
 	struct bookmark *bookmark;
-	struct list_head *lh;
+	LIST_OF(struct bookmark) *lh;
 
 	lh = folder ? &folder->child : &bookmarks;
 

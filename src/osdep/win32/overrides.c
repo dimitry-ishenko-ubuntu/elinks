@@ -25,6 +25,7 @@
 #include "intl/gettext/libintl.h"
 #include "osdep/osdep.h"
 #include "osdep/win32/overrides.h"
+#include "osdep/win32/vt100.h"
 #include "osdep/win32/win32.h"
 #include "terminal/mouse.h"
 #include "terminal/terminal.h"
@@ -57,6 +58,21 @@ static const char *keymap[] = {
 	"",      /* VK_SNAPSHOT */
 	"\E[2~", /* VK_INSERT */
 	"\E[3~"  /* VK_DELETE */
+};
+
+static const char *keymap_2[] = {
+	"\E[11~", /* VK_F1 */
+	"\E[12~", /* VK_F2 */
+	"\E[13~",  /* VK_F3 */
+	"\E[14~",  /* VK_F4 */
+	"\E[15~",  /* VK_F5 */
+	"\E[17~",  /* VK_F6 */
+	"\E[18~",  /* VK_F7 */
+	"\E[19~",  /* VK_F8 */
+	"\E[20~",  /* VK_F9 */
+	"\E[21~",  /* VK_F10 */
+	"\E[23~",  /* VK_F11 */
+	"\E[24~"   /* VK_F12 */
 };
 
 #define TRACE(m...)					\
@@ -100,11 +116,15 @@ console_key_read(const KEY_EVENT_RECORD *ker, char *buf, int max)
 	}
 
 	vkey = ker->wVirtualKeyCode;
-	if (vkey < VK_PRIOR || vkey > VK_DELETE)
-		return 0;
-
-	strncpy(buf, keymap[vkey-VK_PRIOR], max);
-
+	if (vkey >= VK_PRIOR && vkey <= VK_DELETE) {
+		strncpy(buf, keymap[vkey - VK_PRIOR], max);
+	} else {
+		if (vkey >= VK_F1 && vkey <= VK_F12) {
+			strncpy(buf, keymap_2[vkey - VK_F1], max);
+		} else {
+			return 0;
+		}
+	}
 	return strlen(buf);
 }
 
@@ -209,9 +229,11 @@ win32_write(int fd, const void *buf, unsigned len)
 
 	case FDT_TERMINAL:
 		if (isatty(STDOUT_FILENO) > 0) {
-			/* TODO: pass to VT100 decoder */
+#if 0
 			WriteConsole ((HANDLE) fd, buf, len, &written, NULL);
 			rc = written;
+#endif
+			rc = VT100_decode((HANDLE) fd, buf, len);
 		} else {
 			/* stdout redirected */
 			rc = write(STDOUT_FILENO, buf, len);
@@ -562,9 +584,8 @@ select_one_loop(int num_fds, struct fd_set *rd, struct fd_set *wr,
 			}
 
 		} else if (fd < SOCK_SHIFT) {
-			if (FD_ISSET(fd,rd))
-				rc += select_read(fd, rd);
-			if (FD_ISSET(fd,wr))
+			rc += select_read(fd, rd);
+			if (wr && FD_ISSET(fd,wr))
 				rc++;   /* assume always writable */
 
 		} else {
@@ -588,12 +609,14 @@ select_one_loop(int num_fds, struct fd_set *rd, struct fd_set *wr,
 				errno = WSAGetLastError();
 			}
 
-			sel_rc = select(fd + 1, NULL, &sock_wr, NULL, &tv);
-			if (sel_rc > 0) {
-				FD_SET (fd, wr);
-				rc++;
-			} else if (sel_rc < 0) {
-				errno = WSAGetLastError();
+			if (wr) {
+				sel_rc = select(fd + 1, NULL, &sock_wr, NULL, &tv);
+				if (sel_rc > 0) {
+					FD_SET (fd, wr);
+					rc++;
+				} else if (sel_rc < 0) {
+					errno = WSAGetLastError();
+				}
 			}
 
 			sel_rc = select(fd + 1, NULL, NULL, &sock_ex, &tv);
@@ -612,7 +635,7 @@ select_one_loop(int num_fds, struct fd_set *rd, struct fd_set *wr,
 int win32_select (int num_fds, struct fd_set *rd, struct fd_set *wr,
 		struct fd_set *ex, struct timeval *tv)
 {
-	struct fd_set tmp_rd, tmp_wr, tmp_ex;
+	struct fd_set tmp_rd, tmp_ex;
 	struct timeval expiry, start_time;
 	int    fd, rc;
 	BOOL   expired = FALSE;
@@ -625,7 +648,6 @@ int win32_select (int num_fds, struct fd_set *rd, struct fd_set *wr,
 		select_dump(num_fds, rd, wr, ex);
 
 	FD_ZERO(&tmp_rd);
-	FD_ZERO(&tmp_wr);
 	FD_ZERO(&tmp_ex);
 
 	if (tv) {
@@ -644,7 +666,7 @@ int win32_select (int num_fds, struct fd_set *rd, struct fd_set *wr,
 	errno = 0;
 
 	for (rc = 0; !expired; ) {
-		rc += select_one_loop (num_fds, &tmp_rd, &tmp_wr, &tmp_ex);
+		rc += select_one_loop (num_fds, &tmp_rd, wr, &tmp_ex);
 
 		if (tv) {
 			struct timeval now;
@@ -659,18 +681,16 @@ int win32_select (int num_fds, struct fd_set *rd, struct fd_set *wr,
 		if (rc) break;
 	}
 
-	/* Copy fd_sets to output */
-	if (rd) FD_ZERO(rd);
-	if (wr) FD_ZERO(wr);
-	if (ex) FD_ZERO(ex);
-
+	rc = 0;
 	for (fd = 0; fd < num_fds; fd++) {
-		if (rd && FD_ISSET(fd,&tmp_rd))
-			FD_SET (fd, rd);
-		if (wr && FD_ISSET(fd,&tmp_wr))
-			FD_SET (fd, wr);
-		if (ex && FD_ISSET(fd,&tmp_ex))
-			FD_SET (fd, ex);
+		if (rd && FD_ISSET(fd, rd) && !FD_ISSET(fd, &tmp_rd))
+			FD_CLR(fd, rd);
+		else rc++;
+		if (wr && FD_ISSET(fd, wr)) rc++;
+		/* wr always set */
+		if (ex && FD_ISSET(fd, ex) && !FD_ISSET(fd, &tmp_ex))
+			FD_CLR(fd, ex);
+		else rc++;
 	}
 
 	TRACE("-> rc %d, err %d", rc, rc < 0 ? errno : 0);

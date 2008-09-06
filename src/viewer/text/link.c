@@ -11,6 +11,7 @@
 
 #include "bfu/listmenu.h"
 #include "bfu/menu.h"
+#include "bfu/style.h"
 #include "dialogs/menu.h"
 #include "dialogs/status.h"
 #include "document/document.h"
@@ -31,6 +32,7 @@
 #include "terminal/screen.h"
 #include "terminal/tab.h"
 #include "terminal/terminal.h"
+#include "util/box.h"
 #include "util/conv.h"
 #include "util/error.h"
 #include "util/memory.h"
@@ -63,12 +65,18 @@ current_link_evhook(struct document_view *doc_view, enum script_event_hook_type 
 	if (!doc_view->vs->ecmascript) return -1;
 
 	foreach (evhook, *link->event_hooks) {
-		struct string src = INIT_STRING(evhook->src, strlen(evhook->src));
+		unsigned char *ret;
 
 		if (evhook->type != type) continue;
-		/* TODO: Some even handlers return a bool. */
-		if (!ecmascript_eval_boolback(doc_view->vs->ecmascript, &src))
-			return 0;
+		ret = evhook->src;
+		while ((ret = strstr(ret, "return ")))
+			while (*ret != ' ') *ret++ = ' ';
+		{
+			struct string src = INIT_STRING(evhook->src, strlen(evhook->src));
+			/* TODO: Some even handlers return a bool. */
+			if (!ecmascript_eval_boolback(doc_view->vs->ecmascript, &src))
+				return 0;
+		}
 	}
 
 	return 1;
@@ -106,6 +114,11 @@ get_link_cursor_offset(struct document_view *doc_view, struct link *link)
 {
 	struct form_control *fc;
 	struct form_state *fs;
+#ifdef CONFIG_UTF8
+	/* The encoding of form fields depends on the terminal,
+	 * rather than on the document.  */
+	int utf8 = doc_view->session->tab->term->utf8_cp;
+#endif /* CONFIG_UTF8 */
 
 	switch (link->type) {
 		case LINK_CHECKBOX:
@@ -117,12 +130,30 @@ get_link_cursor_offset(struct document_view *doc_view, struct link *link)
 		case LINK_FIELD:
 			fc = get_link_form_control(link);
 			fs = find_form_state(doc_view, fc);
-			return fs ? fs->state - fs->vpos : 0;
+			if (!fs || !fs->value)
+				return 0;
+#ifdef CONFIG_UTF8
+			else if (utf8) {
+				unsigned char *scroll = fs->value + fs->vpos;
+				unsigned char *point = fs->value + fs->state;
+
+				if (fs->type == FC_PASSWORD)
+					return utf8_ptr2chars(scroll, point);
+				else
+					return utf8_ptr2cells(scroll, point);
+			}
+#endif /* CONFIG_UTF8 */
+			else
+				return fs->state - fs->vpos;
 
 		case LINK_AREA:
 			fc = get_link_form_control(link);
 			fs = find_form_state(doc_view, fc);
+#ifdef CONFIG_UTF8
+			return fs ? area_cursor(fc, fs, utf8) : 0;
+#else
 			return fs ? area_cursor(fc, fs) : 0;
+#endif /* CONFIG_UTF8 */
 
 		case LINK_HYPERTEXT:
 		case LINK_MAP:
@@ -133,29 +164,18 @@ get_link_cursor_offset(struct document_view *doc_view, struct link *link)
 	return 0;
 }
 
-/* Allocate doc_view->link_bg with enough space to save the colour
- * and attributes of each point of the given link plus one byte
- * for the template character. Initialise that template character
- * with the colour and attributes appropriate for an active link. */
+/** Initialise a static template character with the colour and attributes
+ * appropriate for an active link and return that character. */
 static inline struct screen_char *
 init_link_drawing(struct document_view *doc_view, struct link *link, int invert)
 {
 	struct document_options *doc_opts;
-	struct screen_char *template;
+	static struct screen_char template;
 	enum color_flags color_flags;
 	enum color_mode color_mode;
 	struct color_pair colors;
 
-	/* Allocate an extra background char to work on here. */
-	doc_view->link_bg = mem_alloc((1 + link->npoints) * sizeof(*doc_view->link_bg));
-	if (!doc_view->link_bg) return NULL;
-
-	doc_view->link_bg_n = link->npoints;
-
-	/* Setup the template char. */
-	template = &doc_view->link_bg[link->npoints].c;
-
-	template->attr = SCREEN_ATTR_STANDOUT;
+	template.attr = SCREEN_ATTR_STANDOUT;
 
 	doc_opts = &doc_view->document->options;
 
@@ -163,10 +183,10 @@ init_link_drawing(struct document_view *doc_view, struct link *link, int invert)
 	color_mode = doc_opts->color_mode;
 
 	if (doc_opts->active_link.underline)
-		template->attr |= SCREEN_ATTR_UNDERLINE;
+		template.attr |= SCREEN_ATTR_UNDERLINE;
 
 	if (doc_opts->active_link.bold)
-		template->attr |= SCREEN_ATTR_BOLD;
+		template.attr |= SCREEN_ATTR_BOLD;
 
 	if (doc_opts->active_link.color) {
 		colors.foreground = doc_opts->active_link.fg;
@@ -199,13 +219,12 @@ init_link_drawing(struct document_view *doc_view, struct link *link, int invert)
 		}
 	}
 
-	set_term_color(template, &colors, color_flags, color_mode);
+	set_term_color(&template, &colors, color_flags, color_mode);
 
-	return template;
+	return &template;
 }
 
-/* Save the current link's colours and attributes to doc_view->link_bg
- * and give it the appropriate colour and attributes for an active link. */
+/** Give the current link the appropriate colour and attributes. */
 void
 draw_current_link(struct session *ses, struct document_view *doc_view)
 {
@@ -221,9 +240,6 @@ draw_current_link(struct session *ses, struct document_view *doc_view)
 
 	assert(ses->tab == get_current_tab(term));
 	if_assert_failed return;
-
-	assertm(!doc_view->link_bg, "link background not empty");
-	if_assert_failed mem_free(doc_view->link_bg);
 
 	link = get_current_link(doc_view);
 	if (!link) return;
@@ -250,16 +266,10 @@ draw_current_link(struct session *ses, struct document_view *doc_view)
 		struct screen_char *co;
 
 		if (!is_in_box(&doc_view->box, x, y)) {
-			doc_view->link_bg[i].x = -1;
-			doc_view->link_bg[i].y = -1;
 			continue;
 		}
 
-		doc_view->link_bg[i].x = x;
-		doc_view->link_bg[i].y = y;
-
 		co = get_char(term, x, y);
-		copy_screen_chars(&doc_view->link_bg[i].c, co, 1);
 
 		if (i == cursor_offset) {
 			int blockable = (!link_is_textinput(link)
@@ -273,44 +283,75 @@ draw_current_link(struct session *ses, struct document_view *doc_view)
  		copy_screen_chars(co, template, 1);
 		set_screen_dirty(term->screen, y, y);
 	}
+
+	doc_view->vs->old_current_link = doc_view->vs->current_link;
 }
 
-void
-free_link(struct document_view *doc_view)
+static void
+draw_link(struct terminal *term, struct document_view *doc_view,
+          struct link *link)
 {
-	assert(doc_view);
-	if_assert_failed return;
+	int xpos = doc_view->box.x - doc_view->vs->x;
+	int ypos = doc_view->box.y - doc_view->vs->y;
+	int i;
 
-	mem_free_set(&doc_view->link_bg, NULL);
-	doc_view->link_bg_n = 0;
+	for (i = 0; i < link->npoints; ++i) {
+		int x = link->points[i].x;
+		int y = link->points[i].y;
+
+		if (is_in_box(&doc_view->box, x + xpos, y + ypos)){
+			struct screen_char *ch;
+
+			ch = get_char(term, x + xpos, y + ypos);
+			copy_struct(ch, &doc_view->document->data[y].chars[x]);
+			set_screen_dirty(term->screen, y + ypos, y + ypos);
+		}
+	}
 }
 
-/* Restore the colours and attributes that the active link had
+/** Restore the colours and attributes that the active link had
  * before it was selected. */
 void
 clear_link(struct terminal *term, struct document_view *doc_view)
 {
-	assert(term && doc_view);
-	if_assert_failed return;
+	struct link *link = get_current_link(doc_view);
+	struct link *last = get_old_current_link(doc_view);
 
-	if (doc_view->link_bg) {
-		struct link_bg *link_bg = doc_view->link_bg;
-		int i;
+	if (last && last != link) {
+		draw_link(term, doc_view, last);
+	}
 
-		for (i = doc_view->link_bg_n - 1; i >= 0; i--) {
-			struct link_bg *bgchar = &link_bg[i];
+	doc_view->vs->old_current_link = doc_view->vs->current_link;
+}
 
-			if (bgchar->x != -1 && bgchar->y != -1) {
-				struct terminal_screen *screen = term->screen;
-				struct screen_char *co;
+void
+highlight_links_with_prefixes_that_start_with_n(struct terminal *term,
+                                                struct document_view *doc_view,
+                                                int n)
+{
+	struct color_pair *color = get_bfu_color(term, "searched");
+	int xoffset = doc_view->box.x - doc_view->vs->x;
+	int yoffset = doc_view->box.y - doc_view->vs->y;
+	struct document *document = doc_view->document;
+	int m;
 
-				co = get_char(term, bgchar->x, bgchar->y);
-				copy_screen_chars(co, &bgchar->c, 1);
-				set_screen_dirty(screen, bgchar->y, bgchar->y);
+	for (m = n + 1; n <= document->nlinks; n *= 10, m *= 10) {
+		int linkn;
+
+		for (linkn = n; linkn < m; ++linkn) {
+			struct link *link = &document->links[linkn - 1];
+			int i;
+
+			if (linkn > document->nlinks) break;
+
+			for (i = 0; i < link->npoints; ++i) {
+				int x = link->points[i].x + xoffset;
+				int y = link->points[i].y + yoffset;
+
+				if (is_in_box(&doc_view->box, x, y))
+					draw_char_color(term, x, y, color);
 			}
 		}
-
-		free_link(doc_view);
 	}
 }
 
@@ -431,7 +472,7 @@ current_link_is_visible(struct document_view *doc_view)
 	return (link && link_in_view(doc_view, link));
 }
 
-/* Look for the first and the last link currently visible in our
+/** Look for the first and the last link currently visible in our
  * viewport. */
 static void
 get_visible_links_range(struct document_view *doc_view, int *first, int *last)
@@ -502,8 +543,9 @@ next_link_in_view_y(struct document_view *doc_view, int current, int direction)
 	return next_link_in_view_(doc_view, current, direction, link_in_view_y, set_pos_x);
 }
 
-/* Get the bounding columns of @link at line @y (or all lines if @y == -1). */
-static void
+/** Get the bounding columns of @a link at line @a y (or all lines if
+ * @a y == -1). */
+void
 get_link_x_bounds(struct link *link, int y, int *min_x, int *max_x)
 {
 	int point;
@@ -519,8 +561,8 @@ get_link_x_bounds(struct link *link, int y, int *min_x, int *max_x)
 	}
 }
 
-/* Check whether there is any point between @min_x and @max_x at the line @y
- * in link @link. */
+/** Check whether there is any point between @a min_x and @a max_x at
+ * the line @a y in link @a link. */
 static int
 get_link_x_intersect(struct link *link, int y, int min_x, int max_x)
 {
@@ -537,8 +579,8 @@ get_link_x_intersect(struct link *link, int y, int min_x, int max_x)
 	return 0;
 }
 
-/* Check whether there is any point between @min_y and @max_y in the column @x
- * in link @link. */
+/** Check whether there is any point between @a min_y and @a max_y in
+ * the column @a x in link @a link. */
 static int
 get_link_y_intersect(struct link *link, int x, int min_y, int max_y)
 {
@@ -736,8 +778,9 @@ set_pos_y(struct document_view *doc_view, struct link *link)
 		   doc_view->document->height - doc_view->box.height);
 }
 
-/* direction == 1 -> DOWN
- * direction == -1 -> UP */
+/** Focus the next link in the specified direction.
+ * @a direction == 1 -> DOWN;
+ * @a direction == -1 -> UP */
 static void
 find_link(struct document_view *doc_view, int direction, int page_mode)
 {
@@ -854,6 +897,54 @@ get_link_uri(struct session *ses, struct document_view *doc_view,
 	}
 }
 
+static int
+call_onsubmit_and_submit(struct session *ses, struct document_view *doc_view,
+			 struct form_control *fc, int do_reload)
+{
+	struct uri *uri = NULL;
+	enum cache_mode mode = do_reload ? CACHE_MODE_FORCE_RELOAD : CACHE_MODE_NORMAL;
+
+	assert(fc->form); /* regardless of whether there is a FORM element */
+	if_assert_failed return 0;
+
+#ifdef CONFIG_ECMASCRIPT
+	/* If the form has multiple submit buttons, this does not
+	 * explicitly tell the ECMAScript code which of them was
+	 * pressed.  W3C DOM Level 3 doesn't seem to include such a
+	 * feature.  */
+	if (fc->form->onsubmit) {
+		struct string code;
+
+		if (init_string(&code)) {
+			struct view_state *vs = doc_view->vs;
+			struct ecmascript_interpreter *interpreter;
+			int res;
+
+			if (vs->ecmascript_fragile)
+				ecmascript_reset_state(vs);
+			interpreter = vs->ecmascript;
+			assert(interpreter);
+
+			add_to_string(&code, fc->form->onsubmit);
+			res = ecmascript_eval_boolback(interpreter, &code);
+			done_string(&code);
+			/* If the user presses Enter in a text field,
+			 * and document.browse.forms.auto_submit is
+			 * true, and the form has an onsubmit script
+			 * that returns false, then insert mode should
+			 * end, so return 1 here rather than 0. */
+			if (!res) return 1;
+		}
+	}
+#endif	/* CONFIG_ECMASCRIPT */
+
+	uri = get_form_uri(ses, doc_view, fc);
+	if (!uri) return 0;
+	goto_uri_frame(ses, uri, fc->form->target, mode);
+	done_uri(uri);
+	return 1;
+}
+
 struct link *
 goto_current_link(struct session *ses, struct document_view *doc_view, int do_reload)
 {
@@ -866,9 +957,14 @@ goto_current_link(struct session *ses, struct document_view *doc_view, int do_re
 	link = get_current_link(doc_view);
 	if (!link) return NULL;
 
-	if (link_is_form(link))
-		uri = get_form_uri(ses, doc_view, get_link_form_control(link));
-	else
+	if (link_is_form(link)) {
+		struct form_control *fc = link->data.form_control;
+
+		if (!call_onsubmit_and_submit(ses, doc_view, fc, do_reload))
+			return NULL;
+		else
+			return link;
+	} else
 		uri = get_link_uri(ses, doc_view, link);
 
 	if (!uri) return NULL;
@@ -904,7 +1000,6 @@ activate_link(struct session *ses, struct document_view *doc_view,
 	case LINK_BUTTON:
 		if (goto_current_link(ses, doc_view, do_reload))
 			return FRAME_EVENT_OK;
-
 		break;
 	case LINK_CHECKBOX:
 		link_fc = get_link_form_control(link);
@@ -985,6 +1080,11 @@ enter(struct session *ses, struct document_view *doc_view, int do_reload)
 	return activate_link(ses, doc_view, link, do_reload);
 }
 
+/** Get the link at the coordinates @a x and @a y, or NULL if none.
+ * The coordinates are relative to the document view; not to the
+ * terminal, nor to the document.  So (0, 0) means whatever part of
+ * the document has been scrolled to the top left corner of the
+ * document view.  */
 struct link *
 get_link_at_coordinates(struct document_view *doc_view, int x, int y)
 {
@@ -1036,7 +1136,7 @@ get_link_at_coordinates(struct document_view *doc_view, int x, int y)
 	return NULL;
 }
 
-/* This is backend of the backend goto_link_number_do() below ;)). */
+/** This is backend of the backend goto_link_number_do() below ;)). */
 void
 jump_to_link_number(struct session *ses, struct document_view *doc_view, int n)
 {
@@ -1063,7 +1163,7 @@ jump_to_link_number(struct session *ses, struct document_view *doc_view, int n)
 	current_link_hover(doc_view);
 }
 
-/* This is common backend for goto_link_number() and try_document_key(). */
+/** This is common backend for goto_link_number() and try_document_key(). */
 static void
 goto_link_number_do(struct session *ses, struct document_view *doc_view, int n)
 {
@@ -1093,31 +1193,44 @@ goto_link_number(struct session *ses, unsigned char *num)
 	goto_link_number_do(ses, doc_view, atoi(num) - 1);
 }
 
-/* See if this document is interested in the key user pressed. */
+/** See if this document is interested in the key user pressed. */
 enum frame_event_status
 try_document_key(struct session *ses, struct document_view *doc_view,
 		 struct term_event *ev)
 {
-	long key;
+	unicode_val_T key;
 	int i; /* GOD I HATE C! --FF */ /* YEAH, BRAINFUCK RULEZ! --pasky */
 
 	assert(ses && doc_view && doc_view->document && doc_view->vs && ev);
 	if_assert_failed return FRAME_EVENT_IGNORED;
 
-	if (!check_kbd_modifier(ev, KBD_MOD_ALT)) {
-		/* We accept those only in alt-combo. */
+	if (!check_kbd_modifier(ev, KBD_MOD_ALT)
+	    || !is_kbd_character(get_kbd_key(ev))) {
+		/* We accept only alt-character combos. */
 		return FRAME_EVENT_IGNORED;
 	}
 
+	/* The key is a character.  Convert it to Unicode so that it
+	 * can be compared with link.accesskey.  */
+#ifdef CONFIG_UTF8
+	key = get_kbd_key(ev);
+#else  /* !CONFIG_UTF8 */
+	key = cp2u(get_opt_codepage_tree(ses->tab->term->spec,
+					 "charset"),
+		   get_kbd_key(ev));
+#endif /* !CONFIG_UTF8 */
+	/* If @key now is 0 (which is used in link.accesskey if there
+	 * is no access key) or UCS_REPLACEMENT_CHARACTER, then the
+	 * results may be a little odd, but not really harmful.  */
+
 	/* Run through all the links and see if one of them is bound to the
 	 * key we test.. */
-	key = get_kbd_key(ev);
 
 	i = doc_view->vs->current_link + 1;
 	for (; i < doc_view->document->nlinks; i++) {
 		struct link *link = &doc_view->document->links[i];
 
-		if (key == link->accesskey) {	/* FIXME: key vs unicode ... */
+		if (key == link->accesskey) {
 			ses->kbdprefix.repeat_count = 0;
 			goto_link_number_do(ses, doc_view, i);
 			return FRAME_EVENT_REFRESH;
@@ -1126,7 +1239,7 @@ try_document_key(struct session *ses, struct document_view *doc_view,
 	for (i = 0; i <= doc_view->vs->current_link; i++) {
 		struct link *link = &doc_view->document->links[i];
 
-		if (key == link->accesskey) {	/* FIXME: key vs unicode ... */
+		if (key == link->accesskey) {
 			ses->kbdprefix.repeat_count = 0;
 			goto_link_number_do(ses, doc_view, i);
 			return FRAME_EVENT_REFRESH;
@@ -1136,8 +1249,8 @@ try_document_key(struct session *ses, struct document_view *doc_view,
 	return FRAME_EVENT_IGNORED;
 }
 
-/* Open a contextual menu on a link, form or image element. */
-/* TODO: This should be completely configurable. */
+/** Open a contextual menu on a link, form or image element.
+ * @todo TODO: This should be completely configurable. */
 void
 link_menu(struct terminal *term, void *xxx, void *ses_)
 {
@@ -1163,9 +1276,12 @@ link_menu(struct terminal *term, void *xxx, void *ses_)
 
 	if (link->where && !link_is_form(link)) {
 		if (link->type == LINK_MAP) {
+			/* [gettext_accelerator_context(link_menu.map)] */
 			add_to_menu(&mi, N_("Display ~usemap"), NULL, ACT_MAIN_LINK_FOLLOW,
 				    NULL, NULL, SUBMENU);
+			/* [gettext_accelerator_context()] */
 		} else {
+			/* [gettext_accelerator_context(link_menu.std)] */
 			add_menu_action(&mi, N_("~Follow link"), ACT_MAIN_LINK_FOLLOW);
 
 			add_menu_action(&mi, N_("Follow link and r~eload"), ACT_MAIN_LINK_FOLLOW_RELOAD);
@@ -1187,8 +1303,10 @@ link_menu(struct terminal *term, void *xxx, void *ses_)
 				add_menu_action(&mi, N_("~Add link to bookmarks"),
 						ACT_MAIN_ADD_BOOKMARK_LINK);
 #endif
-				add_uri_command_to_menu(&mi, PASS_URI_LINK);
+				add_uri_command_to_menu(&mi, PASS_URI_LINK,
+							N_("Pass link URI to e~xternal command"));
 			}
+			/* [gettext_accelerator_context()] */
 		}
 	}
 
@@ -1196,10 +1314,13 @@ link_menu(struct terminal *term, void *xxx, void *ses_)
 	if (fc) {
 		switch (fc->type) {
 		case FC_RESET:
+			/* [gettext_accelerator_context(link_menu.reset)] */
 			add_menu_action(&mi, N_("~Reset form"), ACT_MAIN_RESET_FORM);
+			/* [gettext_accelerator_context()] */
 			break;
 
 		case FC_TEXTAREA:
+			/* [gettext_accelerator_context(link_menu.textarea)] */
 			if (!form_field_is_readonly(fc)) {
 				struct string keystroke;
 
@@ -1213,8 +1334,10 @@ link_menu(struct terminal *term, void *xxx, void *ses_)
 					    keystroke.source, ACT_MAIN_NONE,
 					    menu_textarea_edit, NULL, FREE_RTEXT);
 			}
+			/* [gettext_accelerator_context()] */
 			/* Fall through */
 		default:
+			/* [gettext_accelerator_context(link_menu.textarea, link_menu.form)] */
 			add_menu_action(&mi, N_("~Submit form"), ACT_MAIN_SUBMIT_FORM);
 			add_menu_action(&mi, N_("Submit form and rel~oad"), ACT_MAIN_SUBMIT_FORM_RELOAD);
 
@@ -1233,20 +1356,25 @@ link_menu(struct terminal *term, void *xxx, void *ses_)
 				add_menu_action(&mi, N_("Submit form and ~download"), ACT_MAIN_LINK_DOWNLOAD);
 
 			add_menu_action(&mi, N_("~Reset form"), ACT_MAIN_RESET_FORM);
+			/* [gettext_accelerator_context()] */
 		}
 
+		/* [gettext_accelerator_context(link_menu.reset, link_menu.textarea, link_menu.form)] */
 		add_to_menu(&mi, N_("Form f~ields"), NULL, ACT_MAIN_LINK_FORM_MENU,
 			    NULL, NULL, SUBMENU);
+		/* [gettext_accelerator_context()] */
 	}
 
 	if (link->where_img) {
+		/* [gettext_accelerator_context(link_menu.map, link_menu.std, link_menu.form)] */
 		add_menu_action(&mi, N_("V~iew image"), ACT_MAIN_VIEW_IMAGE);
 		if (!get_cmd_opt_bool("anonymous"))
 			add_menu_action(&mi, N_("Download ima~ge"), ACT_MAIN_LINK_DOWNLOAD_IMAGE);
+		/* [gettext_accelerator_context()] */
 	}
 
-	/* TODO: Make it possible to trigger any script event hooks associated
-	 * to the link. --pasky */
+	/** @todo TODO: Make it possible to trigger any script event
+	 * hooks associated to the link. --pasky */
 
 end:
 	if (!mi->text) {
@@ -1257,7 +1385,7 @@ end:
 	do_menu(term, mi, ses, 1);
 }
 
-/* Return current link's title. Pretty trivial. */
+/** Return current link's title. */
 unsigned char *
 get_current_link_title(struct document_view *doc_view)
 {
@@ -1271,7 +1399,29 @@ get_current_link_title(struct document_view *doc_view)
 
 	link = get_current_link(doc_view);
 
-	return (link && link->title && *link->title) ? stracpy(link->title) : NULL;
+	if (link && link->title && *link->title) {
+		unsigned char *link_title, *src;
+		struct conv_table *convert_table;
+
+		convert_table = get_translation_table(doc_view->document->cp,
+						      doc_view->document->options.cp);
+
+		link_title = convert_string(convert_table, link->title,
+					    strlen(link->title),
+					    doc_view->document->options.cp,
+					    CSM_DEFAULT, NULL, NULL, NULL);
+		/* Remove illicit chars. */
+#ifdef CONFIG_UTF8
+		if (link_title && !doc_view->document->options.utf8)
+#endif /* CONFIG_UTF8 */
+			for (src = link_title; *src; src++)
+				if (!isprint(*src) || iscntrl(*src))
+					*src = '*';
+
+		return link_title;
+	}
+
+	return NULL;
 }
 
 unsigned char *
@@ -1288,7 +1438,7 @@ get_current_link_info(struct session *ses, struct document_view *doc_view)
 	link = get_current_link(doc_view);
 	if (!link) return NULL;
 
-	/* TODO: Provide info about script event hooks too. --pasky */
+	/** @todo TODO: Provide info about script event hooks too. --pasky */
 
 	if (!link_is_form(link)) {
 		struct terminal *term = ses->tab->term;
@@ -1316,7 +1466,12 @@ get_current_link_info(struct session *ses, struct document_view *doc_view)
 			add_char_to_string(&str, ')');
 		}
 
-		decode_uri_string_for_display(&str);
+#ifdef CONFIG_UTF8
+		if (term->utf8_cp)
+			decode_uri_string(&str);
+		else
+#endif /* CONFIG_UTF8 */
+			decode_uri_string_for_display(&str);
 		return str.source;
 	}
 

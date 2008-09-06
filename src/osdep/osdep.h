@@ -7,6 +7,14 @@
 #include "osdep/unix/unix.h"
 #include "osdep/win32/win32.h"
 
+#ifndef CHAR_DIR_SEP
+#define CHAR_DIR_SEP '/'
+#endif
+
+#ifndef STRING_DIR_SEP
+#define STRING_DIR_SEP "/"
+#endif
+
 int get_system_env(void);
 int get_e(unsigned char *env);
 int is_xterm(void);
@@ -66,5 +74,9 @@ unsigned char *get_shell(void);
  * thus we fix it right away. We can also emulate cfmakeraw() if it is not
  * available at all. Face it, we are just cool. */
 void elinks_cfmakeraw(struct termios *t);
+
+#ifndef user_appdata_directory
+#define user_appdata_directory() NULL
+#endif
 
 #endif

@@ -51,7 +51,7 @@
 
 static int cookies_nosave = 0;
 
-static INIT_LIST_HEAD(cookies);
+static INIT_LIST_OF(struct cookie, cookies);
 
 struct c_domain {
 	LIST_HEAD(struct c_domain);
@@ -59,9 +59,15 @@ struct c_domain {
 	unsigned char domain[1]; /* Must be at end of struct. */
 };
 
-static INIT_LIST_HEAD(c_domains);
+/* List of domains for which there may be cookies.  This supposedly
+ * speeds up @send_cookies for other domains.  Each element is a
+ * struct c_domain.  No other data structures have pointers to these
+ * objects.  Currently the domains remain in the list until
+ * @done_cookies clears the whole list.  */
+static INIT_LIST_OF(struct c_domain, c_domains);
 
-static INIT_LIST_HEAD(cookie_servers);
+/* List of servers for which there are cookies.  */
+static INIT_LIST_OF(struct cookie_server, cookie_servers);
 
 /* Only @set_cookies_dirty may make this nonzero.  */
 static int cookies_dirty = 0;
@@ -127,7 +133,7 @@ static struct option_info cookies_options[] = {
 #define get_cookies_save()		get_opt_cookies(COOKIES_SAVE).number
 #define get_cookies_resave()		get_opt_cookies(COOKIES_RESAVE).number
 
-static struct cookie_server *
+struct cookie_server *
 get_cookie_server(unsigned char *host, int hostlen)
 {
 	struct cookie_server *sort_spot = NULL;
@@ -286,10 +292,50 @@ is_domain_security_ok(unsigned char *domain, unsigned char *server, int server_l
 	return 1;
 }
 
+/* Allocate a struct cookie and initialize it with the specified
+ * values (rather than copies).  Returns NULL on error.  On success,
+ * the cookie is basically safe for @done_cookie or @accept_cookie,
+ * although you may also want to set the remaining members and check
+ * @get_cookies_accept_policy and @is_domain_security_ok.
+ *
+ * The unsigned char * arguments must be allocated with @mem_alloc or
+ * equivalent, because @done_cookie will @mem_free them.  Likewise,
+ * the caller must already have locked @server.  If @init_cookie
+ * fails, then it frees the strings itself, and unlocks @server.
+ *
+ * If any parameter is NULL, then @init_cookie fails and does not
+ * consider that a bug.  This means callers can use e.g. @stracpy
+ * and let @init_cookie check whether the call ran out of memory.  */
+struct cookie *
+init_cookie(unsigned char *name, unsigned char *value,
+	    unsigned char *path, unsigned char *domain,
+	    struct cookie_server *server)
+{
+	struct cookie *cookie = mem_calloc(1, sizeof(*cookie));
+	if (!cookie || !name || !value || !path || !domain || !server) {
+		mem_free_if(cookie);
+		mem_free_if(name);
+		mem_free_if(value);
+		mem_free_if(path);
+		mem_free_if(domain);
+		done_cookie_server(server);
+		return NULL;
+	}
+	object_nolock(cookie, "cookie"); /* Debugging purpose. */
+
+	cookie->name = name;
+	cookie->value = value;
+	cookie->domain = domain;
+	cookie->path = path;
+	cookie->server = server; /* the caller already locked it for us */
+
+	return cookie;
+}
+
 void
 set_cookie(struct uri *uri, unsigned char *str)
 {
-	unsigned char *secure, *path;
+	unsigned char *path, *domain;
 	struct cookie *cookie;
 	struct cookie_str cstr;
 	int max_age;
@@ -303,27 +349,47 @@ set_cookie(struct uri *uri, unsigned char *str)
 
 	if (!parse_cookie_str(&cstr, str)) return;
 
-	cookie = mem_calloc(1, sizeof(*cookie));
-	if (!cookie) return;
+	switch (parse_header_param(str, "path", &path)) {
+		unsigned char *path_end;
 
-	object_nolock(cookie, "cookie"); /* Debugging purpose. */
+	case HEADER_PARAM_FOUND:
+		if (!path[0]
+		    || path[strlen(path) - 1] != '/')
+			add_to_strn(&path, "/");
 
-	/* Fill main fields */
+		if (path[0] != '/') {
+			add_to_strn(&path, "x");
+			memmove(path + 1, path, strlen(path) - 1);
+			path[0] = '/';
+		}
+		break;
 
-	cookie->name = memacpy(str, cstr.nam_end - str);
-	cookie->value = memacpy(cstr.val_start, cstr.val_end - cstr.val_start);
-	cookie->server = get_cookie_server(uri->host, uri->hostlen);
-	cookie->domain = parse_header_param(str, "domain");
-	if (!cookie->domain) cookie->domain = memacpy(uri->host, uri->hostlen);
+	case HEADER_PARAM_NOT_FOUND:
+		path = get_uri_string(uri, URI_PATH);
+		if (!path)
+			return;
 
-	/* Now check that all is well */
-	if (!cookie->domain
-	    || !cookie->name
-	    || !cookie->value
-	    || !cookie->server) {
-		done_cookie(cookie);
+		path_end = strrchr(path, '/');
+		if (path_end)
+			path_end[1] = '\0';
+		break;
+
+	default: /* error */
 		return;
 	}
+
+	if (parse_header_param(str, "domain", &domain) == HEADER_PARAM_NOT_FOUND)
+		domain = memacpy(uri->host, uri->hostlen);
+	if (domain && domain[0] == '.')
+		memmove(domain, domain + 1, strlen(domain));
+
+	cookie = init_cookie(memacpy(str, cstr.nam_end - str),
+			     memacpy(cstr.val_start, cstr.val_end - cstr.val_start),
+			     path,
+			     domain,
+			     get_cookie_server(uri->host, uri->hostlen));
+	if (!cookie) return;
+	/* @cookie now owns @path and @domain.  */
 
 #if 0
 	/* We don't actually set ->accept at the moment. But I have kept it
@@ -352,16 +418,18 @@ set_cookie(struct uri *uri, unsigned char *str)
 
 	max_age = get_cookies_max_age();
 	if (max_age) {
-		unsigned char *date = parse_header_param(str, "expires");
+		unsigned char *date;
+		time_t expires;
 
-		if (date) {
-			time_t expires = parse_date(&date, NULL, 0, 1); /* Convert date to seconds. */
+		switch (parse_header_param(str, "expires", &date)) {
+		case HEADER_PARAM_FOUND:
+			expires = parse_date(&date, NULL, 0, 1); /* Convert date to seconds. */
 
 			mem_free(date);
 
 			if (expires) {
 				if (max_age > 0) {
-					int seconds = max_age*24*3600;
+					time_t seconds = ((time_t) max_age)*24*3600;
 					time_t deadline = time(NULL) + seconds;
 
 					if (expires > deadline) /* Over-aged cookie ? */
@@ -370,57 +438,26 @@ set_cookie(struct uri *uri, unsigned char *str)
 
 				cookie->expires = expires;
 			}
-		}
-	}
+			break;
 
-	path = parse_header_param(str, "path");
-	if (!path) {
-		unsigned char *path_end;
+		case HEADER_PARAM_NOT_FOUND:
+			break;
 
-		path = get_uri_string(uri, URI_PATH);
-		if (!path) {
+		default: /* error */
 			done_cookie(cookie);
 			return;
 		}
-
-		for (path_end = path + strlen(path) - 1;
-		     path_end >= path; path_end--) {
-			if (*path_end == '/') {
-				path_end[1] = '\0';
-				break;
-			}
-		}
-
-	} else {
-		if (!path[0]
-		    || path[strlen(path) - 1] != '/')
-			add_to_strn(&path, "/");
-
-		if (path[0] != '/') {
-			add_to_strn(&path, "x");
-			memmove(path + 1, path, strlen(path) - 1);
-			path[0] = '/';
-		}
 	}
-	cookie->path = path;
 
-	if (cookie->domain[0] == '.')
-		memmove(cookie->domain, cookie->domain + 1,
-			strlen(cookie->domain));
-
-	/* cookie->secure is set to 0 by default by calloc(). */
-	secure = parse_header_param(str, "secure");
-	if (secure) {
-		cookie->secure = 1;
-		mem_free(secure);
-	}
+	cookie->secure = (parse_header_param(str, "secure", NULL)
+	                  == HEADER_PARAM_FOUND);
 
 #ifdef DEBUG_COOKIES
 	{
 		DBG("Got cookie %s = %s from %s, domain %s, "
-		      "expires at %d, secure %d", cookie->name,
+		      "expires at %"TIME_PRINT_FORMAT", secure %d", cookie->name,
 		      cookie->value, cookie->server->host, cookie->domain,
-		      cookie->expires, cookie->secure);
+		      (time_print_T) cookie->expires, cookie->secure);
 	}
 #endif
 
@@ -564,32 +601,6 @@ accept_cookie_never(void *idp)
 }
 #endif
 
-/* Check whether domain is matching server
- * Ie.
- * example.com matches www.example.com/
- * example.com doesn't match www.example.com.org/
- * example.com doesn't match www.example.comm/
- * example.com doesn't match example.co
- */
-static int
-is_in_domain(unsigned char *domain, unsigned char *server, int server_len)
-{
-	int domain_len = strlen(domain);
-	int len;
-
-	if (domain_len > server_len)
-		return 0;
-
-	if (domain_len == server_len)
-		return !strncasecmp(domain, server, server_len);
-
-	len = server_len - domain_len;
-	if (server[len - 1] != '.')
-		return 0;
-
-	return !strncasecmp(domain, server + len, domain_len);
-}
-
 
 static inline int
 is_path_prefix(unsigned char *d, unsigned char *s)
@@ -634,8 +645,8 @@ send_cookies(struct uri *uri)
 
 		if (c->expires && c->expires <= now) {
 #ifdef DEBUG_COOKIES
-			DBG("Cookie %s=%s (exp %d) expired.",
-			    c->name, c->value, c->expires);
+			DBG("Cookie %s=%s (exp %"TIME_PRINT_FORMAT") expired.",
+			    c->name, c->value, (time_print_T) c->expires);
 #endif
 			delete_cookie(c);
 
@@ -682,7 +693,8 @@ load_cookies(void) {
 	time_t now;
 
 	if (elinks_home) {
-		cookfile = straconcat(elinks_home, cookfile, NULL);
+		cookfile = straconcat(elinks_home, cookfile,
+				      (unsigned char *) NULL);
 		if (!cookfile) return;
 	}
 
@@ -764,7 +776,7 @@ static void
 resave_cookies_bottom_half(void *always_null)
 {
 	if (get_cookies_save() && get_cookies_resave())
-		save_cookies();	/* checks cookies_dirty */
+		save_cookies(NULL); /* checks cookies_dirty */
 }
 
 /* Note that the cookies have been modified, and register a bottom
@@ -784,37 +796,79 @@ set_cookies_dirty(void)
 	register_bottom_half(resave_cookies_bottom_half, NULL);
 }
 
+/* @term is non-NULL if the user told ELinks to save cookies, or NULL
+ * if ELinks decided that on its own.  In the former case, this
+ * function reports errors to @term, unless CONFIG_SMALL is defined.
+ * In the latter case, this function does not save the cookies if it
+ * thinks the file is already up to date.  */
 void
-save_cookies(void) {
+save_cookies(struct terminal *term) {
 	struct cookie *c;
 	unsigned char *cookfile;
 	struct secure_save_info *ssi;
 	time_t now;
 
-	if (cookies_nosave || !elinks_home || !cookies_dirty
-	    || get_cmd_opt_bool("anonymous"))
-		return;
+#ifdef CONFIG_SMALL
+# define CANNOT_SAVE_COOKIES(flags, message)
+#else
+# define CANNOT_SAVE_COOKIES(flags, message)				\
+	do {								\
+		if (term)						\
+			info_box(term, flags, N_("Cannot save cookies"),\
+				 ALIGN_LEFT, message);			\
+	} while (0)
+#endif
 
-	cookfile = straconcat(elinks_home, COOKIES_FILENAME, NULL);
-	if (!cookfile) return;
+	if (cookies_nosave) {
+		assert(term == NULL);
+		if_assert_failed {}
+		return;
+	}
+	if (!elinks_home) {
+		CANNOT_SAVE_COOKIES(0, N_("ELinks was started without a home directory."));
+		return;
+	}
+	if (!cookies_dirty && !term)
+		return;
+	if (get_cmd_opt_bool("anonymous")) {
+		CANNOT_SAVE_COOKIES(0, N_("ELinks was started with the -anonymous option."));
+		return;
+	}
+
+	cookfile = straconcat(elinks_home, COOKIES_FILENAME,
+			      (unsigned char *) NULL);
+	if (!cookfile) {
+		CANNOT_SAVE_COOKIES(0, N_("Out of memory"));
+		return;
+	}
 
 	ssi = secure_open(cookfile);
 	mem_free(cookfile);
-	if (!ssi) return;
+	if (!ssi) {
+		CANNOT_SAVE_COOKIES(MSGBOX_NO_TEXT_INTL,
+				    secsave_strerror(secsave_errno, term));
+		return;
+	}
 
 	now = time(NULL);
 	foreach (c, cookies) {
 		if (!c->expires || c->expires <= now) continue;
-		if (secure_fprintf(ssi, "%s\t%s\t%s\t%s\t%s\t%ld\t%d\n",
+		if (secure_fprintf(ssi, "%s\t%s\t%s\t%s\t%s\t%"TIME_PRINT_FORMAT"\t%d\n",
 				   c->name, c->value,
 				   c->server->host,
 				   empty_string_or_(c->path),
 				   empty_string_or_(c->domain),
-				   c->expires, c->secure) < 0)
+				   (time_print_T) c->expires, c->secure) < 0)
 			break;
 	}
 
+	secsave_errno = SS_ERR_OTHER; /* @secure_close doesn't always set it */
 	if (!secure_close(ssi)) cookies_dirty = 0;
+	else {
+		CANNOT_SAVE_COOKIES(MSGBOX_NO_TEXT_INTL,
+				    secsave_strerror(secsave_errno, term));
+	}
+#undef CANNOT_SAVE_COOKIES
 }
 
 static void
@@ -827,7 +881,7 @@ init_cookies(struct module *module)
 /* Like @delete_cookie, this function does not set @cookies_dirty.
  * The caller must do that if appropriate.  */
 static void
-free_cookies_list(struct list_head *list)
+free_cookies_list(LIST_OF(struct cookie) *list)
 {
 	while (!list_empty(*list)) {
 		struct cookie *cookie = list->next;
@@ -842,7 +896,7 @@ done_cookies(struct module *module)
 	free_list(c_domains);
 
 	if (!cookies_nosave && get_cookies_save())
-		save_cookies();
+		save_cookies(NULL);
 
 	free_cookies_list(&cookies);
 	free_cookies_list(&cookie_queries);

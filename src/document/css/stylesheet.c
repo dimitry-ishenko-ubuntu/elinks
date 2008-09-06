@@ -1,4 +1,5 @@
-/* CSS stylesheet handling */
+/** CSS stylesheet handling
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -25,9 +26,10 @@
 
 
 struct css_selector *
-find_css_selector(struct list_head *sels, enum css_selector_type type,
+find_css_selector(LIST_OF(struct css_selector) *sels,
+                  enum css_selector_type type,
                   enum css_selector_relation rel,
-                  unsigned char *name, int namelen)
+                  const unsigned char *name, int namelen)
 {
 	struct css_selector *selector;
 
@@ -45,8 +47,9 @@ find_css_selector(struct list_head *sels, enum css_selector_type type,
 }
 
 struct css_selector *
-init_css_selector(struct list_head *sels, enum css_selector_type type,
-                  unsigned char *name, int namelen)
+init_css_selector(LIST_OF(struct css_selector) *sels,
+                  enum css_selector_type type,
+                  const unsigned char *name, int namelen)
 {
 	struct css_selector *selector;
 
@@ -78,9 +81,10 @@ init_css_selector(struct list_head *sels, enum css_selector_type type,
 }
 
 struct css_selector *
-get_css_selector(struct list_head *sels, enum css_selector_type type,
+get_css_selector(LIST_OF(struct css_selector) *sels,
+                 enum css_selector_type type,
                  enum css_selector_relation rel,
-                 unsigned char *name, int namelen)
+                 const unsigned char *name, int namelen)
 {
 	struct css_selector *selector = NULL;
 
@@ -127,7 +131,7 @@ add_selector_property(struct css_selector *selector, struct css_property *prop)
 
 void
 add_selector_properties(struct css_selector *selector,
-                        struct list_head *properties)
+                        LIST_OF(struct css_property) *properties)
 {
 	struct css_property *prop;
 
@@ -185,7 +189,7 @@ done_css_selector(struct css_selector *selector)
 
 #ifdef DEBUG_CSS
 void
-dump_css_selector_tree_iter(struct list_head *sels, int level)
+dump_css_selector_tree_iter(LIST_OF(struct css_selector) *sels, int level)
 {
 	struct css_selector *sel;
 
@@ -204,7 +208,7 @@ dump_css_selector_tree_iter(struct list_head *sels, int level)
 }
 
 void
-dump_css_selector_tree(struct list_head *sels)
+dump_css_selector_tree(LIST_OF(struct css_selector) *sels)
 {
 	dump_css_selector_tree_iter(sels, 0);
 }

@@ -51,19 +51,27 @@ struct html_context {
 
 	struct document_options *options;
 
+	/* doc_cp is the charset of the document, i.e. part->document->cp.
+	 * It is copied here because part->document is NULL sometimes.  */
+	int doc_cp;
+
 	/* For:
 	 * html/parser/parse.c
 	 * html/parser/stack.c
 	 * html/parser.c */
-	struct list_head stack;
+	LIST_OF(struct html_element) stack;
 
 	/* For parser/parse.c: */
 	unsigned char *eoff; /* For parser/forms.c too */
 	int line_breax; /* This is for ln_break. */
-	int position;
+	int position; /* This is the position on the document canvas relative
+	               * to the current line and is maintained by put_chrs. */
 	enum html_whitespace_state putsp; /* This is for the put_chrs
 					   * state-machine. */
 	int was_li;
+
+	unsigned int quote_level; /* Nesting level of <q> tags. See @html_quote
+				   * for why this is unsigned. */
 
 	unsigned int was_br:1;
 	unsigned int was_xmp:1;
@@ -98,6 +106,8 @@ struct html_context {
 	 * html/parser/link.c
 	 * html/parser/parse.c
 	 * html/parser.c */
+	/* Note that this is for usage by put_chrs only; anywhere else in
+	 * the parser, one should use put_chrs. */
 	void (*put_chars_f)(struct html_context *, unsigned char *, int);
 
 	/* For:
@@ -115,9 +125,10 @@ struct html_context {
 	void *(*special_f)(struct html_context *, enum html_special_type, ...);
 };
 
-#define format (((struct html_element *) html_context->stack.next)->attr)
-#define par_format (((struct html_element *) html_context->stack.next)->parattr)
-#define html_top (*(struct html_element *) html_context->stack.next)
+#define html_top	((struct html_element *) html_context->stack.next)
+#define html_bottom	((struct html_element *) html_context->stack.prev)
+#define format		(html_top->attr)
+#define par_format	(html_top->parattr)
 
 #define html_is_preformatted() (format.style.attr & AT_PREFORMATTED)
 
@@ -132,6 +143,6 @@ unsigned char *get_target(struct document_options *options, unsigned char *a);
 
 void
 import_css_stylesheet(struct css_stylesheet *css, struct uri *base_uri,
-		      unsigned char *url, int len);
+		      const unsigned char *unterminated_url, int len);
 
 #endif

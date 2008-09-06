@@ -22,7 +22,8 @@
 struct s_msg_dsc {
 	int n;
 	unsigned char *msg;
-} msg_dsc[] = {
+};
+static const struct s_msg_dsc msg_dsc[] = {
 	{S_WAIT,		N_("Waiting in queue")},
 	{S_DNS,			N_("Looking up host")},
 	{S_CONN,		N_("Making connection")},
@@ -135,7 +136,7 @@ struct strerror_val {
 	unsigned char msg[1]; /* must be last */
 };
 
-static INIT_LIST_HEAD(strerror_buf); /* struct strerror_val */
+static INIT_LIST_OF(struct strerror_val, strerror_buf);
 
 /* It returns convenient error message, depending on @state.
  * It never returns NULL (if one changes that, be warn that

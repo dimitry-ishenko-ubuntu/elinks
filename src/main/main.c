@@ -23,7 +23,6 @@
 #include "config/cmdline.h"
 #include "config/conf.h"
 #include "config/home.h"
-#include "config/kbdbind.h"
 #include "config/options.h"
 #include "dialogs/menu.h"
 #include "document/document.h"
@@ -63,7 +62,7 @@ static int init_b = 0;
 
 /* Check if either stdin or stdout are pipes */
 static void
-check_stdio(struct list_head *url_list)
+check_stdio(LIST_OF(struct string_list_item) *url_list)
 {
 	assert(!remote_session_flags);
 
@@ -106,12 +105,11 @@ check_cwd(void)
 static void
 init(void)
 {
-	INIT_LIST_HEAD(url_list);
+	INIT_LIST_OF(struct string_list_item, url_list);
 	int fd = -1;
 	enum retval ret;
 
 	init_osdep();
-	init_static_version();
 	check_cwd();
 
 #ifdef CONFIG_NLS
@@ -119,19 +117,18 @@ init(void)
 	textdomain(PACKAGE);
 	set_language(0);
 #endif
-
 	init_event();
-
 	init_charsets_lookup();
 	init_colors_lookup();
 	init_modules(main_modules);
 
 	init_options();
+	init_static_version();
+
 	register_modules_options(main_modules);
 	register_modules_options(builtin_modules);
 	set_sigcld();
 	get_system_name();
-	init_keymaps();
 
 	/* XXX: OS/2 has some stupid bug and the pipe must be created before
 	 * socket :-/. -- Mikulas */
@@ -156,6 +153,8 @@ init(void)
 
 	if (!remote_session_flags) {
 		check_stdio(&url_list);
+	} else {
+		program.terminate = 1;
 	}
 
 	if (!get_cmd_opt_bool("no-home")) {
@@ -211,13 +210,11 @@ init(void)
 			usrerror(gettext("No running ELinks found."));
 			program.retval = RET_PING;
 		}
-		program.terminate = 1;
 
 	} else if (remote_session_flags && fd == -1) {
 		/* The remote session(s) can not be created */
 		usrerror(gettext("No remote session to connect to."));
 		program.retval = RET_REMOTE;
-		program.terminate = 1;
 
 	} else {
 		struct string info;
@@ -285,13 +282,8 @@ terminate_all_subsystems(void)
 #ifdef CONFIG_SCRIPTING
 		trigger_event_name("quit");
 #endif
-#ifdef CONFIG_MARKS
-		free_marks();
-#endif
 		free_history_lists();
-		free_auth();
 		done_modules(builtin_modules);
-		done_screen_drivers();
 		done_saved_session_info();
 	}
 
@@ -299,7 +291,6 @@ terminate_all_subsystems(void)
 	free_charsets_lookup();
 	free_colors_lookup();
 	done_modules(main_modules);
-	free_keymaps();
 	free_conv_table();
 	check_bottom_halves();
 	done_home();
@@ -343,9 +334,21 @@ check_if_root(void)
 #define check_if_root()
 #endif
 
+#ifdef CONFIG_GC
+static void
+gc_warning(char *msg, GC_word arg)
+{
+}
+#endif
+
+
 int
 main(int argc, char *argv[])
 {
+#ifdef CONFIG_GC
+	GC_INIT();
+	GC_set_warn_proc(gc_warning);
+#endif
 	check_if_root();
 
 	program.terminate = 0;

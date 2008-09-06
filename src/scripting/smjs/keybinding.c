@@ -20,7 +20,7 @@ static JSBool
 keymap_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
 	unsigned char *action_str;
-	unsigned char *keystroke_str;
+	const unsigned char *keystroke_str;
 	int *data;
 
 	/* This can be called if @obj if not itself an instance of the
@@ -76,7 +76,7 @@ keymap_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 {
 	int *data;
 	unsigned char *keymap_str;
-	unsigned char *keystroke_str;
+	const unsigned char *keystroke_str;
 
 	/* This can be called if @obj if not itself an instance of the
 	 * appropriate class but has one in its prototype chain.  Fail
@@ -111,7 +111,7 @@ keymap_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		int event_id;
 		struct string event_name = NULL_STRING;
 		JSObject *jsobj = JSVAL_TO_OBJECT(*vp);
-		
+
 		if (JS_FALSE == JS_ObjectIsFunction(ctx, jsobj))
 			return JS_FALSE;
 
@@ -145,7 +145,7 @@ keymap_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		return JS_TRUE;
 	}
 
-	return JS_TRUE;
+	return JS_FALSE;
 }
 
 /* @keymap_class.finalize */
@@ -176,7 +176,7 @@ smjs_get_keymap_object(enum keymap_id keymap_id)
 {
 	int *data;
 	JSObject *keymap_object;
-		
+
 	assert(smjs_ctx);
 
 	keymap_object = JS_NewObject(smjs_ctx, (JSClass *) &keymap_class,
@@ -209,7 +209,7 @@ smjs_get_keymap_hash_object(void)
 	jsval val;
 	enum keymap_id keymap_id;
 	JSObject *keymaps_hash;
-	
+
 	keymaps_hash = JS_NewObject(smjs_ctx, (JSClass *) &keymaps_hash_class,
 	                            NULL, NULL);
 	if (!keymaps_hash) return NULL;

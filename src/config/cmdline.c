@@ -45,7 +45,7 @@ static unsigned char *remote_url;
 
 static enum retval
 parse_options_(int argc, unsigned char *argv[], struct option *opt,
-               struct list_head *url_list)
+               LIST_OF(struct string_list_item) *url_list)
 {
 	while (argc) {
 		argv++, argc--;
@@ -116,7 +116,8 @@ unknown_option:
 }
 
 enum retval
-parse_options(int argc, unsigned char *argv[], struct list_head *url_list)
+parse_options(int argc, unsigned char *argv[],
+	      LIST_OF(struct string_list_item) *url_list)
 {
 	return parse_options_(argc, argv, cmdline_options, url_list);
 }
@@ -418,8 +419,11 @@ version_cmd(struct option *o, unsigned char ***argv, int *argc)
 
 #define gettext_nonempty(x) (*(x) ? gettext(x) : (x))
 
+static void print_full_help_outer(struct option *tree, unsigned char *path);
+
 static void
-print_full_help(struct option *tree, unsigned char *path)
+print_full_help_inner(struct option *tree, unsigned char *path,
+		      int trees)
 {
 	struct option *option;
 	unsigned char saved[MAX_STR_LEN];
@@ -434,6 +438,9 @@ print_full_help(struct option *tree, unsigned char *path)
 		unsigned char *desc = (option->desc && *option->desc)
 				      ? (unsigned char *) gettext(option->desc)
 				      : (unsigned char *) "N/A";
+
+		if (trees != (type == OPT_TREE))
+			continue;
 
 		/* Don't print deprecated aliases (if we don't walk command
 		 * line options which use aliases for legitimate options). */
@@ -546,12 +553,19 @@ print_full_help(struct option *tree, unsigned char *path)
 
 		if (option->type == OPT_TREE) {
 			memcpy(savedpos, ".", 2);
-			print_full_help(option, saved);
+			print_full_help_outer(option, saved);
 		}
 
 		savedpos = saved;
 		*savedpos = 0;
 	}
+}
+
+static void
+print_full_help_outer(struct option *tree, unsigned char *path)
+{
+	print_full_help_inner(tree, path, 0);
+	print_full_help_inner(tree, path, 1);
 }
 
 static void
@@ -626,13 +640,13 @@ printhelp_cmd(struct option *option, unsigned char ***argv, int *argc)
 
 	if (!strcmp(option->name, "config-help")) {
 		printf("%s:\n", gettext("Configuration options"));
-		print_full_help(config_options, "");
+		print_full_help_outer(config_options, "");
 	} else {
 		printf("%s\n\n%s:\n",
 		       gettext("Usage: elinks [OPTION]... [URL]..."),
 		       gettext("Options"));
 		if (!strcmp(option->name, "long-help")) {
-			print_full_help(cmdline_options, "-");
+			print_full_help_outer(cmdline_options, "-");
 		} else {
 			print_short_help();
 		}
@@ -707,6 +721,7 @@ printconfigdump_cmd(struct option *option, unsigned char ***argv, int *argc)
 /* Keep options in alphabetical order. */
 
 struct option_info cmdline_options_info[] = {
+	/* [gettext_accelerator_context(IGNORE)] */
 	INIT_OPT_BOOL("", N_("Restrict to anonymous mode"),
 		"anonymous", 0, 0,
 		N_("Restricts ELinks so it can run on an anonymous account.\n"
@@ -767,6 +782,10 @@ struct option_info cmdline_options_info[] = {
 	INIT_OPT_CMDALIAS("", N_("Codepage to use with -dump"),
 		"dump-charset", 0, "document.dump.codepage",
 		N_("Codepage used when formatting dump output.")),
+
+	INIT_OPT_CMDALIAS("", N_("Color mode used with -dump"),
+		"dump-color-mode", 0, "document.dump.color_mode",
+		N_("Color mode used with -dump.")),
 
 	INIT_OPT_CMDALIAS("", N_("Width of document formatted with -dump"),
 		"dump-width", 0, "document.dump.width",

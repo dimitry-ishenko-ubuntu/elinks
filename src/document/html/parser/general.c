@@ -80,21 +80,63 @@ void
 html_subscript(struct html_context *html_context, unsigned char *a,
                unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
 {
-	format.style.attr |= AT_SUBSCRIPT | AT_UPDATE_SUB;
+	put_chrs(html_context, "[", 1);
+}
+
+void
+html_subscript_close(struct html_context *html_context, unsigned char *a,
+                unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
+{
+	put_chrs(html_context, "]", 1);
 }
 
 void
 html_superscript(struct html_context *html_context, unsigned char *a,
                  unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
 {
-	format.style.attr |= AT_SUPERSCRIPT | AT_UPDATE_SUP;
+	put_chrs(html_context, "^", 1);
+}
+
+/* TODO: Add more languages. */
+static unsigned char *quote_char[2] = { "\"", "'" };
+
+void
+html_quote(struct html_context *html_context, unsigned char *a,
+	   unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
+{
+	/* An HTML document containing extremely many repetitions of
+	 * "<q>" could cause @html_context->quote_level to overflow.
+	 * Because it is unsigned, it then wraps around to zero, and
+	 * we don't get a negative array index here.  If the document
+	 * then tries to close the quotes with "</q>", @html_quote_close
+	 * won't let the quote level wrap back, so it will render the
+	 * quotes incorrectly, but such a document probably doesn't
+	 * make sense anyway.  */
+	unsigned char *q = quote_char[html_context->quote_level++ % 2];
+
+	put_chrs(html_context, q, 1);
+}
+
+void
+html_quote_close(struct html_context *html_context, unsigned char *a,
+		 unsigned char *xxx3, unsigned char *xxx4,
+		 unsigned char **xxx5)
+{
+	unsigned char *q;
+
+	if (html_context->quote_level > 0)
+		html_context->quote_level--;
+
+	q = quote_char[html_context->quote_level % 2];
+
+	put_chrs(html_context, q, 1);
 }
 
 void
 html_font(struct html_context *html_context, unsigned char *a,
           unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
 {
-	unsigned char *al = get_attr_val(a, "size", html_context->options);
+	unsigned char *al = get_attr_val(a, "size", html_context->doc_cp);
 
 	if (al) {
 		int p = 0;
@@ -141,21 +183,21 @@ html_apply_canvas_bgcolor(struct html_context *html_context)
 	/* If there are any CSS twaks regarding bgcolor, make sure we will get
 	 * it _and_ prefer it over bgcolor attribute. */
 	if (html_context->options->css_enable)
-		css_apply(html_context, &html_top, &html_context->css_styles,
+		css_apply(html_context, html_top, &html_context->css_styles,
 		          &html_context->stack);
 #endif
 
 	if (par_format.bgcolor != format.style.bg) {
 		/* Modify the root HTML element - format_html_part() will take
 		 * this from there. */
-		struct html_element *e = html_context->stack.prev;
+		struct html_element *e = html_bottom;
 
 		html_context->was_body_background = 1;
 		e->parattr.bgcolor = e->attr.style.bg = par_format.bgcolor = format.style.bg;
 	}
 
 	if (html_context->has_link_lines
-	    && par_format.bgcolor != html_context->options->default_bg
+	    && par_format.bgcolor != html_context->options->default_style.bg
 	    && !search_html_stack(html_context, "BODY")) {
 		html_context->special_f(html_context, SP_COLOR_LINK_LINES);
 	}
@@ -181,7 +223,7 @@ html_script(struct html_context *html_context, unsigned char *a,
 	/* Ref:
 	 * http://www.ietf.org/internet-drafts/draft-hoehrmann-script-types-03.txt
 	 */
-	type = get_attr_val(a, "type", html_context->options);
+	type = get_attr_val(a, "type", html_context->doc_cp);
 	if (type) {
 		unsigned char *pos = type;
 
@@ -195,7 +237,7 @@ html_script(struct html_context *html_context, unsigned char *a,
 			mem_free(type);
 not_processed:
 			/* Permit nested scripts and retreat. */
-			html_top.invisible++;
+			html_top->invisible++;
 			return;
 		}
 
@@ -223,7 +265,7 @@ not_processed:
 	 * language attribute can be JavaScript with optional version digits
 	 * postfixed (like: ``JavaScript1.1'').
 	 * That attribute is deprecated in favor of type by HTML 4.01 */
-	language = get_attr_val(a, "language", html_context->options);
+	language = get_attr_val(a, "language", html_context->doc_cp);
 	if (language) {
 		int languagelen = strlen(language);
 
@@ -238,7 +280,7 @@ not_processed:
 	}
 
 	if (html_context->part->document
-	    && (src = get_attr_val(a, "src", html_context->options))) {
+	    && (src = get_attr_val(a, "src", html_context->doc_cp))) {
 		/* External reference. */
 
 		unsigned char *import_url;
@@ -358,6 +400,13 @@ html_style(struct html_context *html_context, unsigned char *a,
 }
 
 void
+html_style_close(struct html_context *html_context, unsigned char *a,
+                 unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
+{
+	html_context->was_style = 0;
+}
+
+void
 html_html(struct html_context *html_context, unsigned char *a,
           unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
 {
@@ -365,10 +414,19 @@ html_html(struct html_context *html_context, unsigned char *a,
 
 	/* Modify the root HTML element - format_html_part() will take
 	 * this from there. */
-	struct html_element *e = html_context->stack.prev;
+	struct html_element *e = html_bottom;
 
 	if (par_format.bgcolor != format.style.bg)
 		e->parattr.bgcolor = e->attr.style.bg = par_format.bgcolor = format.style.bg;
+}
+
+void
+html_html_close(struct html_context *html_context, unsigned char *a,
+                unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
+{
+	if (html_top->type >= ELEMENT_KILLABLE
+	    && !html_context->was_body_background)
+		html_apply_canvas_bgcolor(html_context);
 }
 
 void
@@ -404,8 +462,8 @@ void
 html_title(struct html_context *html_context, unsigned char *a,
            unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
 {
-	html_top.invisible = 1;
-	html_top.type = ELEMENT_WEAK;
+	html_top->invisible = 1;
+	html_top->type = ELEMENT_WEAK;
 }
 
 void
@@ -421,7 +479,7 @@ void
 html_linebrk(struct html_context *html_context, unsigned char *a,
              unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
 {
-	unsigned char *al = get_attr_val(a, "align", html_context->options);
+	unsigned char *al = get_attr_val(a, "align", html_context->doc_cp);
 
 	if (al) {
 		if (!strcasecmp(al, "left")) par_format.align = ALIGN_LEFT;
@@ -562,12 +620,19 @@ html_xmp(struct html_context *html_context, unsigned char *a,
 }
 
 void
+html_xmp_close(struct html_context *html_context, unsigned char *a,
+               unsigned char *html, unsigned char *eof, unsigned char **end)
+{
+	html_context->was_xmp = 0;
+}
+
+void
 html_hr(struct html_context *html_context, unsigned char *a,
         unsigned char *html, unsigned char *eof, unsigned char **end)
 {
 	int i/* = par_format.width - 10*/;
 	unsigned char r = (unsigned char) BORDER_DHLINE;
-	int q = get_num(a, "size", html_context->options);
+	int q = get_num(a, "size", html_context->doc_cp);
 
 	if (q >= 0 && q < 2) r = (unsigned char) BORDER_SHLINE;
 	html_stack_dup(html_context, ELEMENT_KILLABLE);
@@ -587,7 +652,7 @@ html_hr(struct html_context *html_context, unsigned char *a,
 	}
 	html_context->special_f(html_context, SP_NOWRAP, 0);
 	ln_break(html_context, 2);
-	kill_html_stack_item(html_context, &html_top);
+	pop_html_element(html_context);
 }
 
 void
@@ -649,7 +714,7 @@ html_base(struct html_context *html_context, unsigned char *a,
 {
 	unsigned char *al;
 
-	al = get_url_val(a, "href", html_context->options);
+	al = get_url_val(a, "href", html_context->doc_cp);
 	if (al) {
 		unsigned char *base = join_urls(html_context->base_href, al);
 		struct uri *uri = base ? get_uri(base, 0) : NULL;
@@ -678,7 +743,7 @@ html_ul(struct html_context *html_context, unsigned char *a,
 	par_format.list_number = 0;
 	par_format.flags = P_STAR;
 
-	al = get_attr_val(a, "type", html_context->options);
+	al = get_attr_val(a, "type", html_context->doc_cp);
 	if (al) {
 		if (!strcasecmp(al, "disc") || !strcasecmp(al, "circle"))
 			par_format.flags = P_O;
@@ -691,7 +756,7 @@ html_ul(struct html_context *html_context, unsigned char *a,
 		int_upper_bound(&par_format.leftmargin, par_format.width / 2);
 
 	par_format.align = ALIGN_LEFT;
-	html_top.type = ELEMENT_DONT_KILL;
+	html_top->type = ELEMENT_DONT_KILL;
 }
 
 void
@@ -702,12 +767,12 @@ html_ol(struct html_context *html_context, unsigned char *a,
 	int st;
 
 	par_format.list_level++;
-	st = get_num(a, "start", html_context->options);
+	st = get_num(a, "start", html_context->doc_cp);
 	if (st == -1) st = 1;
 	par_format.list_number = st;
 	par_format.flags = P_NUMBER;
 
-	al = get_attr_val(a, "type", html_context->options);
+	al = get_attr_val(a, "type", html_context->doc_cp);
 	if (al) {
 		if (*al && !al[1]) {
 			if (*al == '1') par_format.flags = P_NUMBER;
@@ -726,7 +791,7 @@ html_ol(struct html_context *html_context, unsigned char *a,
 		int_upper_bound(&par_format.leftmargin, par_format.width / 2);
 
 	par_format.align = ALIGN_LEFT;
-	html_top.type = ELEMENT_DONT_KILL;
+	html_top->type = ELEMENT_DONT_KILL;
 }
 
 static struct {
@@ -810,7 +875,7 @@ html_li(struct html_context *html_context, unsigned char *a,
 		unsigned char n[32];
 		int nlen;
 		int t = par_format.flags & P_LISTMASK;
-		int s = get_num(a, "value", html_context->options);
+		int s = get_num(a, "value", html_context->doc_cp);
 
 		if (s != -1) par_format.list_number = s;
 
@@ -867,17 +932,17 @@ html_dl(struct html_context *html_context, unsigned char *a,
         unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
 {
 	par_format.flags &= ~P_COMPACT;
-	if (has_attr(a, "compact", html_context->options))
+	if (has_attr(a, "compact", html_context->doc_cp))
 		par_format.flags |= P_COMPACT;
 	if (par_format.list_level) par_format.leftmargin += 5;
 	par_format.list_level++;
 	par_format.list_number = 0;
 	par_format.align = ALIGN_LEFT;
 	par_format.dd_margin = par_format.leftmargin;
-	html_top.type = ELEMENT_DONT_KILL;
+	html_top->type = ELEMENT_DONT_KILL;
 	if (!(par_format.flags & P_COMPACT)) {
 		ln_break(html_context, 2);
-		html_top.linebreak = 2;
+		html_top->linebreak = 2;
 	}
 }
 
@@ -889,7 +954,7 @@ html_dt(struct html_context *html_context, unsigned char *a,
 	par_format.align = ALIGN_LEFT;
 	par_format.leftmargin = par_format.dd_margin;
 	if (!(par_format.flags & P_COMPACT)
-	    && !has_attr(a, "compact", html_context->options))
+	    && !has_attr(a, "compact", html_context->doc_cp))
 		ln_break(html_context, 2);
 }
 
@@ -930,7 +995,7 @@ html_frame(struct html_context *html_context, unsigned char *a,
 {
 	unsigned char *name, *src, *url;
 
-	src = get_url_val(a, "src", html_context->options);
+	src = get_url_val(a, "src", html_context->doc_cp);
 	if (!src) {
 		url = stracpy("about:blank");
 	} else {
@@ -939,7 +1004,7 @@ html_frame(struct html_context *html_context, unsigned char *a,
 	}
 	if (!url) return;
 
-	name = get_attr_val(a, "name", html_context->options);
+	name = get_attr_val(a, "name", html_context->doc_cp);
 	if (!name) {
 		name = stracpy(url);
 	} else if (!name[0]) {
@@ -949,14 +1014,14 @@ html_frame(struct html_context *html_context, unsigned char *a,
 	}
 	if (!name) return;
 
-	if (!html_context->options->frames || !html_top.frameset) {
+	if (!html_context->options->frames || !html_top->frameset) {
 		html_focusable(html_context, a);
 		put_link_line("Frame: ", name, url, "", html_context);
 
 	} else {
 		if (html_context->special_f(html_context, SP_USED, NULL)) {
 			html_context->special_f(html_context, SP_FRAME,
-					       html_top.frameset, name, url);
+					       html_top->frameset, name, url);
 		}
 	}
 
@@ -983,13 +1048,13 @@ html_frameset(struct html_context *html_context, unsigned char *a,
 	    || !html_context->special_f(html_context, SP_USED, NULL))
 		return;
 
-	cols = get_attr_val(a, "cols", html_context->options);
+	cols = get_attr_val(a, "cols", html_context->doc_cp);
 	if (!cols) {
 		cols = stracpy("100%");
 		if (!cols) return;
 	}
 
-	rows = get_attr_val(a, "rows", html_context->options);
+	rows = get_attr_val(a, "rows", html_context->doc_cp);
 	if (!rows) {
 		rows = stracpy("100%");
 	       	if (!rows) {
@@ -998,12 +1063,12 @@ html_frameset(struct html_context *html_context, unsigned char *a,
 		}
 	}
 
-	if (!html_top.frameset) {
+	if (!html_top->frameset) {
 		width = html_context->options->box.width;
 		height = html_context->options->box.height;
 		html_context->options->needs_height = 1;
 	} else {
-		struct frameset_desc *frameset_desc = html_top.frameset;
+		struct frameset_desc *frameset_desc = html_top->frameset;
 		int offset;
 
 		if (frameset_desc->box.y >= frameset_desc->box.height)
@@ -1021,9 +1086,9 @@ html_frameset(struct html_context *html_context, unsigned char *a,
 	parse_frame_widths(rows, height, HTML_FRAME_CHAR_HEIGHT,
 			   &fp.height, &fp.y);
 
-	fp.parent = html_top.frameset;
+	fp.parent = html_top->frameset;
 	if (fp.x && fp.y) {
-		html_top.frameset = html_context->special_f(html_context, SP_FRAMESET, &fp);
+		html_top->frameset = html_context->special_f(html_context, SP_FRAMESET, &fp);
 	}
 	mem_free_if(fp.width);
 	mem_free_if(fp.height);

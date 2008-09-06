@@ -1,4 +1,5 @@
-/* The document base functionality */
+/** The document base functionality
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -14,6 +15,7 @@
 #include "bfu/listmenu.h"
 #include "document/document.h"
 #include "document/forms.h"
+#include "document/renderer.h"
 #include "util/error.h"
 #include "util/lists.h"
 #include "util/memory.h"
@@ -91,6 +93,7 @@ done_form(struct form *form)
 
 	mem_free_if(form->action);
 	mem_free_if(form->name);
+	mem_free_if(form->onsubmit);
 	mem_free_if(form->target);
 
 	foreach (fc, form->items) {
@@ -130,6 +133,8 @@ get_form_control_link(struct document *document, struct form_control *fc)
 	if (fc->type == FC_HIDDEN)
 		return -1;
 
+	if (!document->links_sorted) sort_links(document);
+
 	for (link = 0; link < document->nlinks; link++)
 		if (fc == get_link_form_control(&document->links[link]))
 			return link;
@@ -147,6 +152,7 @@ done_form_control(struct form_control *fc)
 	assert(fc);
 	if_assert_failed return;
 
+	mem_free_if(fc->id);
 	mem_free_if(fc->name);
 	mem_free_if(fc->alt);
 	mem_free_if(fc->default_value);

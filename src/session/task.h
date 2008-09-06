@@ -10,8 +10,8 @@ struct terminal;
 struct view_state;
 struct uri;
 
-/* This is for map_selected(), it is used to pass around information about
- * in-imagemap links. */
+/** This is for map_selected(), it is used to pass around information
+ * about in-imagemap links. */
 struct link_def {
 	unsigned char *link;
 	unsigned char *target;
@@ -27,6 +27,7 @@ struct uri *get_hooked_uri(unsigned char *uristring, struct session *ses, unsign
 
 void goto_uri(struct session *ses, struct uri *uri);
 void goto_uri_frame(struct session *, struct uri *, unsigned char *, enum cache_mode);
+void delayed_goto_uri_frame(void *);
 void goto_url(struct session *, unsigned char *);
 void goto_url_with_hook(struct session *, unsigned char *);
 int goto_url_home(struct session *ses);

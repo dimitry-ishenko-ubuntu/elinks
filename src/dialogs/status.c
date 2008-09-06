@@ -67,13 +67,14 @@ update_status(void)
 	int show_title_bar = get_opt_bool("ui.show_title_bar");
 	int show_status_bar = get_opt_bool("ui.show_status_bar");
 	int show_tabs_bar = get_opt_int("ui.tabs.show_bar");
+	int show_tabs_bar_at_top = get_opt_bool("ui.tabs.top");
 #ifdef CONFIG_LEDS
 	int show_leds = get_opt_bool("ui.leds.enable");
 #endif
 	int set_window_title = get_opt_bool("ui.window_title");
 	int insert_mode = get_opt_bool("document.browse.forms.insert_mode");
 	struct session *ses;
-	int tabs = 1;
+	int tabs_count = 1;
 	struct terminal *term = NULL;
 
 	foreach (ses, sessions) {
@@ -84,7 +85,7 @@ update_status(void)
 		 * tab sessions share the same term. */
 		if (ses->tab->term != term) {
 			term = ses->tab->term;
-			tabs = number_of_tabs(term);
+			tabs_count = number_of_tabs(term);
 		}
 
 		if (status->force_show_title_bar >= 0)
@@ -101,9 +102,16 @@ update_status(void)
 			dirty = 1;
 		}
 
-		if (show_tabs(show_tabs_bar, tabs) != status->show_tabs_bar) {
-			status->show_tabs_bar = show_tabs(show_tabs_bar, tabs);
+		if (show_tabs(show_tabs_bar, tabs_count) != status->show_tabs_bar) {
+			status->show_tabs_bar = show_tabs(show_tabs_bar, tabs_count);
 			dirty = 1;
+		}
+
+		if (status->show_tabs_bar) {
+			if (status->show_tabs_bar_at_top != show_tabs_bar_at_top) {
+				status->show_tabs_bar_at_top = show_tabs_bar_at_top;
+				dirty = 1;
+			}
 		}
 #ifdef CONFIG_LEDS
 		if (status->show_leds != show_leds) {
@@ -142,16 +150,10 @@ get_current_link_info_and_title(struct session *ses,
 
 	link_title = get_current_link_title(doc_view);
 	if (link_title) {
-		unsigned char *src;
-
 		assert(*link_title);
 
-		/* Remove illicit chars. */
-		for (src = link_title; *src; src++)
-			if (!isprint(*src) || iscntrl(*src))
-				*src = '*';
-
-		ret = straconcat(link_info, " - ", link_title, NULL);
+		ret = straconcat(link_info, " - ", link_title,
+				 (unsigned char *) NULL);
 		mem_free(link_info);
 		mem_free(link_title);
 	}
@@ -193,7 +195,13 @@ display_status_bar(struct session *ses, struct terminal *term, int tabs_count)
 	if (ses->kbdprefix.repeat_count) {
 		msg = msg_text(term, N_("Keyboard prefix: %d"),
 			       ses->kbdprefix.repeat_count);
-	} else if (download) {
+	}
+#ifdef CONFIG_ECMASCRIPT
+	else if (ses->status.window_status) {
+		msg = stracpy(ses->status.window_status);
+	}
+#endif
+	else if (download) {
 		struct document_view *doc_view = current_frame(ses);
 
 		/* Show S_INTERRUPTED message *once* but then show links
@@ -290,7 +298,8 @@ display_tab_bar(struct session *ses, struct terminal *term, int tabs_count)
 	int tab_num;
 	struct box box;
 
-	set_box(&box, 0, term->height - (status->show_status_bar ? 2 : 1), 0, 1);
+	if (status->show_tabs_bar_at_top) set_box(&box, 0, status->show_title_bar, term->width, 1);
+	else set_box(&box, 0, term->height - (status->show_status_bar ? 2 : 1), 0, 1);
 
 	for (tab_num = 0; tab_num < tabs_count; tab_num++) {
 		struct download *download = NULL;
@@ -379,11 +388,14 @@ display_title_bar(struct session *ses, struct terminal *term)
 	unsigned char buf[40];
 	int buflen = 0;
 	int height;
-	struct box box;
 
 	/* Clear the old title */
-	set_box(&box, 0, 0, term->width, 1);
-	draw_box(term, &box, ' ', 0, get_bfu_color(term, "title.title-bar"));
+	if (!get_opt_bool("ui.show_menu_bar_always")) {
+		struct box box;
+
+		set_box(&box, 0, 0, term->width, 1);
+		draw_box(term, &box, ' ', 0, get_bfu_color(term, "title.title-bar"));
+	}
 
 	doc_view = current_frame(ses);
 	if (!doc_view || !doc_view->document) return;
@@ -412,11 +424,25 @@ display_title_bar(struct session *ses, struct terminal *term)
 
 	if (document->title) {
 		int maxlen = int_max(term->width - 4 - buflen, 0);
-		int titlelen = int_min(strlen(document->title), maxlen);
+		int titlelen, titlewidth;
+
+#ifdef CONFIG_UTF8
+		if (term->utf8_cp) {
+			titlewidth = utf8_ptr2cells(document->title, NULL);
+			titlewidth = int_min(titlewidth, maxlen);
+
+			titlelen = utf8_cells2bytes(document->title,
+							titlewidth, NULL);
+		} else
+#endif /* CONFIG_UTF8 */
+		{
+			titlewidth = int_min(strlen(document->title), maxlen);
+			titlelen = titlewidth;
+		}
 
 		add_bytes_to_string(&title, document->title, titlelen);
 
-		if (titlelen == maxlen)
+		if (titlewidth == maxlen)
 			add_bytes_to_string(&title, "...", 3);
 	}
 
@@ -424,7 +450,16 @@ display_title_bar(struct session *ses, struct terminal *term)
 		add_bytes_to_string(&title, buf, buflen);
 
 	if (title.length) {
-		int x = int_max(term->width - 1 - title.length, 0);
+		int x;
+#ifdef CONFIG_UTF8
+		if (term->utf8_cp) {
+			x = int_max(term->width - 1
+				    - utf8_ptr2cells(title.source,
+						     title.source
+						     + title.length), 0);
+		} else
+#endif /* CONFIG_UTF8 */
+			x = int_max(term->width - 1 - title.length, 0);
 
 		draw_text(term, x, 0, title.source, title.length, 0,
 			  get_bfu_color(term, "title.title-text"));
@@ -448,7 +483,8 @@ display_window_title(struct session *ses, struct terminal *term)
 	    && ses->doc_view->document->title[0])
 		doc_title = ses->doc_view->document->title;
 
-	title = doc_title ? straconcat(doc_title, " - ELinks", NULL)
+	title = doc_title ? straconcat(doc_title, " - ELinks",
+				       (unsigned char *) NULL)
 			  : stracpy("ELinks");
 	if (!title) return;
 
@@ -469,10 +505,8 @@ display_window_title(struct session *ses, struct terminal *term)
 static inline void
 display_leds(struct session *ses, struct session_status *status)
 {
-	if (ses->doc_view && ses->doc_view->document
-	    && ses->doc_view->document->uri) {
-		struct cache_entry *cached =
-			find_in_cache(ses->doc_view->document->uri);
+	if (ses->doc_view && ses->doc_view->document) {
+		struct cache_entry *cached = ses->doc_view->document->cached;
 
 		if (cached) {
 			if (cached->ssl_info)

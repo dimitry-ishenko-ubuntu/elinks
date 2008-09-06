@@ -1,4 +1,5 @@
-/* Terminal windows stuff. */
+/** Terminal windows stuff.
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -6,6 +7,7 @@
 
 #include "elinks.h"
 
+#include "bfu/menu.h"
 #include "terminal/event.h"
 #include "terminal/tab.h"
 #include "terminal/terminal.h"
@@ -171,3 +173,35 @@ add_empty_window(struct terminal *term, void (*fn)(void *), void *data)
 	ewd->called_once = 0;
 	add_window(term, empty_window_handler, ewd);
 }
+
+#if CONFIG_DEBUG
+/** Check that terminal.windows are in the documented order.  */
+void
+assert_window_stacking(struct terminal *term)
+{
+	enum { WANT_ANY, WANT_TAB, WANT_NONE } want = WANT_ANY;
+	const struct window *win;
+	const struct window *main_menu_win;
+
+	/* The main menu can be either above or below the tabs.  */
+	main_menu_win = term->main_menu ? term->main_menu->win : NULL;
+
+	foreach (win, term->windows) {
+		switch (want) {
+		case WANT_ANY:
+			if (win->type == WINDOW_TAB)
+				want = WANT_TAB;
+			break;
+		case WANT_TAB:
+			if (win == main_menu_win)
+				want = WANT_NONE;
+			else
+				assert(win->type == WINDOW_TAB);
+			break;
+		case WANT_NONE:
+			assert(0);
+			break;
+		}
+	}
+}
+#endif	/* CONFIG_DEBUG */

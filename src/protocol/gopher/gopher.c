@@ -35,6 +35,7 @@
 #include "main/module.h"
 #include "network/connection.h"
 #include "network/socket.h"
+#include "protocol/common.h"
 #include "protocol/gopher/gopher.h"
 #include "protocol/protocol.h"
 #include "protocol/uri.h"
@@ -328,30 +329,6 @@ init_gopher_connection_info(struct connection *conn)
 }
 
 
-static void
-end_gopher_connection(struct connection *conn, enum connection_state state)
-{
-	if (state == S_OK && conn->cached) {
-#if 0
-		/* Seeing dots at all files .. trying to remove the end-marker
-		 * ".\r\n" */
-		struct gopher_connection_info *gopher = conn->info;
-
-		if (gopher
-		    && gopher->entity
-		    && gopher->entity->type != GOPHER_DIRECTORY
-		    && gopher->entity->type != GOPHER_INDEX
-		    && gopher->entity->type != GOPHER_CSO) {
-			conn->from -= 3;
-		}
-#endif
-		normalize_cache_entry(conn->cached, conn->from);
-	}
-
-	abort_connection(conn, state);
-}
-
-
 /* Add a link. The title of the destination is set, as there is no way of
  * knowing what the title is when we arrive.
  *
@@ -599,25 +576,15 @@ read_gopher_directory_data(struct connection *conn, struct read_buffer *rb)
 	struct string buffer;
 	unsigned char *end;
 
-	if (!init_string(&buffer))
-		return S_OUT_OF_MEM;
-
 	if (conn->from == 0) {
-		unsigned char *where = get_uri_string(conn->uri, URI_PUBLIC);
+		enum connection_state state;
 
-		if (where) decode_uri_for_display(where);
+		state = init_directory_listing(&buffer, conn->uri);
+		if (state != S_OK)
+			return state;
 
-		add_format_to_string(&buffer,
-			"<html>\n"
-			"<head>\n"
-			"<title>Gopher menu at %s</title>\n"
-			"</head>\n"
-			"<body>\n"
-			"<h1>Gopher menu at %s</h1>\n"
-			"<pre>",
-			empty_string_or_(where), empty_string_or_(where));
-
-		mem_free_if(where);
+	} else if (!init_string(&buffer)) {
+		return S_OUT_OF_MEM;
 	}
 
 	while ((end = get_gopher_line_end(rb->data, rb->length))) {
@@ -682,6 +649,10 @@ init_gopher_index_cache_entry(struct connection *conn)
 		return S_OUT_OF_MEM;
 
 	where = get_uri_string(conn->uri, URI_PUBLIC);
+
+	/* TODO: Use different function when using UTF-8
+	 * in terminal (decode_uri_for_display replaces
+	 * bytes of UTF-8 characters width '*'). */
 	if (where) decode_uri_for_display(where);
 
 	add_format_to_string(&buffer,
@@ -722,7 +693,7 @@ read_gopher_response_data(struct socket *socket, struct read_buffer *rb)
 	assert(gopher && gopher->entity);
 
 	if (!conn->cached && !init_gopher_cache_entry(conn)) {
-		end_gopher_connection(conn, S_OUT_OF_MEM);
+		abort_connection(conn, S_OUT_OF_MEM);
 		return;
 	}
 
@@ -772,7 +743,7 @@ read_gopher_response_data(struct socket *socket, struct read_buffer *rb)
 	}
 
 	if (state != S_TRANS) {
-		end_gopher_connection(conn, state);
+		abort_connection(conn, state);
 		return;
 	}
 
@@ -806,7 +777,7 @@ gopher_protocol_handler(struct connection *conn)
 		 * - FM */
 		if (uri->datalen == 1 && *uri->data == GOPHER_CSO) {
 			/* FIXME: redirect_cache() */
-			end_gopher_connection(conn, S_GOPHER_CSO_ERROR);
+			abort_connection(conn, S_GOPHER_CSO_ERROR);
 		}
 		break;
 
@@ -819,7 +790,7 @@ gopher_protocol_handler(struct connection *conn)
 		 * - FM */
 		if (uri->datalen >= 1 && *uri->data == GOPHER_FILE) {
 			/* FIXME: redirect_cache() */
-			end_gopher_connection(conn, S_OK);
+			abort_connection(conn, S_OK);
 		}
 #endif
 		break;
@@ -828,7 +799,7 @@ gopher_protocol_handler(struct connection *conn)
 	state = init_gopher_connection_info(conn);
 	if (state != S_CONN) {
 		/* FIXME: Handle bad selector ... */
-		end_gopher_connection(conn, state);
+		abort_connection(conn, state);
 		return;
 	}
 

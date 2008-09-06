@@ -11,11 +11,15 @@ struct session;
 struct term_event;
 struct terminal;
 struct uri;
+struct conv_table;
 
 void set_link(struct document_view *doc_view);
-void free_link(struct document_view *doc_view);
 void clear_link(struct terminal *term, struct document_view *doc_view);
 void draw_current_link(struct session *ses, struct document_view *doc_view);
+
+void highlight_links_with_prefixes_that_start_with_n(struct terminal *term,
+                                                 struct document_view *doc_view,
+                                                 int n);
 
 void link_menu(struct terminal *term, void *, void *ses);
 
@@ -44,6 +48,8 @@ void jump_to_link_number(struct session *ses, struct document_view *doc_view, in
 
 struct link *goto_current_link(struct session *ses, struct document_view *, int);
 void goto_link_number(struct session *ses, unsigned char *num);
+void get_link_x_bounds(struct link *link, int y, int *min_x, int *max_x);
+
 
 /* Bruteforce compilation fixes */
 enum frame_event_status enter(struct session *ses, struct document_view *doc_view, int do_reload);

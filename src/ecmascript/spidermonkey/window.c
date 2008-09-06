@@ -56,11 +56,16 @@ const JSClass window_class = {
 };
 
 
+/* Tinyids of properties.  Use negative values to distinguish these
+ * from array indexes (even though this object has no array elements).
+ * ECMAScript code should not use these directly as in window[-1];
+ * future versions of ELinks may change the numbers.  */
 enum window_prop {
-	JSP_WIN_CLOSED,
-	JSP_WIN_PARENT,
-	JSP_WIN_SELF,
-	JSP_WIN_TOP,
+	JSP_WIN_CLOSED = -1,
+	JSP_WIN_PARENT = -2,
+	JSP_WIN_SELF   = -3,
+	JSP_WIN_STATUS = -4,
+	JSP_WIN_TOP    = -5,
 };
 /* "location" is special because we need to simulate "location.href"
  * when the code is asking directly for "location". We do not register
@@ -72,6 +77,7 @@ const JSPropertySpec window_props[] = {
 	{ "closed",	JSP_WIN_CLOSED,	JSPROP_ENUMERATE | JSPROP_READONLY },
 	{ "parent",	JSP_WIN_PARENT,	JSPROP_ENUMERATE | JSPROP_READONLY },
 	{ "self",	JSP_WIN_SELF,	JSPROP_ENUMERATE | JSPROP_READONLY },
+	{ "status",	JSP_WIN_STATUS,	JSPROP_ENUMERATE },
 	{ "top",	JSP_WIN_TOP,	JSPROP_ENUMERATE | JSPROP_READONLY },
 	{ "window",	JSP_WIN_SELF,	JSPROP_ENUMERATE | JSPROP_READONLY },
 	{ NULL }
@@ -202,6 +208,8 @@ found_parent:
 		break;
 	}
 #endif
+	case JSP_WIN_STATUS:
+		return JS_FALSE;
 	case JSP_WIN_TOP:
 	{
 		struct document_view *doc_view = vs->doc_view;
@@ -274,6 +282,10 @@ window_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		return JS_TRUE;
 
 	switch (JSVAL_TO_INT(id)) {
+	case JSP_WIN_STATUS:
+		mem_free_set(&vs->doc_view->session->status.window_status, stracpy(jsval_to_string(ctx, vp)));
+		print_screen_status(vs->doc_view->session);
+		return JS_TRUE;
 	default:
 		/* Unrecognized integer property ID; someone is using
 		 * the object as an array.  SMJS builtin classes (e.g.
@@ -288,10 +300,12 @@ window_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 static JSBool window_alert(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
 static JSBool window_open(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
+static JSBool window_setTimeout(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
 
 const spidermonkeyFunctionSpec window_funcs[] = {
 	{ "alert",	window_alert,		1 },
 	{ "open",	window_open,		3 },
+	{ "setTimeout",	window_setTimeout,	2 },
 	{ NULL }
 };
 
@@ -320,34 +334,6 @@ window_alert(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	return JS_TRUE;
 }
 
-struct delayed_open {
-	struct session *ses;
-	struct uri *uri;
-	unsigned char *target;
-};
-
-static void
-delayed_open(void *data)
-{
-	struct delayed_open *deo = data;
-
-	assert(deo);
-	open_uri_in_new_tab(deo->ses, deo->uri, 0, 0);
-	done_uri(deo->uri);
-	mem_free(deo);
-}
-
-static void
-delayed_goto_uri_frame(void *data)
-{
-	struct delayed_open *deo = data;
-
-	assert(deo);
-	goto_uri_frame(deo->ses, deo->uri, deo->target, CACHE_MODE_NORMAL);
-	done_uri(deo->uri);
-	mem_free(deo);
-}
-
 /* @window_funcs{"open"} */
 static JSBool
 window_open(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -355,7 +341,7 @@ window_open(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 	struct view_state *vs;
 	struct document_view *doc_view;
 	struct session *ses;
-	unsigned char *target = "";
+	unsigned char *frame = "";
 	unsigned char *url;
 	struct uri *uri;
 	static time_t ratelimit_start;
@@ -376,10 +362,20 @@ window_open(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 
 	if (argc < 1) return JS_TRUE;
 
+	url = stracpy(jsval_to_string(ctx, &argv[0]));
+	trim_chars(url, ' ', 0);
+	if (argc > 1) {
+		frame = stracpy(jsval_to_string(ctx, &argv[1]));
+		if (!frame) {
+			mem_free(url);
+			return JS_TRUE;
+		}
+		if (!ecmascript_check_url(url, frame)) return JS_TRUE;
+	}
+
 	/* Ratelimit window opening. Recursive window.open() is very nice.
 	 * We permit at most 20 tabs in 2 seconds. The ratelimiter is very
 	 * rough but shall suffice against the usual cases. */
-
 	if (!ratelimit_start || time(NULL) - ratelimit_start > 2) {
 		ratelimit_start = time(NULL);
 		ratelimit_count = 0;
@@ -389,26 +385,22 @@ window_open(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 			return JS_TRUE;
 	}
 
-	url = jsval_to_string(ctx, &argv[0]);
-
 	/* TODO: Support for window naming and perhaps some window features? */
 
-	url = join_urls(doc_view->document->uri,
-	                trim_chars(url, ' ', 0));
+	url = join_urls(doc_view->document->uri, url);
 	if (!url) return JS_TRUE;
 	uri = get_uri(url, 0);
 	mem_free(url);
 	if (!uri) return JS_TRUE;
 
-	if (argc > 1) target = jsval_to_string(ctx, &argv[1]);
 
-	if (*target && strcasecmp(target, "_blank")) {
+	if (*frame && strcasecmp(frame, "_blank")) {
 		struct delayed_open *deo = mem_calloc(1, sizeof(*deo));
 
 		if (deo) {
 			deo->ses = ses;
 			deo->uri = get_uri_reference(uri);
-			deo->target = target;
+			deo->target = stracpy(frame);
 			register_bottom_half(delayed_goto_uri_frame, deo);
 			boolean_to_jsval(ctx, rval, 1);
 			goto end;
@@ -440,5 +432,32 @@ window_open(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 end:
 	done_uri(uri);
 
+	return JS_TRUE;
+}
+
+/* @window_funcs{"setTimeout"} */
+static JSBool
+window_setTimeout(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct ecmascript_interpreter *interpreter = JS_GetContextPrivate(ctx);
+	unsigned char *code;
+	int timeout;
+
+	if (argc != 2)
+		return JS_TRUE;
+
+	code = jsval_to_string(ctx, &argv[0]);
+	if (!*code)
+		return JS_TRUE;
+
+	code = stracpy(code);
+	if (!code)
+		return JS_TRUE;
+	timeout = atoi(jsval_to_string(ctx, &argv[1]));
+	if (timeout <= 0) {
+		mem_free(code);
+		return JS_TRUE;
+	}
+	ecmascript_set_timeout(interpreter, code, timeout);
 	return JS_TRUE;
 }

@@ -39,6 +39,7 @@
 
 
 INIT_INPUT_HISTORY(global_history);
+INIT_LIST_OF(struct global_history_item, global_history_reap_list);
 
 
 /* GUI stuff. Declared here because done_global_history() frees it. */
@@ -107,12 +108,28 @@ remove_item_from_global_history(struct global_history_item *history_item)
 }
 
 static void
+reap_deleted_globhist_items(void)
+{
+	struct global_history_item *history_item, *next;
+
+	foreachsafe(history_item, next, global_history_reap_list) {
+		if (!is_object_used(history_item)) {
+			del_from_list(history_item);
+			mem_free(history_item->title);
+			mem_free(history_item->url);
+			mem_free(history_item);
+		}
+	}
+}
+
+static void
 done_global_history_item(struct global_history_item *history_item)
 {
 	done_listbox_item(&globhist_browser, history_item->box_item);
-	mem_free(history_item->title);
-	mem_free(history_item->url);
-	mem_free(history_item);
+
+	history_item->box_item = NULL;
+
+	add_to_list(global_history_reap_list, history_item);
 }
 
 void
@@ -231,7 +248,7 @@ add_item_to_global_history(struct global_history_item *history_item,
 
 	/* Hash creation if needed. */
 	if (!globhist_cache)
-		globhist_cache = init_hash(8, &strhash);
+		globhist_cache = init_hash8();
 
 	if (globhist_cache && globhist_cache_entries < max_globhist_items) {
 		int urllen = strlen(history_item->url);
@@ -259,6 +276,8 @@ add_global_history_item(unsigned char *url, unsigned char *title, time_t vtime)
 	if (history_item) delete_global_history_item(history_item);
 
 	if (!cap_global_history(max_globhist_items)) return;
+
+	reap_deleted_globhist_items();
 
 	history_item = init_global_history_item(url, title, vtime);
 	if (!history_item) return;
@@ -322,7 +341,8 @@ read_global_history(void)
 		return;
 
 	if (elinks_home) {
-		file_name = straconcat(elinks_home, file_name, NULL);
+		file_name = straconcat(elinks_home, file_name,
+				       (unsigned char *) NULL);
 		if (!file_name) return;
 	}
 	f = fopen(file_name, "rb");
@@ -366,7 +386,8 @@ write_global_history(void)
 	    || get_cmd_opt_bool("anonymous"))
 		return;
 
-	file_name = straconcat(elinks_home, GLOBAL_HISTORY_FILENAME, NULL);
+	file_name = straconcat(elinks_home, GLOBAL_HISTORY_FILENAME,
+			       (unsigned char *) NULL);
 	if (!file_name) return;
 
 	ssi = secure_open(file_name);
@@ -374,10 +395,11 @@ write_global_history(void)
 	if (!ssi) return;
 
 	foreachback (history_item, global_history.entries) {
-		if (secure_fprintf(ssi, "%s\t%s\t%ld\n",
+		if (secure_fprintf(ssi, "%s\t%s\t%"TIME_PRINT_FORMAT"\n",
 				   history_item->title,
 				   history_item->url,
-				   history_item->last_visit) < 0) break;
+				   (time_print_T) history_item->last_visit) < 0)
+			break;
 	}
 
 	if (!secure_close(ssi)) global_history.dirty = 0;
@@ -387,13 +409,14 @@ static void
 free_global_history(void)
 {
 	if (globhist_cache) {
-		free_hash(globhist_cache);
-		globhist_cache = NULL;
+		free_hash(&globhist_cache);
 		globhist_cache_entries = 0;
 	}
 
 	while (!list_empty(global_history.entries))
 		delete_global_history_item(global_history.entries.next);
+
+	reap_deleted_globhist_items();
 }
 
 static enum evhook_status

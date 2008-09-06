@@ -185,7 +185,7 @@ get_shell(void)
 
 /* Terminal size */
 
-#if !defined(CONFIG_OS2) && !defined(CONFIG_WIN32)
+#if !defined(CONFIG_OS_OS2) && !defined(CONFIG_OS_WIN32)
 
 static void
 sigwinch(void *s)
@@ -232,7 +232,7 @@ get_terminal_size(int fd, int *x, int *y)
 
 /* Pipe */
 
-#if defined(CONFIG_UNIX) || defined(CONFIG_BEOS) || defined(CONFIG_RISCOS)
+#if defined(CONFIG_OS_UNIX) || defined(CONFIG_OS_BEOS) || defined(CONFIG_OS_RISCOS)
 
 void
 set_bin(int fd)
@@ -245,7 +245,7 @@ c_pipe(int *fd)
 	return pipe(fd);
 }
 
-#elif defined(CONFIG_OS2) || defined(CONFIG_WIN32)
+#elif defined(CONFIG_OS_OS2) || defined(CONFIG_OS_WIN32)
 
 void
 set_bin(int fd)
@@ -291,7 +291,7 @@ is_gnuscreen(void)
 }
 
 
-#if defined(CONFIG_UNIX) || defined(CONFIG_WIN32)
+#if defined(CONFIG_OS_UNIX) || defined(CONFIG_OS_WIN32)
 
 int
 is_xterm(void)
@@ -332,9 +332,9 @@ is_xterm(void)
 
 unsigned int resize_count = 0;
 
-#ifndef CONFIG_OS2
+#ifndef CONFIG_OS_OS2
 
-#if !(defined(CONFIG_BEOS) && defined(HAVE_SETPGID)) && !defined(CONFIG_WIN32)
+#if !(defined(CONFIG_OS_BEOS) && defined(HAVE_SETPGID)) && !defined(CONFIG_OS_WIN32)
 
 int
 exe(unsigned char *path)
@@ -344,14 +344,44 @@ exe(unsigned char *path)
 
 #endif
 
+static unsigned char *clipboard;
+
 unsigned char *
-get_clipboard_text(void)	/* !!! FIXME */
+get_clipboard_text(void)
 {
-	unsigned char *ret = mem_alloc(1);
+	/* The following support for GNU Screen's clipboard is
+	 * disabled for two reasons:
+	 *
+	 * 1. It does not actually return the string from that
+	 *    clipboard, but rather causes the clipboard contents to
+	 *    appear in stdin.	get_clipboard_text is normally called
+	 *    because the user pressed a Paste key in an input field,
+	 *    so the characters end up being inserted in that field;
+	 *    but if there are newlines in the clipboard, then the
+	 *    field may lose focus, in which case the remaining
+	 *    characters may trigger arbitrary actions in ELinks.
+	 *
+	 * 2. It pastes from both GNU Screen's clipboard and the ELinks
+	 *    internal clipboard.  Because set_clipboard_text also sets
+	 *    them both, the same text would typically get pasted twice.
+	 *
+	 * Users can instead use the GNU Screen key bindings to run the
+	 * paste command.  This method still suffers from problem 1 but
+	 * any user of GNU Screen should know that already.  */
+#if 0
+	/* GNU Screen's clipboard */
+	if (is_gnuscreen()) {
+		struct string str;
 
-	if (ret) ret[0] = 0;
+		if (!init_string(&str)) return NULL;
 
-	return ret;
+		add_to_string(&str, "screen -X paste .");
+		if (str.length) exe(str.source);
+		if (str.source) done_string(&str);
+	}
+#endif
+
+	return stracpy(empty_string_or_(clipboard));
 }
 
 void
@@ -370,7 +400,9 @@ set_clipboard_text(unsigned char *data)
 		if (str.source) done_string(&str);
 	}
 
-	/* TODO: internal clipboard */
+	/* Shouldn't complain about leaks. */
+	if (clipboard) free(clipboard);
+	clipboard = strdup(data);
 }
 
 /* Set xterm-like term window's title. */
@@ -559,13 +591,41 @@ resize_window(int width, int height, int old_width, int old_height)
 	}
 
 	if (!x_error && status) {
-		double ratio_width = (double) attributes.width  / old_width;
-		double ratio_height = (double) attributes.height / old_height;
+		XSizeHints *size_hints;
+		long mask;
+		int px_width = 0;
+		int px_height = 0;
 
-		width  = (int) ((double) width * ratio_width);
-		height = (int) ((double) height * ratio_height);
+		/* With xterm 210, a window with 80x24 characters at
+		 * a 6x13 font appears to have 484x316 pixels; both
+		 * the width and height include four extra pixels.
+		 * Computing a new size by scaling these values often
+		 * results in windows that cannot display as many
+		 * characters as was intended.  We can do better if we
+		 * can find out the actual size of character cells.
+		 * If the terminal emulator has set a window size
+		 * increment, assume that is the cell size.  */
+		size_hints = XAllocSizeHints();
+		if (size_hints != NULL
+		    && XGetWMNormalHints(display, window, size_hints, &mask)
+		    && (mask & PResizeInc) != 0) {
+			px_width = attributes.width
+				+ (width - old_width) * size_hints->width_inc;
+			px_height = attributes.height
+				+ (height - old_height) * size_hints->height_inc;
+		}
+		if (px_width <= 0 || px_height <= 0) {
+			double ratio_width = (double) attributes.width  / old_width;
+			double ratio_height = (double) attributes.height / old_height;
 
-		status = XResizeWindow(display, window, width, height);
+			px_width  = (int) ((double) width * ratio_width);
+			px_height = (int) ((double) height * ratio_height);
+		}
+
+		if (size_hints)
+			XFree(size_hints);
+
+		status = XResizeWindow(display, window, px_width, px_height);
 		while (!x_error && !status) {
 			Window root, parent, *children;
 			unsigned int num_children;
@@ -577,7 +637,7 @@ resize_window(int width, int height, int old_width, int old_height)
 			if (parent == root || parent == 0)
 				break;
 			window = parent;
-			status = XResizeWindow(display, window, width, height);
+			status = XResizeWindow(display, window, px_width, px_height);
 		}
 	}
 
@@ -594,7 +654,7 @@ resize_window(int width, int height, int old_width, int old_height)
 
 /* Threads */
 
-#if defined(HAVE_BEGINTHREAD) || defined(CONFIG_BEOS)
+#if defined(HAVE_BEGINTHREAD) || defined(CONFIG_OS_BEOS)
 
 struct tdata {
 	void (*fn)(void *, int);
@@ -676,7 +736,7 @@ done_draw(void)
 #endif
 
 
-#if !defined(CONFIG_WIN32)
+#if !defined(CONFIG_OS_WIN32)
 int
 get_output_handle(void)
 {
@@ -695,8 +755,8 @@ get_ctl_handle(void)
 #endif
 
 
-#if !defined(CONFIG_BEOS) && !(defined(HAVE_BEGINTHREAD) && defined(HAVE_READ_KBD)) \
-	&& !defined(CONFIG_WIN32)
+#if !defined(CONFIG_OS_BEOS) && !(defined(HAVE_BEGINTHREAD) && defined(HAVE_READ_KBD)) \
+	&& !defined(CONFIG_OS_WIN32)
 
 int
 get_input_handle(void)
@@ -706,7 +766,7 @@ get_input_handle(void)
 
 #endif
 
-#ifndef CONFIG_WIN32
+#ifndef CONFIG_OS_WIN32
 
 void
 init_osdep(void)
@@ -718,7 +778,7 @@ init_osdep(void)
 
 #endif
 
-#if defined(CONFIG_UNIX) || defined(CONFIG_OS2) || defined(CONFIG_RISCOS)
+#if defined(CONFIG_OS_UNIX) || defined(CONFIG_OS_OS2) || defined(CONFIG_OS_RISCOS)
 
 void
 terminate_osdep(void)
@@ -727,7 +787,7 @@ terminate_osdep(void)
 
 #endif
 
-#ifndef CONFIG_BEOS
+#ifndef CONFIG_OS_BEOS
 
 void
 block_stdin(void)
@@ -792,7 +852,7 @@ resume_mouse(void *data)
 
 #endif
 
-#ifndef CONFIG_WIN32
+#ifndef CONFIG_OS_WIN32
 /* Create a bitmask consisting from system-independent envirnoment modifiers.
  * This is then complemented by system-specific modifiers in an appropriate
  * get_system_env() routine. */
@@ -817,7 +877,7 @@ get_common_env(void)
 }
 #endif
 
-#if defined(CONFIG_UNIX) || defined(CONFIG_RISCOS)
+#if defined(CONFIG_OS_UNIX) || defined(CONFIG_OS_RISCOS)
 int
 get_system_env(void)
 {
@@ -832,7 +892,7 @@ can_resize_window(int environment)
 	return !!(environment & (ENV_OS2VIO | ENV_XWIN));
 }
 
-#ifndef CONFIG_OS2
+#ifndef CONFIG_OS_OS2
 int
 can_open_os_shell(int environment)
 {

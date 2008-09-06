@@ -1,4 +1,5 @@
-/* Forms viewing/manipulation handling */
+/** Forms viewing/manipulation handling
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -58,6 +59,7 @@
 /* TODO: Some of these (particulary those encoding routines) would feel better
  * in viewer/common/. --pasky */
 
+/** @relates submitted_value */
 struct submitted_value *
 init_submitted_value(unsigned char *name, unsigned char *value, enum form_type type,
 		     struct form_control *fc, int position)
@@ -80,6 +82,7 @@ init_submitted_value(unsigned char *name, unsigned char *value, enum form_type t
 	return sv;
 }
 
+/** @relates submitted_value */
 void
 done_submitted_value(struct submitted_value *sv)
 {
@@ -150,19 +153,44 @@ selected_item(struct terminal *term, void *item_, void *ses_)
 }
 
 static void
-init_form_state(struct form_control *fc, struct form_state *fs)
+init_form_state(struct document_view *doc_view,
+		struct form_control *fc, struct form_state *fs)
 {
+	struct terminal *term;
+	int doc_cp, viewer_cp;
+
 	assert(fc && fs);
 	if_assert_failed return;
+
+	doc_cp = doc_view->document->cp;
+	term = doc_view->session->tab->term;
+	viewer_cp = get_opt_codepage_tree(term->spec, "charset");
 
 	mem_free_set(&fs->value, NULL);
 
 	switch (fc->type) {
 		case FC_TEXT:
 		case FC_PASSWORD:
+#ifdef CONFIG_FORMHIST
+			fs->value = null_or_stracpy(
+				get_form_history_value(
+					fc->form->action, fc->name));
+#endif /* CONFIG_FORMHIST */
+			/* fall through */
 		case FC_TEXTAREA:
-			fs->value = stracpy(fc->default_value);
-			fs->state = strlen(fc->default_value);
+			if (fs->value == NULL) {
+				fs->value = convert_string(
+					get_translation_table(doc_cp, viewer_cp),
+					fc->default_value,
+					strlen(fc->default_value),
+					viewer_cp, CSM_FORM,
+					&fs->state, NULL, NULL);
+			}
+			fs->state = fs->value ? strlen(fs->value) : 0;
+#ifdef CONFIG_UTF8
+			if (fc->type == FC_TEXTAREA)
+				fs->state_cell = 0;
+#endif /* CONFIG_UTF8 */
 			fs->vpos = 0;
 			break;
 		case FC_FILE:
@@ -171,7 +199,12 @@ init_form_state(struct form_control *fc, struct form_state *fs)
 			fs->vpos = 0;
 			break;
 		case FC_SELECT:
-			fs->value = stracpy(fc->default_value);
+			fs->value = convert_string(
+				get_translation_table(doc_cp, viewer_cp),
+				fc->default_value,
+				strlen(fc->default_value),
+				viewer_cp, CSM_FORM,
+				&fs->state, NULL, NULL);
 			fs->state = fc->default_state;
 			fixup_select_state(fc, fs);
 			break;
@@ -184,6 +217,7 @@ init_form_state(struct form_control *fc, struct form_state *fs)
 		case FC_RESET:
 		case FC_BUTTON:
 		case FC_HIDDEN:
+			/* We don't want to recode hidden fields. */
 			fs->value = stracpy(fc->default_value);
 			break;
 	}
@@ -206,10 +240,8 @@ find_form_state(struct document_view *doc_view, struct form_control *fc)
 	if (n >= vs->form_info_len) {
 		int nn = n + 1;
 
-		fs = mem_realloc(vs->form_info, nn * sizeof(*fs));
+		fs = mem_align_alloc(&vs->form_info, vs->form_info_len, nn, 0);
 		if (!fs) return NULL;
-		memset(fs + vs->form_info_len, 0,
-		       (nn - vs->form_info_len) * sizeof(*fs));
 		vs->form_info = fs;
 		vs->form_info_len = nn;
 	}
@@ -227,7 +259,7 @@ find_form_state(struct document_view *doc_view, struct form_control *fc)
 	fs->g_ctrl_num = fc->g_ctrl_num;
 	fs->position = fc->position;
 	fs->type = fc->type;
-	init_form_state(fc, fs);
+	init_form_state(doc_view, fc, fs);
 
 	return fs;
 }
@@ -320,7 +352,7 @@ draw_form_entry(struct terminal *term, struct document_view *doc_view,
 	if_assert_failed return;
 
 	fc = get_link_form_control(link);
-	assertm(fc, "link %d has no form control", (int) (link - doc_view->document->links));
+	assertm(fc != NULL, "link %d has no form control", (int) (link - doc_view->document->links));
 	if_assert_failed return;
 
 	fs = find_form_state(doc_view, fc);
@@ -332,21 +364,28 @@ draw_form_entry(struct terminal *term, struct document_view *doc_view,
 	dy = box->y - vs->y;
 	switch (fc->type) {
 		unsigned char *s;
+#ifdef CONFIG_UTF8
+		unsigned char *text, *end, *last_in_view;
+		int retried;
+#endif /* CONFIG_UTF8 */
 		int len;
 		int i, x, y;
 
 		case FC_TEXT:
 		case FC_PASSWORD:
 		case FC_FILE:
-			int_bounds(&fs->vpos, fs->state - fc->size + 1, fs->state);
 			if (!link->npoints) break;
 
 			y = link->points[0].y + dy;
 			if (!row_is_in_box(box, y))
 				break;
 
-			len = strlen(fs->value) - fs->vpos;
 			x = link->points[0].x + dx;
+#ifdef CONFIG_UTF8
+			if (term->utf8_cp) goto utf8;
+#endif /* CONFIG_UTF8 */
+			int_bounds(&fs->vpos, fs->state - fc->size + 1, fs->state);
+			len = strlen(fs->value) - fs->vpos;
 
 			for (i = 0; i < fc->size; i++, x++) {
 				unsigned char data;
@@ -362,6 +401,124 @@ draw_form_entry(struct terminal *term, struct document_view *doc_view,
 				draw_char_data(term, x, y, data);
 			}
 			break;
+#ifdef CONFIG_UTF8
+utf8:
+			retried = 0;
+
+retry_after_scroll:
+			text = fs->value;
+			if (!text) text = "";
+			len = strlen(text);
+			int_bounds(&fs->state, 0, len);
+			int_bounds(&fs->vpos, 0, fs->state);
+			end = text + len;
+			text += fs->vpos;
+			last_in_view = NULL;
+
+			for (i = 0; i < fc->size; ) {
+				unicode_val_T data;
+				int cells, cell;
+				unsigned char *maybe_in_view = text;
+
+				data = utf8_to_unicode(&text, end);
+				if (data == UCS_NO_CHAR) /* end of string */
+					data = '_';
+				else if (fc->type == FC_PASSWORD)
+					data = '*';
+
+				cells = unicode_to_cell(data);
+				if (i + cells <= fc->size) {
+					last_in_view = maybe_in_view;
+					if (colspan_is_in_box(box, x + i, cells)) {
+						/* The character fits completely.
+						 * Draw the character, and mark any
+						 * further cells with UCS_NO_CHAR.  */
+						draw_char_data(term, x + i, y, data);
+						for (cell = 1; cell < cells; cell++)
+							draw_char_data(term, x + i + cell,
+								       y, UCS_NO_CHAR);
+						goto drew_char;
+					}
+				}
+
+				/* The character does not fit completely.
+				 * Write UCS_ORPHAN_CELL to the cells that
+				 * do fit.  */
+				for (cell = 0; cell < cells; cell++) {
+					if (col_is_in_box(box, x + i + cell)
+					    && i + cell < fc->size)
+						draw_char_data(term,
+							       x + i + cell, y,
+							       UCS_ORPHAN_CELL);
+				}
+
+drew_char:
+				i += cells;
+			}
+
+			/* The int_bounds calls above ensured that the
+			 * insertion point cannot be at the left side
+			 * of the scrolled-visible part of the text.
+			 * However it can still be at the right side.
+			 * Check whether we need to change fs->vpos.
+			 *
+			 * This implementation attempts to follow
+			 * these rules:
+			 * - If the insertion point is at the end of
+			 *   the string, leave at least one empty cell
+			 *   so that there is a place for the cursor.
+			 * - If a character follows the insertion
+			 *   point, make that character fully visible;
+			 *   note the character may be double-width.
+			 * - If fc->size < 2, it is not possible to
+			 *   make a double-width character fully
+			 *   visible.  In this case, it is OK if the
+			 *   output is ugly, but ELinks must not fall
+			 *   into an infinite loop or crash.
+			 * - The length of the string should not affect
+			 *   how long this function takes.  The width
+			 *   of the widget naturally will.
+			 * - Optimize the case where fields are drawn
+			 *   several times without being modified.
+			 *
+			 * It follows that:
+			 * - If the "for i" loop above hit UCS_NO_CHAR,
+			 *   then there is no need to scroll.
+			 * - When the string ends with a double-width
+			 *   character that fits in only partially,
+			 *   then text==end, but the field may have
+			 *   to be scrolled.  */
+			if (fs->value && last_in_view
+			    && last_in_view < fs->value + fs->state) {
+				unsigned char *ptr = fs->value + fs->state;
+				int cells = fc->size;
+				enum utf8_step how = (fc->type == FC_PASSWORD)
+					? UTF8_STEP_CHARACTERS
+					: UTF8_STEP_CELLS_FEWER;
+
+				/* The insertion point is at the right
+				 * side of the scrolled-visible part
+				 * of the text.  Decide a new fs->vpos
+				 * by counting cells backwards from
+				 * @ptr.  But first advance @ptr past
+				 * the character that follows the
+				 * insertion point, so that it will be
+				 * fully displayed.  If there is no
+				 * such character, reserve one cell
+				 * for the cursor anyway.  */
+				if (utf8_to_unicode(&ptr, end) == UCS_NO_CHAR)
+					--cells;
+				ptr = utf8_step_backward(ptr, fs->value,
+							 cells, how, NULL);
+
+				if (fs->vpos != ptr - fs->value) {
+					fs->vpos = ptr - fs->value;
+					retried = 1;
+					goto retry_after_scroll;
+				}
+			}
+			break;
+#endif /* CONFIG_UTF8 */
 		case FC_TEXTAREA:
 			draw_textarea(term, fs, doc_view, link);
 			break;
@@ -380,6 +537,9 @@ draw_form_entry(struct terminal *term, struct document_view *doc_view,
 			else
 				/* XXX: when can this happen? --pasky */
 				s = "";
+#ifdef CONFIG_UTF8
+			if (term->utf8_cp) goto utf8_select;
+#endif /* CONFIG_UTF8 */
 			len = s ? strlen(s) : 0;
 			for (i = 0; i < link->npoints; i++) {
 				x = link->points[i].x + dx;
@@ -388,6 +548,36 @@ draw_form_entry(struct terminal *term, struct document_view *doc_view,
 					draw_char_data(term, x, y, i < len ? s[i] : '_');
 			}
 			break;
+#ifdef CONFIG_UTF8
+utf8_select:
+			text = s;
+			end = strchr(s, '\0');
+			len = utf8_ptr2cells(text, end);
+			for (i = 0; i < link->npoints; i++) {
+				x = link->points[i].x + dx;
+				y = link->points[i].y + dy;
+				if (is_in_box(box, x, y)) {
+					unicode_val_T data;
+					if (i < len) {
+						int cell;
+
+						data = utf8_to_unicode(&s, end);
+						cell = unicode_to_cell(data);
+						if (i + 1 < len && cell == 2) {
+							draw_char_data(term, x++, y, data);
+
+							data = UCS_NO_CHAR;
+							i++;
+						} else if (cell == 2) {
+							data = UCS_ORPHAN_CELL;
+						}
+					} else
+						data = '_';
+					draw_char_data(term, x, y, data);
+				}
+			}
+			break;
+#endif /* CONFIG_UTF8 */
 		case FC_SUBMIT:
 		case FC_IMAGE:
 		case FC_RESET:
@@ -417,26 +607,15 @@ draw_forms(struct terminal *term, struct document_view *doc_view)
 		struct form_control *fc = get_link_form_control(l1);
 
 		if (!fc) continue;
-#ifdef CONFIG_FORMHIST
-		if (fc->type == FC_TEXT || fc->type == FC_PASSWORD) {
-			unsigned char *value;
-
-			assert(fc->form);
-			value = get_form_history_value(fc->form->action, fc->name);
-
-			if (value)
-				mem_free_set(&fc->default_value,
-					     stracpy(value));
-		}
-#endif /* CONFIG_FORMHIST */
 		draw_form_entry(term, doc_view, l1);
 
 	} while (l1++ < l2);
 }
 
 
+/** @relates submitted_value */
 void
-done_submitted_value_list(struct list_head *list)
+done_submitted_value_list(LIST_OF(struct submitted_value) *list)
 {
 	struct submitted_value *sv, *svtmp;
 
@@ -454,7 +633,7 @@ done_submitted_value_list(struct list_head *list)
 static void
 add_submitted_value_to_list(struct form_control *fc,
 		            struct form_state *fs,
-		            struct list_head *list)
+		            LIST_OF(struct submitted_value) *list)
 {
 	struct submitted_value *sub;
 	unsigned char *name;
@@ -499,13 +678,13 @@ add_submitted_value_to_list(struct form_control *fc,
 		break;
 
 	case FC_IMAGE:
-	        name = straconcat(fc->name, ".x", NULL);
+	        name = straconcat(fc->name, ".x", (unsigned char *) NULL);
 		if (!name) break;
 		sub = init_submitted_value(name, "0", type, fc, position);
 		mem_free(name);
 		if (sub) add_to_list(*list, sub);
 
-		name = straconcat(fc->name, ".y", NULL);
+		name = straconcat(fc->name, ".y", (unsigned char *) NULL);
 		if (!name) break;
 		sub = init_submitted_value(name, "0", type, fc, position);
 		mem_free(name);
@@ -516,7 +695,7 @@ add_submitted_value_to_list(struct form_control *fc,
 }
 
 static void
-sort_submitted_values(struct list_head *list)
+sort_submitted_values(LIST_OF(struct submitted_value) *list)
 {
 	while (1) {
 		struct submitted_value *sub;
@@ -548,7 +727,8 @@ sort_submitted_values(struct list_head *list)
 
 static void
 get_successful_controls(struct document_view *doc_view,
-			struct form_control *fc, struct list_head *list)
+			struct form_control *fc,
+			LIST_OF(struct submitted_value) *list)
 {
 	struct form_control *fc2;
 
@@ -573,7 +753,7 @@ get_successful_controls(struct document_view *doc_view,
 }
 
 static void
-encode_controls(struct list_head *l, struct string *data,
+encode_controls(LIST_OF(struct submitted_value) *l, struct string *data,
 		int cp_from, int cp_to)
 {
 	struct submitted_value *sv;
@@ -630,7 +810,7 @@ encode_controls(struct list_head *l, struct string *data,
 
 #define BOUNDARY_LENGTH	32
 #define realloc_bound_ptrs(bptrs, bptrs_size) \
-	mem_align_alloc(bptrs, bptrs_size, bptrs_size + 1, int, 0xFF)
+	mem_align_alloc(bptrs, bptrs_size, bptrs_size + 1, 0xFF)
 
 struct boundary_info {
 	int count;
@@ -638,6 +818,7 @@ struct boundary_info {
 	unsigned char string[BOUNDARY_LENGTH];
 };
 
+/** @relates boundary_info */
 static inline void
 init_boundary(struct boundary_info *boundary)
 {
@@ -645,7 +826,8 @@ init_boundary(struct boundary_info *boundary)
 	memset(boundary->string, '0', BOUNDARY_LENGTH);
 }
 
-/* Add boundary to string and save the offset */
+/** Add boundary to string and save the offset
+ * @relates boundary_info */
 static inline void
 add_boundary(struct string *data, struct boundary_info *boundary)
 {
@@ -657,6 +839,7 @@ add_boundary(struct string *data, struct boundary_info *boundary)
 	add_bytes_to_string(data, boundary->string, BOUNDARY_LENGTH);
 }
 
+/** @relates boundary_info */
 static inline unsigned char *
 increment_boundary_counter(struct boundary_info *boundary)
 {
@@ -675,6 +858,7 @@ increment_boundary_counter(struct boundary_info *boundary)
 	return NULL;
 }
 
+/** @relates boundary_info */
 static inline void
 check_boundary(struct string *data, struct boundary_info *boundary)
 {
@@ -720,9 +904,10 @@ check_boundary(struct string *data, struct boundary_info *boundary)
 		memcpy(data->source + boundary->offsets[i], bound, BOUNDARY_LENGTH);
 }
 
-/* FIXME: shouldn't we encode data at send time (in http.c) ? --Zas */
+/** @todo FIXME: shouldn't we encode data at send time (in http.c) ? --Zas */
 static void
-encode_multipart(struct session *ses, struct list_head *l, struct string *data,
+encode_multipart(struct session *ses, LIST_OF(struct submitted_value) *l,
+		 struct string *data,
 		 struct boundary_info *boundary, int cp_from, int cp_to)
 {
 	struct conv_table *convert_table = NULL;
@@ -737,7 +922,7 @@ encode_multipart(struct session *ses, struct list_head *l, struct string *data,
 		add_boundary(data, boundary);
 		add_crlf_to_string(data);
 
-		/* FIXME: name is not encoded.
+		/** @bug FIXME: name is not encoded.
 		 * from RFC 1867:
 		 * multipart/form-data contains a series of parts.
 		 * Each part is expected to contain a content-disposition
@@ -885,7 +1070,7 @@ encode_newlines(struct string *string, unsigned char *data)
 }
 
 static void
-encode_text_plain(struct list_head *l, struct string *data,
+encode_text_plain(LIST_OF(struct submitted_value) *l, struct string *data,
 		  int cp_from, int cp_to)
 {
 	struct submitted_value *sv;
@@ -941,7 +1126,7 @@ do_reset_form(struct document_view *doc_view, struct form *form)
 	foreach (fc, form->items) {
 		struct form_state *fs = find_form_state(doc_view, fc);
 
-		if (fs) init_form_state(fc, fs);
+		if (fs) init_form_state(doc_view, fc, fs);
 	}
 }
 
@@ -965,7 +1150,7 @@ get_form_uri(struct session *ses, struct document_view *doc_view,
 	     struct form_control *fc)
 {
 	struct boundary_info boundary;
-	INIT_LIST_HEAD(submit);
+	INIT_LIST_OF(struct submitted_value, submit);
 	struct string data;
 	struct string go;
 	int cp_from, cp_to;
@@ -981,8 +1166,6 @@ get_form_uri(struct session *ses, struct document_view *doc_view,
 
 	if (fc->type == FC_RESET) {
 		do_reset_form(doc_view, form);
-		return NULL;
-	} else if (fc->type == FC_BUTTON) {
 		return NULL;
 	}
 
@@ -1102,7 +1285,8 @@ submit_form(struct session *ses, struct document_view *doc_view, int do_reload)
 }
 
 void
-submit_given_form(struct session *ses, struct document_view *doc_view, struct form *form)
+submit_given_form(struct session *ses, struct document_view *doc_view,
+		  struct form *form, int do_reload)
 {
 /* Added support for submitting forms in hidden
  * links in 1.285, commented code can safely be removed once we have made sure the new
@@ -1125,11 +1309,12 @@ submit_given_form(struct session *ses, struct document_view *doc_view, struct fo
 	if (!list_empty(form->items)) {
 		struct form_control *fc = (struct form_control *)form->items.next;
 		struct uri *uri;
+		enum cache_mode mode = do_reload ? CACHE_MODE_FORCE_RELOAD : CACHE_MODE_NORMAL;
 
 		if (!fc) return;
 		uri = get_form_uri(ses, doc_view, fc);
 		if (!uri) return;
-		goto_uri_frame(ses, uri, form->target, CACHE_MODE_NORMAL);
+		goto_uri_frame(ses, uri, form->target, mode);
 		done_uri(uri);
 	}
 }
@@ -1140,7 +1325,7 @@ auto_submit_form(struct session *ses)
 	struct document *document = ses->doc_view->document;
 
 	if (!list_empty(document->forms))
-		submit_given_form(ses, ses->doc_view, document->forms.next);
+		submit_given_form(ses, ses->doc_view, document->forms.next, 0);
 }
 
 
@@ -1197,12 +1382,16 @@ field_op(struct session *ses, struct document_view *doc_view,
 	unsigned char *text;
 	int length;
 	enum frame_event_status status = FRAME_EVENT_REFRESH;
+#ifdef CONFIG_UTF8
+	const unsigned char *ctext;
+	int utf8 = ses->tab->term->utf8_cp;
+#endif /* CONFIG_UTF8 */
 
 	assert(ses && doc_view && link && ev);
 	if_assert_failed return FRAME_EVENT_OK;
 
 	fc = get_link_form_control(link);
-	assertm(fc, "link has no form control");
+	assertm(fc != NULL, "link has no form control");
 	if_assert_failed return FRAME_EVENT_OK;
 
 	if (fc->mode == FORM_MODE_DISABLED || ev->ev != EVENT_KBD
@@ -1216,47 +1405,102 @@ field_op(struct session *ses, struct document_view *doc_view,
 
 	switch (action_id) {
 		case ACT_EDIT_LEFT:
-			fs->state = int_max(fs->state - 1, 0);
+#ifdef CONFIG_UTF8
+			if (fc->type == FC_TEXTAREA) {
+				status = textarea_op_left(fs, fc, utf8);
+				break;
+			}
+			if (utf8) {
+				unsigned char *new_value;
+
+				new_value = utf8_prevchar(fs->value + fs->state, 1, fs->value);
+				fs->state = new_value - fs->value;
+			} else
+#endif /* CONFIG_UTF8 */
+				fs->state = int_max(fs->state - 1, 0);
 			break;
 		case ACT_EDIT_RIGHT:
-			fs->state = int_min(fs->state + 1, strlen(fs->value));
+#ifdef CONFIG_UTF8
+			if (fc->type == FC_TEXTAREA) {
+				status = textarea_op_right(fs, fc, utf8);
+				break;
+			}
+			if (utf8) {
+				unsigned char *text = fs->value + fs->state;
+				unsigned char *end = strchr(text, '\0');
+
+				utf8_to_unicode(&text, end);
+				fs->state = (int)(text - fs->value);
+			} else
+#endif /* CONFIG_UTF8 */
+				fs->state = int_min(fs->state + 1, strlen(fs->value));
 			break;
 		case ACT_EDIT_HOME:
+#ifdef CONFIG_UTF8
+			if (fc->type == FC_TEXTAREA) {
+				status = textarea_op_home(fs, fc, utf8);
+			} else {
+				fs->state = 0;
+			}
+#else
 			if (fc->type == FC_TEXTAREA) {
 				status = textarea_op_home(fs, fc);
 			} else {
 				fs->state = 0;
 			}
+
+#endif /* CONFIG_UTF8 */
 			break;
 		case ACT_EDIT_UP:
 			if (fc->type != FC_TEXTAREA)
 				status = FRAME_EVENT_IGNORED;
 			else
+#ifdef CONFIG_UTF8
+				status = textarea_op_up(fs, fc, utf8);
+#else
 				status = textarea_op_up(fs, fc);
+#endif /* CONFIG_UTF8 */
 			break;
 		case ACT_EDIT_DOWN:
 			if (fc->type != FC_TEXTAREA)
 				status = FRAME_EVENT_IGNORED;
 			else
+#ifdef CONFIG_UTF8
+				status = textarea_op_down(fs, fc, utf8);
+#else
 				status = textarea_op_down(fs, fc);
+#endif /* CONFIG_UTF8 */
 			break;
 		case ACT_EDIT_END:
 			if (fc->type == FC_TEXTAREA) {
+#ifdef CONFIG_UTF8
+				status = textarea_op_end(fs, fc, utf8);
+#else
 				status = textarea_op_end(fs, fc);
+#endif /* CONFIG_UTF8 */
 			} else {
 				fs->state = strlen(fs->value);
 			}
 			break;
 		case ACT_EDIT_BEGINNING_OF_BUFFER:
 			if (fc->type == FC_TEXTAREA) {
+#ifdef CONFIG_UTF8
+				status = textarea_op_bob(fs, fc, utf8);
+				fs->state_cell = 0;
+#else
 				status = textarea_op_bob(fs, fc);
+#endif /* CONFIG_UTF8 */
 			} else {
 				fs->state = 0;
 			}
 			break;
 		case ACT_EDIT_END_OF_BUFFER:
 			if (fc->type == FC_TEXTAREA) {
+#ifdef CONFIG_UTF8
+				status = textarea_op_eob(fs, fc, utf8);
+#else
 				status = textarea_op_eob(fs, fc);
+#endif /* CONFIG_UTF8 */
 			} else {
 				fs->state = strlen(fs->value);
 			}
@@ -1276,6 +1520,10 @@ field_op(struct session *ses, struct document_view *doc_view,
 			if (!form_field_is_readonly(fc))
 				fs->value[0] = 0;
 			fs->state = 0;
+#ifdef CONFIG_UTF8
+			if (fc->type == FC_TEXTAREA)
+				fs->state_cell = 0;
+#endif /* CONFIG_UTF8 */
 			break;
 		case ACT_EDIT_PASTE_CLIPBOARD:
 			if (form_field_is_readonly(fc)) break;
@@ -1291,13 +1539,21 @@ field_op(struct session *ses, struct document_view *doc_view,
 					fs->value = v;
 					memmove(v, text, length + 1);
 					fs->state = strlen(fs->value);
+#ifdef CONFIG_UTF8
+					if (utf8 && fc->type == FC_TEXTAREA)
+						fs->state_cell = 0;
+#endif /* CONFIG_UTF8 */
 				}
 			}
 			mem_free(text);
 			break;
 		case ACT_EDIT_ENTER:
 			if (fc->type == FC_TEXTAREA) {
+#ifdef CONFIG_UTF8
+				status = textarea_op_enter(fs, fc, utf8);
+#else
 				status = textarea_op_enter(fs, fc);
+#endif /* CONFIG_UTF8 */
 				break;
 			}
 
@@ -1322,12 +1578,29 @@ field_op(struct session *ses, struct document_view *doc_view,
 				status = FRAME_EVENT_OK;
 				break;
 			}
+#ifdef CONFIG_UTF8
+			if (utf8) {
+				int old_state = fs->state;
+				unsigned char *new_value;
 
-			length = strlen(fs->value + fs->state) + 1;
-			text = fs->value + fs->state;
+				new_value = utf8_prevchar(fs->value + fs->state, 1, fs->value);
+				fs->state = new_value - fs->value;
 
-			memmove(text - 1, text, length);
-			fs->state--;
+				if (old_state != fs->state) {
+					if (fc->type == FC_TEXTAREA)
+						fs->state_cell = 0;
+					length = strlen(fs->value + old_state) + 1;
+					memmove(new_value, fs->value + old_state, length);
+				}
+			} else
+#endif /* CONFIG_UTF8 */
+			{
+				length = strlen(fs->value + fs->state) + 1;
+				text = fs->value + fs->state;
+
+				memmove(text - 1, text, length);
+				fs->state--;
+			}
 			break;
 		case ACT_EDIT_DELETE:
 			if (form_field_is_readonly(fc)) {
@@ -1340,7 +1613,20 @@ field_op(struct session *ses, struct document_view *doc_view,
 				status = FRAME_EVENT_OK;
 				break;
 			}
+#ifdef CONFIG_UTF8
+			if (utf8) {
+				unsigned char *end = fs->value + length;
+				unsigned char *text = fs->value + fs->state;
+				unsigned char *old = text;
 
+				utf8_to_unicode(&text, end);
+				if (old != text) {
+					memmove(old, text,
+						(int)(end - text) + 1);
+				}
+				break;
+			}
+#endif /* CONFIG_UTF8 */
 			text = fs->value + fs->state;
 
 			memmove(text, text + 1, length - fs->state);
@@ -1370,6 +1656,12 @@ field_op(struct session *ses, struct document_view *doc_view,
 			memmove(text, fs->value + fs->state, length);
 
 			fs->state = (int) (text - fs->value);
+#ifdef CONFIG_UTF8
+			if (utf8) {
+				if (fc->type == FC_TEXTAREA)
+					fs->state_cell = 0;
+			}
+#endif /* CONFIG_UTF8 */
 			break;
 		case ACT_EDIT_KILL_TO_EOL:
 			if (form_field_is_readonly(fc)) {
@@ -1392,6 +1684,51 @@ field_op(struct session *ses, struct document_view *doc_view,
 				++text;
 
 			memmove(fs->value + fs->state, text, strlen(text) + 1);
+			break;
+
+		case ACT_EDIT_KILL_WORD_BACK:
+			if (form_field_is_readonly(fc)) {
+				status = FRAME_EVENT_IGNORED;
+				break;
+			}
+
+			if (fs->state <= 0) {
+				status = FRAME_EVENT_OK;
+				break;
+			}
+
+			text = &fs->value[fs->state];
+			while (text > fs->value && isspace(*(text - 1)))
+				--text;
+			while (text > fs->value && !isspace(*(text - 1)))
+				--text;
+			if (*text == ASCII_LF
+			    && text != &fs->value[fs->state - 1])
+				text++;
+
+			length = strlen(fs->value + fs->state) + 1;
+			memmove(text, fs->value + fs->state, length);
+
+			fs->state = (int) (text - fs->value);
+			break;
+
+		case ACT_EDIT_MOVE_BACKWARD_WORD:
+			while (fs->state > 0
+			       && isspace(fs->value[fs->state - 1]))
+				--fs->state;
+			while (fs->state > 0
+			       && !isspace(fs->value[fs->state - 1]))
+				--fs->state;
+			break;
+
+		case ACT_EDIT_MOVE_FORWARD_WORD:
+			while (isspace(fs->value[fs->state]))
+				++fs->state;
+			while (fs->value[fs->state]
+			       && !isspace(fs->value[fs->state]))
+				++fs->state;
+			while (isspace(fs->value[fs->state]))
+				++fs->state;
 			break;
 
 		case ACT_EDIT_AUTO_COMPLETE:
@@ -1423,20 +1760,42 @@ field_op(struct session *ses, struct document_view *doc_view,
 			}
 
 			if (form_field_is_readonly(fc)
-			    || strlen(fs->value) >= fc->maxlength
-			    || !insert_in_string(&fs->value, fs->state, "?", 1)) {
+#ifndef CONFIG_UTF8
+					|| strlen(fs->value) >= fc->maxlength
+					|| !insert_in_string(&fs->value, fs->state, "?", 1)
+#endif /* CONFIG_UTF8 */
+					)
+					{
 				status = FRAME_EVENT_OK;
 				break;
 			}
 
+#ifdef CONFIG_UTF8
+			/* fs->value is in the charset of the terminal.  */
+			ctext = u2cp_no_nbsp(get_kbd_key(ev),
+					     get_opt_codepage_tree(ses->tab->term->spec,
+								   "charset"));
+			length = strlen(ctext);
+
+			if (strlen(fs->value) + length > fc->maxlength
+			    || !insert_in_string(&fs->value, fs->state, ctext, length)) {
+				status = FRAME_EVENT_OK;
+				break;
+			}
+
+			fs->state += length;
+			if (fc->type == FC_TEXTAREA)
+				fs->state_cell = 0;
+#else
 			fs->value[fs->state++] = get_kbd_key(ev);
+#endif /* CONFIG_UTF8 */
 			break;
 	}
 
 	return status;
 }
 
-unsigned char *
+static unsigned char *
 get_form_label(struct form_control *fc)
 {
 	assert(fc->form);

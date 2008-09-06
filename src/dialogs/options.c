@@ -37,9 +37,7 @@ display_codepage(struct terminal *term, void *name_, void *xxx)
 
 	if (opt->value.number != index) {
 		opt->value.number = index;
-		/* TODO: option_changed() (we need to review the hooks
-		 * to handle NULL ses or properly document that stuff). */
-		opt->flags |= OPT_TOUCHED;
+		option_changed(NULL, opt);
 	}
 
 	cls_redraw_all_terminals();
@@ -50,7 +48,9 @@ charset_list(struct terminal *term, void *xxx, void *ses_)
 {
 	struct session *ses = ses_;
 	int i, items;
-	int sel = int_max(0, get_opt_codepage_tree(term->spec, "charset"));
+	int sel = 0;
+	const unsigned char *const sel_mime = get_cp_mime_name(
+		get_opt_codepage_tree(term->spec, "charset"));
 	struct menu_item *mi = new_menu(FREE_LIST);
 
 	if (!mi) return;
@@ -59,18 +59,20 @@ charset_list(struct terminal *term, void *xxx, void *ses_)
 		unsigned char *name = get_cp_name(i);
 
 		if (!name) break;
-		if (is_cp_special(i))
-			continue;
 
+#ifndef CONFIG_UTF8
+		if (is_cp_utf8(i)) continue;
+#endif /* CONFIG_UTF8 */
+
+		/* Map the "System" codepage to the underlying one.
+		 * A pointer comparison might suffice here but this
+		 * code is not time-critical.  */
+		if (strcmp(sel_mime, get_cp_mime_name(i)) == 0)
+			sel = items;
 		items++;
 		add_to_menu(&mi, name, NULL, ACT_MAIN_NONE,
-			    display_codepage, get_cp_mime_name(i), 0);
+			    display_codepage, get_cp_config_name(i), 0);
 	}
-
-	/* Special codepages are not in the menu and it may cause assertion
-	 * failures later if the selected item is out of bound. */
-	if (sel >= items)
-		sel = 0;
 
 	do_menu_selected(term, mi, ses, sel, 0);
 }
@@ -129,19 +131,32 @@ push_save_button(struct dialog_data *dlg_data, struct widget_data *button)
 	return EVENT_PROCESSED;
 }
 
-#if	defined(CONFIG_88_COLORS) && defined(CONFIG_256_COLORS)
-#define TERMOPT_WIDGETS_COUNT 21
-#elif	defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
-#define TERMOPT_WIDGETS_COUNT 20
+#if	defined(CONFIG_88_COLORS)
+#define	RADIO_88 1
 #else
-#define TERMOPT_WIDGETS_COUNT 19
+#define	RADIO_88 0
 #endif
+
+#if	defined(CONFIG_256_COLORS)
+#define	RADIO_256 1
+#else
+#define	RADIO_256 0
+#endif
+
+#if	defined(CONFIG_TRUE_COLOR)
+#define	RADIO_TRUE 1
+#else
+#define	RADIO_TRUE 0
+#endif
+
+#define TERMOPT_WIDGETS_COUNT (19 + RADIO_88 + RADIO_256 + RADIO_TRUE)
 
 #define TERM_OPTION_VALUE_SIZE (sizeof(union option_value) * TERM_OPTIONS)
 
 void
 terminal_options(struct terminal *term, void *xxx, struct session *ses)
 {
+	/* [gettext_accelerator_context(terminal_options)] */
 	struct dialog *dlg;
 	union option_value *values;
 	int anonymous = get_cmd_opt_bool("anonymous");
@@ -206,7 +221,9 @@ terminal_options(struct terminal *term, void *xxx, struct session *ses)
 #ifdef CONFIG_256_COLORS
 	add_dlg_radio(dlg, _("256 colors", term), 2, COLOR_MODE_256, &values[TERM_OPT_COLORS].number);
 #endif
-
+#ifdef CONFIG_TRUE_COLOR
+	add_dlg_radio(dlg, _("true color", term), 2, COLOR_MODE_TRUE_COLOR, &values[TERM_OPT_COLORS].number);
+#endif
 	add_dlg_checkbox(dlg, _("Switch fonts for line drawing", term), &values[TERM_OPT_M11_HACK].number);
 	add_dlg_checkbox(dlg, _("Restrict frames in cp850/852", term), &values[TERM_OPT_RESTRICT_852].number);
 	add_dlg_checkbox(dlg, _("Block cursor", term), &values[TERM_OPT_BLOCK_CURSOR].number);
@@ -221,7 +238,7 @@ terminal_options(struct terminal *term, void *xxx, struct session *ses)
 
 	add_dlg_end(dlg, TERMOPT_WIDGETS_COUNT - anonymous);
 
-	do_dialog(term, dlg, getml(dlg, NULL));
+	do_dialog(term, dlg, getml(dlg, (void *) NULL));
 }
 
 #ifdef CONFIG_NLS
@@ -274,6 +291,7 @@ push_resize_button(void *data)
 void
 resize_terminal_dialog(struct terminal *term)
 {
+	/* [gettext_accelerator_context(resize_terminal_dialog)] */
 	struct dialog *dlg;
 	int width = int_min(term->width, 999);
 	int height = int_min(term->height, 999);
@@ -299,5 +317,5 @@ resize_terminal_dialog(struct terminal *term)
 
 	add_dlg_end(dlg, RESIZE_WIDGETS_COUNT);
 
-	do_dialog(term, dlg, getml(dlg, NULL));
+	do_dialog(term, dlg, getml(dlg, (void *) NULL));
 }

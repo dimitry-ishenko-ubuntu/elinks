@@ -1,4 +1,5 @@
-/* Secure file saving handling */
+/** Secure file saving handling
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -18,6 +19,7 @@
 #include "elinks.h"
 
 #include "config/options.h"
+#include "intl/gettext/libintl.h"
 #include "osdep/osdep.h" /* Needed for mkstemp() on win32 */
 #include "util/memory.h"
 #include "util/secsave.h"
@@ -66,8 +68,8 @@
 enum secsave_errno secsave_errno = SS_ERR_NONE;
 
 
-/* Open a file for writing in a secure way. It returns a pointer to a structure
- * secure_save_info on success, or NULL on failure. */
+/** Open a file for writing in a secure way. @returns a pointer to a
+ * structure secure_save_info on success, or NULL on failure. */
 static struct secure_save_info *
 secure_open_umask(unsigned char *file_name)
 {
@@ -150,7 +152,8 @@ secure_open_umask(unsigned char *file_name)
 		 */
 		int fd;
 		unsigned char *randname = straconcat(ssi->file_name,
-						     ".tmp_XXXXXX", NULL);
+						     ".tmp_XXXXXX",
+						     (unsigned char *) NULL);
 
 		if (!randname) {
 			secsave_errno = SS_ERR_OUT_OF_MEM;
@@ -198,12 +201,18 @@ end:
 	return NULL;
 }
 
+/* @relates secure_save_info */
 struct secure_save_info *
 secure_open(unsigned char *file_name)
 {
 	struct secure_save_info *ssi;
 	mode_t saved_mask;
+#ifdef CONFIG_OS_WIN32
+	/* There is neither S_IRWXG nor S_IRWXO under crossmingw32-gcc */
+	const mode_t mask = 0177;
+#else
 	const mode_t mask = S_IXUSR | S_IRWXG | S_IRWXO;
+#endif
 
 	saved_mask = umask(mask);
 	ssi = secure_open_umask(file_name);
@@ -212,8 +221,9 @@ secure_open(unsigned char *file_name)
 	return ssi;
 }
 
-/* Close a file opened with secure_open, and return 0 on success, errno
- * or -1 on failure. */
+/** Close a file opened with secure_open(). @returns 0 on success,
+ * errno or -1 on failure.
+ * @relates secure_save_info */
 int
 secure_close(struct secure_save_info *ssi)
 {
@@ -264,7 +274,7 @@ secure_close(struct secure_save_info *ssi)
 	}
 
 	if (ssi->secure_save && ssi->file_name && ssi->tmp_file_name) {
-#ifdef CONFIG_OS2
+#ifdef CONFIG_OS_OS2
 		/* OS/2 needs this, however it breaks atomicity on
 		 * UN*X. */
 		unlink(ssi->file_name);
@@ -291,8 +301,9 @@ free:
 }
 
 
-/* fputs() wrapper, set ssi->err to errno on error. If ssi->err is set when
- * called, it immediatly returns EOF. */
+/** fputs() wrapper, set ssi->err to errno on error. If ssi->err is set when
+ * called, it immediatly returns EOF.
+ * @relates secure_save_info */
 int
 secure_fputs(struct secure_save_info *ssi, const char *s)
 {
@@ -310,8 +321,9 @@ secure_fputs(struct secure_save_info *ssi, const char *s)
 }
 
 
-/* fputc() wrapper, set ssi->err to errno on error. If ssi->err is set when
- * called, it immediatly returns EOF. */
+/** fputc() wrapper, set ssi->err to errno on error. If ssi->err is set when
+ * called, it immediatly returns EOF.
+ * @relates secure_save_info */
 int
 secure_fputc(struct secure_save_info *ssi, int c)
 {
@@ -328,8 +340,9 @@ secure_fputc(struct secure_save_info *ssi, int c)
 	return ret;
 }
 
-/* fprintf() wrapper, set ssi->err to errno on error and return a negative
- * value. If ssi->err is set when called, it immediatly returns -1. */
+/** fprintf() wrapper, set ssi->err to errno on error and return a negative
+ * value. If ssi->err is set when called, it immediatly returns -1.
+ * @relates secure_save_info */
 int
 secure_fprintf(struct secure_save_info *ssi, const char *format, ...)
 {
@@ -344,4 +357,31 @@ secure_fprintf(struct secure_save_info *ssi, const char *format, ...)
 	va_end(ap);
 
 	return ret;
+}
+
+unsigned char *
+secsave_strerror(enum secsave_errno secsave_error, struct terminal *term)
+{
+	switch (secsave_error) {
+	case SS_ERR_OPEN_READ:
+		return _("Cannot read the file", term);
+	case SS_ERR_STAT:
+		return _("Cannot get file status", term);
+	case SS_ERR_ACCESS:
+		return _("Cannot access the file", term);
+	case SS_ERR_MKSTEMP:
+		return _("Cannot create temp file", term);
+	case SS_ERR_RENAME:
+		return _("Cannot rename the file", term);
+	case SS_ERR_DISABLED:
+		return _("File saving disabled by option", term);
+	case SS_ERR_OUT_OF_MEM:
+		return _("Out of memory", term);
+	case SS_ERR_OPEN_WRITE:
+		return _("Cannot write the file", term);
+	case SS_ERR_NONE: /* Impossible. */
+	case SS_ERR_OTHER:
+	default:
+		return _("Secure file saving error", term);
+	}
 }

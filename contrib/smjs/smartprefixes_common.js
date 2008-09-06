@@ -85,7 +85,17 @@ function gmane (url)
 	var v = url.split(' ');
 	var group = v[0], words = v.slice(1).join(' ');
 
-	if (!words) return "";
+	if (!group) return base_url;
+
+	if (!words) {
+		if (group.match(/^gmane\./)) {
+			/* Looks like a newsgroup. */
+			return "http://dir.gmane.org/" + group;
+		} else {
+			/* Looks like a mailing list. */
+			return "http://gmane.org/find.php?list=" + group;
+		}
+	}
 
 	return "http://search.gmane.org/search.php?query=" + words
 	        + "&group=" + group;
@@ -101,4 +111,65 @@ function bugzilla (base_url, arguments)
 
 	return base_url + 'buglist.cgi?short_desc_type=allwordssubstr'
                 + '&short_desc=' + escape(arguments);
+}
+
+/* javascript:babelfish("%s"); */
+function babelfish (url)
+{
+	var lang2code = {
+		"chinese-simp": 'zh',
+		"chinese-simple": 'zh',
+		"chinese-simplified": 'zh',
+		"chinese-trad": 'zt',
+		"chinese-traditional": 'zt',
+		"dutch": 'nl',
+		"nederlands": 'nl',
+		"Nederlands": 'nl',
+		"german": 'de',
+		"deutsch": 'de',
+		"Deutsch": 'de',
+		"english": 'en',
+		"french": 'fr',
+		"fran\231ais": 'fr',
+		"greek": 'el',
+		"italian": 'it',
+		"italiano": 'it',
+		"japanese": 'ja',
+		"korean": 'ko',
+		"portuguese": 'pt',
+		"portugu\234s": 'pt',
+		"russian": 'ru',
+		"spanish": 'es',
+		"espanol": 'es',
+		"espa\241ol": 'es',
+	};
+
+	var parts = url.match(/^(\S+)\s+(\S+)\s*(.*)/);
+	if (!parts) return "";
+
+	var from = parts[1], to = parts[2], text = parts[3];
+
+	if (lang2code[from]) from = lang2code[from];
+	if (lang2code[to]) to = lang2code[to];
+
+	if (text.match(/:[^[:blank:]]/))
+		url = "http://babelfish.altavista.com/babelfish/urltrurl?url=";
+	else
+		url = "http://babelfish.altavista.com/babelfish/tr?trtext=";
+
+	url += escape(text) + "&lp=" + from + "_" + to;
+
+	return url;
+}
+
+/* javascript:videodownloader("%s"); */
+function videodownloader (url)
+{
+	elinks.load_uri("http://videodownloader.net/get/?url=" + escape(url),
+	                function (cached) {
+	                        var url = cached.content.match(/<a href="(.*?)"><img src=".\/vd\/botdl.gif"/)[1]
+	                        if (url) elinks.location = url;
+	                } );
+
+	return "";
 }

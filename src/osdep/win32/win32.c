@@ -4,7 +4,11 @@
 #include "config.h"
 #endif
 
+/* Get SHGFP_TYPE_CURRENT from <shlobj.h>.  */
+#define _WIN32_IE 0x500
+
 #include <windows.h>
+#include <shlobj.h>
 
 #include "osdep/system.h"
 
@@ -30,7 +34,7 @@
 void
 init_osdep(void)
 {
-#ifdef CONFIG_WIN32
+#ifdef CONFIG_OS_WIN32
 	WSADATA ws;
 	WORD ver = MAKEWORD(1,1);
 #ifdef CONFIG_IPV6
@@ -258,3 +262,21 @@ gettext__parse(void *arg)
 	return 0;
 }
 #endif
+
+unsigned char *
+user_appdata_directory(void)
+{
+#if _WIN32_WINNT >= 0x0500
+	HWND hwnd = GetConsoleWindow();
+#else
+	HWND hwnd = NULL;
+#endif
+	char path[MAX_PATH];
+	HRESULT hr;
+
+	hr = SHGetFolderPath(hwnd, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT, path);
+	if (hr == S_OK) /* Don't even allow S_FALSE.  */
+		return stracpy(path);
+	else
+		return NULL;
+}

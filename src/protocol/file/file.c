@@ -25,6 +25,8 @@
 #include "intl/gettext/libintl.h"
 #include "main/module.h"
 #include "network/connection.h"
+#include "osdep/osdep.h"
+#include "protocol/common.h"
 #include "protocol/file/cgi.h"
 #include "protocol/file/file.h"
 #include "protocol/uri.h"
@@ -38,20 +40,6 @@ static struct option_info file_options[] = {
 	INIT_OPT_TREE("protocol", N_("Local files"),
 		"file", 0,
 		N_("Options specific to local browsing.")),
-
-#ifdef CONFIG_CGI
-	INIT_OPT_TREE("protocol.file", N_("Local CGI"),
-		"cgi", 0,
-		N_("Local CGI specific options.")),
-
-	INIT_OPT_STRING("protocol.file.cgi", N_("Path"),
-		"path", 0, "",
-		N_("Colon separated list of directories, where CGI scripts are stored.")),
-
-	INIT_OPT_BOOL("protocol.file.cgi", N_("Allow local CGI"),
-		"policy", 0, 0,
-		N_("Whether to execute local CGI scripts.")),
-#endif /* CONFIG_CGI */
 
 	INIT_OPT_BOOL("protocol.file", N_("Allow reading special files"),
 		"allow_special_files", 0, 0,
@@ -87,7 +75,7 @@ struct module file_protocol_module = struct_module(
 /* Directory listing */
 
 /* Based on the @entry attributes and file-/dir-/linkname is added to the @data
- * fragment. */
+ * fragment.  All the strings are in the system charset.  */
 static inline void
 add_dir_entry(struct directory_entry *entry, struct string *page,
 	      int pathlen, unsigned char *dircolor)
@@ -122,7 +110,7 @@ add_dir_entry(struct directory_entry *entry, struct string *page,
 
 		if (readlen > 0 && readlen != MAX_STR_LEN) {
 			buf[readlen] = '\0';
-			lnk = straconcat(" -> ", buf, NULL);
+			lnk = straconcat(" -> ", buf, (unsigned char *) NULL);
 		}
 
 		if (!stat(entry->name, &st) && S_ISDIR(st.st_mode))
@@ -134,7 +122,8 @@ add_dir_entry(struct directory_entry *entry, struct string *page,
 
 	if (entry->attrib[0] == 'd' && *dircolor) {
 		/* The <b> is for the case when use_document_colors is off. */
-		string_concat(page, "<font color=\"", dircolor, "\"><b>", NULL);
+		string_concat(page, "<font color=\"", dircolor, "\"><b>",
+			      (unsigned char *) NULL);
 	}
 
 	add_string_to_string(page, &html_encoded_name);
@@ -186,12 +175,12 @@ add_dir_entries(struct directory_entry *entries, unsigned char *dirpath,
  * @dirpath. */
 /* Returns a connection state. S_OK if all is well. */
 static inline enum connection_state
-list_directory(unsigned char *dirpath, struct string *page)
+list_directory(struct connection *conn, unsigned char *dirpath,
+	       struct string *page)
 {
 	int show_hidden_files = get_opt_bool("protocol.file.show_hidden_files");
-	unsigned char *slash = dirpath;
-	unsigned char *pslash = ++slash;
 	struct directory_entry *entries;
+	enum connection_state state;
 
 	errno = 0;
 	entries = get_directory_entries(dirpath, show_hidden_files);
@@ -200,30 +189,17 @@ list_directory(unsigned char *dirpath, struct string *page)
 		return S_OUT_OF_MEM;
 	}
 
-	if (!init_string(page)) return S_OUT_OF_MEM;
+	state = init_directory_listing(page, conn->uri);
+	if (state != S_OK)
+		return S_OUT_OF_MEM;
 
-	add_to_string(page, "<html>\n<head><title>");
-	add_html_to_string(page, dirpath, strlen(dirpath));
-	add_to_string(page, "</title>\n<base href=\"");
-	encode_uri_string(page, dirpath, -1, 0);
-	add_to_string(page, "\" />\n</head>\n<body>\n<h2>Directory /");
+	add_dir_entries(entries, dirpath, page);
 
-	/* Make the directory path with links to each subdir. */
-	while ((slash = strchr(slash, '/'))) {
-		*slash = 0;
-		add_to_string(page, "<a href=\"");
-		/* FIXME: htmlesc? At least we should escape quotes. --pasky */
-		add_to_string(page, dirpath);
-		add_to_string(page, "/\">");
-		add_html_to_string(page, pslash, strlen(pslash));
-		add_to_string(page, "</a>/");
-		*slash = '/';
-		pslash = ++slash;
+	if (!add_to_string(page, "</pre>\n<hr/>\n</body>\n</html>\n")) {
+		done_string(page);
+		return S_OUT_OF_MEM;
 	}
 
-	add_to_string(page, "</h2>\n<pre>");
-	add_dir_entries(entries, dirpath, page);
-	add_to_string(page, "</pre>\n<hr>\n</body>\n</html>\n");
 	return S_OK;
 }
 
@@ -240,7 +216,7 @@ file_protocol_handler(struct connection *connection)
 	unsigned char *redirect_location = NULL;
 	struct string page, name;
 	enum connection_state state;
-	unsigned char *type = NULL;
+	int set_dir_content_type = 0;
 
 	if (get_cmd_opt_bool("anonymous")) {
 		if (strcmp(connection->uri->string, "file:///dev/stdin")
@@ -269,16 +245,19 @@ file_protocol_handler(struct connection *connection)
 
 	decode_uri_string(&name);
 
-	if (file_is_dir(name.source)) {
+	/* In Win32, file_is_dir seems to always return 0 if the name
+	 * ends with a directory separator.  */
+	if ((name.length > 0 && dir_sep(name.source[name.length - 1]))
+	    || file_is_dir(name.source)) {
 		/* In order for global history and directory listing to
 		 * function properly the directory url must end with a
 		 * directory separator. */
 		if (name.source[0] && !dir_sep(name.source[name.length - 1])) {
-			redirect_location = "/";
+			redirect_location = STRING_DIR_SEP;
 			state = S_OK;
 		} else {
-			state = list_directory(name.source, &page);
-			type = "text/html";
+			state = list_directory(connection, name.source, &page);
+			set_dir_content_type = 1;
 		}
 
 	} else {
@@ -305,23 +284,26 @@ file_protocol_handler(struct connection *connection)
 
 		} else {
 			add_fragment(cached, 0, page.source, page.length);
+			connection->from += page.length;
 
-			if (!cached->content_type) {
-				unsigned char *ctype = null_or_stracpy(type);
+			if (!cached->head && set_dir_content_type) {
+				unsigned char *head;
+
+				/* If the system charset somehow
+				 * changes after the directory listing
+				 * has been generated, it should be
+				 * parsed with the original charset.  */
+				head = straconcat("\r\nContent-Type: text/html; charset=",
+						  get_cp_mime_name(get_cp_index("System")),
+						  "\r\n", (unsigned char *) NULL);
 
 				/* Not so gracefully handle failed memory
 				 * allocation. */
-				if (type && !ctype)
+				if (!head)
 					state = S_OUT_OF_MEM;
-				else
-					normalize_cache_entry(cached, page.length);
 
-				/* Setup file read or directory listing for
-				 * viewing. */
-				mem_free_set(&cached->content_type, ctype);
-
-			} else {
-				normalize_cache_entry(cached, page.length);
+				/* Setup directory listing for viewing. */
+				mem_free_set(&cached->head, head);
 			}
 
 			done_string(&page);

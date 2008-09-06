@@ -13,6 +13,8 @@
 #include "elinks.h"
 
 #include "bfu/dialog.h"
+#include "bfu/hierbox.h"
+#include "bfu/listbox.h"
 #include "bookmarks/bookmarks.h"
 #include "bookmarks/dialogs.h"
 #include "dialogs/edit.h"
@@ -129,7 +131,7 @@ static struct listbox_ops_messages bookmarks_messages = {
 	N_("Delete the folder \"%s\" and all bookmarks in it?"),
 	/* delete_item_title */
 	N_("Delete bookmark"),
-	/* delete_item */
+	/* delete_item; xgettext:c-format */
 	N_("Delete this bookmark?"),
 	/* clear_all_items_title */
 	N_("Clear all bookmarks"),
@@ -137,7 +139,7 @@ static struct listbox_ops_messages bookmarks_messages = {
 	N_("Do you really want to remove all bookmarks?"),
 };
 
-static struct listbox_ops bookmarks_listbox_ops = {
+static const struct listbox_ops bookmarks_listbox_ops = {
 	lock_bookmark,
 	unlock_bookmark,
 	is_bookmark_used,
@@ -155,10 +157,6 @@ static struct listbox_ops bookmarks_listbox_ops = {
 /****************************************************************************
   Bookmark manager stuff.
 ****************************************************************************/
-
-void launch_bm_add_doc_dialog(struct terminal *, struct dialog_data *,
-			      struct session *);
-
 
 /* Callback for the "add" button in the bookmark manager */
 static widget_handler_status_T
@@ -202,20 +200,6 @@ move_bookmark_after_selected(struct bookmark *bookmark, struct bookmark *selecte
 }
 
 static void
-focus_bookmark(struct widget_data *box_widget_data, struct listbox_data *box,
-		struct bookmark *bm)
-{
-	/* Infinite loop protector. Maximal safety. It will protect your system
-	 * from 100% CPU time. Buy it now. Only from Sirius Labs. */
-	struct listbox_item *sel2 = NULL;
-
-	do {
-		sel2 = box->sel;
-		listbox_sel_move(box_widget_data, 1);
-	} while (box->sel->udata != bm && box->sel != sel2);
-}
-
-static void
 do_add_bookmark(struct dialog_data *dlg_data, unsigned char *title, unsigned char *url)
 {
 	struct bookmark *bm = NULL;
@@ -226,7 +210,7 @@ do_add_bookmark(struct dialog_data *dlg_data, unsigned char *title, unsigned cha
 		box = get_dlg_listbox_data(dlg_data);
 
 		if (box->sel) {
-			selected = box->sel ? box->sel->udata : NULL;
+			selected = box->sel->udata;
 
 			if (box->sel->type == BI_FOLDER && box->sel->expanded) {
 				bm = selected;
@@ -250,7 +234,7 @@ do_add_bookmark(struct dialog_data *dlg_data, unsigned char *title, unsigned cha
 
 		/* We touch only the actual bookmark dialog, not all of them;
 		 * that's right, right? ;-) --pasky */
-		focus_bookmark(widget_data, box, bm);
+		listbox_sel(widget_data, bm->box_item);
 	}
 }
 
@@ -350,22 +334,35 @@ update_depths(struct listbox_item *parent)
 	}
 }
 
+enum move_bookmark_flags {
+	MOVE_BOOKMARK_NONE  = 0x00,
+	MOVE_BOOKMARK_MOVED = 0x01,
+	MOVE_BOOKMARK_CYCLE = 0x02
+};
+
 /* Traverse all bookmarks and move all marked items
  * _into_ dest or, if insert_as_child is 0, _after_ dest. */
-static void
+static enum move_bookmark_flags
 do_move_bookmark(struct bookmark *dest, int insert_as_child,
-		 struct list_head *src, struct listbox_data *box)
+		 LIST_OF(struct bookmark) *src, struct listbox_data *box)
 {
 	static int move_bookmark_event_id = EVENT_NONE;
 	struct bookmark *bm, *next;
+	enum move_bookmark_flags result = MOVE_BOOKMARK_NONE;
 
 	set_event_id(move_bookmark_event_id, "bookmark-move");
 
 	foreachsafe (bm, next, *src) {
-		if (bm != dest /* prevent moving a folder into itself */
-		    && bm->box_item->marked && bm != move_cache_root_avoid) {
+		if (!bm->box_item->marked) {
+			/* Don't move this bookmark itself; but if
+			 * it's a folder, then we'll look inside. */
+		} else if (bm == dest || bm == move_cache_root_avoid) {
+			/* Prevent moving a folder into itself. */
+			result |= MOVE_BOOKMARK_CYCLE;
+		} else {
 			struct hierbox_dialog_list_item *item;
 
+			result |= MOVE_BOOKMARK_MOVED;
 			bm->box_item->marked = 0;
 
 			trigger_event(move_bookmark_event_id, bm, dest);
@@ -380,7 +377,7 @@ do_move_bookmark(struct bookmark *dest, int insert_as_child,
 				if (box2->top == bm->box_item)
 					listbox_sel_move(widget_data, 1);
 			}
-				
+
 			del_from_list(bm->box_item);
 			del_from_list(bm);
 			if (insert_as_child) {
@@ -411,10 +408,12 @@ do_move_bookmark(struct bookmark *dest, int insert_as_child,
 		}
 
 		if (bm->box_item->type == BI_FOLDER) {
-			do_move_bookmark(dest, insert_as_child,
-					 &bm->child, box);
+			result |= do_move_bookmark(dest, insert_as_child,
+						   &bm->child, box);
 		}
 	}
+
+	return result;
 }
 
 static widget_handler_status_T
@@ -424,6 +423,7 @@ push_move_button(struct dialog_data *dlg_data,
 	struct listbox_data *box = get_dlg_listbox_data(dlg_data);
 	struct bookmark *dest = NULL;
 	int insert_as_child = 0;
+	enum move_bookmark_flags result;
 
 	if (!box->sel) return EVENT_PROCESSED; /* nowhere to move to */
 
@@ -443,21 +443,47 @@ push_move_button(struct dialog_data *dlg_data,
 		}
 	}
 
-	do_move_bookmark(dest, insert_as_child, &bookmarks, box);
-
-	bookmarks_set_dirty();
+	result = do_move_bookmark(dest, insert_as_child, &bookmarks, box);
+	if (result & MOVE_BOOKMARK_MOVED) {
+		bookmarks_set_dirty();
 
 #ifdef BOOKMARKS_RESAVE
-	write_bookmarks();
+		write_bookmarks();
 #endif
-	update_hierbox_browser(&bookmark_browser);
+		update_hierbox_browser(&bookmark_browser);
+	}
+#ifndef CONFIG_SMALL
+	else if (result & MOVE_BOOKMARK_CYCLE) {
+		/* If the user also selected other bookmarks, then
+		 * they have already been moved, and this box doesn't
+		 * appear.  */
+		info_box(dlg_data->win->term, 0,
+			 N_("Cannot move folder inside itself"), ALIGN_LEFT,
+			 N_("You are trying to move the marked folder inside "
+			    "itself. To move the folder to a different "
+			    "location select the new location before pressing "
+			    "the Move button."));
+	} else {
+		info_box(dlg_data->win->term, 0,
+			 N_("Nothing to move"), ALIGN_LEFT,
+			 N_("To move bookmarks, first mark all the bookmarks "
+			    "(or folders) you want to move.  This can be done "
+			    "with the Insert key if you're using the default "
+			    "key-bindings.  An asterisk will appear near all "
+			    "marked bookmarks.  Now move to where you want to "
+			    "have the stuff moved to, and press the \"Move\" "
+			    "button."));
+	}
+#endif	/* ndef CONFIG_SMALL */
+
 	return EVENT_PROCESSED;
 }
 
 
 /**** MANAGEMENT *****************************************************/
 
-static struct hierbox_browser_button bookmark_buttons[] = {
+static const struct hierbox_browser_button bookmark_buttons[] = {
+	/* [gettext_accelerator_context(.bookmark_buttons)] */
 	{ N_("~Goto"),		push_hierbox_goto_button,	1 },
 	{ N_("~Edit"),		push_edit_button,		0 },
 	{ N_("~Delete"),	push_hierbox_delete_button,	0 },
@@ -472,7 +498,7 @@ static struct hierbox_browser_button bookmark_buttons[] = {
 	{ N_("Clear"),		push_hierbox_clear_button,	0 },
 
 	/* TODO: Would this be useful? --jonas */
-	{ N_("Save"),		push_save_button		},
+	{ N_("Save"),		push_save_button,		0 },
 #endif
 };
 
@@ -560,7 +586,7 @@ memorize_last_searched_bookmark(struct bookmark_search_ctx *ctx)
 	/* Memorize last searched url */
 	mem_free_set(&bm_last_searched_url, stracpy(ctx->url));
 	if (!bm_last_searched_url) {
-		mem_free(bm_last_searched_title);
+		mem_free_set(&bm_last_searched_title, NULL);
 		return 0;
 	}
 
@@ -576,7 +602,7 @@ bookmark_search_do(void *data)
 	struct listbox_data *box;
 	struct dialog_data *dlg_data;
 
-	assertm(dlg->udata, "Bookmark search with NULL udata in dialog");
+	assertm(dlg->udata != NULL, "Bookmark search with NULL udata in dialog");
 	if_assert_failed return;
 
 	ctx.title = dlg->widgets[0].data;
@@ -598,7 +624,6 @@ bookmark_search_do(void *data)
 }
 
 
-/* launch_bm_search_doc_dialog() */
 static void
 launch_bm_search_doc_dialog(struct terminal *term,
 			    struct dialog_data *parent,

@@ -65,7 +65,7 @@ static struct hash *event_hash = NULL;
 #define EVENT_GRANULARITY 0x07
 
 #define realloc_events(ptr, size) \
-	mem_align_alloc(ptr, (size), (size) + 1, struct event, EVENT_GRANULARITY)
+	mem_align_alloc(ptr, (size), (size) + 1, EVENT_GRANULARITY)
 
 static inline int
 invalid_event_id(register int id)
@@ -132,7 +132,7 @@ get_event_id(unsigned char *name)
 	if (item) {
 		struct event *event = item->value;
 
-		assertm(event, "Hash item with no value");
+		assertm(event != NULL, "Hash item with no value");
 		if_assert_failed return EVENT_NONE;
 
 		return event->id;
@@ -177,6 +177,7 @@ trigger_event(int id, ...)
 
 	va_start(ap, id);
 	trigger_event_va(id, ap);
+	va_end(ap);
 }
 
 void
@@ -187,6 +188,7 @@ trigger_event_name(unsigned char *name, ...)
 
 	va_start(ap, name);
 	trigger_event_va(id, ap);
+	va_end(ap);
 }
 
 static inline void
@@ -308,7 +310,7 @@ unregister_event_hooks(struct event_hook_info *hooks)
 void
 init_event(void)
 {
-	event_hash = init_hash(8, strhash);
+	event_hash = init_hash8();
 }
 
 void
@@ -316,13 +318,13 @@ done_event(void)
 {
 	int i;
 
-	if (event_hash)	free_hash(event_hash);
-
 	for (i = 0; i < eventssize; i++) {
 		mem_free_if(events[i].handlers);
 		mem_free(events[i].name);
 	}
 
 	mem_free_set(&events, NULL);
+
+	if (event_hash)	free_hash(&event_hash);
 	eventssize = 0;
 }
