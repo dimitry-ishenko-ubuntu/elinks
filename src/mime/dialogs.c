@@ -50,6 +50,7 @@ really_del_ext(void *fcp)
 void
 menu_del_ext(struct terminal *term, void *fcp, void *xxx2)
 {
+	/* [gettext_accelerator_context(menu_del_ext)] */
 	struct option *opt = NULL;
 	unsigned char *extension = fcp;
 
@@ -61,13 +62,13 @@ menu_del_ext(struct terminal *term, void *fcp, void *xxx2)
 		return;
 	}
 
-	msg_box(term, getml(extension, NULL), MSGBOX_FREE_TEXT,
+	msg_box(term, getml(extension, (void *) NULL), MSGBOX_FREE_TEXT,
 		N_("Delete extension"), ALIGN_CENTER,
 		msg_text(term, N_("Delete extension %s -> %s?"),
 			 extension, opt->value.string),
 		extension, 2,
-		N_("~Yes"), really_del_ext, B_ENTER,
-		N_("~No"), NULL, B_ESC);
+		MSG_BOX_BUTTON(N_("~Yes"), really_del_ext, B_ENTER),
+		MSG_BOX_BUTTON(N_("~No"), NULL, B_ESC));
 }
 
 
@@ -81,7 +82,6 @@ static void
 add_mime_extension(void *data)
 {
 	struct extension *ext = data;
-	struct option *option;
 	struct string name;
 
 	if (!ext || !init_string(&name)) return;
@@ -91,14 +91,14 @@ add_mime_extension(void *data)
 
 	really_del_ext(ext->ext_orig); /* ..or rename ;) */
 	safe_strncpy(get_opt_str(name.source), ext->ct, MAX_STR_LEN);
-	option = get_opt_rec(config_options, name.source);
-	option_changed(NULL, option, option);
+	option_changed(NULL, get_opt_rec(config_options, name.source));
 	done_string(&name);
 }
 
 void
 menu_add_ext(struct terminal *term, void *fcp, void *xxx2)
 {
+	/* [gettext_accelerator_context(menu_add_ext)] */
 	struct extension *new;
 	struct dialog *dlg;
 
@@ -134,7 +134,7 @@ menu_add_ext(struct terminal *term, void *fcp, void *xxx2)
 
 	add_dlg_end(dlg, MIME_WIDGETS_COUNT);
 
-	do_dialog(term, dlg, getml(dlg, NULL));
+	do_dialog(term, dlg, getml(dlg, (void *) NULL));
 }
 
 
@@ -147,7 +147,7 @@ void
 menu_list_ext(struct terminal *term, void *fn_, void *xxx)
 {
 	menu_func_T fn = fn_;
-	struct list_head *opt_tree = get_opt_tree("mime.extension");
+	LIST_OF(struct option) *opt_tree = get_opt_tree("mime.extension");
 	struct option *opt;
 	struct menu_item *mi = NULL;
 

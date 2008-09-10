@@ -24,7 +24,7 @@ struct timer {
 
 /* @timers.next points to the timer with the smallest interval,
  * @timers.next->next to the second smallest, and so on.  */
-static INIT_LIST_HEAD(timers);
+static INIT_LIST_OF(struct timer, timers);
 
 int
 get_timers_count(void)
@@ -68,6 +68,14 @@ check_timers(timeval_T *last_time)
 	timeval_copy(last_time, &now);
 }
 
+/* Install a timer that calls @func(@data) after @delay milliseconds.
+ * Store to *@id either the ID of the new timer, or TIMER_ID_UNDEF if
+ * the timer cannot be installed.  (This function ignores the previous
+ * value of *@id in any case.)
+ *
+ * When @func is called, the timer ID has become invalid.  @func
+ * should erase the expired timer ID from all variables, so that
+ * there's no chance it will be given to @kill_timer later.  */
 void
 install_timer(timer_id_T *id, milliseconds_T delay, void (*func)(void *), void *data)
 {

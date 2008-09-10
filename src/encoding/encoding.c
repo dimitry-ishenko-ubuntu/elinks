@@ -52,14 +52,6 @@ dummy_read(struct stream_encoded *stream, unsigned char *data, int len)
 }
 
 static unsigned char *
-dummy_decode(struct stream_encoded *stream, unsigned char *data, int len,
-	     int *new_len)
-{
-	*new_len = len;
-	return data;
-}
-
-static unsigned char *
 dummy_decode_buffer(unsigned char *data, int len, int *new_len)
 {
 	unsigned char *buffer = memacpy(data, len);
@@ -77,14 +69,13 @@ dummy_close(struct stream_encoded *stream)
 	mem_free(stream->data);
 }
 
-static unsigned char *dummy_extensions[] = { NULL };
+static const unsigned char *const dummy_extensions[] = { NULL };
 
-static struct decoding_backend dummy_decoding_backend = {
+static const struct decoding_backend dummy_decoding_backend = {
 	"none",
 	dummy_extensions,
 	dummy_open,
 	dummy_read,
-	dummy_decode,
 	dummy_decode_buffer,
 	dummy_close,
 };
@@ -93,12 +84,15 @@ static struct decoding_backend dummy_decoding_backend = {
 /* Dynamic backend area */
 
 #include "encoding/bzip2.h"
-#include "encoding/gzip.h"
+#include "encoding/deflate.h"
+#include "encoding/lzma.h"
 
-static struct decoding_backend *decoding_backends[] = {
+static const struct decoding_backend *const decoding_backends[] = {
 	&dummy_decoding_backend,
 	&gzip_decoding_backend,
 	&bzip2_decoding_backend,
+	&lzma_decoding_backend,
+	&deflate_decoding_backend,
 };
 
 
@@ -133,16 +127,9 @@ read_encoded(struct stream_encoded *stream, unsigned char *data, int len)
 	return decoding_backends[stream->encoding]->read(stream, data, len);
 }
 
-/* Decode the given chunk of data in the context of @stream. @data contains the
- * original data chunk, @len bytes long. The resulting decoded data chunk is
- * *@new_len bytes long. */
-unsigned char *
-decode_encoded(struct stream_encoded *stream, unsigned char *data, int len,
-		int *new_len)
-{
-	return decoding_backends[stream->encoding]->decode(stream, data, len, new_len);
-}
-
+/* Decode an entire file from a buffer. This function is not suitable
+ * for parts of files. @data contains the original data, @len bytes
+ * long. The resulting decoded data chunk is *@new_len bytes long. */
 unsigned char *
 decode_encoded_buffer(enum stream_encoding encoding, unsigned char *data, int len,
 		      int *new_len)
@@ -161,7 +148,7 @@ close_encoded(struct stream_encoded *stream)
 
 
 /* Return a list of extensions associated with that encoding. */
-unsigned char **listext_encoded(enum stream_encoding encoding)
+const unsigned char *const *listext_encoded(enum stream_encoding encoding)
 {
 	return decoding_backends[encoding]->extensions;
 }
@@ -174,7 +161,7 @@ guess_encoding(unsigned char *filename)
 	int enc;
 
 	for (enc = 1; enc < ENCODINGS_KNOWN; enc++) {
-		unsigned char **ext = decoding_backends[enc]->extensions;
+		const unsigned char *const *ext = decoding_backends[enc]->extensions;
 
 		while (ext && *ext) {
 			int len = strlen(*ext);
@@ -189,7 +176,7 @@ guess_encoding(unsigned char *filename)
 	return ENCODING_NONE;
 }
 
-unsigned char *
+const unsigned char *
 get_encoding_name(enum stream_encoding encoding)
 {
 	return decoding_backends[encoding]->name;
@@ -208,7 +195,7 @@ try_encoding_extensions(struct string *filename, int *fd)
 
 	/* No file of that name was found, try some others names. */
 	for (encoding = 1; encoding < ENCODINGS_KNOWN; encoding++) {
-		unsigned char **ext = listext_encoded(encoding);
+		const unsigned char *const *ext = listext_encoded(encoding);
 
 		for (; ext && *ext; ext++) {
 			add_to_string(filename, *ext);
@@ -228,8 +215,14 @@ try_encoding_extensions(struct string *filename, int *fd)
 	return ENCODING_NONE;
 }
 
-/* Reads the file from @stream in chunks of size @readsize. */
-/* Returns a connection state. S_OK if all is well. */
+/** Reads the file from @a stream in chunks of size @a readsize.
+ *
+ * @a stream should be in blocking mode.  If it is in non-blocking
+ * mode, this function can return an empty string in @a page just
+ * because no more data is available yet, and the caller cannot know
+ * whether the true end of the stream has been reached.
+ *
+ * @return a connection state. S_OK if all is well. */
 enum connection_state
 read_file(struct stream_encoded *stream, int readsize, struct string *page)
 {

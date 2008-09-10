@@ -49,7 +49,7 @@ static struct tree_node *new_node(struct tree_node *parent);
 static void free_node(struct tree_node *node);
 static void free_xbeltree(struct tree_node *node);
 static struct tree_node *get_child(struct tree_node *node, unsigned char *name);
-static unsigned char *get_attribute_value(struct attributes *attr,
+static unsigned char *get_attribute_value(struct tree_node *node,
 					  unsigned char *name);
 
 
@@ -58,16 +58,16 @@ static unsigned char * filename_bookmarks_xbel(int writing);
 static int xbeltree_to_bookmarks_list(struct tree_node *root,
 				      struct bookmark *current_parent);
 static void write_bookmarks_list(struct secure_save_info *ssi,
-				 struct list_head *bookmarks_list,
+				 LIST_OF(struct bookmark) *bookmarks_list,
 				 int n, int folder_state);
 static void write_bookmarks_xbel(struct secure_save_info *ssi,
-				 struct list_head *bookmarks_list);
+				 LIST_OF(struct bookmark) *bookmarks_list);
 
 /* Element */
 struct tree_node {
 	unsigned char *name;		/* Name of the element */
 	unsigned char *text;		/* Text inside the element */
-	struct attributes *attrs;	/* Attributes of the element */
+	LIST_OF(struct attributes) attrs;
 	struct tree_node *parent;
 	struct tree_node *children;
 
@@ -134,7 +134,7 @@ read_bookmarks_xbel(FILE *f)
 
 static void
 write_bookmarks_xbel(struct secure_save_info *ssi,
-		     struct list_head *bookmarks_list)
+		     LIST_OF(struct bookmarks) *bookmarks_list)
 {
 	int folder_state = get_opt_bool("bookmarks.folder_state");
 	/* We check for readok in filename_bookmarks_xbel(). */
@@ -195,7 +195,7 @@ print_xml_entities(struct secure_save_info *ssi, const unsigned char *str)
 				secure_fprintf(ssi, "&#%i;", (int) *str);
 			}
 			else {
-				unsigned char *s = u2cp_no_nbsp(*str, cp);
+				const unsigned char *s = u2cp_no_nbsp(*str, cp);
 
 				if (s) print_xml_entities(ssi, s);
 			}
@@ -208,7 +208,7 @@ print_xml_entities(struct secure_save_info *ssi, const unsigned char *str)
 
 static void
 write_bookmarks_list(struct secure_save_info *ssi,
-		     struct list_head *bookmarks_list,
+		     LIST_OF(struct bookmark) *bookmarks_list,
 		     int n, int folder_state)
 {
 	struct bookmark *bm;
@@ -301,7 +301,7 @@ on_element_open(void *data, const char *name, const char **attr)
 
 		attribute->name = tmp;
 
-		add_to_list(*current_node->attrs, attribute);
+		add_to_list(current_node->attrs, attribute);
 
 		++attr;
 	}
@@ -382,7 +382,7 @@ xbeltree_to_bookmarks_list(struct tree_node *node,
 			unsigned char *href;
 
 			title = get_child(node, "title");
-			href = get_attribute_value(node->attrs, "href");
+			href = get_attribute_value(node, "href");
 
 			tmp = add_bookmark(current_parent, 0,
 					   /* The <title> element is optional */
@@ -414,7 +414,7 @@ xbeltree_to_bookmarks_list(struct tree_node *node,
 			/* Out of memory */
 			if (!tmp) return 0;
 
-			folded = get_attribute_value(node->attrs, "folded");
+			folded = get_attribute_value(node, "folded");
 			if (folded && !strcmp(folded, "no"))
 				tmp->box_item->expanded = 1;
 
@@ -487,11 +487,11 @@ get_child(struct tree_node *node, unsigned char *name)
 }
 
 static unsigned char *
-get_attribute_value(struct attributes *attr, unsigned char *name)
+get_attribute_value(struct tree_node *node, unsigned char *name)
 {
 	struct attributes *attribute;
 
-	foreachback (attribute, *attr) {
+	foreachback (attribute, node->attrs) {
 		if (!strcmp(attribute->name, name)) {
 			return attribute->prev->name;
 		}
@@ -509,14 +509,7 @@ new_node(struct tree_node *parent)
 	if (!node) return NULL;
 
 	node->parent = parent ? parent : node;
-
-	node->attrs = mem_calloc(1, sizeof(*node->attrs));
-	if (!node->attrs) {
-		mem_free(node);
-		return NULL;
-	}
-
-	init_list(*node->attrs);
+	init_list(node->attrs);
 
 	return node;
 }
@@ -526,13 +519,9 @@ free_node(struct tree_node *node)
 {
 	struct attributes *attribute;
 
-	if (node->attrs) {
-		foreachback (attribute, *node->attrs)
-			mem_free_if(attribute->name);
-
-		free_list(*(struct list_head *) node->attrs); /* Don't free list during traversal */
-		mem_free(node->attrs);
-	}
+	foreachback (attribute, node->attrs)
+		mem_free_if(attribute->name);
+	free_list(node->attrs); /* Don't free list during traversal */
 
 	mem_free_if(node->name);
 	mem_free_if(node->text);

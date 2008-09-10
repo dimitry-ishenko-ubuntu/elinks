@@ -1,4 +1,5 @@
-/* CSS main parser */
+/** CSS main parser
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -21,11 +22,10 @@
 #include "util/memory.h"
 #include "util/string.h"
 
-/* #define DEBUG_CSS */
-
 
 void
-css_parse_properties(struct list_head *props, struct scanner *scanner)
+css_parse_properties(LIST_OF(struct css_property) *props,
+		     struct scanner *scanner)
 {
 	assert(props && scanner);
 
@@ -92,15 +92,29 @@ ride_on:
 	}
 }
 
+static void
+skip_css_block(struct scanner *scanner)
+{
+	if (skip_css_tokens(scanner, '{')) {
+		const int preclimit = get_css_precedence('}');
+		int depth = 1;
+		struct scanner_token *token = get_scanner_token(scanner);
 
-/* TODO: We should handle support for skipping blocks better like "{ { } }"
- * will be handled correctly. --jonas */
-#define skip_css_block(scanner) \
-	if (skip_css_tokens(scanner, '{')) skip_css_tokens(scanner, '}');
+		while (token && token->precedence <= preclimit && depth > 0) {
+			if (token->type == '{')
+				++depth;
+			else if (token->type == '}')
+				--depth;
+			token = get_next_scanner_token(scanner);
+		}
+	}
+}
 
-
-/* Atrules grammer:
+/** Parse an atrule from @a scanner and update @a css accordingly.
  *
+ * Atrules grammar:
+ *
+ * @verbatim
  * media_types:
  *	  <empty>
  *	| <ident>
@@ -113,6 +127,7 @@ ride_on:
  *	| '@media' media_types '{' ruleset* '}'
  *	| '@page' <ident>? [':' <ident>]? '{' properties '}'
  *	| '@font-face' '{' properties '}'
+ * @endverbatim
  */
 static void
 css_parse_atrule(struct css_stylesheet *css, struct scanner *scanner,
@@ -172,8 +187,22 @@ struct selector_pkg {
 	struct css_selector *selector;
 };
 
-struct css_selector *
-reparent_selector(struct list_head *sels, struct css_selector *selector,
+/** Move a CSS selector and its leaves into a new list.  If a similar
+ * selector already exists in the list, merge them.
+ *
+ * @param sels
+ *   The list to which @a selector should be moved.  Must not be NULL.
+ * @param selector
+ *   The selector that should be moved.  Must not be NULL.  If it is
+ *   already in some list, this function removes it from there.
+ * @param watch
+ *   This function updates @a *watch if it merges that selector into
+ *   another one.  @a watch must not be NULL but @a *watch may be.
+ *
+ * @returns @a selector or the one into which it was merged.  */
+static struct css_selector *
+reparent_selector(LIST_OF(struct css_selector) *sels,
+                  struct css_selector *selector,
                   struct css_selector **watch)
 {
 	struct css_selector *twin = find_css_selector(sels, selector->type,
@@ -199,16 +228,22 @@ reparent_selector(struct list_head *sels, struct css_selector *selector,
 	return twin ? twin : selector;
 }
 
-/* Our selector grammar:
+/** Parse a comma-separated list of CSS selectors from @a scanner.
+ * Register the selectors in @a css so that get_css_selector_for_element()
+ * will find them, and add them to @a selectors so that the caller can
+ * attach properties to them.
  *
+ * Our selector grammar:
+ *
+ * @verbatim
  * selector:
  *	  element_name? ('#' id)? ('.' class)? (':' pseudo_class)? \
  *		  ((' ' | '>') selector)?
- *
+ * @endverbatim
  */
 static void
 css_parse_selector(struct css_stylesheet *css, struct scanner *scanner,
-		   struct list_head *selectors)
+		   LIST_OF(struct selector_pkg) *selectors)
 {
 	/* Shell for the last selector (the whole selector chain, that is). */
 	struct selector_pkg *pkg = NULL;
@@ -440,16 +475,20 @@ css_parse_selector(struct css_stylesheet *css, struct scanner *scanner,
 }
 
 
-/* Ruleset grammar:
+/** Parse a ruleset from @a scanner to @a css.
  *
+ * Ruleset grammar:
+ *
+ * @verbatim
  * ruleset:
  *	  selector [ ',' selector ]* '{' properties '}'
+ * @endverbatim
  */
 static void
 css_parse_ruleset(struct css_stylesheet *css, struct scanner *scanner)
 {
-	INIT_LIST_HEAD(selectors);
-	INIT_LIST_HEAD(properties);
+	INIT_LIST_OF(struct selector_pkg, selectors);
+	INIT_LIST_OF(struct css_property, properties);
 	struct selector_pkg *pkg;
 
 	css_parse_selector(css, scanner, &selectors);
@@ -481,11 +520,17 @@ css_parse_ruleset(struct css_stylesheet *css, struct scanner *scanner)
 	/* Mirror the properties to all the selectors. */
 	foreach (pkg, selectors) {
 #ifdef DEBUG_CSS
+		/* Cannot use list_empty() inside the arglist of DBG()
+		 * because GCC 4.1 "warning: operation on `errfile'
+		 * may be undefined" breaks the build with -Werror.  */
+		int dbg_has_properties = !list_empty(properties);
+		int dbg_has_leaves = !list_empty(pkg->selector->leaves);
+
 		DBG("Binding properties (!!%d) to selector %s (type %d, relation %d, children %d)",
-			!list_empty(properties),
+			dbg_has_properties,
 			pkg->selector->name, pkg->selector->type,
 			pkg->selector->relation,
-			!list_empty(pkg->selector->leaves));
+			dbg_has_leaves);
 #endif
 		add_selector_properties(pkg->selector, &properties);
 	}

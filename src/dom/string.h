@@ -3,13 +3,22 @@
 
 #include "util/memory.h"
 
+/* For now DOM has it's own little string library. Mostly because there are
+ * some memory overhead associated with util/string's block-based allocation
+ * scheme which is optimized for building strings and quickly dispose of it.
+ * Also, at some point we need to switch to use mainly UTF-8 strings for DOM
+ * and it needs to be possible to adapt the string library to that. --jonas */
+
 struct dom_string {
-	size_t length;
+	unsigned int length;
 	unsigned char *string;
 };
 
 #define INIT_DOM_STRING(strvalue, strlength) \
-	{ (strlength) == -1 ? sizeof(strvalue) - 1 : (strlength), (strvalue) }
+	{ (strlength), (strvalue) }
+
+#define STATIC_DOM_STRING(strvalue) \
+	{ sizeof(strvalue) - 1, (strvalue) }
 
 static inline void
 set_dom_string(struct dom_string *string, unsigned char *value, size_t length)
@@ -39,21 +48,28 @@ dom_string_ncasecmp(struct dom_string *string1, struct dom_string *string2, size
 	set_dom_string(string1, (string2)->string, (string2)->length)
 
 static inline struct dom_string *
-init_dom_string(struct dom_string *string, unsigned char *str, size_t len)
+add_to_dom_string(struct dom_string *string, unsigned char *str, size_t len)
 {
-	string->string = mem_alloc(len + 1);
-	if (!string->string)
+	unsigned char *newstring;
+
+	newstring = mem_realloc(string->string, string->length + len + 1);
+	if (!newstring)
 		return NULL;
 
-	memcpy(string->string, str, len);
-	string->string[len] = 0;
-	string->length = len;
+	string->string = newstring;
+	memcpy(string->string + string->length, str, len);
+	string->length += len;
+	string->string[string->length] = 0;
+
 	return string;
 }
 
+#define init_dom_string(string, str, len) add_to_dom_string(string, str, len)
+
 #define is_dom_string_set(str) ((str)->string && (str)->length)
 
-#define done_dom_string(str) mem_free((str)->string);
+#define done_dom_string(str) \
+	do { mem_free_set(&(str)->string, NULL); (str)->length = 0; } while (0)
 
 #define isquote(c)	((c) == '"' || (c) == '\'')
 

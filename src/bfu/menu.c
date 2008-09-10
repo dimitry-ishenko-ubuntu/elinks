@@ -60,8 +60,17 @@ static int m_submenu_len = sizeof(m_submenu) - 1;
 /* Prototypes */
 static window_handler_T menu_handler;
 static window_handler_T mainmenu_handler;
+static void display_mainmenu(struct terminal *term, struct menu *menu);
 static void set_menu_selection(struct menu *menu, int pos);
 
+
+void
+deselect_mainmenu(struct terminal *term, struct menu *menu)
+{
+	menu->selected = -1;
+	del_from_list(menu->win);
+	add_to_list_end(term->windows, menu->win);
+}
 
 static inline int
 count_items(struct menu_item *items)
@@ -147,7 +156,11 @@ select_menu_item(struct terminal *term, struct menu_item *it, void *data)
 			    && win->handler != mainmenu_handler)
 				break;
 
-			delete_window(win);
+			if (win->handler == mainmenu_handler) {
+				deselect_mainmenu(term, win->data);
+				redraw_terminal(term);
+			} else
+				delete_window(win);
 		}
 	}
 
@@ -158,7 +171,7 @@ select_menu_item(struct terminal *term, struct menu_item *it, void *data)
 		return;
 	}
 
-	assertm(func, "No menu function");
+	assertm(func != NULL, "No menu function");
 	if_assert_failed return;
 
 	func(term, it_data, data);
@@ -187,7 +200,14 @@ get_menuitem_text_width(struct terminal *term, struct menu_item *mi)
 
 	if (!text[0]) return 0;
 
-	return L_TEXT_SPACE + strlen(text) - !!mi->hotkey_pos + R_TEXT_SPACE;
+#ifdef CONFIG_UTF8
+	if (term->utf8_cp)
+		return L_TEXT_SPACE + utf8_ptr2cells(text, NULL)
+		       - !!mi->hotkey_pos + R_TEXT_SPACE;
+	else
+#endif /* CONFIG_UTF8 */
+		return L_TEXT_SPACE + strlen(text)
+		       - !!mi->hotkey_pos + R_TEXT_SPACE;
 }
 
 /* Get desired width for right text in menu item, accounting spacing. */
@@ -347,17 +367,31 @@ set_menu_selection(struct menu *menu, int pos)
 	int_bounds(&menu->first, 0, menu->size - height);
 }
 
+/* width - number of standard terminal cells to be displayed (text + whitespace
+ *         separators). For double-width glyph width == 2.
+ * len - length of text in bytes */
 static inline void
 draw_menu_left_text(struct terminal *term, unsigned char *text, int len,
 		    int x, int y, int width, struct color_pair *color)
 {
 	int w = width - (L_TEXT_SPACE + R_TEXT_SPACE);
+	int max_len;
 
 	if (w <= 0) return;
 
 	if (len < 0) len = strlen(text);
 	if (!len) return;
-	if (len > w) len = w;
+
+#ifdef CONFIG_UTF8
+	if (term->utf8_cp) {
+		max_len = utf8_cells2bytes(text, w, NULL);
+		if (max_len <= 0)
+			return;
+	} else
+#endif /* CONFIG_UTF8 */
+		max_len = w;
+
+	if (len > max_len) len = max_len;
 
 	draw_text(term, x + L_TEXT_SPACE, y, text, len, 0, color);
 }
@@ -376,6 +410,10 @@ draw_menu_left_text_hk(struct terminal *term, unsigned char *text,
 	int xbase = x + L_TEXT_SPACE;
 	int w = width - (L_TEXT_SPACE + R_TEXT_SPACE);
 	int hk_state = 0;
+#ifdef CONFIG_UTF8
+	unsigned char *text2, *end;
+#endif
+
 #ifdef CONFIG_DEBUG
 	/* For redundant hotkeys highlighting. */
 	int double_hk = 0;
@@ -392,6 +430,10 @@ draw_menu_left_text_hk(struct terminal *term, unsigned char *text,
 		hk_color_sel = tmp;
 	}
 
+#ifdef CONFIG_UTF8
+	if (term->utf8_cp) goto utf8;
+#endif /* CONFIG_UTF8 */
+
 	for (x = 0; x - !!hk_state < w && (c = text[x]); x++) {
 		if (!hk_state && x == hotkey_pos - 1) {
 			hk_state = 1;
@@ -404,12 +446,78 @@ draw_menu_left_text_hk(struct terminal *term, unsigned char *text,
 				  (double_hk ? hk_color_sel : hk_color));
 #else
 			draw_char(term, xbase + x - 1, y, c, hk_attr, hk_color);
-#endif
+#endif /* CONFIG_DEBUG */
 			hk_state = 2;
 		} else {
 			draw_char(term, xbase + x - !!hk_state, y, c, 0, color);
 		}
 	}
+	return;
+
+#ifdef CONFIG_UTF8
+utf8:
+	end = strchr(text, '\0');
+	text2 = text;
+	for (x = 0; x - !!hk_state < w && *text2; x++) {
+		unicode_val_T data;
+
+		data = utf8_to_unicode(&text2, end);
+		if (!hk_state && (int)(text2 - text) == hotkey_pos) {
+			hk_state = 1;
+			continue;
+		}
+		if (hk_state == 1) {
+			if (unicode_to_cell(data) == 2) {
+				if (x < w && xbase + x < term->width) {
+#ifdef CONFIG_DEBUG
+					draw_char(term, xbase + x - 1, y,
+						  data, hk_attr,
+						  (double_hk ? hk_color_sel
+						             : hk_color));
+#else
+					draw_char(term, xbase + x - 1, y,
+						  data, hk_attr, hk_color);
+#endif /* CONFIG_DEBUG */
+					x++;
+					draw_char(term, xbase + x - 1, y,
+						  UCS_NO_CHAR, 0, hk_color);
+				} else {
+					draw_char(term, xbase + x - 1, y,
+						  UCS_ORPHAN_CELL, 0, hk_color);
+				}
+			} else {
+#ifdef CONFIG_DEBUG
+				draw_char(term, xbase + x - 1, y,
+					  data, hk_attr,
+					  (double_hk ? hk_color_sel
+					   	     : hk_color));
+#else
+				draw_char(term, xbase + x - 1, y,
+					  data, hk_attr, hk_color);
+#endif /* CONFIG_DEBUG */
+			}
+			hk_state = 2;
+		} else {
+			if (unicode_to_cell(data) == 2) {
+				if (x - !!hk_state + 1 < w &&
+				    xbase + x - !!hk_state + 1 < term->width) {
+					draw_char(term, xbase + x - !!hk_state,
+						  y, data, 0, color);
+					x++;
+					draw_char(term, xbase + x - !!hk_state,
+						  y, UCS_NO_CHAR, 0, color);
+				} else {
+					draw_char(term, xbase + x - !!hk_state,
+						  y, UCS_ORPHAN_CELL, 0, color);
+				}
+			} else {
+				draw_char(term, xbase + x - !!hk_state,
+					  y, data, 0, color);
+			}
+		}
+
+	}
+#endif /* CONFIG_UTF8 */
 }
 
 static inline void
@@ -452,7 +560,15 @@ display_menu(struct terminal *term, struct menu *menu)
 		/* Draw shadow */
 		draw_shadow(term, &menu->box,
 			    get_bfu_color(term, "dialog.shadow"), 2, 1);
+#ifdef CONFIG_UTF8
+		if (term->utf8_cp)
+			fix_dwchar_around_box(term, &box, 1, 2, 1);
+#endif /* CONFIG_UTF8 */
 	}
+#ifdef CONFIG_UTF8
+	else if (term->utf8_cp)
+		fix_dwchar_around_box(term, &box, 1, 0, 0);
+#endif /* CONFIG_UTF8 */
 
 	menu_height = box.height;
 	box.height = 1;
@@ -753,8 +869,8 @@ static void
 search_menu(struct menu *menu)
 {
 	struct terminal *term = menu->win->term;
-	struct window *tab = get_current_tab(term);
-	struct session *ses = tab ? tab->data : NULL;
+	struct window *current_tab = get_current_tab(term);
+	struct session *ses = current_tab ? current_tab->data : NULL;
 	unsigned char *prompt = _("Search menu/", term);
 
 	if (menu->size < 1 || !ses) return;
@@ -832,9 +948,9 @@ menu_kbd_handler(struct menu *menu, struct term_event *ev)
 
 		default:
 		{
-			int key = get_kbd_key(ev);
+			term_event_key_T key = get_kbd_key(ev);
 
-			if ((key >= KBD_F1 && key <= KBD_F12)
+			if (is_kbd_fkey(key)
 			    || check_kbd_modifier(ev, KBD_MOD_ALT)) {
 				delete_window_ev(win, ev);
 				return;
@@ -898,10 +1014,17 @@ void
 do_mainmenu(struct terminal *term, struct menu_item *items,
 	    void *data, int sel)
 {
-	struct menu *menu = mem_calloc(1, sizeof(*menu));
+	int init = 0;
+	struct menu *menu;
+	struct window *win;
 
-	if (!menu) return;
+	if (!term->main_menu) {
+		term->main_menu = mem_calloc(1, sizeof(*menu));
+		if (!term->main_menu) return;
+		init = 1;
+	}
 
+	menu = term->main_menu;
 	menu->selected = (sel == -1 ? 0 : sel);
 	menu->items = items;
 	menu->data = data;
@@ -912,7 +1035,24 @@ do_mainmenu(struct terminal *term, struct menu_item *items,
 	clear_hotkeys_cache(menu);
 #endif
 	init_hotkeys(term, menu);
-	add_window(term, mainmenu_handler, menu);
+	if (init) {
+		add_window(term, mainmenu_handler, menu);
+		win = menu->win;
+		/* This should be fine because add_window will call
+		 * mainmenu_handler which will assign the window to menu->win.
+		 */
+		assert(win);
+		deselect_mainmenu(term, menu);
+	} else {
+		foreach (win, term->windows) {
+			if (win->data == menu) {
+				del_from_list(win);
+				add_to_list(term->windows, win);
+				display_mainmenu(term, menu);
+				break;
+			}
+		}
+	}
 
 	if (sel != -1) {
 		select_menu(term, menu);
@@ -968,18 +1108,33 @@ display_mainmenu(struct terminal *term, struct menu *menu)
 		int l = mi->hotkey_pos;
 		int textlen;
 		int selected = (i == menu->selected);
+		int screencnt;
 
 		if (mi_text_translate(mi))
 			text = _(text, term);
 
 		textlen = strlen(text) - !!l;
+#ifdef CONFIG_UTF8
+		if (term->utf8_cp)
+			screencnt = utf8_ptr2cells(text, NULL) - !!l;
+		else
+#endif /* CONFIG_UTF8 */
+			screencnt = textlen;
 
 		if (selected) {
 			color = selected_color;
 			box.x = p;
-			box.width = L_MAINTEXT_SPACE + L_TEXT_SPACE
-				    + textlen
-				    + R_TEXT_SPACE + R_MAINTEXT_SPACE;
+#ifdef CONFIG_UTF8
+			if (term->utf8_cp)
+				box.width = L_MAINTEXT_SPACE + L_TEXT_SPACE
+					+ screencnt
+					+ R_TEXT_SPACE + R_MAINTEXT_SPACE;
+			else
+#endif /* CONFIG_UTF8 */
+				box.width = L_MAINTEXT_SPACE + L_TEXT_SPACE
+					+ textlen
+					+ R_TEXT_SPACE + R_MAINTEXT_SPACE;
+
 			draw_box(term, &box, ' ', 0, color);
 			set_cursor(term, p, 0, 1);
 			set_window_ptr(menu->win, p, 1);
@@ -997,7 +1152,7 @@ display_mainmenu(struct terminal *term, struct menu *menu)
 					    color);
 		}
 
-		p += textlen;
+		p += screencnt;
 
 		if (p >= term->width - R_MAINMENU_SPACE)
 			break;
@@ -1008,6 +1163,22 @@ display_mainmenu(struct terminal *term, struct menu *menu)
 	menu->last = i - 1;
 	int_lower_bound(&menu->last, menu->first);
 	if (menu->last < menu->size - 1) {
+#ifdef CONFIG_UTF8
+		if (term->utf8_cp) {
+			struct screen_char *schar;
+
+			schar = get_char(term, term->width - R_MAINMENU_SPACE, 0);
+			/* Is second cell of double-width char on the place where
+			 * first char of the R_MAINMENU_SPACE will be displayed? */
+			if (schar->data == UCS_NO_CHAR) {
+				/* Replace double-width char with UCS_ORPHAN_CELL. */
+				schar++;
+				draw_char_data(term, term->width - R_MAINMENU_SPACE - 1,
+					       0, UCS_ORPHAN_CELL);
+			}
+		}
+#endif
+
 		set_box(&box,
 			term->width - R_MAINMENU_SPACE, 0,
 			R_MAINMENU_SPACE, 1);
@@ -1031,9 +1202,11 @@ mainmenu_mouse_handler(struct menu *menu, struct term_event *ev)
 
 	/* Mouse was clicked outside the mainmenu bar */
 	if (ev->info.mouse.y) {
-		if (check_mouse_action(ev, B_DOWN))
-			delete_window_ev(win, NULL);
+		if (check_mouse_action(ev, B_DOWN)) {
+			deselect_mainmenu(win->term, menu);
+			display_mainmenu(win->term, menu);
 
+		}
 		return;
 	}
 
@@ -1137,8 +1310,8 @@ mainmenu_kbd_handler(struct menu *menu, struct term_event *ev)
 		}
 
 	case ACT_MENU_CANCEL:
-		delete_window_ev(win, action_id != ACT_MENU_CANCEL ? ev : NULL);
-		return;
+		deselect_mainmenu(win->term, menu);
+		break;
 	}
 
 	/* Redraw the menu */
@@ -1176,7 +1349,7 @@ mainmenu_handler(struct window *win, struct term_event *ev)
 
 /* For dynamic menus the last (cleared) item is used to mark the end. */
 #define realloc_menu_items(mi_, size) \
-	mem_align_alloc(mi_, size, (size) + 2, struct menu_item, 0xF)
+	mem_align_alloc(mi_, size, (size) + 2, 0xF)
 
 struct menu_item *
 new_menu(enum menu_item_flags flags)

@@ -92,6 +92,7 @@ static struct option_info uri_rewrite_options[] = {
 
 	INIT_OPT_STRING("protocol.rewrite", N_("Default template"),
 		"default_template", 0, "",
+		/* xgettext:no-c-format */
 		N_("Default URI template used when the string entered in\n"
 		"the goto dialog does not appear to be a URI or a filename\n"
 		"(i.e. contains no '.', ':' or '/' characters), and does\n"
@@ -105,7 +106,7 @@ static struct option_info uri_rewrite_options[] = {
 #define INIT_OPT_DUMB_PREFIX(prefix, uri) \
 	INIT_OPT_STRING("protocol.rewrite.dumb", NULL, prefix, 0, uri, NULL)
 
-	INIT_OPT_DUMB_PREFIX("elinks", ELINKS_HOMEPAGE),
+	INIT_OPT_DUMB_PREFIX("elinks", ELINKS_WEBSITE_URL),
 	INIT_OPT_DUMB_PREFIX("documentation", ELINKS_DOC_URL),
 	INIT_OPT_DUMB_PREFIX("bz", ELINKS_BUGS_URL),
 	INIT_OPT_DUMB_PREFIX("bug", ELINKS_BUGS_URL),

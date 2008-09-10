@@ -1,4 +1,5 @@
-/* Conversion functions */
+/** Conversion functions
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -22,39 +23,42 @@
 
 
 
-/* This function takes string @s and stores the @number (of a result width
- * @width) in string format there, starting at position [*@slen]. If the number
- * would take more space than @width, it is truncated and only the _last_
- * digits of it are inserted to the string. If the number takes less space than
- * @width, it is padded by @fillchar from left.
- * @base defined which base should be used (10, 16, 8, 2, ...)
- * @upper selects either hexa uppercased chars or lowercased chars.
+/** This function takes string @a s and stores the @a number (of a
+ * result width @a width) in string format there, starting at position
+ * [*@a slen]. If the number would take more space than @a width, it
+ * is truncated and only the _last_ digits of it are inserted to the
+ * string. If the number takes less space than @a width, it is padded
+ * by @a fillchar from left.
+ * @a base defined which base should be used (10, 16, 8, 2, ...)
+ * @a upper selects either hexa uppercased chars or lowercased chars.
  *
- * A NUL char is always added at the end of the string. @s must point to a
- * sufficiently large memory space, at least *@slen + @width + 1.
+ * A NUL char is always added at the end of the string. @a s must point
+ * to a sufficiently large memory space, at least *@a slen + @a width + 1.
  *
  * Examples:
  *
+ * @code
  * elinks_ulongcat(s, NULL, 12345, 4, 0, 10, 0) : s = "2345"
  * elinks_ulongcat(s, NULL, 255, 4, '*', 16, 1) : s = "**FF"
  * elinks_ulongcat(s, NULL, 123, 5, '0', 10, 0) : s = "00123"
+ * @endcode
  *
  * Note that this function exists to provide a fast and efficient, however
  * still quite powerful alternative to sprintf(). It is optimized for speed and
  * is *MUCH* faster than sprintf(). If you can use it, use it ;-). But do not
  * get too enthusiastic, do not use it in cases where it would break i18n.
- */
-/* The function returns 0 if OK or width needed for the whole number to fit
- * there, if it had to be truncated. A negative value signs an error. */
+ *
+ * @returns 0 if OK or width needed for the whole number to fit there,
+ * if it had to be truncated. A negative value signs an error. */
 int inline
 elinks_ulongcat(unsigned char *s, unsigned int *slen,
 		unsigned long number, unsigned int width,
 		unsigned char fillchar, unsigned int base,
 		unsigned int upper)
 {
-	static unsigned char unum[]= "0123456789ABCDEF";
-	static unsigned char lnum[]= "0123456789abcdef";
-	unsigned char *to_num = (unsigned char *) (upper ? &unum : &lnum);
+	static const unsigned char unum[]= "0123456789ABCDEF";
+	static const unsigned char lnum[]= "0123456789abcdef";
+	const unsigned char *to_num = (upper ? unum : lnum);
 	unsigned int start = slen ? *slen : 0;
 	unsigned int nlen = 1; /* '0' is one char, we can't have less. */
 	unsigned int pos = start; /* starting position of the number */
@@ -103,7 +107,7 @@ elinks_ulongcat(unsigned char *s, unsigned int *slen,
 	return ret;
 }
 
-/* Similar to elinks_ulongcat() but for long number. */
+/** Similar to elinks_ulongcat() but for @c long number. */
 int inline
 elinks_longcat(unsigned char *s, unsigned int *slen,
 	       long number, unsigned int width,
@@ -123,6 +127,7 @@ elinks_longcat(unsigned char *s, unsigned int *slen,
 }
 
 
+/** @relates string */
 struct string *
 add_long_to_string(struct string *string, long number)
 {
@@ -139,6 +144,7 @@ add_long_to_string(struct string *string, long number)
 	return add_bytes_to_string(string, buffer, length);
 }
 
+/** @relates string */
 struct string *
 add_knum_to_string(struct string *string, long num)
 {
@@ -165,6 +171,7 @@ add_knum_to_string(struct string *string, long num)
 	return string;
 }
 
+/** @relates string */
 struct string *
 add_xnum_to_string(struct string *string, off_t xnum)
 {
@@ -198,6 +205,7 @@ add_xnum_to_string(struct string *string, off_t xnum)
 	return string;
 }
 
+/** @relates string */
 struct string *
 add_duration_to_string(struct string *string, long seconds)
 {
@@ -232,6 +240,7 @@ add_duration_to_string(struct string *string, long seconds)
 	return string;
 }
 
+/** @relates string */
 struct string *
 add_timeval_to_string(struct string *string, timeval_T *timeval)
 {
@@ -240,7 +249,8 @@ add_timeval_to_string(struct string *string, timeval_T *timeval)
 
 #ifdef HAVE_STRFTIME
 struct string *
-add_date_to_string(struct string *string, unsigned char *fmt, time_t *date)
+add_date_to_string(struct string *string, const unsigned char *fmt,
+		   const time_t *date)
 {
 	unsigned char buffer[MAX_STR_LEN];
 	time_t when_time = date ? *date : time(NULL);
@@ -272,17 +282,12 @@ add_string_replace(struct string *string, unsigned char *src, int len,
 }
 
 struct string *
-add_html_to_string(struct string *string, unsigned char *src, int len)
+add_html_to_string(struct string *string, const unsigned char *src, int len)
 {
-
-#define isalphanum(q) (isalnum(q) || (q) == '-' || (q) == '_')
-
 	for (; len; len--, src++) {
-		if (isalphanum(*src) || *src == ' '
-		    || *src == '.' || *src == ':' || *src == ';') {
-			if (!add_bytes_to_string(string, src, 1))
-				return NULL;
-		} else {
+		if (*src < 0x20
+		    || *src == '<' || *src == '>' || *src == '&'
+		    || *src == '\"' || *src == '\'') {
 			int rollback_length = string->length;
 
 			if (!add_bytes_to_string(string, "&#", 2)
@@ -292,17 +297,62 @@ add_html_to_string(struct string *string, unsigned char *src, int len)
 				string->source[rollback_length] = '\0';
 				return NULL;
 			}
+		} else {
+			if (!add_char_to_string(string, *src))
+				return NULL;
 		}
 	}
 
-#undef isalphanum
+	return string;
+}
+
+struct string *
+add_cp_html_to_string(struct string *string, int src_codepage,
+		      const unsigned char *src, int len)
+{
+	const unsigned char *const end = src + len;
+	unicode_val_T unicode;
+
+	while (src != end) {
+		if (is_cp_utf8(src_codepage)) {
+#ifdef CONFIG_UTF8
+			unicode = utf8_to_unicode((unsigned char **) &src,
+						  end);
+			if (unicode == UCS_NO_CHAR)
+				break;
+#else  /* !CONFIG_UTF8 */
+			/* Cannot parse UTF-8 without CONFIG_UTF8.
+			 * Pretend the input is ISO-8859-1 instead.  */
+			unicode = *src++;
+#endif /* !CONFIG_UTF8 */
+		} else {
+			unicode = cp2u(src_codepage, *src++);
+		}
+
+		if (unicode < 0x20 || unicode >= 0x7F
+		    || unicode == '<' || unicode == '>' || unicode == '&'
+		    || unicode == '\"' || unicode == '\'') {
+			int rollback_length = string->length;
+
+			if (!add_bytes_to_string(string, "&#", 2)
+			    || !add_long_to_string(string, unicode)
+			    || !add_char_to_string(string, ';')) {
+				string->length = rollback_length;
+				string->source[rollback_length] = '\0';
+				return NULL;
+			}
+		} else {
+			if (!add_char_to_string(string, unicode))
+				return NULL;
+		}
+	}
 
 	return string;
 }
 
 /* TODO Optimize later --pasky */
 struct string *
-add_quoted_to_string(struct string *string, unsigned char *src, int len)
+add_quoted_to_string(struct string *string, const unsigned char *src, int len)
 {
 	for (; len; len--, src++) {
 		if (isquote(*src) || *src == '\\')
@@ -428,8 +478,8 @@ month2num(const unsigned char *str)
 	}
 }
 
-/* This function drops control chars, nbsp char and limit the number of consecutive
- * space chars to one. It modifies its argument. */
+/** This function drops control chars, nbsp char and limit the number
+ * of consecutive space chars to one. It modifies its argument. */
 void
 clr_spaces(unsigned char *str)
 {
@@ -451,7 +501,7 @@ clr_spaces(unsigned char *str)
 	*dest = '\0';
 }
 
-/* Replace invalid chars in @title with ' ' and trim all starting/ending
+/** Replace invalid chars in @a title with ' ' and trim all starting/ending
  * spaces. */
 void
 sanitize_title(unsigned char *title)
@@ -467,7 +517,7 @@ sanitize_title(unsigned char *title)
 	trim_chars(title, ' ', NULL);
 }
 
-/* Returns 0 if @url contains invalid chars, 1 if ok.
+/** Returns 0 if @a url contains invalid chars, 1 if ok.
  * It trims starting/ending spaces. */
 int
 sanitize_url(unsigned char *url)

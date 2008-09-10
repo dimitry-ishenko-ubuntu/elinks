@@ -1,5 +1,9 @@
 /* HTML parser */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE /* XXX: we _WANT_ strcasestr() ! */
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -57,7 +61,7 @@ get_color(struct html_context *html_context, unsigned char *a,
 	if (!use_document_fg_colors(html_context->options))
 		return -1;
 
-	at = get_attr_val(a, c, html_context->options);
+	at = get_attr_val(a, c, html_context->doc_cp);
 	if (!at) return -1;
 
 	r = decode_color(at, strlen(at), rgb);
@@ -78,7 +82,9 @@ get_bgcolor(struct html_context *html_context, unsigned char *a, color_T *rgb)
 unsigned char *
 get_target(struct document_options *options, unsigned char *a)
 {
-	unsigned char *v = get_attr_val(a, "target", options);
+	/* FIXME (bug 784): options->cp is the terminal charset;
+	 * should use the document charset instead.  */
+	unsigned char *v = get_attr_val(a, "target", options->cp);
 
 	if (!v) return NULL;
 
@@ -93,7 +99,7 @@ get_target(struct document_options *options, unsigned char *a)
 void
 ln_break(struct html_context *html_context, int n)
 {
-	if (!n || html_top.invisible) return;
+	if (!n || html_top->invisible) return;
 	while (n > html_context->line_breax) {
 		html_context->line_breax++;
 		html_context->line_break_f(html_context);
@@ -108,7 +114,7 @@ put_chrs(struct html_context *html_context, unsigned char *start, int len)
 	if (html_is_preformatted())
 		html_context->putsp = HTML_SPACE_NORMAL;
 
-	if (!len || html_top.invisible)
+	if (!len || html_top->invisible)
 		return;
 
 	switch (html_context->putsp) {
@@ -154,7 +160,7 @@ set_fragment_identifier(struct html_context *html_context,
 {
 	unsigned char *id_attr;
 
-	id_attr = get_attr_val(attr_name, attr, html_context->options);
+	id_attr = get_attr_val(attr_name, attr, html_context->doc_cp);
 
 	if (id_attr) {
 		html_context->special_f(html_context, SP_TAG, id_attr);
@@ -176,9 +182,10 @@ add_fragment_identifier(struct html_context *html_context,
 #ifdef CONFIG_CSS
 void
 import_css_stylesheet(struct css_stylesheet *css, struct uri *base_uri,
-		      unsigned char *url, int len)
+		      const unsigned char *unterminated_url, int len)
 {
 	struct html_context *html_context = css->import_data;
+	unsigned char *url;
 	unsigned char *import_url;
 	struct uri *uri;
 
@@ -189,7 +196,9 @@ import_css_stylesheet(struct css_stylesheet *css, struct uri *base_uri,
 	    || !html_context->options->css_import)
 		return;
 
-	url = memacpy(url, len);
+	/* unterminated_url might not end with '\0', but join_urls
+	 * requires that, so make a copy.  */
+	url = memacpy(unterminated_url, len);
 	if (!url) return;
 
 	/* HTML <head> urls should already be fine but we can.t detect them. */
@@ -226,6 +235,7 @@ html_focusable(struct html_context *html_context, unsigned char *a)
 {
 	struct document_options *options;
 	unsigned char *accesskey;
+	int cp;
 	int tabindex;
 
 	format.accesskey = 0;
@@ -234,33 +244,36 @@ html_focusable(struct html_context *html_context, unsigned char *a)
 	if (!a) return;
 
 	options = html_context->options;
+	cp = html_context->doc_cp;
 
-	accesskey = get_attr_val(a, "accesskey", options);
+	accesskey = get_attr_val(a, "accesskey", cp);
 	if (accesskey) {
 		format.accesskey = accesskey_string_to_unicode(accesskey);
 		mem_free(accesskey);
 	}
 
-	tabindex = get_num(a, "tabindex", options);
+	tabindex = get_num(a, "tabindex", html_context->doc_cp);
 	if (0 < tabindex && tabindex < 32767) {
 		format.tabindex = (tabindex & 0x7fff) << 16;
 	}
 
-	mem_free_set(&format.onclick, get_attr_val(a, "onclick", options));
-	mem_free_set(&format.ondblclick, get_attr_val(a, "ondblclick", options));
-	mem_free_set(&format.onmouseover, get_attr_val(a, "onmouseover", options));
-	mem_free_set(&format.onhover, get_attr_val(a, "onhover", options));
-	mem_free_set(&format.onfocus, get_attr_val(a, "onfocus", options));
-	mem_free_set(&format.onmouseout, get_attr_val(a, "onmouseout", options));
-	mem_free_set(&format.onblur, get_attr_val(a, "onblur", options));
+	mem_free_set(&format.onclick, get_attr_val(a, "onclick", cp));
+	mem_free_set(&format.ondblclick, get_attr_val(a, "ondblclick", cp));
+	mem_free_set(&format.onmouseover, get_attr_val(a, "onmouseover", cp));
+	mem_free_set(&format.onhover, get_attr_val(a, "onhover", cp));
+	mem_free_set(&format.onfocus, get_attr_val(a, "onfocus", cp));
+	mem_free_set(&format.onmouseout, get_attr_val(a, "onmouseout", cp));
+	mem_free_set(&format.onblur, get_attr_val(a, "onblur", cp));
 }
 
 void
 html_skip(struct html_context *html_context, unsigned char *a)
 {
-	html_top.invisible = 1;
-	html_top.type = ELEMENT_DONT_KILL;
+	html_top->invisible = 1;
+	html_top->type = ELEMENT_DONT_KILL;
 }
+
+#define LWS(c) ((c) == ' ' || (c) == ASCII_TAB)
 
 /* Parse meta refresh without URL= in it:
  *  <meta http-equiv="refresh" content="3,http://elinks.or.cz/">
@@ -277,30 +290,105 @@ parse_old_meta_refresh(unsigned char *str, unsigned char **ret)
 	if_assert_failed return;
 
 	*ret = NULL;
-	while (*p && (*p == ' ' || *p == ASCII_TAB)) p++;
+	while (*p && LWS(*p)) p++;
 	if (!*p) return;
 	while (*p && *p >= '0' && *p <= '9') p++;
 	if (!*p) return;
-	while (*p && (*p == ' ' || *p == ASCII_TAB)) p++;
+	while (*p && LWS(*p)) p++;
 	if (!*p) return;
 	if (*p == ';' || *p == ',') p++; else return;
-	while (*p && (*p == ' ' || *p == ASCII_TAB)) p++;
+	while (*p && LWS(*p)) p++;
 	if (!*p) return;
 
 	len = strlen(p);
-	while (len && (p[len] == ' ' || p[len] == ASCII_TAB)) len--;
+	while (len && LWS(p[len])) len--;
 	if (len) *ret = memacpy(p, len);
 }
 
-void
-process_head(struct html_context *html_context, unsigned char *head)
+/* Search for the url part in the content attribute and returns
+ * it if found.
+ * It searches the first occurence of 'url' marker somewhere ignoring
+ * anything before it.
+ * It should cope with most situations including:
+ * content="0; URL='http://www.site.com/path/xxx.htm'"
+ * content="0  url=http://www.site.com/path/xxx.htm"
+ * content="anything ; some url  ===   ''''http://www.site.com/path/xxx.htm''''
+ *
+ * The return value is one of:
+ *
+ * - HEADER_PARAM_FOUND: the parameter was found, copied, and stored in *@ret.
+ * - HEADER_PARAM_NOT_FOUND: the parameter is not there.  *@ret is now NULL.
+ * - HEADER_PARAM_OUT_OF_MEMORY: error. *@ret is now NULL.
+ *
+ * If @ret is NULL, then this function doesn't actually access *@ret,
+ * and cannot fail with HEADER_PARAM_OUT_OF_MEMORY.  Some callers may
+ * rely on this. */
+static enum parse_header_param
+search_for_url_param(unsigned char *str, unsigned char **ret)
+{
+	unsigned char *p;
+	int plen = 0;
+
+	if (ret) *ret = NULL;	/* default in case of early return */
+
+	assert(str);
+	if_assert_failed return HEADER_PARAM_NOT_FOUND;
+
+	/* Returns now if string @str is empty. */
+	if (!*str) return HEADER_PARAM_NOT_FOUND;
+
+	p = strcasestr(str, "url");
+	if (!p) return HEADER_PARAM_NOT_FOUND;
+	p += 3;
+
+	while (*p && (*p <= ' ' || *p == '=')) p++;
+	if (!*p) {
+		if (ret) {
+			*ret = stracpy("");
+			if (!*ret)
+				return HEADER_PARAM_OUT_OF_MEMORY;
+		}
+		return HEADER_PARAM_FOUND;
+	}
+
+	while ((p[plen] > ' ' || LWS(p[plen])) && p[plen] != ';') plen++;
+
+	/* Trim ending spaces */
+	while (plen > 0 && LWS(p[plen - 1])) plen--;
+
+	/* XXX: Drop enclosing single quotes if there's some.
+	 *
+	 * Some websites like newsnow.co.uk are using single quotes around url
+	 * in URL field in meta tag content attribute like this:
+	 * <meta http-equiv="Refresh" content="0; URL='http://www.site.com/path/xxx.htm'">
+	 *
+	 * This is an attempt to handle that, but it may break something else.
+	 * We drop all pair of enclosing quotes found (eg. '''url''' => url).
+	 * Please report any issue related to this. --Zas */
+	while (plen > 1 && *p == '\'' && p[plen - 1] == '\'') {
+		p++;
+		plen -= 2;
+	}
+
+	if (ret) {
+		*ret = memacpy(p, plen);
+		if (!*ret)
+			return HEADER_PARAM_OUT_OF_MEMORY;
+	}
+	return HEADER_PARAM_FOUND;
+}
+
+#undef LWS
+
+static void
+check_head_for_refresh(struct html_context *html_context, unsigned char *head)
 {
 	unsigned char *refresh, *url;
 
 	refresh = parse_header(head, "Refresh", NULL);
 	if (!refresh) return;
 
-	url = parse_header_param(refresh, "URL");
+	search_for_url_param(refresh, &url);
 	if (!url) {
 		/* Let's try a more tolerant parsing. */
 		parse_old_meta_refresh(refresh, &url);
@@ -355,68 +443,82 @@ process_head(struct html_context *html_context, unsigned char *head)
 	}
 
 	mem_free(refresh);
+}
 
-	if (!get_opt_bool("document.cache.ignore_cache_control")) {
-		unsigned char *d;
-		int no_cache = 0;
-		time_t expires = 0;
+static void
+check_head_for_cache_control(struct html_context *html_context,
+                             unsigned char *head)
+{
+	unsigned char *d;
+	int no_cache = 0;
+	time_t expires = 0;
 
-		/* XXX: Code duplication with HTTP protocol backend. */
-		/* I am not entirely sure in what order we should process these
-		 * headers and if we should still process Cache-Control max-age
-		 * if we already set max age to date mentioned in Expires.
-		 * --jonas */
-		if ((d = parse_header(head, "Pragma", NULL))) {
-			if (strstr(d, "no-cache")) {
-				no_cache = 1;
-			}
-			mem_free(d);
+	if (get_opt_bool("document.cache.ignore_cache_control"))
+		return;
+
+	/* XXX: Code duplication with HTTP protocol backend. */
+	/* I am not entirely sure in what order we should process these
+	 * headers and if we should still process Cache-Control max-age
+	 * if we already set max age to date mentioned in Expires.
+	 * --jonas */
+	if ((d = parse_header(head, "Pragma", NULL))) {
+		if (strstr(d, "no-cache")) {
+			no_cache = 1;
 		}
-
-		if (!no_cache && (d = parse_header(head, "Cache-Control", NULL))) {
-			if (strstr(d, "no-cache") || strstr(d, "must-revalidate")) {
-				no_cache = 1;
-
-			} else  {
-				unsigned char *pos = strstr(d, "max-age=");
-
-				assert(!no_cache);
-
-				if (pos) {
-					/* Grab the number of seconds. */
-					timeval_T max_age, seconds;
-
-					timeval_from_seconds(&seconds, atol(pos + 8));
-					timeval_now(&max_age);
-					timeval_add_interval(&max_age, &seconds);
-
-					expires = timeval_to_seconds(&max_age);
-				}
-			}
-
-			mem_free(d);
-		}
-
-		if (!no_cache && (d = parse_header(head, "Expires", NULL))) {
-			/* Convert date to seconds. */
-			if (strstr(d, "now")) {
-				timeval_T now;
-
-				timeval_now(&now);
-				expires = timeval_to_seconds(&now);
-			} else {
-				expires = parse_date(&d, NULL, 0, 1);
-			}
-
-			mem_free(d);
-		}
-
-		if (no_cache)
-			html_context->special_f(html_context, SP_CACHE_CONTROL);
-		else if (expires)
-			html_context->special_f(html_context,
-					       SP_CACHE_EXPIRES, expires);
+		mem_free(d);
 	}
+
+	if (!no_cache && (d = parse_header(head, "Cache-Control", NULL))) {
+		if (strstr(d, "no-cache") || strstr(d, "must-revalidate")) {
+			no_cache = 1;
+
+		} else  {
+			unsigned char *pos = strstr(d, "max-age=");
+
+			assert(!no_cache);
+
+			if (pos) {
+				/* Grab the number of seconds. */
+				timeval_T max_age, seconds;
+
+				timeval_from_seconds(&seconds, atol(pos + 8));
+				timeval_now(&max_age);
+				timeval_add_interval(&max_age, &seconds);
+
+				expires = timeval_to_seconds(&max_age);
+			}
+		}
+
+		mem_free(d);
+	}
+
+	if (!no_cache && (d = parse_header(head, "Expires", NULL))) {
+		/* Convert date to seconds. */
+		if (strstr(d, "now")) {
+			timeval_T now;
+
+			timeval_now(&now);
+			expires = timeval_to_seconds(&now);
+		} else {
+			expires = parse_date(&d, NULL, 0, 1);
+		}
+
+		mem_free(d);
+	}
+
+	if (no_cache)
+		html_context->special_f(html_context, SP_CACHE_CONTROL);
+	else if (expires)
+		html_context->special_f(html_context,
+				       SP_CACHE_EXPIRES, expires);
+}
+
+void
+process_head(struct html_context *html_context, unsigned char *head)
+{
+	check_head_for_refresh(html_context, head);
+
+	check_head_for_cache_control(html_context, head);
 }
 
 
@@ -448,7 +550,9 @@ look_for_map(unsigned char **pos, unsigned char *eof, struct uri *uri,
 	if (strlcasecmp(name, namelen, "MAP", 3)) return 1;
 
 	if (uri && uri->fragment) {
-		al = get_attr_val(attr, "name", options);
+		/* FIXME (bug 784): options->cp is the terminal charset;
+		 * should use the document charset instead.  */
+		al = get_attr_val(attr, "name", options->cp);
 		if (!al) return 1;
 
 		if (strlcasecmp(al, -1, uri->fragment, uri->fragmentlen)) {
@@ -546,7 +650,9 @@ look_for_link(unsigned char **pos, unsigned char *eof, struct menu_item **menu,
 		if (*pos >= eof) return 0;
 
 	} else if (!strlcasecmp(name, namelen, "AREA", 4)) {
-		unsigned char *alt = get_attr_val(attr, "alt", options);
+		/* FIXME (bug 784): options->cp is the terminal charset;
+		 * should use the document charset instead.  */
+		unsigned char *alt = get_attr_val(attr, "alt", options->cp);
 
 		if (alt) {
 			label = convert_string(ct, alt, strlen(alt),
@@ -559,7 +665,7 @@ look_for_link(unsigned char **pos, unsigned char *eof, struct menu_item **menu,
 
 	} else if (!strlcasecmp(name, namelen, "/MAP", 4)) {
 		/* This is the only successful return from here! */
-		add_to_ml(ml, *menu, NULL);
+		add_to_ml(ml, (void *) *menu, (void *) NULL);
 		return 0;
 
 	} else {
@@ -580,7 +686,9 @@ look_for_link(unsigned char **pos, unsigned char *eof, struct menu_item **menu,
 		return 1;
 	}
 
-	href = get_url_val(attr, "href", options);
+	/* FIXME (bug 784): options->cp is the terminal charset;
+	 * should use the document charset instead.  */
+	href = get_url_val(attr, "href", options->cp);
 	if (!href) {
 		mem_free_if(label);
 		mem_free(target);
@@ -642,7 +750,8 @@ look_for_link(unsigned char **pos, unsigned char *eof, struct menu_item **menu,
 		nm[nmenu].flags = NO_INTL;
 	}
 
-	add_to_ml(ml, ld, ld->link, ld->target, label, NULL);
+	add_to_ml(ml, (void *) ld, (void *) ld->link, (void *) ld->target,
+		  (void *) label, (void *) NULL);
 
 	return 1;
 }
@@ -691,15 +800,12 @@ get_image_map(unsigned char *head, unsigned char *pos, unsigned char *eof,
 
 
 
-struct html_element *
+void *
 init_html_parser_state(struct html_context *html_context,
                        enum html_element_mortality_type type,
                        int align, int margin, int width)
 {
-	struct html_element *element;
-
 	html_stack_dup(html_context, type);
-	element = &html_top;
 
 	par_format.align = align;
 
@@ -710,37 +816,42 @@ init_html_parser_state(struct html_context *html_context,
 		par_format.list_level = 0;
 		par_format.list_number = 0;
 		par_format.dd_margin = 0;
-		html_top.namelen = 0;
+		html_top->namelen = 0;
 	}
 
-	return element;
+	return html_top;
 }
 
 
 
 void
 done_html_parser_state(struct html_context *html_context,
-                       struct html_element *element)
+                       void *state)
 {
+	struct html_element *element = state;
+
 	html_context->line_breax = 1;
 
-	while (&html_top != element) {
-		kill_html_stack_item(html_context, &html_top);
+	while (html_top != element) {
+		pop_html_element(html_context);
 #if 0
 		/* I've preserved this bit to show an example of the Old Code
 		 * of the Mikulas days (I _HOPE_ it's by Mikulas, at least ;-).
 		 * I think this assert() can never fail, for one. --pasky */
-		assertm(&html_top && (void *) &html_top != (void *) &html_stack,
+		assertm(html_top && (void *) html_top != (void *) &html_stack,
 			"html stack trashed");
 		if_assert_failed break;
 #endif
 	}
 
-	html_top.type = ELEMENT_KILLABLE;
-	kill_html_stack_item(html_context, &html_top);
+	html_top->type = ELEMENT_KILLABLE;
+	pop_html_element(html_context);
 
 }
 
+/* This function does not set html_context.doc_cp = document.cp,
+ * because it does not know the document, and because the codepage has
+ * not even been decided when it is called.  */
 struct html_context *
 init_html_parser(struct uri *uri, struct document_options *options,
 		 unsigned char *start, unsigned char *end,
@@ -790,8 +901,7 @@ init_html_parser(struct uri *uri, struct document_options *options,
 	format.form = NULL;
 	format.title = NULL;
 
-	format.style.fg = options->default_fg;
-	format.style.bg = options->default_bg;
+	format.style = options->default_style;
 	format.clink = options->default_link;
 	format.vlink = options->default_vlink;
 #ifdef CONFIG_BOOKMARKS
@@ -808,14 +918,14 @@ init_html_parser(struct uri *uri, struct document_options *options,
 	par_format.dd_margin = options->margin;
 	par_format.flags = P_NONE;
 
-	par_format.bgcolor = options->default_bg;
+	par_format.bgcolor = options->default_style.bg;
 
-	html_top.invisible = 0;
-	html_top.name = NULL;
-   	html_top.namelen = 0;
-	html_top.options = NULL;
-	html_top.linebreak = 1;
-	html_top.type = ELEMENT_DONT_KILL;
+	html_top->invisible = 0;
+	html_top->name = NULL;
+   	html_top->namelen = 0;
+	html_top->options = NULL;
+	html_top->linebreak = 1;
+	html_top->type = ELEMENT_DONT_KILL;
 
 	html_context->has_link_lines = 0;
 	html_context->table_level = 0;

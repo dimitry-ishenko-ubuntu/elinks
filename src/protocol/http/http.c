@@ -47,6 +47,9 @@
 #include "util/memory.h"
 #include "util/string.h"
 
+#ifdef CONFIG_GSSAPI
+#include "http_negotiate.h"
+#endif
 
 struct http_version {
 	int major;
@@ -437,8 +440,9 @@ static int
 check_http_server_bugs(struct uri *uri, struct http_connection_info *http,
 		       unsigned char *head)
 {
-	unsigned char *server, **s;
-	static unsigned char *buggy_servers[] = {
+	unsigned char *server;
+	const unsigned char *const *s;
+	static const unsigned char *const buggy_servers[] = {
 		"mod_czech/3.1.0",
 		"Purveyor",
 		"Netscape-Enterprise",
@@ -470,14 +474,12 @@ http_end_request(struct connection *conn, enum connection_state state,
 {
 	shutdown_connection_stream(conn);
 
-	if (state == S_OK && conn->cached) {
-		normalize_cache_entry(conn->cached, !notrunc ? conn->from : -1);
-	}
-
 	if (conn->info && !((struct http_connection_info *) conn->info)->close
 	    && (!conn->socket->ssl) /* We won't keep alive ssl connections */
 	    && (!get_opt_bool("protocol.http.bugs.post_no_keepalive")
 		|| !conn->uri->post)) {
+		if (state == S_OK && conn->cached)
+			normalize_cache_entry(conn->cached, !notrunc ? conn->from : -1);
 		set_connection_state(conn, state);
 		add_keepalive_connection(conn, HTTP_KEEPALIVE_TIMEOUT, NULL);
 	} else {
@@ -544,6 +546,33 @@ init_http_connection_info(struct connection *conn, int major, int minor, int clo
 }
 
 static void
+accept_encoding_header(struct string *header)
+{
+#if defined(CONFIG_GZIP) || defined(CONFIG_BZIP2) || defined(CONFIG_LZMA)
+	int comma = 0;
+
+	add_to_string(header, "Accept-Encoding: ");
+
+#ifdef CONFIG_BZIP2
+	add_to_string(header, "bzip2");
+	comma = 1;
+#endif
+
+#ifdef CONFIG_GZIP
+	if (comma) add_to_string(header, ", ");
+	add_to_string(header, "deflate, gzip");
+	comma = 1;
+#endif
+
+#ifdef CONFIG_LZMA
+	if (comma) add_to_string(header, ", ");
+	add_to_string(header, "lzma");
+#endif
+	add_crlf_to_string(header);
+#endif
+}
+
+static void
 http_send_header(struct socket *socket)
 {
 	struct connection *conn = socket->conn;
@@ -569,6 +598,8 @@ http_send_header(struct socket *socket)
 		http_end_request(conn, S_OUT_OF_MEM, 0);
 		return;
 	}
+
+	if (!conn->cached) conn->cached = find_in_cache(uri);
 
 	talking_to_proxy = IS_PROXY_URI(conn->uri) && !conn->socket->ssl;
 	use_connect = connection_is_https_proxy(conn) && !conn->socket->ssl;
@@ -653,7 +684,7 @@ http_send_header(struct socket *socket)
 			if (user[0]) {
 				unsigned char *proxy_data;
 
-				proxy_data = straconcat(user, ":", passwd, NULL);
+				proxy_data = straconcat(user, ":", passwd, (unsigned char *) NULL);
 				if (proxy_data) {
 					unsigned char *proxy_64 = base64_encode(proxy_data);
 
@@ -698,7 +729,7 @@ http_send_header(struct socket *socket)
 	}
 
 	/* CONNECT: Referer probably is a secret page in the HTTPS
-	 * server, so don't reveal it to the proxy.  */ 
+	 * server, so don't reveal it to the proxy.  */
 	if (!use_connect) {
 		switch (get_opt_int("protocol.http.referer.policy")) {
 			case REFERER_NONE:
@@ -741,28 +772,7 @@ http_send_header(struct socket *socket)
 	add_to_string(&header, "Accept: */*");
 	add_crlf_to_string(&header);
 
-	/* TODO: Make this encoding.c function. */
-#if defined(CONFIG_GZIP) || defined(CONFIG_BZIP2)
-	add_to_string(&header, "Accept-Encoding: ");
-
-#ifdef BUG_517
-#ifdef CONFIG_BZIP2
-	add_to_string(&header, "bzip2");
-#endif
-#endif
-
-#ifdef CONFIG_GZIP
-
-#ifdef BUG_517
-#ifdef CONFIG_BZIP2
-	add_to_string(&header, ", ");
-#endif
-#endif
-
-	add_to_string(&header, "gzip");
-#endif
-	add_crlf_to_string(&header);
-#endif
+	accept_encoding_header(&header);
 
 	if (!accept_charset) {
 		init_accept_charset();
@@ -813,14 +823,21 @@ http_send_header(struct socket *socket)
 		add_crlf_to_string(&header);
 	}
 
- 	/* CONNECT: Do not tell the proxy anything we have cached
- 	 * about the resource.  */
- 	if (!use_connect && conn->cached) {
-		if (!conn->cached->incomplete && conn->cached->head && conn->cached->last_modified
+	/* CONNECT: Do not tell the proxy anything we have cached
+	 * about the resource.  */
+	if (!use_connect && conn->cached) {
+		if (!conn->cached->incomplete && conn->cached->head
 		    && conn->cache_mode <= CACHE_MODE_CHECK_IF_MODIFIED) {
-			add_to_string(&header, "If-Modified-Since: ");
-			add_to_string(&header, conn->cached->last_modified);
-			add_crlf_to_string(&header);
+			if (conn->cached->last_modified) {
+				add_to_string(&header, "If-Modified-Since: ");
+				add_to_string(&header, conn->cached->last_modified);
+				add_crlf_to_string(&header);
+			}
+			if (conn->cached->etag) {
+				add_to_string(&header, "If-None-Match: ");
+				add_to_string(&header, conn->cached->etag);
+				add_crlf_to_string(&header);
+			}
 		}
 	}
 
@@ -845,10 +862,14 @@ http_send_header(struct socket *socket)
 		add_crlf_to_string(&header);
 	}
 
- 	/* CONNECT: The Authorization header is for the origin server only.  */
- 	if (!use_connect) {
-		entry = find_auth(uri);
- 	}
+	/* CONNECT: The Authorization header is for the origin server only.  */
+	if (!use_connect) {
+#ifdef CONFIG_GSSAPI
+		if (http_negotiate_output(uri, &header) != 0)
+#endif
+			entry = find_auth(uri);
+	}
+
 	if (entry) {
 		if (entry->digest) {
 			unsigned char *response;
@@ -872,7 +893,8 @@ http_send_header(struct socket *socket)
 			unsigned char *id;
 
 			/* Create base64 encoded string. */
-			id = straconcat(entry->user, ":", entry->password, NULL);
+			id = straconcat(entry->user, ":", entry->password,
+					(unsigned char *) NULL);
 			if (id) {
 				unsigned char *base64 = base64_encode(id);
 
@@ -938,11 +960,11 @@ http_send_header(struct socket *socket)
 			int h1, h2;
 
 			h1 = unhx(post[0]);
-			assert(h1 >= 0 && h1 < 16);
+			assertm(h1 >= 0 && h1 < 16, "h1 in the POST buffer is %d (%d/%c)", h1, post[0], post[0]);
 			if_assert_failed h1 = 0;
 
 			h2 = unhx(post[1]);
-			assert(h2 >= 0 && h2 < 16);
+			assertm(h2 >= 0 && h2 < 16, "h2 in the POST buffer is %d (%d/%c)", h2, post[1], post[1]);
 			if_assert_failed h2 = 0;
 
 			buffer[n++] = (h1<<4) + h2;
@@ -967,7 +989,8 @@ http_send_header(struct socket *socket)
 /* This function decompresses the data block given in @data (if it was
  * compressed), which is long @len bytes. The decompressed data block is given
  * back to the world as the return value and its length is stored into
- * @new_len.
+ * @new_len. After this function returns, the caller will discard all the @len
+ * input bytes, so this function must use all of them unless an error occurs.
  *
  * In this function, value of either http->chunk_remaining or http->length is
  * being changed (it depends on if chunked mode is used or not).
@@ -983,29 +1006,23 @@ decompress_data(struct connection *conn, unsigned char *data, int len,
 		int *new_len)
 {
 	struct http_connection_info *http = conn->info;
-	/* to_read is number of bytes to be read from the decoder. It is 65536
-	 * (then we are just emptying the decoder buffer as we finished the walk
-	 * through the incoming stream already) or PIPE_BUF / 2 (when we are
-	 * still walking through the stream - then we write PIPE_BUF / 2 to the
-	 * pipe and read it back to the decoder ASAP; the point is that we can't
-	 * write more than PIPE_BUF to the pipe at once, but we also have to
-	 * never let read_encoded() (gzread(), in fact) to empty the pipe - that
-	 * causes further malfunction of zlib :[ ... so we will make sure that
-	 * we will always have at least PIPE_BUF / 2 + 1 in the pipe (returning
-	 * early otherwise)). */
-	int to_read = PIPE_BUF / 2, did_read = 0;
+	enum { NORMAL, FINISHING } state = NORMAL;
+	int did_read = 0;
 	int *length_of_block;
 	unsigned char *output = NULL;
 
-	length_of_block = (http->length == LEN_CHUNKED ? &http->chunk_remaining
-						       : &http->length);
-
 #define BIG_READ 65536
-	if (!*length_of_block) {
-		/* Going to finish this decoding bussiness. */
-		/* Some nicely big value - empty encoded output queue by reading
-		 * big chunks from it. */
-		to_read = BIG_READ;
+
+	if (http->length == LEN_CHUNKED) {
+		if (http->chunk_remaining == CHUNK_ZERO_SIZE)
+			state = FINISHING;
+		length_of_block = &http->chunk_remaining;
+	} else {
+		length_of_block = &http->length;
+		if (!*length_of_block) {
+			/* Going to finish this decoding bussiness. */
+			state = FINISHING;
+		}
 	}
 
 	if (conn->content_encoding == ENCODING_NONE) {
@@ -1024,14 +1041,13 @@ decompress_data(struct connection *conn, unsigned char *data, int len,
 	}
 
 	do {
-		int init = 0;
+		unsigned char *tmp;
 
-		if (to_read == PIPE_BUF / 2) {
+		if (state == NORMAL) {
 			/* ... we aren't finishing yet. */
-			int written = safe_write(conn->stream_pipes[1], data,
-						 len > to_read ? to_read : len);
+			int written = safe_write(conn->stream_pipes[1], data, len);
 
-			if (written > 0) {
+			if (written >= 0) {
 				data += written;
 				len -= written;
 
@@ -1042,7 +1058,7 @@ decompress_data(struct connection *conn, unsigned char *data, int len,
 				 * non-keep-alive and chunked */
 				if (!http->length) {
 					/* That's all, folks - let's finish this. */
-					to_read = BIG_READ;
+					state = FINISHING;
 				} else if (!len) {
 					/* We've done for this round (but not done
 					 * completely). Thus we will get out with
@@ -1061,25 +1077,27 @@ decompress_data(struct connection *conn, unsigned char *data, int len,
 			conn->stream = open_encoded(conn->stream_pipes[0],
 					conn->content_encoding);
 			if (!conn->stream) return NULL;
-			/* On "startup" pipe is treated with care, but if everything
-			 * was already written to the pipe, caution isn't necessary */
-			else if (to_read != BIG_READ) init = 1;
-		} else init = 0;
-
-		output = (unsigned char *) mem_realloc(output, *new_len + to_read);
-		if (!output) break;
-
-		did_read = read_encoded(conn->stream, output + *new_len,
-					init ? PIPE_BUF / 32 : to_read); /* on init don't read too much */
-		if (did_read > 0) *new_len += did_read;
-		else if (did_read == -1) {
-			mem_free_set(&output, NULL);
-			*new_len = 0;
-			break; /* Loop prevention (bug 517), is this correct ? --Zas */
 		}
-	} while (len || did_read == BIG_READ);
 
-	shutdown_connection_stream(conn);
+		tmp = mem_realloc(output, *new_len + BIG_READ);
+		if (!tmp) break;
+		output = tmp;
+
+		did_read = read_encoded(conn->stream, output + *new_len, BIG_READ);
+
+		/* Do not break from the loop if did_read == 0.  It
+		 * means no decoded data is available yet, but some may
+		 * become available later.  This happens especially with
+		 * the bzip2 decoder, which needs an entire compressed
+		 * block as input before it generates any output.  */
+		if (did_read < 0) {
+			state = FINISHING;
+			break;
+		}
+		*new_len += did_read;
+	} while (len || (did_read == BIG_READ));
+
+	if (state == FINISHING) shutdown_connection_stream(conn);
 	return output;
 }
 
@@ -1206,11 +1224,8 @@ read_chunked_http_data(struct connection *conn, struct read_buffer *rb)
 		} else {
 			unsigned char *data;
 			int data_len;
-			int len;
 			int zero = (http->chunk_remaining == CHUNK_ZERO_SIZE);
-
-			if (zero) http->chunk_remaining = 0;
-			len = http->chunk_remaining;
+			int len = zero ? 0 : http->chunk_remaining;
 
 			/* Maybe everything necessary didn't come yet.. */
 			int_upper_bound(&len, rb->length);
@@ -1374,12 +1389,13 @@ get_header(struct read_buffer *rb)
 	return 0;
 }
 
-
-static void
-check_http_authentication(struct uri *uri, unsigned char *header,
-			  unsigned char *header_field)
+/* returns 1 if we need retry the connection (for negotiate-auth only) */
+static int
+check_http_authentication(struct connection *conn, struct uri *uri,
+		unsigned char *header, unsigned char *header_field)
 {
 	unsigned char *str, *d;
+	int ret = 0;
 
 	d = parse_header(header, header_field, &str);
 	while (d) {
@@ -1405,10 +1421,24 @@ check_http_authentication(struct uri *uri, unsigned char *header,
 			mem_free(d);
 			break;
 		}
-
+#ifdef CONFIG_GSSAPI
+		else if (!strncasecmp(d, HTTPNEG_GSS_STR, HTTPNEG_GSS_STRLEN)) {
+			if (http_negotiate_input(conn, uri, HTTPNEG_GSS, str)==0)
+				ret = 1;
+			mem_free(d);
+			break;
+		}
+		else if (!strncasecmp(d, HTTPNEG_NEG_STR, HTTPNEG_NEG_STRLEN)) {
+			if (http_negotiate_input(conn, uri, HTTPNEG_NEG, str)==0)
+				ret = 1;
+			mem_free(d);
+			break;
+		}
+#endif
 		mem_free(d);
 		d = parse_header(str, header_field, &str);
 	}
+	return ret;
 }
 
 
@@ -1547,6 +1577,7 @@ again:
 		abort_connection(conn, S_OUT_OF_MEM);
 		return;
 	}
+	conn->cached->cgi = conn->cgi;
 	mem_free_set(&conn->cached->head, head);
 
 	if (!get_opt_bool("document.cache.ignore_cache_control")) {
@@ -1635,11 +1666,13 @@ again:
 	}
 
 	if (h == 401) {
-		unsigned char *head = conn->cached->head;
+		if (check_http_authentication(conn, uri,
+				conn->cached->head, "WWW-Authenticate")) {
+			retry_connection(conn, S_RESTART);
+			return;
+		}
 
-		check_http_authentication(uri, head, "WWW-Authenticate");
 	}
-
 	if (h == 407) {
 		unsigned char *str;
 
@@ -1834,13 +1867,20 @@ again:
 		if (file_encoding != ENCODING_GZIP
 		    && (!strcasecmp(d, "gzip") || !strcasecmp(d, "x-gzip")))
 		    	conn->content_encoding = ENCODING_GZIP;
+		if (!strcasecmp(d, "deflate") || !strcasecmp(d, "x-deflate"))
+			conn->content_encoding = ENCODING_DEFLATE;
 #endif
-#ifdef BUG_517
+
 #ifdef CONFIG_BZIP2
 		if (file_encoding != ENCODING_BZIP2
 		    && (!strcasecmp(d, "bzip2") || !strcasecmp(d, "x-bzip2")))
 			conn->content_encoding = ENCODING_BZIP2;
 #endif
+
+#ifdef CONFIG_LZMA
+		if (file_encoding != ENCODING_LZMA
+		    && (!strcasecmp(d, "lzma") || !strcasecmp(d, "x-lzma")))
+			conn->content_encoding = ENCODING_LZMA;
 #endif
 		mem_free(d);
 	}
@@ -1850,8 +1890,7 @@ again:
 		conn->cached->encoding_info = stracpy(get_encoding_name(conn->content_encoding));
 	}
 
-	if (http->length == -1
-	    || (PRE_HTTP_1_1(http->recv_version) && http->close))
+	if (http->length == -1 || http->close)
 		socket->state = SOCKET_END_ONCLOSE;
 
 	read_http_data(socket, rb);

@@ -1,8 +1,13 @@
 top_builddir=../..
 include $(top_builddir)/Makefile.config
-INCLUDES += $(SPIDERMONKEY_CFLAGS)
+INCLUDES += $(SPIDERMONKEY_CFLAGS) $(SEE_CFLAGS)
 
-SUBDIRS = spidermonkey
-OBJS	= ecmascript.o spidermonkey.o
+SUBDIRS-$(CONFIG_ECMASCRIPT_SEE)	+= see
+SUBDIRS-$(CONFIG_ECMASCRIPT_SMJS)	+= spidermonkey
+
+OBJS-$(CONFIG_ECMASCRIPT_SEE)		+= see.o
+OBJS-$(CONFIG_ECMASCRIPT_SMJS)		+= spidermonkey.o
+
+OBJS	= ecmascript.o
 
 include $(top_srcdir)/Makefile.lib

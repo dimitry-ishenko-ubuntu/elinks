@@ -59,10 +59,14 @@ bookmark_finalize(JSContext *ctx, JSObject *obj)
 
 /*** bookmark object ***/
 
+/* Tinyids of properties.  Use negative values to distinguish these
+ * from array indexes (even though this object has no array elements).
+ * ECMAScript code should not use these directly as in bookmark[-1];
+ * future versions of ELinks may change the numbers.  */
 enum bookmark_prop {
-	BOOKMARK_TITLE,
-	BOOKMARK_URL,
-	BOOKMARK_CHILDREN,
+	BOOKMARK_TITLE    = -1,
+	BOOKMARK_URL      = -2,
+	BOOKMARK_CHILDREN = -3,
 };
 
 static const JSPropertySpec bookmark_props[] = {
@@ -212,21 +216,15 @@ bookmark_folder_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	folder = JS_GetInstancePrivate(ctx, obj,
 				       (JSClass *) &bookmark_folder_class, NULL);
 
-	title = JS_GetStringBytes(JS_ValueToString(ctx, id));
-	if (!title) {
-		*vp = JSVAL_NULL;
+	*vp = JSVAL_NULL;
 
-		return JS_TRUE;
-	}
+	title = JS_GetStringBytes(JS_ValueToString(ctx, id));
+	if (!title) return JS_TRUE;
 
 	bookmark = get_bookmark_by_name(folder, title);
-	if (!bookmark) {
-		*vp = JSVAL_NULL;
-
-		return JS_TRUE;
+	if (bookmark) {
+		*vp = OBJECT_TO_JSVAL(smjs_get_bookmark_object(bookmark));
 	}
-
-	*vp = OBJECT_TO_JSVAL(smjs_get_bookmark_object(bookmark));
 
 	return JS_TRUE;
 }

@@ -57,47 +57,50 @@ static const JSClass form_class;	     /* defined below */
 static JSBool input_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp);
 static JSBool input_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp);
 
+/* Indexes of reserved slots in instances of @input_class.  */
+enum {
+	/* The slot contains an integer used as an index to
+	 * view_state.form_info[].  This allows ELinks to reallocate
+	 * form_info[] without keeping track of SMJS objects that
+	 * refer to its elements.  We do not use JSCLASS_HAS_PRIVATE
+	 * for that because SMJS expects the private data to be an
+	 * aligned pointer.  */
+	JSRS_INPUT_FSINDEX,
+
+	/* Number of reserved slots.  */
+	JSRS_INPUT_COUNT
+};
+
 /* Each @input_class object must have a @form_class parent.  */
 static const JSClass input_class = {
 	"input", /* here, we unleash ourselves */
-	/* In instances of @input_class, the private data is not
-	 * actually a pointer, although SMJS assumes so.  Rather, it
-	 * is an integer used as an index to view_state.form_info[].
-	 * This allows ELinks to reallocate form_info[] without
-	 * keeping track of SMJS objects that refer to its elements.
-	 *
-	 * JS_SetPrivate converts private pointers to jsval, and
-	 * JS_GetPrivate converts back.  These conversions assume that
-	 * private pointers are aligned.  Therefore, ELinks must not
-	 * cast the integer directly to void *.  Instead, ELinks takes
-	 * advantage of the fact that the jsval format for private
-	 * pointers is the same as for integers (presumably to make GC
-	 * ignore the pointers).  So when ELinks is initializing the
-	 * private data, it converts the integer to a jsval and from
-	 * there to a pointer, which SMJS then converts back to the
-	 * same jsval.  */
-	JSCLASS_HAS_PRIVATE,
+	JSCLASS_HAS_RESERVED_SLOTS(JSRS_INPUT_COUNT),
 	JS_PropertyStub, JS_PropertyStub,
 	input_get_property, input_set_property,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
 
+/* Tinyids of properties.  Use negative values to distinguish these
+ * from array indexes (even though this object has no array elements).
+ * ECMAScript code should not use these directly as in input[-1];
+ * future versions of ELinks may change the numbers.  */
 enum input_prop {
-	JSP_INPUT_ACCESSKEY,
-	JSP_INPUT_ALT,
-	JSP_INPUT_CHECKED,
-	JSP_INPUT_DEFAULT_CHECKED,
-	JSP_INPUT_DEFAULT_VALUE,
-	JSP_INPUT_DISABLED,
-	JSP_INPUT_FORM,
-	JSP_INPUT_MAX_LENGTH,
-	JSP_INPUT_NAME,
-	JSP_INPUT_READONLY,
-	JSP_INPUT_SIZE,
-	JSP_INPUT_SRC,
-	JSP_INPUT_TABINDEX,
-	JSP_INPUT_TYPE,
-	JSP_INPUT_VALUE
+	JSP_INPUT_ACCESSKEY       = -1,
+	JSP_INPUT_ALT             = -2,
+	JSP_INPUT_CHECKED         = -3,
+	JSP_INPUT_DEFAULT_CHECKED = -4,
+	JSP_INPUT_DEFAULT_VALUE   = -5,
+	JSP_INPUT_DISABLED        = -6,
+	JSP_INPUT_FORM            = -7,
+	JSP_INPUT_MAX_LENGTH      = -8,
+	JSP_INPUT_NAME            = -9,
+	JSP_INPUT_READONLY        = -10,
+	JSP_INPUT_SELECTED_INDEX  = -11,
+	JSP_INPUT_SIZE            = -12,
+	JSP_INPUT_SRC             = -13,
+	JSP_INPUT_TABINDEX        = -14,
+	JSP_INPUT_TYPE            = -15,
+	JSP_INPUT_VALUE           = -16,
 };
 
 /* XXX: Some of those are marked readonly just because we can't change them
@@ -116,6 +119,7 @@ static const JSPropertySpec input_props[] = {
 	{ "maxLength",	JSP_INPUT_MAX_LENGTH,	JSPROP_ENUMERATE },
 	{ "name",	JSP_INPUT_NAME,		JSPROP_ENUMERATE },
 	{ "readonly",	JSP_INPUT_READONLY,	JSPROP_ENUMERATE },
+	{ "selectedIndex",JSP_INPUT_SELECTED_INDEX,JSPROP_ENUMERATE },
 	{ "size",	JSP_INPUT_SIZE,		JSPROP_ENUMERATE | JSPROP_READONLY },
 	{ "src",	JSP_INPUT_SRC,		JSPROP_ENUMERATE },
 	{ "tabindex",	JSP_INPUT_TABINDEX,	JSPROP_ENUMERATE | JSPROP_READONLY },
@@ -137,14 +141,26 @@ static const spidermonkeyFunctionSpec input_funcs[] = {
 	{ NULL }
 };
 
+static JSString *unicode_to_jsstring(JSContext *ctx, unicode_val_T u);
+static unicode_val_T jsval_to_accesskey(JSContext *ctx, jsval *vp);
+
 
 static struct form_state *
 input_get_form_state(JSContext *ctx, JSObject *obj, struct view_state *vs)
 {
-	void *private = JS_GetInstancePrivate(ctx, obj,
-					      (JSClass *) &input_class,
-					      NULL);
-	int n = JSVAL_TO_INT(PRIVATE_TO_JSVAL(private));
+	jsval val;
+	int n;
+	JSBool ok;
+
+	ok = JS_GetReservedSlot(ctx, obj, JSRS_INPUT_FSINDEX, &val);
+	assert(ok);
+	assert(JSVAL_IS_INT(val));
+	if_assert_failed return NULL;
+
+	n = JSVAL_TO_INT(val);
+	assert(n >= 0);
+	assert(n < vs->form_info_len);
+	if_assert_failed return NULL;
 
 	return &vs->form_info[n];
 }
@@ -201,14 +217,19 @@ input_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	switch (JSVAL_TO_INT(id)) {
 	case JSP_INPUT_ACCESSKEY:
 	{
-		struct string keystr;
+		JSString *keystr;
 
 		if (!link) break;
 
-		init_string(&keystr);
-		add_accesskey_to_string(&keystr, link->accesskey);
-		string_to_jsval(ctx, vp, keystr.source);
-		done_string(&keystr);
+		if (!link->accesskey) {
+			*vp = JS_GetEmptyStringValue(ctx);
+		} else {
+			keystr = unicode_to_jsstring(ctx, link->accesskey);
+			if (keystr)
+				*vp = STRING_TO_JSVAL(keystr);
+			else
+				return JS_FALSE;
+		}
 		break;
 	}
 	case JSP_INPUT_ALT:
@@ -221,6 +242,7 @@ input_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		boolean_to_jsval(ctx, vp, fc->default_state);
 		break;
 	case JSP_INPUT_DEFAULT_VALUE:
+		/* FIXME (bug 805): convert from the charset of the document */
 		string_to_jsval(ctx, vp, fc->default_value);
 		break;
 	case JSP_INPUT_DISABLED:
@@ -267,6 +289,7 @@ input_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		case FC_RESET: s = "reset"; break;
 		case FC_BUTTON: s = "button"; break;
 		case FC_HIDDEN: s = "hidden"; break;
+		case FC_SELECT: s = "select"; break;
 		default: INTERNAL("input_get_property() upon a non-input item."); break;
 		}
 		string_to_jsval(ctx, vp, s);
@@ -276,6 +299,9 @@ input_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		string_to_jsval(ctx, vp, fs->value);
 		break;
 
+	case JSP_INPUT_SELECTED_INDEX:
+		if (fc->type == FC_SELECT) int_to_jsval(ctx, vp, fs->state);
+		break;
 	default:
 		/* Unrecognized integer property ID; someone is using
 		 * the object as an array.  SMJS builtin classes (e.g.
@@ -303,6 +329,7 @@ input_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 	struct form_control *fc;
 	int linknum;
 	struct link *link = NULL;
+	unicode_val_T accesskey;
 
 	/* This can be called if @obj if not itself an instance of the
 	 * appropriate class but has one in its prototype chain.  Fail
@@ -338,8 +365,11 @@ input_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 	switch (JSVAL_TO_INT(id)) {
 	case JSP_INPUT_ACCESSKEY:
-		if (link)
-			link->accesskey = accesskey_string_to_unicode(jsval_to_string(ctx, vp));
+		accesskey = jsval_to_accesskey(ctx, vp);
+		if (accesskey == UCS_NO_CHAR)
+			return JS_FALSE;
+		else if (link)
+			link->accesskey = accesskey;
 		break;
 	case JSP_INPUT_ALT:
 		mem_free_set(&fc->alt, stracpy(jsval_to_string(ctx, vp)));
@@ -356,7 +386,8 @@ input_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		                                                       : FORM_MODE_NORMAL);
 		break;
 	case JSP_INPUT_MAX_LENGTH:
-		fc->maxlength = atol(jsval_to_string(ctx, vp));
+		if (!JS_ValueToInt32(ctx, *vp, &fc->maxlength))
+			return JS_FALSE;
 		break;
 	case JSP_INPUT_NAME:
 		mem_free_set(&fc->name, stracpy(jsval_to_string(ctx, vp)));
@@ -378,6 +409,19 @@ input_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 		mem_free_set(&fs->value, stracpy(jsval_to_string(ctx, vp)));
 		if (fc->type == FC_TEXT || fc->type == FC_PASSWORD)
 			fs->state = strlen(fs->value);
+		break;
+	case JSP_INPUT_SELECTED_INDEX:
+		if (fc->type == FC_SELECT) {
+			int item;
+
+			if (!JS_ValueToInt32(ctx, *vp, &item))
+				return JS_FALSE;
+
+			if (item >= 0 && item < fc->nvalues) {
+				fs->state = item;
+				mem_free_set(&fs->value, stracpy(fc->values[item]));
+			}
+		}
 		break;
 
 	default:
@@ -521,11 +565,10 @@ get_input_object(JSContext *ctx, JSObject *jsform, long number)
 	/* FIXME: That is NOT correct since the real containing element
 	 * should be its parent, but gimme DOM first. --pasky */
 	JSObject *jsinput = JS_NewObject(ctx, (JSClass *) &input_class, NULL, jsform);
-	void *private = JSVAL_TO_PRIVATE(INT_TO_JSVAL(number));
 
 	JS_DefineProperties(ctx, jsinput, (JSPropertySpec *) input_props);
 	spidermonkey_DefineFunctions(ctx, jsinput, input_funcs);
-	JS_SetPrivate(ctx, jsinput, private); /* to @input_class */
+	JS_SetReservedSlot(ctx, jsinput, JSRS_INPUT_FSINDEX, INT_TO_JSVAL(number));
 	return jsinput;;
 }
 
@@ -544,10 +587,10 @@ get_form_control_object(JSContext *ctx, JSObject *jsform, enum form_type type, i
 		case FC_RESET:
 		case FC_BUTTON:
 		case FC_HIDDEN:
+		case FC_SELECT:
 			return get_input_object(ctx, jsform, (long)number);
 
 		case FC_TEXTAREA:
-		case FC_SELECT:
 			/* TODO */
 			return NULL;
 
@@ -579,9 +622,13 @@ static const spidermonkeyFunctionSpec form_elements_funcs[] = {
 	{ NULL }
 };
 
-/* INTs from 0 up are equivalent to item(INT), so we have to stuff length out
- * of the way. */
-enum form_elements_prop { JSP_FORM_ELEMENTS_LENGTH = -1 };
+/* Tinyids of properties.  Use negative values to distinguish these
+ * from array indexes (elements[INT] for INT>=0 is equivalent to
+ * elements.item(INT)).  ECMAScript code should not use these directly
+ * as in elements[-1]; future versions of ELinks may change the numbers.  */
+enum form_elements_prop {
+	JSP_FORM_ELEMENTS_LENGTH = -1,
+};
 static const JSPropertySpec form_elements_props[] = {
 	{ "length",	JSP_FORM_ELEMENTS_LENGTH,	JSPROP_ENUMERATE | JSPROP_READONLY},
 	{ NULL }
@@ -684,8 +731,8 @@ form_elements_item(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval
 	if (argc != 1)
 		return JS_TRUE;
 
-	index = atol(jsval_to_string(ctx, &argv[0]));
-
+	if (!JS_ValueToInt32(ctx, argv[0], &index))
+		return JS_FALSE;
 	undef_to_jsval(ctx, rval);
 
 	foreach (fc, form->items) {
@@ -750,7 +797,7 @@ form_elements_namedItem(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, 
 	undef_to_jsval(ctx, rval);
 
 	foreach (fc, form->items) {
-		if (fc->name && !strcasecmp(string, fc->name)) {
+		if ((fc->id && !strcasecmp(string, fc->id)) || (fc->name && !strcasecmp(string, fc->name))) {
 			struct form_state *fs = find_form_state(doc_view, fc);
 
 			if (fs) {
@@ -780,14 +827,18 @@ static const JSClass form_class = {
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
 
+/* Tinyids of properties.  Use negative values to distinguish these
+ * from array indexes (even though this object has no array elements).
+ * ECMAScript code should not use these directly as in form[-1];
+ * future versions of ELinks may change the numbers.  */
 enum form_prop {
-	JSP_FORM_ACTION,
-	JSP_FORM_ELEMENTS,
-	JSP_FORM_ENCODING,
-	JSP_FORM_LENGTH,
-	JSP_FORM_METHOD,
-	JSP_FORM_NAME,
-	JSP_FORM_TARGET
+	JSP_FORM_ACTION   = -1,
+	JSP_FORM_ELEMENTS = -2,
+	JSP_FORM_ENCODING = -3,
+	JSP_FORM_LENGTH   = -4,
+	JSP_FORM_METHOD   = -5,
+	JSP_FORM_NAME     = -6,
+	JSP_FORM_TARGET   = -7,
 };
 
 static const JSPropertySpec form_props[] = {
@@ -851,7 +902,7 @@ form_get_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 			JSObject *fcobj = NULL;
 			struct form_state *fs;
 
-			if (!fc->name || strcasecmp(string, fc->name))
+			if ((!fc->id || strcasecmp(string, fc->id)) && (!fc->name || strcasecmp(string, fc->name)))
 				continue;
 
 			undef_to_jsval(ctx, vp);
@@ -981,7 +1032,12 @@ form_set_property(JSContext *ctx, JSObject *obj, jsval id, jsval *vp)
 
 	switch (JSVAL_TO_INT(id)) {
 	case JSP_FORM_ACTION:
-		mem_free_set(&form->action, stracpy(jsval_to_string(ctx, vp)));
+		string = stracpy(jsval_to_string(ctx, vp));
+		if (form->action) {
+			ecmascript_set_action(&form->action, string);
+		} else {
+			mem_free_set(&form->action, string);
+		}
 		break;
 
 	case JSP_FORM_ENCODING:
@@ -1087,7 +1143,7 @@ form_submit(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 	form = find_form_by_form_view(doc_view->document, fv);
 
 	assert(form);
-	submit_given_form(ses, doc_view, form);
+	submit_given_form(ses, doc_view, form, 0);
 
 	boolean_to_jsval(ctx, rval, 0);
 
@@ -1132,9 +1188,13 @@ const spidermonkeyFunctionSpec forms_funcs[] = {
 	{ NULL }
 };
 
-/* INTs from 0 up are equivalent to item(INT), so we have to stuff length out
- * of the way. */
-enum forms_prop { JSP_FORMS_LENGTH = -1 };
+/* Tinyids of properties.  Use negative values to distinguish these from
+ * array indexes (forms[INT] for INT>=0 is equivalent to forms.item(INT)).
+ * ECMAScript code should not use these directly as in forms[-1];
+ * future versions of ELinks may change the numbers.  */
+enum forms_prop {
+	JSP_FORMS_LENGTH = -1,
+};
 const JSPropertySpec forms_props[] = {
 	{ "length",	JSP_FORMS_LENGTH,	JSPROP_ENUMERATE | JSPROP_READONLY},
 	{ NULL }
@@ -1242,8 +1302,8 @@ forms_item(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 	if (argc != 1)
 		return JS_TRUE;
 
-	index = atol(jsval_to_string(ctx, &argv[0]));
-
+	if (!JS_ValueToInt32(ctx, argv[0], &index))
+		return JS_FALSE;
 	undef_to_jsval(ctx, rval);
 
 	foreach (fv, vs->forms) {
@@ -1284,4 +1344,58 @@ forms_namedItem(JSContext *ctx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	undef_to_jsval(ctx, rval);
 	find_form_by_name(ctx, parent_doc, doc_view, argv[0], rval);
 	return JS_TRUE;
+}
+
+
+static JSString *
+unicode_to_jsstring(JSContext *ctx, unicode_val_T u)
+{
+	jschar buf[2];
+
+	/* This is supposed to make a string from which
+	 * jsval_to_accesskey() can get the original @u back.
+	 * If @u is a surrogate, then that is not possible, so
+	 * return NULL to indicate an error instead.
+	 *
+	 * If JS_NewUCStringCopyN hits a null character, it truncates
+	 * the string there and pads it with more nulls.  However,
+	 * that is not a problem here, because if there is a null
+	 * character in buf[], then it must be the only character.  */
+	if (u <= 0xFFFF && !is_utf16_surrogate(u)) {
+		buf[0] = u;
+		return JS_NewUCStringCopyN(ctx, buf, 1);
+	} else if (needs_utf16_surrogates(u)) {
+		buf[0] = get_utf16_high_surrogate(u);
+		buf[1] = get_utf16_low_surrogate(u);
+		return JS_NewUCStringCopyN(ctx, buf, 2);
+	} else {
+		return NULL;
+	}
+}
+
+/* Convert the string *@vp to an access key.  Return 0 for no access
+ * key, UCS_NO_CHAR on error, or the access key otherwise.  */
+static unicode_val_T
+jsval_to_accesskey(JSContext *ctx, jsval *vp)
+{
+	size_t len;
+	const jschar *chr;
+
+	/* Convert the value in place, to protect the result from GC.  */
+	if (JS_ConvertValue(ctx, *vp, JSTYPE_STRING, vp) == JS_FALSE)
+		return UCS_NO_CHAR;
+	len = JS_GetStringLength(JSVAL_TO_STRING(*vp));
+	chr = JS_GetStringChars(JSVAL_TO_STRING(*vp));
+
+	/* This implementation ignores extra characters in the string.  */
+	if (len < 1)
+		return 0;	/* which means no access key */
+	if (!is_utf16_surrogate(chr[0]))
+		return chr[0];
+	if (len >= 2
+	    && is_utf16_high_surrogate(chr[0])
+	    && is_utf16_low_surrogate(chr[1]))
+		return join_utf16_surrogates(chr[0], chr[1]);
+	JS_ReportError(ctx, "Invalid UTF-16 sequence");
+	return UCS_NO_CHAR;	/* which the caller will reject */
 }

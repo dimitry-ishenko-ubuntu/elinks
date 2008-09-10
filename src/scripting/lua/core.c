@@ -30,6 +30,7 @@
 #include "intl/gettext/libintl.h"
 #include "main/event.h"
 #include "main/module.h"
+#include "osdep/osdep.h"
 #include "osdep/signals.h"
 #include "protocol/uri.h"
 #include "scripting/lua/core.h"
@@ -136,8 +137,8 @@ l_current_title(LS)
 static int
 l_current_document(LS)
 {
-	if (lua_ses) {
-		struct cache_entry *cached = find_in_cache(cur_loc(lua_ses)->vs.uri);
+	if (lua_ses && lua_ses->doc_view && lua_ses->doc_view->document) {
+		struct cache_entry *cached = lua_ses->doc_view->document->cached;
 		struct fragment *f = cached ? cached->frag.next : NULL;
 
 		if (f && f->length) {
@@ -230,7 +231,8 @@ static int
 l_execute(LS)
 {
 	if (lua_isstring(S, 1)) {
-		exec_on_terminal(lua_ses->tab->term, (unsigned char *) lua_tostring(S, 1), "", 0);
+		exec_on_terminal(lua_ses->tab->term, (unsigned char *) lua_tostring(S, 1), "",
+				 TERM_EXEC_BG);
 		lua_pushnumber(S, 0);
 		return 1;
 	}
@@ -275,6 +277,7 @@ run_lua_func(va_list ap, void *data)
 	return EVENT_HOOK_STATUS_NEXT;
 }
 
+/* bind_key (keymap, keystroke, function) */
 static int
 l_bind_key(LS)
 {
@@ -291,12 +294,22 @@ l_bind_key(LS)
 
 	if (!init_string(&event_name)) goto lua_error;
 
+	/* ELinks will need to call the Lua function when the user
+	 * presses the key.  However, ELinks cannot store a pointer
+	 * to the function, because the C API of Lua does not provide
+	 * one.  Instead, ask the "reference system" of Lua to
+	 * generate an integer key that ELinks can store.
+	 *
+	 * TODO: If l_bind_key() succeeds, then the function will
+	 * never be removed from the reference system again, because
+	 * the rest of ELinks does not tell this module if the
+	 * keybinding is removed.  This is part of bug 810.  */
 	lua_pushvalue(S, 3);
 	ref = luaL_ref(S, LUA_REGISTRYINDEX);
 	add_format_to_string(&event_name, "lua-run-func %i", ref);
 
 	event_id = bind_key_to_event_name((unsigned char *) lua_tostring(S, 1),
-					  (unsigned char *) lua_tostring(S, 2),
+					  (const unsigned char *) lua_tostring(S, 2),
 					  event_name.source, &err);
 	done_string(&event_name);
 
@@ -349,6 +362,7 @@ dialog_run_lua(void *data_)
 static int
 l_edit_bookmark_dialog(LS)
 {
+	/* [gettext_accelerator_context(.l_edit_bookmark_dialog)] */
 	struct terminal *term = lua_ses->tab->term;
 	struct dialog *dlg;
 	struct lua_dlg_data *data;
@@ -387,7 +401,7 @@ l_edit_bookmark_dialog(LS)
 
 	add_dlg_end(dlg, L_EDIT_BMK_WIDGETS_COUNT);
 
-	do_dialog(term, dlg, getml(dlg, NULL));
+	do_dialog(term, dlg, getml(dlg, (void *) NULL));
 
 	lua_pushnumber(S, 1);
 	return 1;
@@ -423,6 +437,7 @@ xdialog_run_lua(void *data_)
 static int
 l_xdialog(LS)
 {
+	/* [gettext_accelerator_context(.l_xdialog)] */
 	struct terminal *term;
 	struct dialog *dlg;
 	struct lua_xdialog_data *data;
@@ -467,7 +482,7 @@ l_xdialog(LS)
 
 	add_dlg_end(dlg, nitems);
 
-	do_dialog(term, dlg, getml(dlg, NULL));
+	do_dialog(term, dlg, getml(dlg, (void *) NULL));
 
 	lua_pushnumber(S, 1);
 	return 1;
@@ -485,7 +500,7 @@ static int
 l_set_option(LS)
 {
 	int nargs;
-	struct option *opt, *current;
+	struct option *opt;
 	const char *name;
 
 	nargs = lua_gettop(S);
@@ -508,13 +523,15 @@ l_set_option(LS)
 		option_types[opt->type].set(opt, (unsigned char *) (&value));
 		break;
 	}
-
 	case OPT_INT:
+	{
+		int value = lua_tonumber(S, 2);
+		option_types[opt->type].set(opt, (unsigned char *) (&value));
+		break;
+	}
 	case OPT_LONG:
 	{
-		int value;
-
-		value = lua_tonumber(S, 2);
+		long value = lua_tonumber(S, 2);
 		option_types[opt->type].set(opt, (unsigned char *) (&value));
 		break;
 	}
@@ -528,11 +545,8 @@ l_set_option(LS)
 		goto lua_error;
 	}
 
-	opt->flags |= OPT_TOUCHED;
-
 	/* Call hook */
-	current = opt;
-	call_change_hooks(lua_ses, current, opt);
+	option_changed(lua_ses, opt);
 	return 1;
 
 lua_error:
@@ -562,8 +576,10 @@ l_get_option(LS)
 		lua_pushboolean(S, opt->value.number);
 		break;
 	case OPT_INT:
-	case OPT_LONG:
 		lua_pushnumber(S, opt->value.number);
+		break;
+	case OPT_LONG:
+		lua_pushnumber(S, opt->value.big_number);
 		break;
 	case OPT_STRING:
 		lua_pushstring(S, opt->value.string);
@@ -572,7 +588,7 @@ l_get_option(LS)
 	{
 		unsigned char *cp_name;
 
-		cp_name = get_cp_mime_name(opt->value.number);
+		cp_name = get_cp_config_name(opt->value.number);
 		lua_pushstring(S, cp_name);
 		break;
 	}
@@ -592,7 +608,7 @@ l_get_option(LS)
 	{
 		color_T color;
 		unsigned char hexcolor[8];
-		unsigned char *strcolor;
+		const unsigned char *strcolor;
 
 		color = opt->value.color;
 		strcolor = get_color_string(color, hexcolor);
@@ -632,7 +648,8 @@ eval_function(LS, int num_args, int num_results)
 static void
 do_hooks_file(LS, unsigned char *prefix, unsigned char *filename)
 {
-	unsigned char *file = straconcat(prefix, "/", filename, NULL);
+	unsigned char *file = straconcat(prefix, STRING_DIR_SEP, filename,
+					 (unsigned char *) NULL);
 
 	if (!file) return;
 
@@ -779,7 +796,7 @@ handle_ret_run(struct session *ses)
 	unsigned char *cmd = (unsigned char *) lua_tostring(L, -1);
 
 	if (cmd) {
-		exec_on_terminal(ses->tab->term, cmd, "", 1);
+		exec_on_terminal(ses->tab->term, cmd, "", TERM_EXEC_FG);
 		return;
 	}
 

@@ -16,6 +16,7 @@
 #include "config/options.h"
 #include "intl/gettext/libintl.h"
 #include "main/event.h"
+#include "main/module.h"
 #include "terminal/kbd.h"
 #include "util/memory.h"
 #include "util/string.h"
@@ -26,7 +27,7 @@
 
 static struct action_list action_table[KEYMAP_MAX];
 static struct keymap keymap_table[KEYMAP_MAX];
-static struct list_head keymaps[KEYMAP_MAX]; /* struct keybinding */
+static LIST_OF(struct keybinding) keymaps[KEYMAP_MAX];
 
 static void add_default_keybindings(void);
 
@@ -107,7 +108,7 @@ free_keybinding(struct keybinding *keybinding)
 	}
 
 #ifdef CONFIG_SCRIPTING
-/* TODO: unref function must be implemented. */
+/* TODO: unref function must be implemented. This is part of bug 810. */
 /*	if (keybinding->event != EVENT_NONE)
 		scripting_unref(keybinding->event); */
 #endif
@@ -205,7 +206,7 @@ kbd_nm_lookup(enum keymap_id keymap_id, unsigned char *name)
 }
 
 static struct keybinding *
-kbd_stroke_lookup(enum keymap_id keymap_id, unsigned char *keystroke_str)
+kbd_stroke_lookup(enum keymap_id keymap_id, const unsigned char *keystroke_str)
 {
 	struct term_event_keyboard kbd;
 
@@ -229,7 +230,7 @@ static struct keymap keymap_table[] = {
 
 static struct action *
 get_action_from_keystroke(enum keymap_id keymap_id,
-                          unsigned char *keystroke_str)
+                          const unsigned char *keystroke_str)
 {
 	struct keybinding *keybinding = kbd_stroke_lookup(keymap_id,
 	                                                  keystroke_str);
@@ -239,7 +240,7 @@ get_action_from_keystroke(enum keymap_id keymap_id,
 
 unsigned char *
 get_action_name_from_keystroke(enum keymap_id keymap_id,
-                               unsigned char *keystroke_str)
+                               const unsigned char *keystroke_str)
 {
 	struct action *action = get_action_from_keystroke(keymap_id,
 	                                                  keystroke_str);
@@ -317,12 +318,12 @@ get_keymap_name(enum keymap_id keymap_id)
 }
 
 
-struct key {
-	unsigned char *str;
-	int num;
+struct named_key {
+	const unsigned char *str;
+	term_event_key_T num;
 };
 
-static struct key key_table[] = {
+static const struct named_key key_table[] = {
 	{ "Enter",	KBD_ENTER },
 	{ "Space",	' ' },
 	{ "Backspace",	KBD_BS },
@@ -350,13 +351,13 @@ static struct key key_table[] = {
 	{ "F10",	KBD_F10 },
 	{ "F11",	KBD_F11 },
 	{ "F12",	KBD_F12 },
-	{ NULL, 0 }
+	{ NULL, KBD_UNDEF }
 };
 
-long
-read_key(unsigned char *key_str)
+term_event_key_T
+read_key(const unsigned char *key_str)
 {
-	struct key *key;
+	const struct named_key *key;
 
 	if (key_str[0] && !key_str[1])
 		return key_str[0];
@@ -365,39 +366,71 @@ read_key(unsigned char *key_str)
 		if (!strcasecmp(key->str, key_str))
 			return key->num;
 
-	return -1;
+	return KBD_UNDEF;
 }
 
+/* Parse the string @s as the name of a keystroke.
+ * Write the parsed key and modifiers to *@kbd.
+ * Return >=0 on success, <0 on error.  */
 int
-parse_keystroke(unsigned char *s, struct term_event_keyboard *kbd)
+parse_keystroke(const unsigned char *s, struct term_event_keyboard *kbd)
 {
-	if (!strncasecmp(s, "Shift", 5) && (s[5] == '-' || s[5] == '+')) {
-		/* Shift+a == shiFt-a == Shift-a */
-		memcpy(s, "Shift-", 6);
-		kbd->modifier = KBD_MOD_SHIFT;
-		s += 6;
+	kbd->modifier = KBD_MOD_NONE;
+	while (1) {
+		if (!strncasecmp(s, "Shift", 5) && (s[5] == '-' || s[5] == '+')) {
+			/* Shift+a == shiFt-a == Shift-a */
+			kbd->modifier |= KBD_MOD_SHIFT;
+			s += 6;
 
-	} else if (!strncasecmp(s, "Ctrl", 4) && (s[4] == '-' || s[4] == '+')) {
-		/* Ctrl+a == ctRl-a == Ctrl-a */
-		memcpy(s, "Ctrl-", 5);
-		kbd->modifier = KBD_MOD_CTRL;
-		s += 5;
-		/* Ctrl-a == Ctrl-A */
-		if (s[0] && !s[1]) s[0] = toupper(s[0]);
+		} else if (!strncasecmp(s, "Ctrl", 4) && (s[4] == '-' || s[4] == '+')) {
+			/* Ctrl+a == ctRl-a == Ctrl-a */
+			kbd->modifier |= KBD_MOD_CTRL;
+			s += 5;
 
-	} else if (!strncasecmp(s, "Alt", 3) && (s[3] == '-' || s[3] == '+')) {
-		/* Alt+a == aLt-a == Alt-a */
-		memcpy(s, "Alt-", 4);
-		kbd->modifier = KBD_MOD_ALT;
-		s += 4;
+		} else if (!strncasecmp(s, "Alt", 3) && (s[3] == '-' || s[3] == '+')) {
+			/* Alt+a == aLt-a == Alt-a */
+			kbd->modifier |= KBD_MOD_ALT;
+			s += 4;
 
-	} else {
-		/* No modifier. */
-		kbd->modifier = KBD_MOD_NONE;
+		} else {
+			/* No modifier. */
+			break;
+		}
 	}
 
 	kbd->key = read_key(s);
-	return (kbd->key < 0) ? -1 : 0;
+
+	if ((kbd->modifier & KBD_MOD_CTRL) != 0
+	    && is_kbd_character(kbd->key) && kbd->key <= 0x7F) {
+		/* Convert Ctrl-letter keystrokes to upper case,
+		 * e.g. Ctrl-a to Ctrl-A.  Do this because terminals
+		 * typically generate the same ASCII control
+		 * characters regardless of Shift and Caps Lock.
+		 *
+		 * However, that applies only to ASCII letters.  For
+		 * other Ctrl-letter combinations, there seems to be
+		 * no standard of what the terminal should generate.
+		 * Because it is possible that the terminal does not
+		 * fold case then, ELinks should treat upper-case and
+		 * lower-case variants of such keystrokes as different
+		 * and let the user bind them to separate actions.
+		 * Besides, toupper() might not understand the charset
+		 * of kbd->key.
+		 *
+		 * FIXME: Actually, it is possible that some terminals
+		 * preserve case in all Ctrl-letter keystrokes, even
+		 * for ASCII letters.  In particular, the Win32
+		 * console API looks like it might do this.  When the
+		 * terminal handling part of ELinks is eventually
+		 * extended to fully support that, it could be a good
+		 * idea to change parse_keystroke() not to fold case,
+		 * and instead make kbd_ev_lookup() or its callers
+		 * search for different variants of the keystroke if
+		 * the original one is not bound to any action.  */
+		kbd->key = toupper(kbd->key);
+	}
+
+	return (kbd->key == KBD_UNDEF) ? -1 : 0;
 }
 
 void
@@ -405,10 +438,10 @@ add_keystroke_to_string(struct string *str, struct term_event_keyboard *kbd,
                         int escape)
 {
 	unsigned char key_buffer[3] = "\\x";
-	unsigned char *key_string = NULL;
-	struct key *key;
+	const unsigned char *key_string = NULL;
+	const struct named_key *key;
 
-	if (kbd->key < 0) return;
+	if (kbd->key == KBD_UNDEF) return;
 
 	if (kbd->modifier & KBD_MOD_SHIFT)
 		add_to_string(str, "Shift-");
@@ -426,7 +459,7 @@ add_keystroke_to_string(struct string *str, struct term_event_keyboard *kbd,
 
 	if (!key_string) {
 		key_string = key_buffer + 1;
-		*key_string = (unsigned char) kbd->key;
+		key_buffer[1] = (unsigned char) kbd->key;
 		if (escape && strchr("'\"\\", kbd->key))
 			key_string--;
 	}
@@ -515,8 +548,8 @@ static struct action_list action_table[KEYMAP_MAX] = {
 #undef ACTION_
 
 
-void
-init_keymaps(void)
+static void
+init_keymaps(struct module *xxx)
 {
 	enum keymap_id keymap_id;
 
@@ -527,8 +560,8 @@ init_keymaps(void)
 	add_default_keybindings();
 }
 
-void
-free_keymaps(void)
+static void
+free_keymaps(struct module *xxx)
 {
 	enum keymap_id keymap_id;
 
@@ -545,7 +578,7 @@ free_keymaps(void)
 
 #ifdef CONFIG_SCRIPTING
 static unsigned char *
-bind_key_to_event(unsigned char *ckmap, unsigned char *ckey, int event)
+bind_key_to_event(unsigned char *ckmap, const unsigned char *ckey, int event)
 {
 	struct term_event_keyboard kbd;
 	action_id_T action_id;
@@ -567,7 +600,7 @@ bind_key_to_event(unsigned char *ckmap, unsigned char *ckey, int event)
 }
 
 int
-bind_key_to_event_name(unsigned char *ckmap, unsigned char *ckey,
+bind_key_to_event_name(unsigned char *ckmap, const unsigned char *ckey,
 		       unsigned char *event_name, unsigned char **err)
 {
 	int event_id;
@@ -660,6 +693,7 @@ static struct default_kb default_main_keymap[] = {
 	{ { '{',	 KBD_MOD_NONE }, ACT_MAIN_SCROLL_LEFT },
 	{ { '|',	 KBD_MOD_NONE }, ACT_MAIN_HEADER_INFO },
 	{ { '}',	 KBD_MOD_NONE }, ACT_MAIN_SCROLL_RIGHT },
+	{ { KBD_BS,	 KBD_MOD_NONE }, ACT_MAIN_BACKSPACE_PREFIX },
 	{ { KBD_DEL,	 KBD_MOD_NONE }, ACT_MAIN_SCROLL_DOWN },
 	{ { KBD_DOWN,	 KBD_MOD_NONE }, ACT_MAIN_MOVE_LINK_NEXT },
 	{ { KBD_END,	 KBD_MOD_NONE }, ACT_MAIN_MOVE_DOCUMENT_END },
@@ -687,8 +721,10 @@ static struct default_kb default_edit_keymap[] = {
 	{ { '<',	 KBD_MOD_ALT  }, ACT_EDIT_BEGINNING_OF_BUFFER },
 	{ { '>',	 KBD_MOD_ALT  }, ACT_EDIT_END_OF_BUFFER },
 	{ { 'A',	 KBD_MOD_CTRL }, ACT_EDIT_HOME },
+	{ { 'b',	 KBD_MOD_ALT  }, ACT_EDIT_MOVE_BACKWARD_WORD },
 	{ { 'D',	 KBD_MOD_CTRL }, ACT_EDIT_DELETE },
 	{ { 'E',	 KBD_MOD_CTRL }, ACT_EDIT_END },
+	{ { 'f',	 KBD_MOD_ALT  }, ACT_EDIT_MOVE_FORWARD_WORD },
 	{ { 'H',	 KBD_MOD_CTRL }, ACT_EDIT_BACKSPACE },
 	{ { 'K',	 KBD_MOD_CTRL }, ACT_EDIT_KILL_TO_EOL },
 	{ { 'L',	 KBD_MOD_CTRL }, ACT_EDIT_REDRAW },
@@ -700,6 +736,7 @@ static struct default_kb default_edit_keymap[] = {
 	{ { 'V',	 KBD_MOD_CTRL }, ACT_EDIT_PASTE_CLIPBOARD },
 	{ { 'W',	 KBD_MOD_CTRL }, ACT_EDIT_AUTO_COMPLETE },
 	{ { 'X',	 KBD_MOD_CTRL }, ACT_EDIT_CUT_CLIPBOARD },
+	{ { KBD_BS,	 KBD_MOD_ALT  }, ACT_EDIT_KILL_WORD_BACK },
 	{ { KBD_BS,	 KBD_MOD_NONE }, ACT_EDIT_BACKSPACE },
 	{ { KBD_DEL,	 KBD_MOD_NONE }, ACT_EDIT_DELETE },
 	{ { KBD_DOWN,	 KBD_MOD_NONE }, ACT_EDIT_DOWN },
@@ -861,7 +898,7 @@ get_aliased_action(enum keymap_id keymap_id, unsigned char *action_str)
 
 /* Return 0 when ok, something strange otherwise. */
 int
-bind_do(unsigned char *keymap_str, unsigned char *keystroke_str,
+bind_do(unsigned char *keymap_str, const unsigned char *keystroke_str,
 	unsigned char *action_str, int is_system_conf)
 {
 	enum keymap_id keymap_id;
@@ -885,7 +922,7 @@ bind_do(unsigned char *keymap_str, unsigned char *keystroke_str,
 }
 
 unsigned char *
-bind_act(unsigned char *keymap_str, unsigned char *keystroke_str)
+bind_act(unsigned char *keymap_str, const unsigned char *keystroke_str)
 {
 	enum keymap_id keymap_id;
 	unsigned char *action;
@@ -903,7 +940,7 @@ bind_act(unsigned char *keymap_str, unsigned char *keystroke_str)
 		return NULL;
 
 	keybinding->flags |= KBDB_WATERMARK;
-	return straconcat("\"", action, "\"", NULL);
+	return straconcat("\"", action, "\"", (unsigned char *) NULL);
 }
 
 static void
@@ -950,3 +987,16 @@ bind_config_string(struct string *file)
 		}
 	}
 }
+
+struct module kbdbind_module = struct_module(
+	/* Because this module is listed in main_modules rather than
+	 * in builtin_modules, its name does not appear in the user
+	 * interface and so need not be translatable.  */
+	/* name: */		"Keyboard Bindings",
+	/* options: */		NULL,
+	/* hooks: */		NULL,
+	/* submodules: */	NULL,
+	/* data: */		NULL,
+	/* init: */		init_keymaps,
+	/* done: */		free_keymaps
+);

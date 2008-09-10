@@ -1,10 +1,12 @@
-/* File utilities */
+/** File utilities
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -186,7 +188,7 @@ get_tempdir_filename(unsigned char *name)
 	if (!tmpdir || !*tmpdir) tmpdir = getenv("TEMP");
 	if (!tmpdir || !*tmpdir) tmpdir = "/tmp";
 
-	return straconcat(tmpdir, "/", name, NULL);
+	return straconcat(tmpdir, "/", name, (unsigned char *) NULL);
 }
 
 unsigned char *
@@ -271,16 +273,19 @@ file_read_line(unsigned char *line, size_t *size, FILE *file, int *lineno)
 int
 safe_mkstemp(unsigned char *template)
 {
+#ifndef CONFIG_OS_WIN32
 	mode_t saved_mask = umask(S_IXUSR | S_IRWXG | S_IRWXO);
+#endif
 	int fd = mkstemp(template);
-
+#ifndef CONFIG_OS_WIN32
 	umask(saved_mask);
-
+#endif
 	return fd;
 }
 
 
-/* The stat_* functions set the various attributes for directory entries. */
+/** @name The stat_* functions set the various attributes for directory entries.
+ * @{ */
 
 static inline void
 stat_type(struct string *string, struct stat *stp)
@@ -473,10 +478,15 @@ stat_date(struct string *string, struct stat *stp)
 	add_to_string(string, "             ");
 }
 
+/** @} */
 
+
+/* comparison function for qsort() */
 static int
-compare_dir_entries(struct directory_entry *d1, struct directory_entry *d2)
+compare_dir_entries(const void *v1, const void *v2)
 {
+	const struct directory_entry *d1 = v1, *d2 = v2;
+
 	if (d1->name[0] == '.' && d1->name[1] == '.' && !d1->name[2]) return -1;
 	if (d2->name[0] == '.' && d2->name[1] == '.' && !d2->name[2]) return 1;
 	if (d1->attrib[0] == 'd' && d2->attrib[0] != 'd') return -1;
@@ -485,8 +495,8 @@ compare_dir_entries(struct directory_entry *d1, struct directory_entry *d2)
 }
 
 
-/* This function decides whether a file should be shown in directory listing or
- * not. Returns according boolean value. */
+/** This function decides whether a file should be shown in directory
+ * listing or not. @returns according boolean value. */
 static inline int
 file_visible(unsigned char *name, int get_hidden_files, int is_root_directory)
 {
@@ -507,9 +517,8 @@ file_visible(unsigned char *name, int get_hidden_files, int is_root_directory)
 	return get_hidden_files;
 }
 
-/* First information such as permissions is gathered for each directory entry.
- * All entries are then sorted and finally the sorted entries are added to the
- * @data->fragment one by one. */
+/** First information such as permissions is gathered for each directory entry.
+ * All entries are then sorted. */
 struct directory_entry *
 get_directory_entries(unsigned char *dirname, int get_hidden)
 {
@@ -538,7 +547,8 @@ get_directory_entries(unsigned char *dirname, int get_hidden)
 		/* We allocate the full path because it is used in a few places
 		 * which means less allocation although a bit more short term
 		 * memory usage. */
-		name = straconcat(dirname, entry->d_name, NULL);
+		name = straconcat(dirname, entry->d_name,
+				  (unsigned char *) NULL);
 		if (!name) continue;
 
 		if (!init_string(&attrib)) {
@@ -573,10 +583,48 @@ get_directory_entries(unsigned char *dirname, int get_hidden)
 		return NULL;
 	}
 
-	qsort(entries, size, sizeof(*entries),
-	      (int (*)(const void *, const void *)) compare_dir_entries);
+	qsort(entries, size, sizeof(*entries), compare_dir_entries);
 
 	memset(&entries[size], 0, sizeof(*entries));
 
 	return entries;
+}
+
+/** Recursively create directories in @a path. The last element in the path is
+ * taken to be a filename, and simply ignored */
+int
+mkalldirs(const unsigned char *path)
+{
+	int pos, len, ret = 0;
+	unsigned char *p;
+
+	if (!*path) return -1;
+
+	/* Make a copy of path, to be able to write to it.  Otherwise, the
+	 * function is unsafe if called with a read-only char *argument.  */
+	len = strlen(path) + 1;
+	p = fmem_alloc(len);
+	if (!p) return -1;
+	memcpy(p, path, len);
+
+	for (pos = 1; p[pos]; pos++) {
+		unsigned char separator = p[pos];
+
+		if (!dir_sep(separator))
+			continue;
+
+		p[pos] = 0;
+
+		ret = mkdir(p, S_IRWXU);
+
+		p[pos] = separator;
+
+		if (ret < 0) {
+			if (errno != EEXIST) break;
+			ret = 0;
+		}
+	}
+
+	fmem_free(p);
+	return ret;
 }

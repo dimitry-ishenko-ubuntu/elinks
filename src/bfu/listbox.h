@@ -11,12 +11,8 @@ struct terminal;
 struct uri;
 struct widget_data;
 
-struct widget_info_listbox {
-	int height;
-};
 
-
-void add_dlg_listbox(struct dialog *dlg, int height, void *box_data);
+void add_dlg_listbox(struct dialog *dlg, void *box_data);
 
 enum listbox_match {
 	LISTBOX_MATCH_OK,
@@ -49,18 +45,18 @@ struct listbox_context {
 };
 
 struct listbox_ops_messages {
-	unsigned char *cant_delete_item;
-	unsigned char *cant_delete_used_item;
-	unsigned char *cant_delete_folder;
-	unsigned char *cant_delete_used_folder;
-	unsigned char *delete_marked_items_title;
-	unsigned char *delete_marked_items;
-	unsigned char *delete_folder_title;
-	unsigned char *delete_folder;
-	unsigned char *delete_item_title;
-	unsigned char *delete_item;
-	unsigned char *clear_all_items_title;
-	unsigned char *clear_all_items;
+	unsigned char *cant_delete_item;          /* %s = text of item */
+	unsigned char *cant_delete_used_item;     /* %s = text of item */
+	unsigned char *cant_delete_folder;        /* %s = text of item */
+	unsigned char *cant_delete_used_folder;   /* %s = text of item */
+	unsigned char *delete_marked_items_title; /* not a format string */
+	unsigned char *delete_marked_items;	  /* not a format string */
+	unsigned char *delete_folder_title;	  /* not a format string */
+	unsigned char *delete_folder;		  /* %s = text of item */
+	unsigned char *delete_item_title;	  /* not a format string */
+	unsigned char *delete_item;		  /* %s = text of item */
+	unsigned char *clear_all_items_title;	  /* not a format string */
+	unsigned char *clear_all_items;		  /* not a format string */
 };
 
 /* TODO: We can maybe find a better way of figuring out whether a user of a
@@ -104,12 +100,12 @@ struct listbox_ops {
 struct listbox_data {
 	LIST_HEAD(struct listbox_data);
 
-	struct listbox_ops *ops; /* Backend-provided operations */
+	const struct listbox_ops *ops; /* Backend-provided operations */
 	struct listbox_item *sel; /* Item currently selected */
 	struct listbox_item *top; /* Item which is on the top line of the box */
 
 	int sel_offset; /* Offset of selected item against the box top */
-	struct list_head *items; /* The list being displayed */
+	LIST_OF(struct listbox_item) *items; /* The list being displayed */
 };
 
 enum listbox_item_type {
@@ -123,7 +119,7 @@ struct listbox_item {
 	LIST_HEAD(struct listbox_item);
 
 	/* The list may be empty for leaf nodes or non-hiearchic listboxes */
-	struct list_head child;
+	LIST_OF(struct listbox_item) child;
 
 	enum listbox_item_type type;
 	int depth;
@@ -135,9 +131,9 @@ struct listbox_item {
 	void *udata;
 };
 
-extern struct widget_ops listbox_ops;
+extern const struct widget_ops listbox_ops;
 
-void dlg_format_listbox(struct terminal *, struct widget_data *, int, int *, int, int, int *, enum format_align);
+void dlg_format_listbox(struct terminal *, struct widget_data *, int, int *, int, int, int *, enum format_align, int format_only);
 
 struct listbox_item *traverse_listbox_items_list(struct listbox_item *, struct listbox_data *, int, int, int (*)(struct listbox_item *, void *, int *), void *);
 

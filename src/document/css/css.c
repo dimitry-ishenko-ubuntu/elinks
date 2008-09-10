@@ -1,4 +1,5 @@
-/* CSS module management */
+/** CSS module management
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -19,6 +20,7 @@
 #include "main/module.h"
 #include "network/connection.h"
 #include "protocol/uri.h"
+#include "session/session.h"
 #include "util/error.h"
 #include "util/memory.h"
 #include "viewer/text/draw.h"
@@ -77,7 +79,7 @@ import_css(struct css_stylesheet *css, struct uri *uri)
 
 static void
 import_css_file(struct css_stylesheet *css, struct uri *base_uri,
-		unsigned char *url, int urllen)
+		const unsigned char *url, int urllen)
 {
 	struct string string, filename;
 
@@ -123,11 +125,15 @@ static int
 change_hook_css(struct session *ses, struct option *current, struct option *changed)
 {
 	if (!strcmp(changed->name, "stylesheet")) {
-		/* TODO: We need to update all entries in format cache. --jonas */
+		/** @todo TODO: We need to update all entries in
+		 * format cache. --jonas */
 		import_default_css();
 	}
 
-	draw_formatted(ses, 1);
+	/* Instead of using the value of the @ses parameter, iterate
+	 * through the @sessions list.  The parameter may be NULL and
+	 * anyway we don't support session-specific options yet.  */
+	foreach (ses, sessions) draw_formatted(ses, 1);
 
 	return 0;
 }
@@ -135,7 +141,7 @@ change_hook_css(struct session *ses, struct option *current, struct option *chan
 static void
 init_css(struct module *module)
 {
-	struct change_hook_info css_change_hooks[] = {
+	static const struct change_hook_info css_change_hooks[] = {
 		{ "document.css",		change_hook_css },
 		{ NULL,				NULL },
 	};

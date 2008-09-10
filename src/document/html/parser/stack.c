@@ -60,7 +60,7 @@ search_html_stack(struct html_context *html_context, unsigned char *name)
 #endif
 
 	foreach (element, html_context->stack) {
-		if (element == &html_top)
+		if (element == html_top)
 			continue; /* skip the top element */
 		if (strlcasecmp(element->name, element->namelen, name, namelen))
 			continue;
@@ -90,7 +90,7 @@ kill_html_stack_item(struct html_context *html_context, struct html_element *e)
 	 * any element, executing it when that element is fully loaded. */
 	if (e->options)
 		onload = get_attr_val(e->options, "onLoad",
-		                     html_context->options);
+		                     html_context->doc_cp);
 	if (html_context->part
 	    && html_context->part->document
 	    && onload && *onload && *onload != '^') {
@@ -106,6 +106,11 @@ kill_html_stack_item(struct html_context *html_context, struct html_element *e)
 	mem_free_if(e->attr.image);
 	mem_free_if(e->attr.title);
 	mem_free_if(e->attr.select);
+
+#ifdef CONFIG_CSS
+	mem_free_if(e->attr.id);
+	mem_free_if(e->attr.class);
+#endif
 
 	mem_free_if(e->attr.onclick);
 	mem_free_if(e->attr.ondblclick);
@@ -146,6 +151,9 @@ html_stack_dup(struct html_context *html_context, enum html_element_mortality_ty
 	if (ep->attr.title) e->attr.title = stracpy(ep->attr.title);
 	if (ep->attr.select) e->attr.select = stracpy(ep->attr.select);
 
+#ifdef CONFIG_CSS
+	e->attr.id = e->attr.class = NULL;
+#endif
 	/* We don't want to propagate these. */
 	/* XXX: For sure? --pasky */
 	e->attr.onclick = e->attr.ondblclick = e->attr.onmouseover = e->attr.onhover
@@ -189,7 +197,7 @@ kill_element(struct html_context *html_context, int ls, struct html_element *e)
 void
 kill_html_stack_until(struct html_context *html_context, int ls, ...)
 {
-	struct html_element *e = &html_top;
+	struct html_element *e = html_top;
 
 	if (ls) e = e->next;
 

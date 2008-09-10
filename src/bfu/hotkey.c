@@ -121,54 +121,16 @@ refresh_hotkeys(struct terminal *term, struct menu *menu)
 #endif
 }
 
-/* Returns true if key (upcased) matches one of the hotkeys in menu */
 static int
-is_hotkey(struct menu_item *item, unsigned char key, struct terminal *term)
+check_hotkeys_common(struct menu *menu, term_event_char_T hotkey, struct terminal *term,
+		     int check_mode)
 {
-	unsigned char *text;
-	int key_pos;
-
-	assert(item);
-	if_assert_failed return 0;
-
-	if (!mi_has_left_text(item)) return 0;
-
-	text = item->text;
-	if (mi_text_translate(item)) text = _(text, term);
-	if (!text || !*text) return 0;
-
-	key_pos = item->hotkey_pos;
-
-#ifdef CONFIG_DEBUG
-	if (key_pos < 0) key_pos = -key_pos;
-#endif
-
-	return (key_pos && (toupper(text[key_pos]) == key));
-}
-
-/* Returns true if key (upcased) matches first letter of menu item left text. */
-static int
-is_not_so_hotkey(struct menu_item *item, unsigned char key, struct terminal *term)
-{
-	unsigned char *text;
-
-	assert(item);
-	if_assert_failed return 0;
-
-	if (!mi_has_left_text(item)) return 0;
-
-	text = item->text;
-	if (mi_text_translate(item)) text = _(text, term);
-	if (!text || !*text) return 0;
-
-	return (toupper(*text) == key);
-}
-
-static int
-check_hotkeys_common(struct menu *menu, unsigned char hotkey, struct terminal *term,
-		     int (*func)(struct menu_item *, unsigned char, struct terminal *))
-{
+#ifdef CONFIG_UTF8
+	unicode_val_T key = unicode_fold_label_case(hotkey);
+	int codepage = get_opt_codepage_tree(term->spec, "charset");
+#else
 	unsigned char key = toupper(hotkey);
+#endif
 	int i = menu->selected;
 	int start;
 
@@ -179,9 +141,54 @@ check_hotkeys_common(struct menu *menu, unsigned char hotkey, struct terminal *t
 
 	start = i;
 	do {
+		struct menu_item *item;
+		unsigned char *text;
+#ifdef CONFIG_UTF8
+		unicode_val_T items_hotkey;
+#endif
+		int found;
+
 		if (++i == menu->size) i = 0;
 
-		if (func(&menu->items[i], key, term)) {
+		item = &menu->items[i];
+
+		if (!mi_has_left_text(item)) continue;
+
+		text = item->text;
+		if (mi_text_translate(item)) text = _(text, term);
+		if (!text || !*text) continue;
+
+		/* Change @text to point to the character that should
+		 * be compared to @key.  */
+		if (check_mode == 0) {
+			/* Does the key (upcased) matches one of the
+			 * hotkeys in menu ? */
+			int key_pos = item->hotkey_pos;
+
+#ifdef CONFIG_DEBUG
+			if (key_pos < 0) key_pos = -key_pos;
+#endif
+			if (!key_pos) continue;
+			text += key_pos;
+		} else {
+			/* Does the key (upcased) matches first letter
+			 * of menu item left text ? */
+		}
+
+		/* Compare @key to the character to which @text points.  */
+#ifdef CONFIG_UTF8
+		items_hotkey = cp_to_unicode(codepage, &text,
+					     strchr(text, '\0'));
+		/* items_hotkey can be UCS_NO_CHAR only if the text of
+		 * the menu item is not in the expected codepage.  */
+		assert(items_hotkey != UCS_NO_CHAR);
+		if_assert_failed continue;
+		found = (unicode_fold_label_case(items_hotkey) == key);
+#else
+		found = (toupper(*text) == key);
+#endif
+
+		if (found) {
 			menu->selected = i;
 			return 1;
 		}
@@ -193,9 +200,9 @@ check_hotkeys_common(struct menu *menu, unsigned char hotkey, struct terminal *t
 
 /* Returns true if a hotkey was found in the menu, and set menu->selected. */
 int
-check_hotkeys(struct menu *menu, unsigned char key, struct terminal *term)
+check_hotkeys(struct menu *menu, term_event_char_T key, struct terminal *term)
 {
-	return check_hotkeys_common(menu, key, term, is_hotkey);
+	return check_hotkeys_common(menu, key, term, 0);
 }
 
 /* Search if first letter of an entry in menu matches the key (caseless comp.).
@@ -203,7 +210,7 @@ check_hotkeys(struct menu *menu, unsigned char key, struct terminal *term)
  * to selected entry.
  * It returns 1 if found and set menu->selected. */
 int
-check_not_so_hot_keys(struct menu *menu, unsigned char key, struct terminal *term)
+check_not_so_hot_keys(struct menu *menu, term_event_char_T key, struct terminal *term)
 {
-	return check_hotkeys_common(menu, key, term, is_not_so_hotkey);
+	return check_hotkeys_common(menu, key, term, 1);
 }

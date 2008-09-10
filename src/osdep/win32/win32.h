@@ -2,12 +2,19 @@
 #ifndef EL__OSDEP_WIN32_WIN32_H
 #define EL__OSDEP_WIN32_WIN32_H
 
-#ifdef CONFIG_WIN32
+#ifdef CONFIG_OS_WIN32
+
+#undef CHAR_DIR_SEP
+#define CHAR_DIR_SEP '\\'
+#undef STRING_DIR_SEP
+#define STRING_DIR_SEP "\\"
 
 struct terminal;
 
 void open_in_new_win32(struct terminal *term, unsigned char *exe_name,
 		       unsigned char *param);
+unsigned char *user_appdata_directory(void);
+#define user_appdata_directory user_appdata_directory
 
 
 /* Stub functions: */
@@ -59,5 +66,5 @@ int tcgetattr(int fd, struct termios *termios_p);
 int tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
 #endif /* __CYGWIN__ */
 
-#endif /* CONFIG_WIN32 */
+#endif /* CONFIG_OS_WIN32 */
 #endif

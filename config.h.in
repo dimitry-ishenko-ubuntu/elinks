@@ -9,14 +9,14 @@
 /* Define if you want: 88 colors support */
 #undef CONFIG_88_COLORS
 
+/* Define if you want: API Documentation support */
+#undef CONFIG_APIDOCS
+
 /* Define if you want: AsciiDoc support */
 #undef CONFIG_ASCIIDOC
 
 /* Define if you want: Backtrace support */
 #undef CONFIG_BACKTRACE
-
-/* Define if you want: BEOS support */
-#undef CONFIG_BEOS
 
 /* Define if you want: BitTorrent protocol support */
 #undef CONFIG_BITTORRENT
@@ -48,8 +48,17 @@
 /* Define if you want: DOM engine support */
 #undef CONFIG_DOM
 
+/* Define if you want: Doxygen support */
+#undef CONFIG_DOXYGEN
+
 /* Define if you want: ECMAScript (JavaScript) support */
 #undef CONFIG_ECMASCRIPT
+
+/* Define if you want: SEE support */
+#undef CONFIG_ECMASCRIPT_SEE
+
+/* Define if you want: SpiderMonkey document scripting support */
+#undef CONFIG_ECMASCRIPT_SMJS
 
 /* Define if you want: Exmode interface support */
 #undef CONFIG_EXMODE
@@ -69,6 +78,9 @@
 /* Define if you want: FTP protocol support */
 #undef CONFIG_FTP
 
+/* Define if you want: gc support */
+#undef CONFIG_GC
+
 /* Define if you want: Global history support */
 #undef CONFIG_GLOBHIST
 
@@ -84,8 +96,8 @@
 /* Define if you want: gpm support */
 #undef CONFIG_GPM
 
-/* Define if you want: Guile support */
-#undef CONFIG_GUILE
+/* Define if you want: GssApi support */
+#undef CONFIG_GSSAPI
 
 /* Define if you want: zlib support */
 #undef CONFIG_GZIP
@@ -108,8 +120,8 @@
 /* Define if you want: LEDs support */
 #undef CONFIG_LEDS
 
-/* Define if you want: Lua support */
-#undef CONFIG_LUA
+/* Define if you want: lzma support */
+#undef CONFIG_LZMA
 
 /* Define if you want: Mailcap support */
 #undef CONFIG_MAILCAP
@@ -122,9 +134,6 @@
 
 /* Define if you want: Marks support */
 #undef CONFIG_MARKS
-
-/* Define if you want: Built-in MD5 support */
-#undef CONFIG_MD5
 
 /* Define if you want: Mimetypes files support */
 #undef CONFIG_MIMETYPES
@@ -145,14 +154,23 @@
 /* Define if you want: OpenSSL support */
 #undef CONFIG_OPENSSL
 
+/* Define if you want: BEOS support */
+#undef CONFIG_OS_BEOS
+
 /* Define if you want: EMX support */
-#undef CONFIG_OS2
+#undef CONFIG_OS_OS2
+
+/* Define if you want: RISCOS support */
+#undef CONFIG_OS_RISCOS
+
+/* Define if you want: UNIX support */
+#undef CONFIG_OS_UNIX
+
+/* Define if you want: WIN32 support */
+#undef CONFIG_OS_WIN32
 
 /* Define if you want: Own libc stubs support */
 #undef CONFIG_OWN_LIBC
-
-/* Define if you want: Perl support */
-#undef CONFIG_PERL
 
 /* Define if using Perl 5.8.8 or later, where the "POPpx" macro no longer
    needs an "n_a" variable like it did in 5.8.7 */
@@ -161,35 +179,32 @@
 /* Define if you want: Pod2HTML support */
 #undef CONFIG_POD2HTML
 
-/* Define if you want: Python support */
-#undef CONFIG_PYTHON
-
-/* Define if you want: RISCOS support */
-#undef CONFIG_RISCOS
-
-/* Define if you want: Ruby support */
-#undef CONFIG_RUBY
-
-/* Define if you want: Built-in scanner support */
-#undef CONFIG_SCANNER
-
 /* Define if you want: Browser scripting support */
 #undef CONFIG_SCRIPTING
 
-/* Define if you want: Built-in SHA1 support */
-#undef CONFIG_SHA1
+/* Define if you want: Guile support */
+#undef CONFIG_SCRIPTING_GUILE
+
+/* Define if you want: Lua support */
+#undef CONFIG_SCRIPTING_LUA
+
+/* Define if you want: Perl support */
+#undef CONFIG_SCRIPTING_PERL
+
+/* Define if you want: Python support */
+#undef CONFIG_SCRIPTING_PYTHON
+
+/* Define if you want: Ruby support */
+#undef CONFIG_SCRIPTING_RUBY
+
+/* Define if you want: SpiderMonkey support */
+#undef CONFIG_SCRIPTING_SPIDERMONKEY
 
 /* Define if you want: Small binary support */
 #undef CONFIG_SMALL
 
-/* Define if you want: SMB protocol support */
+/* Define if you want: Samba protocol support */
 #undef CONFIG_SMB
-
-/* Define if you want: SpiderMonkey support */
-#undef CONFIG_SM_SCRIPTING
-
-/* Define if you want: SpiderMonkey support */
-#undef CONFIG_SPIDERMONKEY
 
 /* Define if you want: SSL support */
 #undef CONFIG_SSL
@@ -197,14 +212,14 @@
 /* Define if you want: BSD sysmouse support */
 #undef CONFIG_SYSMOUSE
 
-/* Define if you want: UNIX support */
-#undef CONFIG_UNIX
+/* Define if you want: true color support */
+#undef CONFIG_TRUE_COLOR
 
 /* Define if you want: URI rewriting support */
 #undef CONFIG_URI_REWRITE
 
-/* Define if you want: WIN32 support */
-#undef CONFIG_WIN32
+/* Define if you want: UTF-8 support */
+#undef CONFIG_UTF8
 
 /* Define if you want: XBEL bookmarks support */
 #undef CONFIG_XBEL_BOOKMARKS
@@ -244,6 +259,9 @@
 
 /* Define to 1 if you have the `asprintf' function. */
 #undef HAVE_ASPRINTF
+
+/* Define to 1 if you have the `atoll' function. */
+#undef HAVE_ATOLL
 
 /* Define to 1 if you have the `bcopy' function. */
 #undef HAVE_BCOPY
@@ -299,6 +317,9 @@
 
 /* Define to 1 if you have the `ftello' function. */
 #undef HAVE_FTELLO
+
+/* Define to 1 if you have the <gc.h> header file. */
+#undef HAVE_GC_H
 
 /* Define to 1 if you have the `getcwd' function. */
 #undef HAVE_GETCWD
@@ -396,6 +417,9 @@
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
 
+/* Define to 1 if you have the <libsmbclient.h> header file. */
+#undef HAVE_LIBSMBCLIENT_H
+
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
 
@@ -407,6 +431,9 @@
 
 /* Define if you have long long */
 #undef HAVE_LONG_LONG
+
+/* Define to 1 if you have the <lzma.h> header file. */
+#undef HAVE_LZMA_H
 
 /* Define to 1 if you have the <machine/console.h> header file. */
 #undef HAVE_MACHINE_CONSOLE_H
@@ -659,8 +686,14 @@
 /* Define to 1 if you have the `vsnprintf' function. */
 #undef HAVE_VSNPRINTF
 
+/* Define to 1 if you have the <wctype.h> header file. */
+#undef HAVE_WCTYPE_H
+
 /* Define to 1 if you have the <windows.h> header file. */
 #undef HAVE_WINDOWS_H
+
+/* Define to 1 if you have the <ws2tcpip.h> header file. */
+#undef HAVE_WS2TCPIP_H
 
 /* Define if you have X11 for restoring window titles */
 #undef HAVE_X11
@@ -719,27 +752,27 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* The size of a `char', as computed by sizeof. */
+/* The size of `char', as computed by sizeof. */
 #undef SIZEOF_CHAR
 
-/* The size of a `int', as computed by sizeof. */
+/* The size of `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
-/* The size of a `long', as computed by sizeof. */
+/* The size of `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* The size of a `long long', as computed by sizeof. */
+/* The size of `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
 
-/* The size of a `off_t', as computed by sizeof. */
+/* The size of `off_t', as computed by sizeof. */
 #undef SIZEOF_OFF_T
 
-/* The size of a `short', as computed by sizeof. */
+/* The size of `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
-   automatically deduced at run-time.
+   automatically deduced at runtime.
 	STACK_DIRECTION > 0 => grows toward higher addresses
 	STACK_DIRECTION < 0 => grows toward lower addresses
 	STACK_DIRECTION = 0 => direction of growth unknown */
@@ -778,10 +811,10 @@
 #undef inline
 #endif
 
-/* Define to `long' if <sys/types.h> does not define. */
+/* Define to `long int' if <sys/types.h> does not define. */
 #undef off_t
 
-/* Define to `unsigned' if <sys/types.h> does not define. */
+/* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
 
 /* Define to int if <sys/types.h> doesn't define. */

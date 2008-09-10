@@ -82,10 +82,10 @@ get_cache_entry_info(struct listbox_item *item, struct terminal *term)
 		}
 	}
 
-	add_format_to_string(&msg, "\n%s: %" OFF_T_FORMAT, _("Size", term),
-	                     cached->length);
-	add_format_to_string(&msg, "\n%s: %" OFF_T_FORMAT, _("Loaded size", term),
-						cached->data_size);
+	add_format_to_string(&msg, "\n%s: %" OFF_PRINT_FORMAT, _("Size", term),
+			     (off_print_T) cached->length);
+	add_format_to_string(&msg, "\n%s: %" OFF_PRINT_FORMAT, _("Loaded size", term),
+			     (off_print_T) cached->data_size);
 	if (cached->content_type) {
 		add_format_to_string(&msg, "\n%s: %s", _("Content type", term),
 				     cached->content_type);
@@ -201,7 +201,7 @@ static struct listbox_ops_messages cache_messages = {
 	NULL,
 	/* delete_item_title */
 	N_("Delete cache entry"),
-	/* delete_item */
+	/* delete_item; xgettext:c-format */
 	N_("Delete this cache entry?"),
 	/* clear_all_items_title */
 	NULL,
@@ -209,7 +209,7 @@ static struct listbox_ops_messages cache_messages = {
 	NULL,
 };
 
-static struct listbox_ops cache_entry_listbox_ops = {
+static const struct listbox_ops cache_entry_listbox_ops = {
 	lock_cache_entry,
 	unlock_cache_entry,
 	is_cache_entry_used,
@@ -224,7 +224,8 @@ static struct listbox_ops cache_entry_listbox_ops = {
 	&cache_messages,
 };
 
-static struct hierbox_browser_button cache_buttons[] = {
+static const struct hierbox_browser_button cache_buttons[] = {
+	/* [gettext_accelerator_context(.cache_buttons)] */
 	{ N_("~Info"),   push_hierbox_info_button,   1 },
 	{ N_("~Goto"),   push_hierbox_goto_button,   1 },
 	{ N_("~Delete"), push_hierbox_delete_button, 1 },

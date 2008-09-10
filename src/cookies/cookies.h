@@ -8,6 +8,7 @@
 #include "util/time.h"
 
 struct listbox_item;
+struct terminal;
 
 enum cookies_accept {
 	COOKIES_ACCEPT_NONE,
@@ -32,17 +33,19 @@ struct cookie {
 	time_t expires;			/* Expiration time. Zero means undefined */
 	int secure;			/* Did it have 'secure' attribute */
 
-	/* This is indeed maintained by cookies.c, not dialogs.c; much easier
-	 * and simpler. */
 	struct listbox_item *box_item;
 };
 
+struct cookie_server *get_cookie_server(unsigned char *host, int hostlen);
+struct cookie *init_cookie(unsigned char *name, unsigned char *value,
+			   unsigned char *path, unsigned char *domain,
+			   struct cookie_server *server);
 void accept_cookie(struct cookie *);
 void done_cookie(struct cookie *);
 void delete_cookie(struct cookie *);
 void set_cookie(struct uri *, unsigned char *);
 void load_cookies(void);
-void save_cookies(void);
+void save_cookies(struct terminal *);
 void set_cookies_dirty(void);
 
 /* Note that the returned value points to a static structure and thus the

@@ -27,13 +27,13 @@ void add_dlg_radio_do(struct dialog *dlg, unsigned char *text, int groupid, int 
 #define add_dlg_checkbox(dlg, text, data) \
 	add_dlg_radio_do(dlg, text, 0, 0, data)
 
-extern struct widget_ops checkbox_ops;
+extern const struct widget_ops checkbox_ops;
 
 void
 dlg_format_checkbox(struct terminal *term,
 		    struct widget_data *widget_data,
 		    int x, int *y, int w, int *rw,
-		    enum format_align align);
+		    enum format_align align, int format_only);
 
 #define widget_has_group(widget_data)	((widget_data)->widget->type == WIDGET_CHECKBOX \
 					  ? (widget_data)->widget->info.checkbox.gid : -1)

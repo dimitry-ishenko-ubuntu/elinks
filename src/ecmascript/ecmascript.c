@@ -12,15 +12,20 @@
 #include "document/document.h"
 #include "document/view.h"
 #include "ecmascript/ecmascript.h"
+#include "ecmascript/see.h"
 #include "ecmascript/spidermonkey.h"
 #include "intl/gettext/libintl.h"
 #include "main/module.h"
+#include "main/timer.h"
+#include "osdep/osdep.h"
+#include "protocol/protocol.h"
 #include "protocol/uri.h"
 #include "session/session.h"
 #include "session/task.h"
 #include "terminal/terminal.h"
 #include "terminal/window.h"
 #include "util/conv.h"
+#include "util/string.h"
 #include "viewer/text/view.h" /* current_frame() */
 #include "viewer/text/form.h" /* <-ecmascript_reset_state() */
 #include "viewer/text/vs.h"
@@ -38,7 +43,7 @@ static struct option_info ecmascript_options[] = {
 		N_("ECMAScript options.")),
 
 	INIT_OPT_BOOL("ecmascript", N_("Enable"),
-		"enable", 0, 1,
+		"enable", 0, 0,
 		N_("Whether to run those scripts inside of documents.")),
 
 	INIT_OPT_BOOL("ecmascript", N_("Script error reporting"),
@@ -61,21 +66,52 @@ static struct option_info ecmascript_options[] = {
 	NULL_OPTION_INFO,
 };
 
-#define get_ecmascript_enable()		get_opt_bool("ecmascript.enable")
+#define NUMBER_OF_URLS_TO_REMEMBER 8
+static struct {
+	unsigned char *url;
+	unsigned char *frame;
+} u[NUMBER_OF_URLS_TO_REMEMBER];
+static int url_index = 0;
 
-
-static void
-ecmascript_init(struct module *module)
+int
+ecmascript_check_url(unsigned char *url, unsigned char *frame)
 {
-	spidermonkey_init();
+	int i;
+	/* Because of gradual rendering window.open is called many
+	 * times with the same arguments.
+	 * This workaround remembers NUMBER_OF_URLS_TO_REMEMBER last
+	 * opened URLs and do not let open them again.
+	 */
+
+	for (i = 0; i < NUMBER_OF_URLS_TO_REMEMBER; i++) {
+		if (!u[i].url) break;
+		if (!strcmp(u[i].url, url) && !strcmp(u[i].frame, frame)) {
+			mem_free(url);
+			mem_free(frame);
+			return 0;
+		}
+	}
+	mem_free_if(u[url_index].url);
+	mem_free_if(u[url_index].frame);
+	u[url_index].url = url;
+	u[url_index].frame = frame;
+	url_index++;
+	if (url_index >= NUMBER_OF_URLS_TO_REMEMBER) url_index = 0;
+	return 1;
 }
 
-static void
-ecmascript_done(struct module *module)
+void
+ecmascript_free_urls(struct module *module)
 {
-	spidermonkey_done();
+	int i;
+
+	for (i = 0; i < NUMBER_OF_URLS_TO_REMEMBER; i++) {
+		mem_free_if(u[i].url);
+		mem_free_if(u[i].frame);
+	}
 }
 
+#undef NUMBER_OF_URLS_TO_REMEMBER
 
 struct ecmascript_interpreter *
 ecmascript_get_interpreter(struct view_state *vs)
@@ -89,9 +125,14 @@ ecmascript_get_interpreter(struct view_state *vs)
 		return NULL;
 
 	interpreter->vs = vs;
+	interpreter->vs->ecmascript_fragile = 0;
 	init_list(interpreter->onload_snippets);
+#ifdef CONFIG_ECMASCRIPT_SEE
+	see_get_interpreter(interpreter);
+#else
 	spidermonkey_get_interpreter(interpreter);
-
+#endif
+	init_string(&interpreter->code);
 	return interpreter;
 }
 
@@ -104,10 +145,75 @@ ecmascript_put_interpreter(struct ecmascript_interpreter *interpreter)
 	 * interpreter than to corrupt memory.  */
 	if_assert_failed return;
 
+#ifdef CONFIG_ECMASCRIPT_SEE
+	see_put_interpreter(interpreter);
+#else
 	spidermonkey_put_interpreter(interpreter);
+#endif
 	free_string_list(&interpreter->onload_snippets);
+	done_string(&interpreter->code);
+	/* Is it superfluous? */
+	if (interpreter->vs->doc_view)
+		kill_timer(&interpreter->vs->doc_view->document->timeout);
+	interpreter->vs->ecmascript = NULL;
+	interpreter->vs->ecmascript_fragile = 1;
 	mem_free(interpreter);
 }
+
+void
+ecmascript_eval(struct ecmascript_interpreter *interpreter,
+                struct string *code, struct string *ret)
+{
+	if (!get_ecmascript_enable())
+		return;
+	assert(interpreter);
+	interpreter->backend_nesting++;
+#ifdef CONFIG_ECMASCRIPT_SEE
+	see_eval(interpreter, code, ret);
+#else
+	spidermonkey_eval(interpreter, code, ret);
+#endif
+	interpreter->backend_nesting--;
+}
+
+unsigned char *
+ecmascript_eval_stringback(struct ecmascript_interpreter *interpreter,
+			   struct string *code)
+{
+	unsigned char *result;
+
+	if (!get_ecmascript_enable())
+		return NULL;
+	assert(interpreter);
+	interpreter->backend_nesting++;
+#ifdef CONFIG_ECMASCRIPT_SEE
+	result = see_eval_stringback(interpreter, code);
+#else
+	result = spidermonkey_eval_stringback(interpreter, code);
+#endif
+	interpreter->backend_nesting--;
+	return result;
+}
+
+int
+ecmascript_eval_boolback(struct ecmascript_interpreter *interpreter,
+			 struct string *code)
+{
+	int result;
+
+	if (!get_ecmascript_enable())
+		return -1;
+	assert(interpreter);
+	interpreter->backend_nesting++;
+#ifdef CONFIG_ECMASCRIPT_SEE
+	result = see_eval_boolback(interpreter, code);
+#else
+	result = spidermonkey_eval_boolback(interpreter, code);
+#endif
+	interpreter->backend_nesting--;
+	return result;
+}
+
 
 void
 ecmascript_reset_state(struct view_state *vs)
@@ -128,52 +234,6 @@ ecmascript_reset_state(struct view_state *vs)
 	if (!vs->ecmascript)
 		vs->ecmascript_fragile = 1;
 }
-
-
-void
-ecmascript_eval(struct ecmascript_interpreter *interpreter,
-                struct string *code)
-{
-	if (!get_ecmascript_enable())
-		return;
-	assert(interpreter);
-	interpreter->backend_nesting++;
-	spidermonkey_eval(interpreter, code);
-	interpreter->backend_nesting--;
-}
-
-
-unsigned char *
-ecmascript_eval_stringback(struct ecmascript_interpreter *interpreter,
-			   struct string *code)
-{
-	unsigned char *result;
-
-	if (!get_ecmascript_enable())
-		return NULL;
-	assert(interpreter);
-	interpreter->backend_nesting++;
-	result = spidermonkey_eval_stringback(interpreter, code);
-	interpreter->backend_nesting--;
-	return result;
-}
-
-
-int
-ecmascript_eval_boolback(struct ecmascript_interpreter *interpreter,
-			 struct string *code)
-{
-	int result;
-
-	if (!get_ecmascript_enable())
-		return -1;
-	assert(interpreter);
-	interpreter->backend_nesting++;
-	result = spidermonkey_eval_boolback(interpreter, code);
-	interpreter->backend_nesting--;
-	return result;
-}
-
 
 void
 ecmascript_protocol_handler(struct session *ses, struct uri *uri)
@@ -214,12 +274,101 @@ ecmascript_protocol_handler(struct session *ses, struct uri *uri)
 }
 
 
+void
+ecmascript_timeout_dialog(struct terminal *term, int max_exec_time)
+{
+	info_box(term, MSGBOX_FREE_TEXT,
+		 N_("JavaScript Emergency"), ALIGN_LEFT,
+		 msg_text(term,
+		  N_("A script embedded in the current document was running\n"
+		  "for more than %d seconds. This probably means there is\n"
+		  "a bug in the script and it could have halted the whole\n"
+		  "ELinks, so the script execution was interrupted."),
+		  max_exec_time));
+
+}
+
+void
+ecmascript_set_action(unsigned char **action, unsigned char *string)
+{
+	struct uri *protocol;
+
+	trim_chars(string, ' ', NULL);
+	protocol = get_uri(string, URI_PROTOCOL);
+
+	if (protocol) { /* full uri with protocol */
+		done_uri(protocol);
+		mem_free_set(action, string);
+	} else {
+		if (dir_sep(string[0])) { /* absolute uri, TODO: disk drive under WIN32 */
+			struct uri *uri = get_uri(*action, URI_HTTP_REFERRER_HOST);
+
+			if (uri->protocol == PROTOCOL_FILE) {
+				mem_free_set(action, straconcat(struri(uri), string, (unsigned char *) NULL));
+			}
+			else
+				mem_free_set(action, straconcat(struri(uri), string + 1, (unsigned char *) NULL));
+			done_uri(uri);
+			mem_free(string);
+		} else { /* relative uri */
+			unsigned char *last_slash = strrchr(*action, '/');
+			unsigned char *new_action;
+
+			if (last_slash) *(last_slash + 1) = '\0';
+			new_action = straconcat(*action, string,
+						(unsigned char *) NULL);
+			mem_free_set(action, new_action);
+			mem_free(string);
+		}
+	}
+}
+
+/* Timer callback for @interpreter->vs->doc_view->document->timeout.
+ * As explained in @install_timer, this function must erase the
+ * expired timer ID from all variables.  */
+static void
+ecmascript_timeout_handler(void *i)
+{
+	struct ecmascript_interpreter *interpreter = i;
+
+	assertm(interpreter->vs->doc_view != NULL,
+		"setTimeout: vs with no document (e_f %d)",
+		interpreter->vs->ecmascript_fragile);
+	interpreter->vs->doc_view->document->timeout = TIMER_ID_UNDEF;
+	/* The expired timer ID has now been erased.  */
+
+	ecmascript_eval(interpreter, &interpreter->code, NULL);
+}
+
+void
+ecmascript_set_timeout(struct ecmascript_interpreter *interpreter, unsigned char *code, int timeout)
+{
+	assert(interpreter && interpreter->vs->doc_view->document);
+	if (!code) return;
+	done_string(&interpreter->code);
+	init_string(&interpreter->code);
+	add_to_string(&interpreter->code, code);
+	mem_free(code);
+	kill_timer(&interpreter->vs->doc_view->document->timeout);
+	install_timer(&interpreter->vs->doc_view->document->timeout, timeout, ecmascript_timeout_handler, interpreter);
+}
+
+static struct module *ecmascript_modules[] = {
+#ifdef CONFIG_ECMASCRIPT_SEE
+	&see_module,
+#elif defined(CONFIG_ECMASCRIPT_SMJS)
+	&spidermonkey_module,
+#endif
+	NULL,
+};
+
+
 struct module ecmascript_module = struct_module(
 	/* name: */		N_("ECMAScript"),
 	/* options: */		ecmascript_options,
 	/* events: */		NULL,
-	/* submodules: */	NULL,
+	/* submodules: */	ecmascript_modules,
 	/* data: */		NULL,
-	/* init: */		ecmascript_init,
-	/* done: */		ecmascript_done
+	/* init: */		NULL,
+	/* done: */		ecmascript_free_urls
 );

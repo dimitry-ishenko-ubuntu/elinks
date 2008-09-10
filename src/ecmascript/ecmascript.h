@@ -9,8 +9,11 @@
 #include "util/time.h"
 
 struct string;
+struct terminal;
 struct uri;
 struct view_state;
+
+#define get_ecmascript_enable()		get_opt_bool("ecmascript.enable")
 
 struct ecmascript_interpreter {
 	struct view_state *vs;
@@ -21,6 +24,12 @@ struct ecmascript_interpreter {
 	 * stack, so it is not safe to free the data yet.  */
 	int backend_nesting;
 
+	/* Used by document.write() */
+	struct string *ret;
+
+	/* The code evaluated by setTimeout() */
+	struct string code;
+
 	time_t exec_start;
 
 	/* This is a cross-rerenderings accumulator of
@@ -30,7 +39,7 @@ struct ecmascript_interpreter {
 	 * any new snippets in document.onload_snippets). Instead, as we
 	 * go through the list we maintain a pointer to the last processed
 	 * entry. */
-	struct list_head onload_snippets; /* -> struct string_list_item */
+	LIST_OF(struct string_list_item) onload_snippets;
 	struct string_list_item *current_onload_snippet;
 
 	/* ID of the {struct document} where those onload_snippets belong to.
@@ -55,12 +64,15 @@ struct ecmascript_interpreter {
  * reset for each rerendering, and it sucks to do all the magic to preserve the
  * interpreter over the rerenderings (we tried). */
 
+int ecmascript_check_url(unsigned char *url, unsigned char *frame);
+void ecmascript_free_urls(struct module *module);
+
 struct ecmascript_interpreter *ecmascript_get_interpreter(struct view_state*vs);
 void ecmascript_put_interpreter(struct ecmascript_interpreter *interpreter);
 
 void ecmascript_reset_state(struct view_state *vs);
 
-void ecmascript_eval(struct ecmascript_interpreter *interpreter, struct string *code);
+void ecmascript_eval(struct ecmascript_interpreter *interpreter, struct string *code, struct string *ret);
 unsigned char *ecmascript_eval_stringback(struct ecmascript_interpreter *interpreter, struct string *code);
 /* Returns -1 if undefined. */
 int ecmascript_eval_boolback(struct ecmascript_interpreter *interpreter, struct string *code);
@@ -68,6 +80,12 @@ int ecmascript_eval_boolback(struct ecmascript_interpreter *interpreter, struct 
 /* Takes line with the syntax javascript:<ecmascript code>. Activated when user
  * follows a link with this synstax. */
 void ecmascript_protocol_handler(struct session *ses, struct uri *uri);
+
+void ecmascript_timeout_dialog(struct terminal *term, int max_exec_time);
+
+void ecmascript_set_action(unsigned char **action, unsigned char *string);
+
+void ecmascript_set_timeout(struct ecmascript_interpreter *interpreter, unsigned char *code, int timeout);
 
 extern struct module ecmascript_module;
 

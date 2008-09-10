@@ -6,6 +6,7 @@ localedir = $(datadir)/locale
 
 # These are for some reason not added magically to the Makefile.
 MSGMERGE = msgmerge
+PERL = perl
 
 # Name of the file containing the list of files to translate (used by
 # xgettext) 
@@ -52,13 +53,32 @@ $(srcdir)$(POTFILES_ABS_LIST): $(POTFILES_REL)
 	  find src/ -type f -name '*.[ch]' -o -name options.inc -o -name 'actions-*.inc' | sort ) \
 	 > $(srcdir)$(POTFILES_ABS_LIST)
 
-$(srcdir)$(PACKAGE).pot: $(srcdir)$(POTFILES_ABS_LIST)
+$(srcdir)$(PACKAGE).pot: $(srcdir)$(POTFILES_ABS_LIST) $(srcdir)perl/msgaccel-prepare
 	$(XGETTEXT) --default-domain=$(PACKAGE) \
 		    --directory=$(top_srcdir) \
 		    --add-comments --language=C \
-		    --keyword=_ --keyword=N_ --keyword=n_:1,2 --keyword=N__ -f $(srcdir)$(POTFILES_ABS_LIST) \
+		    --keyword=_ --keyword=N_ --keyword=n_:1,2 --keyword=N__ \
+		    --flag=msg_text:2:c-format --flag=die:1:c-format \
+		    --flag=secure_fprintf:2:c-format \
+		    --flag=DBG:1:c-format --flag=elinks_debug:1:c-format \
+		    --flag=WDBG:1:c-format --flag=elinks_wdebug:1:c-format \
+		    --flag=ERROR:1:c-format --flag=elinks_error:1:c-format \
+		    --flag=INTERNAL:1:c-format --flag=elinks_internal:1:c-format \
+		    --flag=usrerror:1:c-format --flag=elinks_log:4:c-format \
+		    --flag=LOG_ERR:1:c-format --flag=LOG_WARN:1:c-format \
+		    --flag=LOG_INFO:1:c-format --flag=LOG_DBG:1:c-format \
+		    --flag=assertm:2:c-format --flag=elinks_assertm:2:c-format \
+		    --flag=add_format_to_string:2:c-format \
+		    --flag=elinks_vsnprintf:3:c-format --flag=elinks_snprintf:3:c-format \
+		    --flag=elinks_vasprintf:2:c-format --flag=elinks_asprintf:2:c-format \
+		    --flag=vasprintfa:1:c-format --flag=asprintfa:1:c-format \
+		    --flag=_:1:pass-c-format --flag=N_:1:pass-c-format \
+		    --flag=n_:1:pass-c-format --flag=n_:2:pass-c-format \
+		    --flag=N__:1:pass-c-format \
+		    -f $(srcdir)$(POTFILES_ABS_LIST) \
 	&& test -f $(PACKAGE).po \
-	&& mv -f $(PACKAGE).po $(srcdir)$(PACKAGE).pot 
+	&& $(PERL) -I"$(srcdir)perl" $(srcdir)perl/msgaccel-prepare -S"$(top_srcdir)" $(PACKAGE).po \
+	&& mv -f $(PACKAGE).po $(srcdir)$(PACKAGE).pot
 
 
 ### Updating po and gmo files
@@ -69,7 +89,6 @@ $(srcdir)$(PACKAGE).pot: $(srcdir)$(POTFILES_ABS_LIST)
 # either <lang> or <lang>.po when calling make. Example: make update-po PO=is
 
 update-po: Makefile $(srcdir)$(PACKAGE).pot
-	@test -z "$(srcdir)" || cd $(srcdir)
 	@$(foreach lang,$(basename $(if $(strip $(PO)),$(PO),$(GMOFILES))), \
 	  echo -n "$(lang): "; \
 	  if $(MSGMERGE) $(srcdir)$(lang).po $(srcdir)$(PACKAGE).pot -o $(lang).new.po; then \
@@ -89,9 +108,10 @@ update-gmo: Makefile $(GMOFILES)
 #
 
 check-po:
-	@$(foreach lang,$(basename $(if $(strip $(PO)),$(PO),$(GMOFILES))), \
+	@-$(foreach lang,$(basename $(if $(strip $(PO)),$(PO),$(GMOFILES))), \
 	  echo -n "$(lang): "; \
 	  $(GMSGFMT) --check --check-accelerators="~" --verbose --statistics -o /dev/null $(srcdir)$(lang).po; \
+	  $(PERL) -I"$(srcdir)perl" $(srcdir)perl/msgaccel-check $(srcdir)$(lang).po; \
 	)
 
 ### Installation and distribution
@@ -103,6 +123,11 @@ install-local: all-local
 	@$(foreach lang,$(basename $(if $(strip $(PO)),$(PO),$(CATALOGS))), \
 		$(MKINSTALLDIRS) $(DESTDIR)$(localedir)/$(lang)/LC_MESSAGES; \
 		$(call ncmd,installdata,$(lang).gmo,$(DESTDIR)$(localedir)/$(lang)/LC_MESSAGES/$(PACKAGE).mo); \
+	)
+
+uninstall-local:
+	@$(foreach lang,$(basename $(if $(strip $(PO)),$(PO),$(CATALOGS))), \
+		$(call ncmd,uninstall,$(PACKAGE).mo,$(DESTDIR)$(localedir)/$(lang)/LC_MESSAGES); \
 	)
 
 clean-local:

@@ -1,4 +1,5 @@
-/* Public terminal drawing API. Frontend for the screen image in memory. */
+/** Public terminal drawing API. Frontend for the screen image in memory.
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -7,6 +8,7 @@
 #include "elinks.h"
 
 #include "config/options.h"
+#include "intl/charsets.h"
 #include "terminal/color.h"
 #include "terminal/draw.h"
 #include "terminal/screen.h"
@@ -14,17 +16,19 @@
 #include "util/color.h"
 #include "util/box.h"
 
-/* Makes sure that @x and @y are within the dimensions of the terminal. */
+/** Makes sure that @a x and @a y are within the dimensions of the terminal. */
 #define check_range(term, x, y) \
 	do { \
 		int_bounds(&(x), 0, (term)->width - 1); \
 		int_bounds(&(y), 0, (term)->height - 1); \
 	} while (0)
 
-#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
-#define clear_screen_char_color(schar) do { memset((schar)->color, 0, 2); } while (0)
+#if SCREEN_COLOR_SIZE > 1
+#define clear_screen_char_color(schar) \
+	do { memset((schar)->color, 0, SCREEN_COLOR_SIZE); } while (0)
 #else
-#define clear_screen_char_color(schar) do { (schar)->color[0] = 0; } while (0)
+#define clear_screen_char_color(schar) \
+	do { (schar)->color[0] = 0; } while (0)
 #endif
 
 
@@ -43,7 +47,7 @@ void
 draw_border_cross(struct terminal *term, int x, int y,
 		  enum border_cross_direction dir, struct color_pair *color)
 {
-	static unsigned char border_trans[2][4] = {
+	static const unsigned char border_trans[2][4] = {
 		/* Used for BORDER_X_{RIGHT,LEFT}: */
 		{ BORDER_SVLINE, BORDER_SRTEE, BORDER_SLTEE },
 		/* Used for BORDER_X_{DOWN,UP}: */
@@ -101,19 +105,43 @@ draw_char_color(struct terminal *term, int x, int y, struct color_pair *color)
 	set_screen_dirty(term->screen, y, y);
 }
 
+/*! The @a data parameter here is like screen_char.data: UCS-4 if the
+ * charset of the terminal is UTF-8 (possible only if CONFIG_UTF8 is
+ * defined), and a byte otherwise.  */
 void
+#ifdef CONFIG_UTF8
+draw_char_data(struct terminal *term, int x, int y, unicode_val_T data)
+#else
 draw_char_data(struct terminal *term, int x, int y, unsigned char data)
+#endif /* CONFIG_UTF8 */
 {
 	struct screen_char *screen_char = get_char(term, x, y);
 
 	if (!screen_char) return;
 
 	screen_char->data = data;
+
+#ifdef CONFIG_UTF8
+#ifdef CONFIG_DEBUG
+	/* Detect attempt to draw double-width char on the last
+	 * column of terminal.  The unicode_to_cell(data) call is
+	 * in principle wrong if CONFIG_UTF8 is defined but the
+	 * charset of the terminal is not UTF-8, because @data
+	 * is then a byte in that charset; but unicode_to_cell
+	 * returns 1 for U+0000...U+00FF so it's not a problem.  */
+	if (unicode_to_cell(data) == 2 && x + 1 > term->width)
+		INTERNAL("Attempt to draw double-width glyph on last column!");
+#endif /* CONFIG_DEBUG */
+
+	if (data == UCS_NO_CHAR)
+		screen_char->attr = 0;
+#endif /* CONFIG_UTF8 */
+
 	set_screen_dirty(term->screen, y, y);
 }
 
-/* Updates a line in the terms screen. */
-/* When doing frame drawing @x can be different than 0. */
+/*! Used by viewer to copy over a document.
+ * When doing frame drawing @a x can be different than 0. */
 void
 draw_line(struct terminal *term, int x, int y, int l, struct screen_char *line)
 {
@@ -127,7 +155,39 @@ draw_line(struct terminal *term, int x, int y, int l, struct screen_char *line)
 	size = int_min(l, term->width - x);
 	if (size == 0) return;
 
-	copy_screen_chars(screen_char, line, size);
+#ifdef CONFIG_UTF8
+	if (term->utf8_cp) {
+		struct screen_char *sc;
+
+		if (line[0].data == UCS_NO_CHAR && x == 0) {
+			unicode_val_T data_save;
+
+			sc = line;
+			data_save = sc->data;
+			sc->data = UCS_ORPHAN_CELL;
+			copy_screen_chars(screen_char, line, 1);
+			sc->data = data_save;
+			size--;
+			line++;
+			screen_char++;
+
+		}
+		/* Instead of displaying double-width character at last column
+		 * display only UCS_ORPHAN_CELL. */
+		if (size - 1 > 0 && unicode_to_cell(line[size - 1].data) == 2) {
+			unicode_val_T data_save;
+
+			sc = &line[size - 1];
+			data_save = sc->data;
+			sc->data = UCS_ORPHAN_CELL;
+			copy_screen_chars(screen_char, line, size);
+			sc->data = data_save;
+		} else {
+			copy_screen_chars(screen_char, line, size);
+		}
+	} else
+#endif
+		copy_screen_chars(screen_char, line, size);
 	set_screen_dirty(term->screen, y, y);
 }
 
@@ -135,7 +195,7 @@ void
 draw_border(struct terminal *term, struct box *box,
 	    struct color_pair *color, int width)
 {
-	static enum border_char p1[] = {
+	static const enum border_char p1[] = {
 		BORDER_SULCORNER,
 		BORDER_SURCORNER,
 		BORDER_SDLCORNER,
@@ -143,7 +203,7 @@ draw_border(struct terminal *term, struct box *box,
 		BORDER_SVLINE,
 		BORDER_SHLINE,
 	};
-	static enum border_char p2[] = {
+	static const enum border_char p2[] = {
 		BORDER_DULCORNER,
 		BORDER_DURCORNER,
 		BORDER_DDLCORNER,
@@ -151,7 +211,7 @@ draw_border(struct terminal *term, struct box *box,
 		BORDER_DVLINE,
 		BORDER_DHLINE,
 	};
-	enum border_char *p = (width > 1) ? p2 : p1;
+	const enum border_char *p = (width > 1) ? p2 : p1;
 	struct box borderbox;
 
 	set_box(&borderbox, box->x - 1, box->y - 1,
@@ -198,10 +258,91 @@ draw_border(struct terminal *term, struct box *box,
 	set_screen_dirty(term->screen, borderbox.y, borderbox.y + borderbox.height);
 }
 
+#ifdef CONFIG_UTF8
+/** Checks cells left and right to the box for broken double-width chars.
+ * Replace it with UCS_ORPHAN_CELL.
+ *
+ * @verbatim
+ * 1+---+3
+ * 1|box|##4
+ * 1|   |##4
+ * 1|   |##4
+ * 1+---+##4
+ *   2#####4
+ * 1,2,3,4 - needs to be checked, # - shadow , +,-,| - border
+ * @endverbatim
+ */
+void
+fix_dwchar_around_box(struct terminal *term, struct box *box, int border,
+		     int shadow_width, int shadow_height)
+{
+	struct screen_char *schar;
+	int height, x, y;
+
+	if (!term->utf8_cp)
+		return;
+
+	/* 1 */
+	x = box->x - border - 1;
+	if (x > 0) {
+		y = box->y - border;
+		height = box->height + 2 * border;
+
+		schar = get_char(term, x, y);
+		for (;height--; schar += term->width)
+			if (unicode_to_cell(schar->data) == 2)
+				schar->data = UCS_ORPHAN_CELL;
+	}
+
+	/* 2 */
+	x = box->x - border + shadow_width - 1;
+	if (x > 0 && x < term->width) {
+		y = box->y + border + box->height;
+		height = shadow_height;
+
+		schar = get_char(term, x, y);
+		for (;height--; schar += term->width)
+			if (unicode_to_cell(schar->data) == 2)
+				schar->data = UCS_ORPHAN_CELL;
+	}
+
+	/* 3 */
+	x = box->x + box->width + border;
+	if (x < term->width) {
+		y = box->y - border;
+		height = shadow_height;
+
+		schar = get_char(term, x, y);
+		for (;height--; schar += term->width)
+			if (schar->data == UCS_NO_CHAR)
+				schar->data = UCS_ORPHAN_CELL;
+	}
+
+	/* 4 */
+	x = box->x + box->width + border + shadow_width;
+	if (x < term->width) {
+		y = box->y - border + shadow_height;
+		height = box->height + 2 * border;
+
+		schar = get_char(term, x, y);
+		for (;height--; schar += term->width)
+			if (schar->data == UCS_NO_CHAR)
+				schar->data = UCS_ORPHAN_CELL;
+	}
+}
+#endif
+
+#ifdef CONFIG_UTF8
 void
 draw_char(struct terminal *term, int x, int y,
-	  unsigned char data, enum screen_char_attr attr,
+	  unicode_val_T data, enum screen_char_attr attr,
 	  struct color_pair *color)
+#else
+void
+draw_char(struct terminal *term, int x, int y,
+		unsigned char data, enum screen_char_attr attr,
+	  struct color_pair *color)
+#endif /* CONFIG_UTF8 */
 {
 	struct screen_char *screen_char = get_char(term, x, y);
 
@@ -277,6 +418,80 @@ draw_shadow(struct terminal *term, struct box *box,
 	draw_box(term, &dbox, ' ', 0, color);
 }
 
+#ifdef CONFIG_UTF8
+static void
+draw_text_utf8(struct terminal *term, int x, int y,
+	       unsigned char *text, int length,
+	       enum screen_char_attr attr, struct color_pair *color)
+{
+	struct screen_char *start, *pos;
+	unsigned char *end = text + length;
+	unicode_val_T data;
+
+	assert(text && length >= 0);
+	if_assert_failed return;
+
+	if (length <= 0) return;
+	if (x >= term->width) return;
+
+	data = utf8_to_unicode(&text, end);
+	if (data == UCS_NO_CHAR) return;
+	start = get_char(term, x, y);
+	if (color) {
+		start->attr = attr;
+		set_term_color(start, color, 0,
+			       get_opt_int_tree(term->spec, "colors"));
+	}
+
+	if (start->data == UCS_NO_CHAR && x - 1 > 0)
+		draw_char_data(term, x - 1, y, UCS_ORPHAN_CELL);
+
+	pos = start;
+
+	if (unicode_to_cell(data) == 2) {
+		/* Is there enough room for whole double-width char? */
+		if (x + 1 < term->width) {
+			pos->data = data;
+			pos++;
+			x++;
+
+			pos->data = UCS_NO_CHAR;
+			pos->attr = 0;
+		} else {
+			pos->data = UCS_ORPHAN_CELL;
+		}
+	} else {
+		pos->data = data;
+	}
+	pos++;
+	x++;
+
+	for (; x < term->width; x++, pos++) {
+		data = utf8_to_unicode(&text, end);
+		if (data == UCS_NO_CHAR) break;
+		if (color) copy_screen_chars(pos, start, 1);
+
+		if (unicode_to_cell(data) == 2) {
+			/* Is there enough room for whole double-width char? */
+			if (x + 1 < term->width) {
+				pos->data = data;
+
+				x++;
+				pos++;
+				pos->data = UCS_NO_CHAR;
+				pos->attr = 0;
+			} else {
+				pos->data = UCS_ORPHAN_CELL;
+			}
+		} else {
+			pos->data = data;
+		}
+	}
+	set_screen_dirty(term->screen, y, y);
+
+}
+#endif /* CONFIG_UTF8 */
+
 void
 draw_text(struct terminal *term, int x, int y,
 	  unsigned char *text, int length,
@@ -287,6 +502,15 @@ draw_text(struct terminal *term, int x, int y,
 
 	assert(text && length >= 0);
 	if_assert_failed return;
+
+	if (x >= term->width || y >= term->height) return;
+
+#ifdef CONFIG_UTF8
+	if (term->utf8_cp) {
+		draw_text_utf8(term, x, y, text, length, attr, color);
+		return;
+	}
+#endif /* CONFIG_UTF8 */
 
 	if (length <= 0) return;
 	pos = get_char(term, x, y);

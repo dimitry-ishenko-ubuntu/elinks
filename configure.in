@@ -1,14 +1,20 @@
 dnl Process this file with autoconf to produce a configure script.
 
+dnl There are two types of comments in this file.
+dnl Comments that refer to Autoconf macros begin with "dnl", and m4
+dnl discards them.  Other comments begin with "#", and they get copied
+dnl to the configure script, hopefully making it easier to read.
+
 dnl Autoconf 2.13 generates an incomplete config.h.in; see ELinks bug 936.
 dnl Autoconf 2.59 is installed in the computer that generates our nightly
 dnl snapshots, so we need to be compatible with that.
 AC_PREREQ(2.59)
-AC_INIT(src/main/main.c)
+AC_INIT
+AC_CONFIG_SRCDIR([src/main/main.c])
 AC_CONFIG_AUX_DIR(config)
 
 PACKAGE=elinks
-VERSION=0.11.4
+VERSION=0.12pre1
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Package version])
@@ -36,18 +42,18 @@ if test -e Makefile.config; then
 	AC_MSG_RESULT(done)
 fi
 
-dnl ===================================================================
-dnl Load feature configuration file and start logging features.
-dnl ===================================================================
+# ===================================================================
+# Load feature configuration file and start logging features.
+# ===================================================================
 
 features="features.conf"
 AC_CHECK_FILE("$srcdir/$features", [ . $srcdir/$features ])
 AC_CHECK_FILE("$builddir/$features", [ . $builddir/$features ])
 echo "Feature summary:" > features.log
 
-dnl ===================================================================
-dnl Checks for programs.
-dnl ===================================================================
+# ===================================================================
+# Checks for programs.
+# ===================================================================
 
 AC_PROG_CC
 AC_PROG_AWK
@@ -94,10 +100,18 @@ if test "x$CONFIG_DOC" != xno; then
       	if test "x$POD2HTML" != "x"; then
 		EL_CONFIG(CONFIG_POD2HTML, [Pod2HTML])
 	fi
+
+	AC_PATH_PROGS(DOXYGEN, "doxygen")
+	if test "x$DOXYGEN" != "x"; then
+		EL_CONFIG(CONFIG_DOXYGEN, [Doxygen])
+		api_srcdir="$(cd "$srcdir" && pwd)/src"
+		AC_SUBST(api_srcdir)
+	fi
 fi
 
 AC_SUBST(ASCIIDOC_FLAGS)
 AC_SUBST(CONFIG_ASCIIDOC)
+AC_SUBST(CONFIG_DOXYGEN)
 AC_SUBST(CONFIG_POD2HTML)
 AC_SUBST(CONFIG_XMLTO)
 AC_SUBST(CONFIG_JW)
@@ -105,18 +119,19 @@ AC_SUBST(CONFIG_JW)
 EL_CONFIG_DEPENDS(CONFIG_DOC, [CONFIG_ASCIIDOC CONFIG_XMLTO CONFIG_JW CONFIG_POD2HTML], [Documentation Tools])
 EL_CONFIG_DEPENDS(CONFIG_MANUAL, [MANUAL_ASCIIDOC MANUAL_XMLTO MANUAL_JW], [Manual Formats])
 EL_CONFIG_DEPENDS(CONFIG_MANPAGE, [MAN_ASCIIDOC MAN_XMLTO], [Man Page Formats])
+EL_CONFIG_DEPENDS(CONFIG_APIDOCS, [CONFIG_DOXYGEN], [API Documentation])
 
-dnl gcc specific options (to be continued at the bottom of configure)
-if test "x$ac_cv_prog_gcc" = "xyes"; then
-  dnl We want to see all warnings and live with none.
-  dnl We can't set up -Werror here as there may be some warnings in test
-  dnl suite of configure, and we don't want to fail them.
+# gcc specific options (to be continued at the bottom of configure)
+if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
+  # We want to see all warnings and live with none.
+  # We can't set up -Werror here as there may be some warnings in test
+  # suite of configure, and we don't want to fail them.
   CFLAGS="$CFLAGS -Wall"
 fi
 
-dnl ===================================================================
-dnl Checks for special OSes.
-dnl ===================================================================
+# ===================================================================
+# Checks for special OSes.
+# ===================================================================
 
 dnl EL_CHECK_COMPILER_MACRO(define, name, flagname)
 AC_DEFUN([EL_CHECK_COMPILER_MACROS],
@@ -124,9 +139,9 @@ AC_DEFUN([EL_CHECK_COMPILER_MACROS],
 	AC_MSG_CHECKING([for $2])
 
 	for flag in $3; do
-		AC_TRY_COMPILE(, [#ifndef $flag
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[#ifndef $flag
 kill me!
-#endif ], $1=yes, $1=no)
+#endif ]])],[$1=yes],[$1=no])
 		if test "[$]$1" = yes; then
 			EL_CONFIG([$1], [$2])
 			break
@@ -136,41 +151,42 @@ kill me!
 	AC_MSG_RESULT([$]$1)
 ])
 
-EL_CHECK_COMPILER_MACROS(CONFIG_BEOS, [BEOS], [__BEOS__])
-AC_SUBST(CONFIG_BEOS)
+EL_CHECK_COMPILER_MACROS(CONFIG_OS_BEOS, [BEOS], [__BEOS__])
+AC_SUBST(CONFIG_OS_BEOS)
 
-EL_CHECK_COMPILER_MACROS(CONFIG_RISCOS, [RISCOS], [__riscos__])
-AC_SUBST(CONFIG_RISCOS)
+EL_CHECK_COMPILER_MACROS(CONFIG_OS_RISCOS, [RISCOS], [__riscos__])
+AC_SUBST(CONFIG_OS_RISCOS)
 
-EL_CHECK_COMPILER_MACROS(CONFIG_WIN32, [WIN32], [_WIN32 __WIN32__])
-AC_SUBST(CONFIG_WIN32)
+EL_CHECK_COMPILER_MACROS(CONFIG_OS_WIN32, [WIN32], [_WIN32 __WIN32__])
+AC_SUBST(CONFIG_OS_WIN32)
 
-EL_CHECK_COMPILER_MACROS(CONFIG_OS2, [EMX], [__EMX__])
-AC_SUBST(CONFIG_OS2)
-test "$CONFIG_OS2" = yes && LDFLAGS=`echo "$LDFLAGS" | sed "s/-Zexe//g"`
+EL_CHECK_COMPILER_MACROS(CONFIG_OS_OS2, [EMX], [__EMX__])
+AC_SUBST(CONFIG_OS_OS2)
+test "$CONFIG_OS_OS2" = yes && LDFLAGS=`echo "$LDFLAGS" | sed "s/-Zexe//g"`
 
 AC_MSG_CHECKING([for UNIX])
 dnl FIXME: some depend kind of mechanism
-if test "$CONFIG_BEOS" = no && \
-   test "$CONFIG_RISCOS" = no && \
-   test "$CONFIG_WIN32" = no && \
-   test "$CONFIG_OS2" = no; then
-	EL_CONFIG(CONFIG_UNIX, [UNIX])
+if test "$CONFIG_OS_BEOS" = no && \
+   test "$CONFIG_OS_RISCOS" = no && \
+   test "$CONFIG_OS_WIN32" = no && \
+   test "$CONFIG_OS_OS2" = no; then
+	EL_CONFIG(CONFIG_OS_UNIX, [UNIX])
 else
-	CONFIG_UNIX=no
+	CONFIG_OS_UNIX=no
 fi
-AC_MSG_RESULT($CONFIG_UNIX)
-AC_SUBST(CONFIG_UNIX)
+AC_MSG_RESULT($CONFIG_OS_UNIX)
+AC_SUBST(CONFIG_OS_UNIX)
 
-dnl ===================================================================
-dnl Checks for header files.
-dnl ===================================================================
+# ===================================================================
+# Checks for header files.
+# ===================================================================
 
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 
+AC_CHECK_HEADERS(wctype.h)
 AC_CHECK_HEADERS(fcntl.h limits.h time.h unistd.h)
 AC_CHECK_HEADERS(sigaction.h)
 AC_CHECK_HEADERS(arpa/inet.h)
@@ -197,9 +213,9 @@ AC_CHECK_HEADERS(sys/un.h,
 	[CONFIG_INTERLINK=no])
 AC_SUBST(CONFIG_INTERLINK)
 
-dnl ===================================================================
-dnl Checks for typedefs, structures, and compiler characteristics.
-dnl ===================================================================
+# ===================================================================
+# Checks for typedefs, structures, and compiler characteristics.
+# ===================================================================
 
 AC_STRUCT_TM
 AC_C_CONST
@@ -223,37 +239,63 @@ AC_CHECK_SIZEOF(long, 4)
 test "x$HAVE_LONG_LONG" = xyes && AC_CHECK_SIZEOF(long long, 8)
 test "x$HAVE_OFF_T" = xyes && AC_CHECK_SIZEOF(off_t, 4)
 
-dnl Check for variadic macros
+# Check for variadic macros
 EL_CHECK_CODE([variadic macros], HAVE_VARIADIC_MACROS,
 		[#include <stdio.h>
 		 #define a(b,c...) printf(b,##c)],
                 [a("foo");a("%s","bar");a("%s%s","baz","quux");])
 
-dnl Check for -rdynamic
-dnl FIXME: This check doesn't work. Something to do with the compiler
-dnl happily ignoring it and stderr not being checked for error messages.
+# Check for -rdynamic
+#
+# gcc -rdynamic calls ld -export-dynamic, which adds all symbols of
+# the executable to its dynamic symbol table.  ELinks uses this for
+# two purposes:
+#
+# 1. If ELinks detects a bug, it can try to display a backtrace by
+#    calling backtrace_symbols_fd() in the GNU libc.  The glibc-2.3.6
+#    manual states users of GNU ld must pass -rdynamic to make the
+#    symbols available to the program.
+#
+# 2. It would eventually be nice to dynamically load shared
+#    libraries as plugins (bug 73).  The plugins must be able to
+#    call ELinks functions.  This can be implemented either by
+#    registering all callable functions in ELinks-specific data
+#    structures, or by letting the dynamic linker handle them.
+#    The latter way requires something equivalent to -rdynamic.
+#
+# Because backtraces are not needed for correct operation, and bug
+# 73 is not yet being fixed, the configure script and makefiles
+# should not complain to the user if they find that -rdynamic does
+# not work.  Besides, it was reported at elinks-users on 2006-09-12
+# that gcc-3.4.2 with "ld: Software Generation Utilities - Solaris
+# Link Editors: 5.8-1.284" on Sun Solaris 8 Sparc does not support
+# -rdynamic but does something equivalent automatically.  (This was
+# tested with "nm -D elinks | grep redraw_from_window".)
+#
+# FIXME: This check doesn't work. Something to do with the compiler
+# happily ignoring it and stderr not being checked for error messages.
 AC_MSG_CHECKING([for -rdynamic])
 LDFLAGS_X="$LDFLAGS"
 LDFLAGS="$LDFLAGS -rdynamic"
-AC_TRY_LINK([], [], have_rdynamic=yes, have_rdynamic=no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[have_rdynamic=yes],[have_rdynamic=no])
 test "$have_rdynamic" = no && LDFLAGS="$LDFLAGS_X"
 AC_MSG_RESULT($have_rdynamic)
 
-dnl ===================================================================
-dnl Check for POSIX <regex.h>
-dnl ===================================================================
+# ===================================================================
+# Check for POSIX <regex.h>
+# ===================================================================
 
 EL_CHECK_SYS_TYPE(regex_t, HAVE_REGEX_H, [#include <regex.h>])
 
-dnl ===================================================================
-dnl Checks for library functions.
-dnl ===================================================================
+# ===================================================================
+# Checks for library functions.
+# ===================================================================
 
 AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS(gethostbyaddr herror strerror)
+AC_CHECK_FUNCS(atoll gethostbyaddr herror strerror)
 AC_CHECK_FUNCS(popen uname access chmod alarm timegm mremap)
 AC_CHECK_FUNCS(strcasecmp strncasecmp strcasestr strstr strchr strrchr)
 AC_CHECK_FUNCS(memmove bcopy stpcpy strdup index isdigit mempcpy memrchr)
@@ -262,15 +304,15 @@ AC_CHECK_FUNCS(getifaddrs getpwnam inet_pton inet_ntop)
 AC_CHECK_FUNCS(fflush fsync fseeko ftello sigaction)
 AC_CHECK_FUNCS(gettimeofday clock_gettime)
 
-AC_HAVE_FUNCS(cygwin_conv_to_full_win32_path)
+AC_CHECK_FUNCS([cygwin_conv_to_full_win32_path])
 
 AC_CHECK_FUNCS(setenv putenv, HAVE_SETENV_OR_PUTENV=yes)
 AC_CHECK_FUNCS(getuid, HAVE_GETUID=yes)
 AC_CHECK_FUNCS(geteuid, HAVE_GETEUID=yes)
 
-dnl These aren't probably needed now, as they are commented in links.h.
-dnl I've no idea about their historical background, but I keep them here
-dnl just in the case they will help later. --pasky
+# These aren't probably needed now, as they are commented in links.h.
+# I've no idea about their historical background, but I keep them here
+# just in the case they will help later. --pasky
 AC_CHECK_FUNCS(getpid, HAVE_GETPID=yes)
 AC_CHECK_FUNCS(setpgid getpgid setpgrp getpgrp)
 AC_CHECK_FUNCS(raise, HAVE_RAISE=yes)
@@ -278,28 +320,26 @@ AC_CHECK_FUNCS(kill, HAVE_KILL=yes)
 
 if test x"$HAVE_RAISE" = x; then
 	if test x"$HAVE_KILL" = x || test x"$HAVE_GETPID" = x; then
-		AC_ERROR([Unable to emulate raise()])
+		AC_MSG_ERROR([Unable to emulate raise()])
 	fi
 fi
 
 AC_CACHE_CHECK([for __va_copy],el_cv_HAVE_VA_COPY,[
-AC_TRY_LINK([#include <stdarg.h>
-va_list ap1,ap2;], [__va_copy(ap1,ap2);],
-el_cv_HAVE_VA_COPY=yes,el_cv_HAVE_VA_COPY=no)])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>
+va_list ap1,ap2;]], [[__va_copy(ap1,ap2);]])],[el_cv_HAVE_VA_COPY=yes],[el_cv_HAVE_VA_COPY=no])])
 if test x"$el_cv_HAVE_VA_COPY" = x"yes"; then
 	EL_DEFINE(HAVE_VA_COPY, __va_copy)
 fi
 
 AC_CACHE_CHECK([for sysconf(_SC_PAGE_SIZE)],el_cv_HAVE_SC_PAGE_SIZE,[
-AC_TRY_LINK([#include <unistd.h>
-], [int page_size = sysconf(_SC_PAGE_SIZE);],
-el_cv_HAVE_SC_PAGE_SIZE=yes,el_cv_HAVE_SC_PAGE_SIZE=no)])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>
+]], [[int page_size = sysconf(_SC_PAGE_SIZE);]])],[el_cv_HAVE_SC_PAGE_SIZE=yes],[el_cv_HAVE_SC_PAGE_SIZE=no])])
 if test x"$el_cv_HAVE_SC_PAGE_SIZE" = x"yes"; then
 	EL_DEFINE(HAVE_SC_PAGE_SIZE, _SC_PAGE_SIZE)
 fi
 
 AC_CACHE_CHECK([for C99 vsnprintf],el_cv_HAVE_C99_VSNPRINTF,[
-AC_TRY_RUN([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -331,19 +371,18 @@ void foo(const char *format, ...) {
        exit(0);
 }
 main() { foo("hello\n"); }
-],
-el_cv_HAVE_C99_VSNPRINTF=yes,el_cv_HAVE_C99_VSNPRINTF=no,el_cv_HAVE_C99_VSNPRINTF=cross)])
+]])],[el_cv_HAVE_C99_VSNPRINTF=yes],[el_cv_HAVE_C99_VSNPRINTF=no],[el_cv_HAVE_C99_VSNPRINTF=cross])])
 if test x"$el_cv_HAVE_C99_VSNPRINTF" = x"yes"; then
 	EL_DEFINE(HAVE_C99_VSNPRINTF, [C99 compliant vsnprintf()])
 fi
 
-AC_CHECK_LIB(dl, dlopen) # OpenSSL and Lua frequently needs it
+# OpenSSL and Lua frequently need dlopen
+AC_CHECK_LIB(dl, dlopen)
 
-dnl ===================================================================
-dnl Checks for libraries.
-dnl ===================================================================
+# ===================================================================
+# Checks for libraries.
+# ===================================================================
 
-dnl Replace `main' with a function in -lsocket:
 AC_CHECK_FUNC(socket, cf_result=yes, cf_result=no)
 if test "$cf_result" = no; then
 	AC_CHECK_LIB(socket, socket)
@@ -364,18 +403,18 @@ if test "$cf_result" = no; then
 	fi
 fi
 
-dnl ===================================================================
-dnl Checks for packaging specific options.
-dnl ===================================================================
+# ===================================================================
+# Checks for packaging specific options.
+# ===================================================================
 
 AC_ARG_WITH(xterm, [  --with-xterm            how to invoke the X terminal emulator],
             [ if test "$withval" != no && test "$withval" != yes; then
 		AC_DEFINE_UNQUOTED(XTERM, "$withval", [How to invoke XTerm])
 	      fi ])
 
-dnl ===================================================================
-dnl Checks for a libraries, optional even if installed.
-dnl ===================================================================
+# ===================================================================
+# Checks for a libraries, optional even if installed.
+# ===================================================================
 
 dnl EL_CHECK_OPTIONAL_LIBRARY(define, name, header, lib, function)
 AC_DEFUN([EL_CHECK_OPTIONAL_LIBRARY],
@@ -386,9 +425,22 @@ AC_DEFUN([EL_CHECK_OPTIONAL_LIBRARY],
 		AC_MSG_RESULT(yes)
 		EL_SAVE_FLAGS
 		if test -n "$withval" && test -d "$withval"; then
-			CFLAGS="$CFLAGS -I$withval/include";
-			CPPFLAGS="$CPPFLAGS -I$withval/include";
-			LDFLAGS="$LDFLAGS -L$withval/lib";
+			# Be a little more careful when setting
+			# include and lib directories. This way
+			# $withval will work when includes are
+			# there but the library is in the common
+			# /usr/lib ... Does the right thing when
+			# looking for gc on Debian.
+			if test -d "$withval/include"; then
+				CFLAGS="$CFLAGS -I$withval/include"
+				CPPFLAGS="$CPPFLAGS -I$withval/include"
+			else
+				CFLAGS="$CFLAGS -I$withval"
+				CPPFLAGS="$CPPFLAGS -I$withval"
+			fi
+			if test -d "$withval/lib"; then
+				LDFLAGS="$LDFLAGS -L$withval/lib"
+			fi
 		fi
 
 		AC_CHECK_HEADERS([$3], [$1=yes], [$1=no; break;])
@@ -428,7 +480,12 @@ AC_DEFUN([EL_CONFIG_OPTIONAL_LIBRARY],
 EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_GPM, gpm, gpm.h, gpm, Gpm_Open,
 	[  --without-gpm           disable gpm (mouse) support])
 
-EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_GZIP, zlib, zlib.h, z, gzdopen,
+# ELinks calls deflateInit2 with windowBits = MAX_WBITS | 32, to
+# enable automatic decoding of both zlib and gzip headers.  This
+# feature was added in zlib 1.2.0.2; earlier versions return an error.
+# The gzclearerr function was also added in zlib 1.2.0.2, so check for
+# that, even though ELinks does not actually call gzclearerr.
+EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_GZIP, zlib, zlib.h, z, gzclearerr,
 	[  --without-zlib          disable zlib support])
 
 EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_BZIP2, bzlib, bzlib.h, bz2, BZ2_bzReadOpen,
@@ -437,9 +494,41 @@ EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_BZIP2, bzlib, bzlib.h, bz2, BZ2_bzReadOpen,
 EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_IDN, idn, idna.h, idn, stringprep_check_version,
 	[  --without-idn           disable international domain names support])
 
-dnl ===================================================================
-dnl Bookmark and XBEL support
-dnl ===================================================================
+if test "x{with_gc}" != xno; then
+	EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_GC, gc, gc.h, gc, GC_init,
+		[  --with-gc               enable Boehm's garbage collector])
+fi
+
+EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_LZMA, lzma, lzma.h, lzma, lzma_code,
+	[  --without-lzma          disable lzma encoding support])
+
+# ===================================================================
+# Check for GSSAPI, optional even if installed.
+# ===================================================================
+
+enable_gssapi="no";
+
+AC_ARG_WITH(gssapi, [  --with-gssapi           enable GSSAPI support],
+            [ if test "x$withval" != xno; then enable_gssapi=yes; fi ])
+
+AC_MSG_CHECKING([for GSSAPI])
+
+if test "$enable_gssapi" = "yes"; then
+	AC_MSG_RESULT(yes)
+	GSSAPI_CFLAGS=`krb5-config --cflags gssapi`
+	GSSAPI_LIBS=`krb5-config --libs gssapi`
+	CFLAGS="$GSSAPI_CFLAGS $CFLAGS"
+	LIBS="$GSSAPI_LIBS $LIBS"
+ 	EL_CONFIG(CONFIG_GSSAPI, [GssApi])
+else
+	AC_MSG_RESULT(no)
+fi
+
+AC_SUBST(CONFIG_GSSAPI)
+
+# ===================================================================
+# Bookmark and XBEL support
+# ===================================================================
 
 EL_SAVE_FLAGS
 
@@ -467,38 +556,86 @@ if test "$CONFIG_XBEL_BOOKMARKS" != yes; then
 	EL_RESTORE_FLAGS
 fi
 
-dnl ===================================================================
-dnl Checks for BSD sysmouse
-dnl ===================================================================
+# ===================================================================
+# Checks for BSD sysmouse
+# ===================================================================
 
 HAVE_SYSMOUSE_HEADER="no"
 
 # Either of these header files provides the (same) sysmouse interface
 AC_CHECK_HEADERS(sys/consio.h machine/console.h, [HAVE_SYSMOUSE_HEADER="yes"])
 
-dnl ===================================================================
-dnl Checks for OS/2
-dnl ===================================================================
+# ===================================================================
+# Checks for OS/2
+# ===================================================================
 
-if test "$CONFIG_OS2" = yes; then
-	EL_CONFIG_OS2
+if test "$CONFIG_OS_OS2" = yes; then
+	EL_CONFIG_OS_OS2
 fi
 
-dnl ===================================================================
-dnl Checks for Win32
-dnl ===================================================================
+# ===================================================================
+# Checks for Win32
+# ===================================================================
 
-if test "$CONFIG_WIN32" = yes; then
-	EL_CONFIG_WIN32
+if test "$CONFIG_OS_WIN32" = yes; then
+	EL_CONFIG_OS_WIN32
 fi
 
-dnl ===================================================================
-dnl Check for SpiderMonkey, optional even if installed.
-dnl ===================================================================
+# ===================================================================
+# Check for SEE (Simple Ecmascript Engine)
+# ===================================================================
+AC_ARG_WITH(see, [  --with-see              enable Simple Ecmascript Engine (SEE) support],
+            [ if test "x$withval" != xno; then enable_see=yes; fi ])
+
+# The following is probably bad, ugly and so on. Stolen from Guile's (1.4)
+# SEE_FLAGS but I really don't want to require people to have Guile in order
+# to compile CVS. Also, the macro seems to be really stupid regarding searching
+# for Guile in $PATH etc. --pasky
+
+CONFIG_ECMASCRIPT_SEE=no
+
+if test "$enable_see" = "yes"; then
+	if test -d "$withval"; then
+		SEE_PATH="$withval:$PATH"
+	else
+		SEE_PATH="$PATH"
+	fi
+
+	AC_PATH_PROG(SEE_CONFIG, libsee-config, no, $SEE_PATH)
+	AC_MSG_CHECKING([for SEE (2.0.1131 or later)])
+	if test "$SEE_CONFIG" != no; then
+		EL_SAVE_FLAGS
+		SEE_LIBS="`$SEE_CONFIG --libs`"
+		SEE_CFLAGS="`$SEE_CONFIG --cppflags`"
+		CPPFLAGS="$SEE_CFLAGS $CPPFLAGS"
+		LIBS="$SEE_LIBS $LIBS_X"
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <see/see.h>]], [[#if SEE_VERSION_API_MAJOR < 2
+			#error SEE too old
+			#endif
+		]])],[cf_result=yes],[cf_result=no])
+		EL_RESTORE_FLAGS
+		if test "$cf_result" = yes; then
+			LIBS="$SEE_LIBS $LIBS"
+			EL_CONFIG(CONFIG_ECMASCRIPT_SEE, [SEE])
+			AC_SUBST(SEE_CFLAGS)
+		fi
+		AC_MSG_RESULT($cf_result)
+	else
+		if test -n "$withval" && test "x$withval" != xno; then
+			AC_MSG_ERROR([SEE not found])
+		else
+			AC_MSG_WARN([SEE support disabled])
+		fi
+	fi
+fi
+
+# ===================================================================
+# Check for SpiderMonkey, optional even if installed.
+# ===================================================================
 
 AC_ARG_WITH(spidermonkey, [  --without-spidermonkey  disable SpiderMonkey Mozilla JavaScript engine support],
             [if test "$withval" = no; then disable_spidermonkey=yes; fi])
-AC_MSG_CHECKING([for SpiderMonkey])
+AC_MSG_CHECKING([for SpiderMonkey (1.5 RC3a or later)])
 
 EL_SAVE_FLAGS
 cf_result=no
@@ -510,22 +647,17 @@ if test -z "$disable_spidermonkey"; then
 	for spidermonkeydir in "$withval" "" /usr /usr/local /opt/spidermonkey /opt/js; do
 		for spidermonkeyinclude in "/include" "/include/js" "/include/smjs" "/include/mozjs"; do
 			for spidermonkeylib in js smjs mozjs; do
-				if test "$cf_result" = no; then
-					SPIDERMONKEY_LIBS="-l$spidermonkeylib"
-
-					if test ! -z "$spidermonkeydir"; then
-						SPIDERMONKEY_LIBS="-L$spidermonkeydir/lib $SPIDERMONKEY_LIBS"
-						SPIDERMONKEY_CFLAGS="-I$spidermonkeydir$spidermonkeyinclude"
-					fi
+				if test "$cf_result" = no &&
+				   test -f "$spidermonkeydir$spidermonkeyinclude/jsapi.h"; then
+					SPIDERMONKEY_LIBS="-L$spidermonkeydir/lib -l$spidermonkeylib"
+					SPIDERMONKEY_CFLAGS="-I$spidermonkeydir$spidermonkeyinclude"
 
 					LIBS="$SPIDERMONKEY_LIBS $LIBS_X"
 					CFLAGS="$CFLAGS_X $SPIDERMONKEY_CFLAGS"
 					CPPFLAGS="$CPPFLAGS_X $SPIDERMONKEY_CFLAGS"
 
-					AC_TRY_LINK([#define XP_UNIX
-						     #include <jsapi.h>],
-						     [JS_GetImplementationVersion()],
-						     cf_result=yes, cf_result=no)
+					AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define XP_UNIX
+						     #include <jsapi.h>]], [[JS_GetReservedSlot(NULL, NULL, 0, NULL)]])],[cf_result=yes],[cf_result=no])
 				fi
 			done
 		done
@@ -533,25 +665,48 @@ if test -z "$disable_spidermonkey"; then
 fi
 
 AC_MSG_RESULT($cf_result)
+CONFIG_SPIDERMONKEY="$cf_result"
+EL_RESTORE_FLAGS
 
-if test "$cf_result" != yes; then
-	EL_RESTORE_FLAGS
+if test "x$CONFIG_SPIDERMONKEY" = xyes &&
+   test "x$CONFIG_ECMASCRIPT_SEE" != xyes; then
+	EL_CONFIG(CONFIG_ECMASCRIPT_SMJS, [SpiderMonkey document scripting])
 else
-	EL_CONFIG(CONFIG_SPIDERMONKEY, [SpiderMonkey])
-
-	CFLAGS="$CFLAGS_X"
-	AC_SUBST(SPIDERMONKEY_LIBS)
-	AC_SUBST(SPIDERMONKEY_CFLAGS)
+	CONFIG_ECMASCRIPT_SMJS=no
 fi
 
-AC_SUBST(CONFIG_SPIDERMONKEY)
+EL_CONFIG_DEPENDS(CONFIG_ECMASCRIPT, [CONFIG_ECMASCRIPT_SEE CONFIG_ECMASCRIPT_SMJS], [ECMAScript (JavaScript)])
+AC_SUBST(CONFIG_ECMASCRIPT_SEE)
+AC_SUBST(CONFIG_ECMASCRIPT_SMJS)
 
-EL_CONFIG_DEPENDS(CONFIG_ECMASCRIPT, [CONFIG_SPIDERMONKEY], [ECMAScript (JavaScript)])
 
+# ===================================================================
+# Optional Spidermonkey-based ECMAScript browser scripting
+# ===================================================================
 
-dnl ===================================================================
-dnl Check for Guile, optional even if installed.
-dnl ===================================================================
+AC_ARG_ENABLE(sm-scripting,
+	      [  --disable-sm-scripting  ECMAScript browser scripting (requires Spidermonkey)],
+	      [if test "$enableval" != no; then enableval="yes"; fi
+	       CONFIG_SCRIPTING_SPIDERMONKEY="$enableval";])
+
+if test "x$CONFIG_SPIDERMONKEY" = xyes &&
+   test "x$CONFIG_SCRIPTING_SPIDERMONKEY" = xyes; then
+	EL_CONFIG(CONFIG_SCRIPTING_SPIDERMONKEY, [SpiderMonkey])
+else
+	CONFIG_SCRIPTING_SPIDERMONKEY=no
+fi
+
+if test "x$CONFIG_ECMASCRIPT_SMJS" = xyes ||
+   test "x$CONFIG_SCRIPTING_SPIDERMONKEY" = xyes; then
+	LIBS="$LIBS $SPIDERMONKEY_LIBS"
+	AC_SUBST(SPIDERMONKEY_LIBS)
+	AC_SUBST(SPIDERMONKEY_CFLAGS)
+	AC_SUBST(CONFIG_SPIDERMONKEY)
+fi
+
+# ===================================================================
+# Check for Guile, optional even if installed.
+# ===================================================================
 
 enable_guile="no";
 
@@ -584,8 +739,7 @@ if test "$enable_guile" = "yes"; then
 		GUILE_LIBS="`guile-config link`"
 		GUILE_CFLAGS="`guile-config compile`"
 		LIBS="$GUILE_LIBS $LIBS"
-		CPPFLAGS="$CPPFLAGS $GUILE_CFLAGS"
-		EL_CONFIG(CONFIG_GUILE, [Guile])
+		EL_CONFIG(CONFIG_SCRIPTING_GUILE, [Guile])
 		AC_SUBST(GUILE_CFLAGS)
 		cat <<EOF
 ***********************************************************************
@@ -607,9 +761,9 @@ else
 	AC_MSG_RESULT(no);
 fi
 
-dnl ===================================================================
-dnl Check for Perl
-dnl ===================================================================
+# ===================================================================
+# Check for Perl
+# ===================================================================
 enable_perl="no";
 
 AC_ARG_WITH(perl, [  --with-perl             enable Perl support],
@@ -634,101 +788,103 @@ if test "$enable_perl" = "yes"; then
 	LIBS="$PERL_LIBS $LIBS"
 	CFLAGS="$PERL_CFLAGS $CFLAGS"
 	CPPFLAGS="$CPPFLAGS $PERL_CFLAGS"
-	AC_TRY_LINK([
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <EXTERN.h>
 #include <perl.h>
 #include <perlapi.h>
-],
-		    [PerlInterpreter *my_perl = perl_alloc();],
-		    cf_result=yes, cf_result=no)
+]], [[PerlInterpreter *my_perl = perl_alloc();]])],[cf_result=yes],[cf_result=no])
 fi
 
 if test "$cf_result"; then AC_MSG_RESULT($cf_result); fi
 
 AC_MSG_CHECKING([whether POPpx works without an n_a variable])
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <EXTERN.h>
 #include <perl.h>
 extern PerlInterpreter *my_perl;
-],
-	[dSP; (void) POPpx;],
-	[AC_MSG_RESULT([yes])
+]], [[dSP; (void) POPpx;]])],[AC_MSG_RESULT([yes])
 AC_DEFINE([CONFIG_PERL_POPPX_WITHOUT_N_A], [1],
 		[Define if using Perl 5.8.8 or later, where the "POPpx" macro
-no longer needs an "n_a" variable like it did in 5.8.7])],
-	[AC_MSG_RESULT([no])])
+no longer needs an "n_a" variable like it did in 5.8.7])],[AC_MSG_RESULT([no])])
 
 if test "$cf_result" != "yes"; then
 	EL_RESTORE_FLAGS
 else
-	EL_CONFIG(CONFIG_PERL, [Perl])
+	EL_CONFIG(CONFIG_SCRIPTING_PERL, [Perl])
 
 	CFLAGS="$CFLAGS_X"
+	CPPFLAGS="$CPPFLAGS_X"
 	AC_SUBST(PERL_LIBS)
 	AC_SUBST(PERL_CFLAGS)
 fi
 
-dnl ===================================================================
-dnl Check for Python
-dnl ===================================================================
+# ===================================================================
+# Check for Python
+# ===================================================================
 enable_python="no";
 
-AC_ARG_WITH(python, [  --with-python           enable Python support],
-            [
-if test "$withval" = yes; then
-	# FIXME: If withval is a valid directory append it to PATH
-	# so that you can specify one of several Python installations.
-	withval="";
-	enable_python=yes;
-	cat <<EOF
+AC_ARG_WITH(python, [  --with-python=[DIR]     enable Python support],
+            [ if test "x$withval" != xno; then enable_python=yes; fi ])
+
+EL_SAVE_FLAGS
+cf_result=no
+
+AC_MSG_CHECKING([for Python])
+
+if test "$enable_python" = "yes"; then
+	AC_MSG_RESULT(yes);
+
+	if test -d "$withval"; then
+		PYTHON_PATH="$withval:$PATH"
+	else
+		PYTHON_PATH="$PATH"
+	fi
+
+	AC_PATH_PROG(PYTHON, python, no, $PYTHON_PATH)
+
+	if test "$PYTHON" != no; then
+		cf_result="yes";
+
+		PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; print "-I%s -I%s" % (sysconfig.get_python_inc(), sysconfig.get_python_inc(plat_specific=True))'`"
+		PYTHON_LIBS="`$PYTHON -c 'from distutils import sysconfig; var = sysconfig.get_config_var; print "%s %s %s -L%s -lpython%s" % (var("LINKFORSHARED"), var("LIBS"), var("SYSLIBS"), var("LIBPL"), var("VERSION"))'`"
+		LIBS="$PYTHON_LIBS $LIBS"
+		CPPFLAGS="$CPPFLAGS $PYTHON_CFLAGS"
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <Python.h>]], [[Py_Initialize();]])],[cf_result=yes],[cf_result=no])
+
+		if test "$cf_result" != "yes"; then
+			EL_RESTORE_FLAGS
+		else
+			EL_CONFIG(CONFIG_SCRIPTING_PYTHON, [Python])
+			AC_SUBST(PYTHON_LIBS)
+			AC_SUBST(PYTHON_CFLAGS)
+			CPPFLAGS="$CPPFLAGS_X"
+			cat <<EOF
 ***********************************************************************
 The Python support is incomplete and not so well integrated to ELinks
-yet. That means, e.g.., that you have no Python console and there might
+yet. That means, e.g., that you have no Python console and there might
 not be all the necessary hooks. Also, the Python interface is not too
 well tested (success stories heartily welcomed!).
 ***********************************************************************
 EOF
-fi
-	    ])
-
-AC_MSG_CHECKING([for Python])
-
-cf_result=no
-
-EL_SAVE_FLAGS
-
-if test "$enable_python" = "yes"; then
-	PYTHON_LIBS="-lpython`python -c 'from distutils import sysconfig; print sysconfig.get_config_var("VERSION")' 2> /dev/null`"
-	PYTHON_CFLAGS="-I`python -c 'from distutils import sysconfig; print sysconfig.get_python_inc()' 2> /dev/null`"
-	LIBS="$PYTHON_LIBS $LIBS"
-	CFLAGS="$PYTHON_CFLAGS $CFLAGS"
-	CPPFLAGS="$CPPFLAGS $PYTHON_CFLAGS"
-	AC_TRY_LINK([
-#include <Python.h>
-],
-		    [Py_Initialize();],
-		    cf_result=yes, cf_result=no)
-fi
-
-if test "$cf_result" != "yes"; then
-	EL_RESTORE_FLAGS
+		fi
+	else
+		if test -n "$withval" && test "x$withval" != xno; then
+			AC_MSG_ERROR([Python not found])
+		else
+			AC_MSG_WARN([Python support disabled])
+		fi
+	fi
 else
-	EL_CONFIG(CONFIG_PYTHON, [Python])
-
-	CFLAGS="$CFLAGS_X"
-	AC_SUBST(PYTHON_LIBS)
-	AC_SUBST(PYTHON_CFLAGS)
+	AC_MSG_RESULT(no);
 fi
 
-if test "$cf_result"; then AC_MSG_RESULT($cf_result); fi
 
+# ===================================================================
+# Check for Lua, optional even if installed.
+# ===================================================================
 
-dnl ===================================================================
-dnl Check for Lua, optional even if installed.
-dnl ===================================================================
-
-dnl Do this the long way, as FreeBSD reportedly needs -L<dir> for
-dnl anything other than /usr/lib, and Lua is very often in /usr/local/lib.
+# Do this the long way, as FreeBSD reportedly needs -L<dir> for
+# anything other than /usr/lib, and Lua is very often in /usr/local/lib.
 
 AC_ARG_WITH(lua, [  --without-lua           disable Lua support],
             [if test "$withval" = no; then disable_lua=yes; fi])
@@ -743,30 +899,25 @@ if test -z "$disable_lua"; then
 	fi
 	for luadir in "$withval" "" /usr /usr/local; do
 		for suffix in "" 50; do
-			if test "$cf_result" = no; then
-				LUA_LIBS="-llua$suffix -llualib$suffix -lm"
-
-				if test ! -z "$luadir"; then
-					LUA_LIBS="-L$luadir/lib $LUA_LIBS"
-					LUA_CFLAGS="-I$luadir/include -I$luadir/include/lua$suffix"
-				fi
+			if test "$cf_result" = no && ( test -f "$luadir/include/lua.h" || \
+			   test -f "$luadir/include/lua$suffix/lua.h" ) ; then
+				LUA_LIBS="-L$luadir/lib -llua$suffix -llualib$suffix -lm"
+				LUA_CFLAGS="-I$luadir/include -I$luadir/include/lua$suffix"
 
 				LIBS="$LUA_LIBS $LIBS_X"
 				CFLAGS="$CFLAGS_X $LUA_CFLAGS"
 				CPPFLAGS="$CPPFLAGS_X $LUA_CFLAGS"
 
 				# Check that it is a compatible Lua version
-				AC_TRY_LINK([	#include <lua.h>
-						#include <lualib.h>],
-					    [	lua_State *L = lua_open();
+				AC_LINK_IFELSE([AC_LANG_PROGRAM([[	#include <lua.h>
+						#include <lualib.h>]], [[	lua_State *L = lua_open();
 						luaopen_base(L);
 						luaopen_table(L);
 						luaopen_io(L);
 						luaopen_string(L);
 						luaopen_math(L);
 						lua_pushboolean(L, 1);
-						lua_close(L);],
-					    cf_result=yes, cf_result=no)
+						lua_close(L);]])],[cf_result=yes],[cf_result=no])
 			fi
 		done
 	done
@@ -777,59 +928,44 @@ AC_MSG_RESULT($cf_result)
 if test "$cf_result" != yes; then
 	EL_RESTORE_FLAGS
 else
-	EL_CONFIG(CONFIG_LUA, [Lua])
+	EL_CONFIG(CONFIG_SCRIPTING_LUA, [Lua])
 	AC_CHECK_HEADERS(lauxlib.h)
 
 	CFLAGS="$CFLAGS_X"
+	CPPFLAGS="$CPPFLAGS_X"
 	AC_SUBST(LUA_LIBS)
 	AC_SUBST(LUA_CFLAGS)
 fi
 
 
-dnl ===================================================================
-dnl Check for Ruby, optional even if installed.
-dnl ===================================================================
+# ===================================================================
+# Check for Ruby, optional even if installed.
+# ===================================================================
 
-EL_CONFIG_RUBY
+EL_CONFIG_SCRIPTING_RUBY
 
-dnl ===================================================================
-dnl Optional Spidermonkey-based ECMAScript browser scripting
-dnl ===================================================================
+# ===================================================================
+# Setup global scripting
+# ===================================================================
 
-AC_ARG_ENABLE(sm-scripting,
-	      [  --disable-sm-scripting  ECMAScript browser scripting (requires Spidermonkey)],
-	      [if test "$enableval" != no; then enableval="yes"; fi
-	       CONFIG_SM_SCRIPTING="$enableval";])
-
-if test "x$CONFIG_SPIDERMONKEY" = xyes &&
-   test "x$CONFIG_SM_SCRIPTING" = xyes; then
-	EL_CONFIG(CONFIG_SM_SCRIPTING, [SpiderMonkey])
-else
-	CONFIG_SM_SCRIPTING=no
-fi
-
-dnl ===================================================================
-dnl Setup global scripting
-dnl ===================================================================
-
-EL_CONFIG_DEPENDS(CONFIG_SCRIPTING, [CONFIG_GUILE CONFIG_LUA CONFIG_PERL CONFIG_PYTHON CONFIG_RUBY CONFIG_SM_SCRIPTING], [Browser scripting])
-AC_SUBST(CONFIG_GUILE)
-AC_SUBST(CONFIG_LUA)
-AC_SUBST(CONFIG_PERL)
-AC_SUBST(CONFIG_PYTHON)
-AC_SUBST(CONFIG_RUBY)
-AC_SUBST(CONFIG_SM_SCRIPTING)
+EL_CONFIG_DEPENDS(CONFIG_SCRIPTING, [CONFIG_SCRIPTING_GUILE CONFIG_SCRIPTING_LUA CONFIG_SCRIPTING_PERL CONFIG_SCRIPTING_PYTHON CONFIG_SCRIPTING_RUBY CONFIG_SCRIPTING_SPIDERMONKEY], [Browser scripting])
+AC_SUBST(CONFIG_SCRIPTING_GUILE)
+AC_SUBST(CONFIG_SCRIPTING_LUA)
+AC_SUBST(CONFIG_SCRIPTING_PERL)
+AC_SUBST(CONFIG_SCRIPTING_PYTHON)
+AC_SUBST(CONFIG_SCRIPTING_RUBY)
+AC_SUBST(CONFIG_SCRIPTING_SPIDERMONKEY)
 AC_SUBST(CONFIG_SCRIPTING)
 
 
-dnl ===================================================================
-dnl Check for SSL support.
-dnl ===================================================================
+# ===================================================================
+# Check for SSL support.
+# ===================================================================
 
-dnl We by default use OpenSSL, and we always prefer it. However, when GNUTLS
-dnl is enabled, we won't try to use OpenSSL anymore.
+# We by default use OpenSSL, and we always prefer it. However, when GNUTLS
+# is enabled, we won't try to use OpenSSL anymore.
 
-dnl For wiping SSL hooks..
+# For wiping SSL hooks..
 #ifdef CONFIG_SSL
 
 disable_openssl=""
@@ -851,7 +987,7 @@ AC_ARG_WITH(openssl, [  --without-openssl       disable OpenSSL support],
 AC_ARG_WITH(openssl, [  --with-openssl[=DIR]    enable OpenSSL support (default)])
 openssl_withval="$withval"
 
-dnl ---- OpenSSL
+# ---- OpenSSL
 
 AC_MSG_CHECKING([for OpenSSL])
 
@@ -879,13 +1015,9 @@ else
 			else
 				LIBS="-lssl -lcrypto $LIBS_X"
 			fi
-			AC_TRY_LINK([#include <openssl/ssl.h>],
-				    [OpenSSL_add_all_algorithms()],
-				    cf_result=yes, cf_result=no)
+			AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]], [[OpenSSL_add_all_algorithms()]])],[cf_result=yes],[cf_result=no])
 			if test "$cf_result" != yes; then
-				AC_TRY_LINK([#include <openssl/ssl.h>],
-					    [SSLeay_add_ssl_algorithms()],
-					    cf_result=yes, cf_result=no)
+				AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]], [[SSLeay_add_ssl_algorithms()]])],[cf_result=yes],[cf_result=no])
 			fi
 		fi
 	done
@@ -906,7 +1038,7 @@ fi
 AC_MSG_RESULT($cf_result)
 
 CONFIG_GNUTLS_OPENSSL_COMPAT=no
-dnl ---- GNU TLS
+# ---- GNU TLS
 dnl We can't have AC_MSG_CHECKING here, because AC_PATH_PROG prints its own and
 dnl it looks ugly then.
 
@@ -943,10 +1075,8 @@ else
 			# Verify if it's really usable.  gnutls_session was
 			# renamed to gnutls_session_t before GNU TLS 1.2.0
 			# (on 2004-06-13); ELinks now requires this.
-			AC_TRY_LINK([#include <gnutls/gnutls.h>],
-				    [gnutls_session_t dummy;
-				     gnutls_check_version(NULL)],
-				    cf_result=yes, cf_result=no)
+			AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]], [[gnutls_session_t dummy;
+				     gnutls_check_version(NULL)]])],[cf_result=yes],[cf_result=no])
 		fi
 
 		if test "$cf_result" = yes; then
@@ -973,7 +1103,7 @@ fi
 AC_MSG_CHECKING([for GNU TLS (1.2 or later)])
 AC_MSG_RESULT($cf_result)
 
-dnl Final SSL setup
+# Final SSL setup
 
 EL_CONFIG_DEPENDS(CONFIG_SSL, [CONFIG_OPENSSL CONFIG_GNUTLS], [SSL])
 AC_SUBST(CONFIG_GNUTLS_OPENSSL_COMPAT)
@@ -985,9 +1115,9 @@ AC_SUBST(CONFIG_GNUTLS)
 AC_MSG_CHECKING([whether to be or not to be])
 AC_MSG_RESULT([needs to be determined experimentally])
 
-dnl ===================================================================
-dnl Check for IPv6 support and related functions.
-dnl ===================================================================
+# ===================================================================
+# Check for IPv6 support and related functions.
+# ===================================================================
 
 EL_CHECK_NET_TYPE(struct sockaddr_storage, HAVE_SA_STORAGE, [])
 EL_CHECK_NET_TYPE(struct sockaddr_in6, HAVE_SA_IN6, [#include <netinet/in.h>])
@@ -1002,23 +1132,23 @@ if test "$HAVE_GETADDRINFO" != yes; then
 fi
 
 
-dnl ===================================================================
-dnl Checking for X11 (window title restoring).
-dnl ===================================================================
+# ===================================================================
+# Checking for X11 (window title restoring).
+# ===================================================================
 
 AC_PATH_X
 if test x"$no_x" != xyes; then
 	EL_SAVE_FLAGS
 	if test -n "$x_includes"; then
 		X_CFLAGS="-I$x_includes"
-		CPPFLAGS="$CPPFLAGS -I$x_includes"
+		CPPFLAGS="$CPPLAGS $X_CFLAGS"
+		CFLAGS="$CFLAGS $X_CFLAGS"
 	fi
 	if test -n "$x_libraries"; then
 		LDFLAGS="$LDFLAGS -L$x_libraries"
 	fi
 	LIBS="-lX11 $LIBS"
-	AC_TRY_LINK([#include <X11/Xlib.h>],[XrmInitialize()],
-		cf_result=yes, cf_result=no)
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <X11/Xlib.h>]], [[XrmInitialize()]])],[cf_result=yes],[cf_result=no])
 	EL_RESTORE_FLAGS
 	if test "$cf_result" = yes; then
 		if test -n "$x_libraries"; then
@@ -1031,26 +1161,19 @@ if test x"$no_x" != xyes; then
 fi
 
 
-dnl ===================================================================
-dnl Backtraces displaying support.
-dnl ===================================================================
+# ===================================================================
+# Backtraces displaying support.
+# ===================================================================
 
 AC_CHECK_HEADERS(execinfo.h, HAVE_EXECINFO=yes, HAVE_EXECINFO=no)
 # possible checks for other system-specific means go here
 
 
-dnl ===================================================================
-dnl SMB protocol support.
-dnl ===================================================================
+# ===================================================================
+# Gettext grey zone. Beware.
+# ===================================================================
 
-AC_CHECK_PROG(HAVE_SMBCLIENT, smbclient, yes, no)
-
-
-dnl ===================================================================
-dnl Gettext grey zone. Beware.
-dnl ===================================================================
-
-ALL_LINGUAS="be bg ca cs da de el es et fi fr gl hr hu id is it lt nl nb pl pt pt_BR ro ru sk sr sv tr uk"
+ALL_LINGUAS="af be bg ca cs da de el es et fi fr gl hr hu id is it lt nl nb pl pt pt_BR ro ru sk sr sv tr uk"
 
 AM_GNU_GETTEXT
 
@@ -1060,9 +1183,9 @@ dnl cf_result=$((48#z - 48#a + 1));
 dnl AC_MSG_RESULT($cf_result)
 
 
-dnl ===================================================================
-dnl Compile-time features control
-dnl ===================================================================
+# ===================================================================
+# Compile-time features control
+# ===================================================================
 
 EL_ARG_ENABLE(CONFIG_COOKIES, cookies, [Cookies],
 	      [  --disable-cookies       disable cookie support])
@@ -1101,9 +1224,9 @@ EL_ARG_DEPEND(CONFIG_CGI, cgi, [HAVE_SETENV_OR_PUTENV:yes], [Local CGI],
 EL_ARG_ENABLE(CONFIG_FINGER, finger, [Finger protocol],
 	      [  --enable-finger         enable finger protocol support])
 
-dnl ===================================================================
-dnl FSP protocol
-dnl ===================================================================
+# ===================================================================
+# FSP protocol
+# ===================================================================
 EL_SAVE_FLAGS
 
 if test "x${enable_fsp}" != xno; then
@@ -1138,17 +1261,28 @@ EL_ARG_ENABLE(CONFIG_GOPHER, gopher, [Gopher protocol],
 EL_ARG_ENABLE(CONFIG_NNTP, nntp, [NNTP protocol],
 	      [  --enable-nntp           enable nntp protocol support])
 
-dnl Force disable SMB before EL_ARG_DEPEND so that it logs the correct value.
-if test "${enable_smb-no}" != no || test "${CONFIG_SMB-no}" != no; then
-  AC_MSG_WARN([Forcing --disable-smb because of vulnerability CVE-2006-5925.
-If you want to use SMB, please wait for ELinks 0.12.0 or see bug 844.])
+# ===================================================================
+# SMB protocol support.
+# ===================================================================
+EL_SAVE_FLAGS
+
+if test "x${enable_smb}" != xno; then
+	AC_CHECK_HEADERS(libsmbclient.h, HAVE_SMBCLIENT=yes, HAVE_SMBCLIENT=no)
+
+	if test "$HAVE_SMBCLIENT" = yes; then
+		AC_CHECK_LIB(smbclient, smbc_init, HAVE_SMBCLIENT=yes, HAVE_SMBCLIENT=no)
+		if test "$HAVE_SMBCLIENT" = yes; then
+			LIBS="$LIBS -lsmbclient"
+		fi
+	fi
 fi
-enable_smb=no
-CONFIG_SMB=no
-EL_ARG_DEPEND(CONFIG_SMB, smb, [HAVE_SMBCLIENT:yes], [SMB protocol],
-	      [  --enable-smb            not currently allowed])
-dnl EL_ARG_DEPEND(CONFIG_SMB, smb, [HAVE_SMBCLIENT:yes], [SMB protocol],
-dnl 	      [  --disable-smb           disable SMB protocol support (requires smbclient)])
+
+EL_ARG_DEPEND(CONFIG_SMB, smb, [HAVE_SMBCLIENT:yes], [Samba protocol],
+	      [  --enable-smb            enable Samba protocol support])
+
+if test "x$CONFIG_SMB" = xno; then
+	EL_RESTORE_FLAGS
+fi
 
 
 EL_ARG_ENABLE(CONFIG_MOUSE, mouse, [Mouse handling],
@@ -1167,6 +1301,8 @@ EL_ARG_ENABLE(CONFIG_88_COLORS, 88-colors, [88 colors],
 EL_ARG_ENABLE(CONFIG_256_COLORS, 256-colors, [256 colors],
 	      [  --enable-256-colors     enable 256 color support])
 
+EL_ARG_ENABLE(CONFIG_TRUE_COLOR, true-color, [true color],
+	      [  --enable-true-color     enable true color support])
 
 EL_ARG_ENABLE(CONFIG_EXMODE, exmode, [Exmode interface],
 	      [  --enable-exmode         enable exmode (CLI) interface])
@@ -1184,8 +1320,8 @@ EL_ARG_ENABLE(CONFIG_CSS, css, [Cascading Style Sheets],
 EL_ARG_DEPEND(CONFIG_HTML_HIGHLIGHT, html-highlight, [CONFIG_CSS:yes], [HTML highlighting],
 	      [  --enable-html-highlight HTML highlighting using DOM engine])
 
-dnl Everything in the tree already uses CONFIG_DOM
-dnl so resolve CONFIG_HTML_HIGHLIGHT to CONFIG_DOM
+# Everything in the tree already uses CONFIG_DOM
+# so resolve CONFIG_HTML_HIGHLIGHT to CONFIG_DOM
 EL_CONFIG_DEPENDS(CONFIG_DOM, [CONFIG_HTML_HIGHLIGHT], [DOM engine])
 
 EL_ARG_DEPEND(CONFIG_BACKTRACE, backtrace, [HAVE_EXECINFO:yes], [Backtrace],
@@ -1207,34 +1343,9 @@ EL_ARG_ENABLE(CONFIG_OWN_LIBC, own-libc, [Own libc stubs],
 EL_ARG_ENABLE(CONFIG_SMALL, small, [Small binary],
 	      [  --enable-small          reduce binary size as far as possible (but see the bottom of doc/small.txt!)])
 
-if test "$CONFIG_OPENSSL" != yes &&
-   test "$CONFIG_GNUTLS_OPENSSL_COMPAT" != yes ||
-   test "$CONFIG_OWN_LIBC" = yes;
-then
-	AC_MSG_CHECKING(for built-in MD5 support)
-	AC_MSG_RESULT(yes)
-	EL_CONFIG(CONFIG_MD5, [Built-in MD5])
-fi
+EL_ARG_ENABLE(CONFIG_UTF8, utf-8, [UTF-8],
+	      [  --disable-utf-8         disable UTF-8 support])
 
-AC_SUBST(CONFIG_MD5)
-
-if test "$CONFIG_BITTORRENT" = yes; then
-	if test "$CONFIG_OPENSSL" != yes ||
-	   test "$CONFIG_OWN_LIBC" = yes;
-	then
-		AC_MSG_CHECKING(for built-in SHA1 support)
-		AC_MSG_RESULT(yes)
-		EL_CONFIG(CONFIG_SHA1, [Built-in SHA1])
-	fi
-fi
-
-AC_SUBST(CONFIG_SHA1)
-
-if test "$CONFIG_CSS" = yes || test "$CONFIG_DOM" = yes;
-then
-	EL_CONFIG(CONFIG_SCANNER, [Built-in scanner])
-fi
-AC_SUBST(CONFIG_SCANNER)
 
 AC_ARG_ENABLE(weehoofooboomookerchoo,
               [
@@ -1243,15 +1354,15 @@ AC_ARG_ENABLE(weehoofooboomookerchoo,
 	      [AC_MSG_ERROR(Are you strange, or what?)])
 
 
-dnl == EMX hack
+# == EMX hack
 
-test "$CONFIG_OS2" = yes && LDFLAGS="$LDFLAGS -Zexe"
-test "$CONFIG_OS2" = yes && LDFLAGS=`echo "$LDFLAGS" | sed "s/-Zbin-files//g"`
+test "$CONFIG_OS_OS2" = yes && LDFLAGS="$LDFLAGS -Zexe"
+test "$CONFIG_OS_OS2" = yes && LDFLAGS=`echo "$LDFLAGS" | sed "s/-Zbin-files//g"`
 
 
-dnl ===================================================================
-dnl Export directory paths
-dnl ===================================================================
+# ===================================================================
+# Export directory paths
+# ===================================================================
 
 # Set up the ``entry points'' if they were not supplied by builder
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -1275,9 +1386,11 @@ AC_DEFINE_UNQUOTED(CONFDIR, "$CONFDIR", [Directory containing default config])
 AC_SUBST(CONFDIR)
 
 # Create LOCALEDIR #define for config.h
-test -z "$localedir" && localedir="$datadir/locale"
-localedir0=`eval echo "$localedir"`
-LOCALEDIR=`eval echo "$localedir0"`
+LOCALEDIR=`eval echo "$datadir/locale"`
+while echo "$LOCALEDIR" | grep "\\$"
+do
+	LOCALEDIR=`eval echo "$LOCALEDIR"`
+done > /dev/null 2> /dev/null
 AC_DEFINE_UNQUOTED(LOCALEDIR, "$LOCALEDIR", [Directory containing locales])
 AC_SUBST(LOCALEDIR)
 
@@ -1289,13 +1402,13 @@ AC_SUBST(LIBDIR)
 EL_LOG_CONFIG(CONFDIR, [System configuration directory], [])
 EL_LOG_CONFIG(LOCALEDIR, [Locale catalogs directory], [])
 
-dnl ===================================================================
-dnl A little fine tuning of gcc specific options (continued)
-dnl ===================================================================
+# ===================================================================
+# A little fine tuning of gcc specific options (continued)
+# ===================================================================
 
-if test "x$ac_cv_prog_gcc" = "xyes"; then
+if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
   if test "$CONFIG_DEBUG" = "yes"; then
-    dnl We want to see all warnings and live with none (in debug mode).
+    # We want to see all warnings and live with none (in debug mode).
     CFLAGS="$CFLAGS -Werror"
   fi
 
@@ -1332,7 +1445,7 @@ if test "x$ac_cv_prog_gcc" = "xyes"; then
     AC_MSG_CHECKING([whether $CC accepts $warning_flag])
     EL_SAVE_FLAGS
     CFLAGS="$CFLAGS $warning_flag"
-    AC_TRY_COMPILE([], [],
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
       [AC_MSG_RESULT([yes])
        break],
       [AC_MSG_RESULT([no])])
@@ -1395,36 +1508,35 @@ if test "x$ac_cv_prog_gcc" = "xyes"; then
   done
 fi
 
-# CFLAGS doesn't contain all compile flags. Some will be added only when
-# needed in the respective source directory. To get all compile flags
-# easily just add CPPFLAGS.
-ALL_CFLAGS="$CFLAGS $CPPFLAGS"
+EL_LOG_CONFIG(CFLAGS, [Compiler flags (CFLAGS)], [])
+EL_LOG_CONFIG(CPPFLAGS, [Preprocessor flags (CPPFLAGS)], [])
+EL_LOG_CONFIG(LDFLAGS, [Linker flags (LDFLAGS)], [])
+EL_LOG_CONFIG(LIBS, [Library flags (LIBS)], [])
 
-EL_LOG_CONFIG(ALL_CFLAGS, [Compiler options (CFLAGS)], [])
-EL_LOG_CONFIG(LIBS, [Linker options (LIBS)], [])
-
-dnl ===================================================================
-dnl Colored make output
-dnl ===================================================================
+# ===================================================================
+# Colored make output
+# ===================================================================
 
 if test $(`which tput` colors) -ge 4; then
 	MAKE_COLOR=1
 	AC_SUBST(MAKE_COLOR)
 fi
 
-dnl ===================================================================
-dnl Generated files
-dnl ===================================================================
+# ===================================================================
+# Generated files
+# ===================================================================
 
-AC_OUTPUT([ \
+AC_CONFIG_FILES([ \
  Makefile.config \
  contrib/elinks.spec \
  contrib/lua/hooks.lua \
  contrib/conv/w3m2links.awk \
+ doc/Doxyfile \
  doc/man/man1/elinks.1 \
  src/intl/gettext/ref-add.sed \
  src/intl/gettext/ref-del.sed
 ])
+AC_OUTPUT
 
 abs_srcdir="$(cd "$srcdir" && pwd)"
 # builddir is always absolute!
@@ -1432,14 +1544,14 @@ if test "$abs_srcdir" != "$builddir"; then
 	# Bootstrap the Makefile creation
 	echo "include $abs_srcdir/Makefile" > "$builddir/Makefile"
 	"$MAKE" "SRC=$abs_srcdir" init
+
 	# Make cg-status ignore this build directory
 	echo "*" > "$builddir/.gitignore"
 fi
 
-
-dnl ===================================================================
-dnl Configuration summary
-dnl ===================================================================
+# ===================================================================
+# Configuration summary
+# ===================================================================
 
 AC_MSG_RESULT(The following feature summary has been saved to features.log)
 cat features.log

@@ -70,6 +70,7 @@ auth_cancel(void *data)
 void
 do_auth_dialog(struct session *ses, void *data)
 {
+	/* [gettext_accelerator_context(do_auth_dialog)] */
 	struct dialog *dlg;
 	struct dialog_data *dlg_data;
 	struct terminal *term = ses->tab->term;
@@ -95,7 +96,10 @@ do_auth_dialog(struct session *ses, void *data)
 
 	a->blocked = 1;
 
-	dlg->title = _("HTTP Authentication", term);
+	/* This function is used for at least HTTP and FTP, so don't
+	 * name the protocol here.  Consider also what an FTP server
+	 * behind an HTTP proxy should be called.  */
+	dlg->title = _("Authentication required", term);
 	dlg->layouter = generic_dialog_layouter;
 
 	text = get_dialog_offset(dlg, AUTH_WIDGETS_COUNT);
@@ -113,7 +117,7 @@ do_auth_dialog(struct session *ses, void *data)
 
 	add_dlg_end(dlg, AUTH_WIDGETS_COUNT);
 
-	dlg_data = do_dialog(term, dlg, getml(dlg, NULL));
+	dlg_data = do_dialog(term, dlg, getml(dlg, (void *) NULL));
 	/* When there's some username, but no password, automagically jump to
 	 * the password. */
 	if (dlg_data && a->user[0] && !a->password[0])
@@ -229,7 +233,7 @@ static struct listbox_ops_messages http_auth_messages = {
 	NULL,
 	/* delete_item_title */
 	N_("Delete auth entry"),
-	/* delete_item */
+	/* delete_item; xgettext:c-format */
 	N_("Delete this auth entry?"),
 	/* clear_all_items_title */
 	N_("Clear all auth entries"),
@@ -237,7 +241,7 @@ static struct listbox_ops_messages http_auth_messages = {
 	N_("Do you really want to remove all auth entries?"),
 };
 
-static struct listbox_ops auth_listbox_ops = {
+static const struct listbox_ops auth_listbox_ops = {
 	lock_auth_entry,
 	unlock_auth_entry,
 	is_auth_entry_used,
@@ -252,7 +256,8 @@ static struct listbox_ops auth_listbox_ops = {
 	&http_auth_messages,
 };
 
-static struct hierbox_browser_button auth_buttons[] = {
+static const struct hierbox_browser_button auth_buttons[] = {
+	/* [gettext_accelerator_context(.auth_buttons)] */
 	{ N_("~Goto"),   push_hierbox_goto_button,   1 },
 	{ N_("~Info"),   push_hierbox_info_button,   1 },
 	{ N_("~Delete"), push_hierbox_delete_button, 1 },

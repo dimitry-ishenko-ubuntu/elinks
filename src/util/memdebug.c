@@ -1,6 +1,7 @@
-/* Memory debugging (leaks, overflows & co) */
-
-/* Wrappers for libc memory managment providing protection against common
+/** Memory debugging (leaks, overflows & co)
+ * @file
+ *
+ * Wrappers for libc memory managment providing protection against common
  * pointers manipulation mistakes - bad realloc()/free() pointers, double
  * free() problem, using uninitialized/freed memory, underflow/overflow
  * protection, leaks tracking...
@@ -52,49 +53,49 @@
 
 #ifdef DEBUG_MEMLEAK
 
-/* Eat less memory, but sacrifice speed?
+/** Eat less memory, but sacrifice speed?
  * Default is defined. */
 #define LESS_MEMORY_SPEED
 
-/* Fill memory on alloc() ?
+/** Fill memory on alloc() ?
  * Default is defined. */
 #define FILL_ON_ALLOC
 #define FILL_ON_ALLOC_VALUE 'X'
 
-/* Fill memory on realloc() ?
+/** Fill memory on realloc() ?
  * Default is defined. */
 #define FILL_ON_REALLOC
 #define FILL_ON_REALLOC_VALUE 'Y'
 
-/* Fill memory before free() ?
+/** Fill memory before free() ?
  * Default is undef. */
 #undef FILL_ON_FREE
 #define FILL_ON_FREE_VALUE 'Z'
 
-/* Check alloc_header block sanity ?
+/** Check alloc_header block sanity ?
  * Default is defined. */
 #define CHECK_AH_SANITY
 #define AH_SANITY_MAGIC 0xD3BA110C
 
-/* Check for useless reallocation ?
+/** Check for useless reallocation ?
  * If oldsize is equal to newsize, print a message to stderr.
  * It may help to find inefficient code.
  * Default is undefined.
  */
 #undef CHECK_USELESS_REALLOC
 
-/* Check for validity of address passed to free() ?
+/** Check for validity of address passed to free() ?
  * Note that this is VERY slow, as we iterate through whole memory_list each
  * time. We can't check magics etc, as it would break double free() check.
  * Default is undef. */
 #undef CHECK_INVALID_FREE
 
-/* Check for double free ?
+/** Check for double free ?
  * Default is defined. */
 #define CHECK_DOUBLE_FREE
 #define AH_FREE_MAGIC 0xD3BF110C
 
-/* Check for overflows and underflows ?
+/** Check for overflows and underflows ?
  * Default is defined. */
 #define CHECK_XFLOWS
 #define XFLOW_MAGIC (char) 0xFA
@@ -114,11 +115,11 @@ struct alloc_header {
 #endif
 	int size;
 	int line;
-	unsigned char *file;
+	const unsigned char *file;
 	unsigned char *comment;
 
 #ifdef CHECK_XFLOWS
-	/* This is a little magic. We want to keep the main pointer aligned,
+	/** This is a little magic. We want to keep the main pointer aligned,
 	 * that means we want to have the xflow underflow mark in the
 	 * alloc_header space, but at the _end_ of the aligned reserved space.
 	 * This means we in fact live at [SIZE_AH_ALIGNED - 1], not here. (Of
@@ -163,12 +164,12 @@ struct alloc_header {
 
 struct mem_stats mem_stats;
 
-INIT_LIST_HEAD(memory_list);
+INIT_LIST_OF(struct alloc_header, memory_list);
 
 #ifdef LOG_MEMORY_ALLOC
 static void
-dump_short_info(struct alloc_header *ah, unsigned char *file, int line,
-		unsigned char *type)
+dump_short_info(struct alloc_header *ah, const unsigned char *file, int line,
+		const unsigned char *type)
 {
 	fprintf(stderr, "%p", PTR_AH2BASE(ah)), fflush(stderr);
 	fprintf(stderr, ":%d", ah->size), fflush(stderr);
@@ -184,8 +185,8 @@ dump_short_info(struct alloc_header *ah, unsigned char *file, int line,
 #endif
 
 static void
-dump_info(struct alloc_header *ah, unsigned char *info,
-	  unsigned char *file, int line, unsigned char *type)
+dump_info(struct alloc_header *ah, const unsigned char *info,
+	  const unsigned char *file, int line, const unsigned char *type)
 {
 	fprintf(stderr, "%p", PTR_AH2BASE(ah)); fflush(stderr);
 	/* In some extreme cases, we may core here, as 'ah' can no longer point
@@ -213,8 +214,8 @@ dump_info(struct alloc_header *ah, unsigned char *info,
 
 #ifdef CHECK_AH_SANITY
 static inline int
-bad_ah_sanity(struct alloc_header *ah, unsigned char *info,
-	      unsigned char *file, int line)
+bad_ah_sanity(struct alloc_header *ah, const unsigned char *info,
+	      const unsigned char *file, int line)
 {
 	if (!ah) return 1;
 	if (ah->magic != AH_SANITY_MAGIC) {
@@ -228,8 +229,8 @@ bad_ah_sanity(struct alloc_header *ah, unsigned char *info,
 
 #ifdef CHECK_XFLOWS
 static inline int
-bad_xflow_magic(struct alloc_header *ah, unsigned char *info,
-		unsigned char *file, int line)
+bad_xflow_magic(struct alloc_header *ah, const unsigned char *info,
+		const unsigned char *file, int line)
 {
 	if (!ah) return 1;
 
@@ -282,7 +283,7 @@ check_memory_leaks(void)
 static int alloc_try = 0;
 
 static int
-patience(unsigned char *file, int line, unsigned char *of)
+patience(const unsigned char *file, int line, const unsigned char *of)
 {
 	errfile = file;
 	errline = line;
@@ -310,7 +311,7 @@ patience(unsigned char *file, int line, unsigned char *of)
 }
 
 void *
-debug_mem_alloc(unsigned char *file, int line, size_t size)
+debug_mem_alloc(const unsigned char *file, int line, size_t size)
 {
 	struct alloc_header *ah;
 	size_t true_size;
@@ -319,7 +320,11 @@ debug_mem_alloc(unsigned char *file, int line, size_t size)
 
 	true_size = SIZE_BASE2AH(size);
 	do {
+#ifdef CONFIG_GC
+		ah = GC_MALLOC(true_size);
+#else
 		ah = malloc(true_size);
+#endif
 		if (ah) break;
 	} while (patience(file, line, "malloc"));
 	if (!ah) return NULL;
@@ -350,7 +355,7 @@ debug_mem_alloc(unsigned char *file, int line, size_t size)
 }
 
 void *
-debug_mem_calloc(unsigned char *file, int line, size_t eltcount, size_t eltsize)
+debug_mem_calloc(const unsigned char *file, int line, size_t eltcount, size_t eltsize)
 {
 	struct alloc_header *ah;
 	size_t size = eltcount * eltsize;
@@ -368,7 +373,11 @@ debug_mem_calloc(unsigned char *file, int line, size_t eltcount, size_t eltsize)
 
 	true_size = SIZE_BASE2AH(size);
 	do {
-		ah = calloc(1, SIZE_BASE2AH(size));
+#ifdef CONFIG_GC
+		ah = GC_MALLOC(true_size);
+#else
+		ah = calloc(1, true_size);
+#endif
 		if (ah) break;
 	} while (patience(file, line, "calloc"));
 	if (!ah) return NULL;
@@ -397,7 +406,7 @@ debug_mem_calloc(unsigned char *file, int line, size_t eltcount, size_t eltsize)
 }
 
 void
-debug_mem_free(unsigned char *file, int line, void *ptr)
+debug_mem_free(const unsigned char *file, int line, void *ptr)
 {
 	struct alloc_header *ah;
 	int ok = 1;
@@ -450,7 +459,11 @@ debug_mem_free(unsigned char *file, int line, void *ptr)
 
 	if (ah->comment) {
 		mem_stats.true_amount -= strlen(ah->comment) + 1;
+#ifdef CONFIG_GC
+		ah->comment = NULL;
+#else
 		free(ah->comment);
+#endif
 	}
 
 	del_from_list(ah);
@@ -465,11 +478,15 @@ debug_mem_free(unsigned char *file, int line, void *ptr)
 	ah->magic = AH_FREE_MAGIC;
 #endif
 
+#ifdef CONFIG_GC
+	ah = NULL;
+#else
 	free(ah);
+#endif
 }
 
 void *
-debug_mem_realloc(unsigned char *file, int line, void *ptr, size_t size)
+debug_mem_realloc(const unsigned char *file, int line, void *ptr, size_t size)
 {
 	struct alloc_header *ah, *ah2;
 	size_t true_size;
@@ -502,7 +519,11 @@ debug_mem_realloc(unsigned char *file, int line, void *ptr, size_t size)
 
 	true_size = SIZE_BASE2AH(size);
 	do {
+#ifdef CONFIG_GC
+		ah2 = GC_REALLOC(ah, true_size);
+#else
 		ah2 = realloc(ah, true_size);
+#endif
 		if (ah2) {
 			ah = ah2;
 			break;
@@ -538,7 +559,7 @@ debug_mem_realloc(unsigned char *file, int line, void *ptr, size_t size)
 }
 
 void
-set_mem_comment(void *ptr, unsigned char *str, int len)
+set_mem_comment(void *ptr, const unsigned char *str, int len)
 {
 	struct alloc_header *ah;
 
@@ -546,10 +567,17 @@ set_mem_comment(void *ptr, unsigned char *str, int len)
 
 	if (ah->comment) {
 		mem_stats.true_amount -= strlen(ah->comment) + 1;
+#ifdef CONFIG_GC
+		ah->comment = NULL;
+#else
 		free(ah->comment);
+#endif
 	}
-
+#ifdef CONFIG_GC
+	ah->comment = GC_MALLOC(len + 1);
+#else
 	ah->comment = malloc(len + 1);
+#endif
 	if (ah->comment) {
 		memcpy(ah->comment, str, len);
 		ah->comment[len] = 0;

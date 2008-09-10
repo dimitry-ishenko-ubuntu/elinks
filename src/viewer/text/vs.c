@@ -1,4 +1,5 @@
-/* View state manager */
+/** View state manager
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -23,11 +24,13 @@
 #include "viewer/text/vs.h"
 
 
+/** @relates view_state */
 void
 init_vs(struct view_state *vs, struct uri *uri, int plain)
 {
 	memset(vs, 0, sizeof(*vs));
 	vs->current_link = -1;
+	vs->old_current_link = -1;
 	vs->plain = plain;
 	vs->uri = uri ? get_uri_reference(uri) : NULL;
 	vs->did_fragment = !uri->fragmentlen;
@@ -38,6 +41,7 @@ init_vs(struct view_state *vs, struct uri *uri, int plain)
 	init_list(vs->forms);
 }
 
+/** @relates view_state */
 void
 destroy_vs(struct view_state *vs, int blast_ecmascript)
 {
@@ -59,6 +63,7 @@ destroy_vs(struct view_state *vs, int blast_ecmascript)
 	}
 }
 
+/** @relates view_state */
 void
 copy_vs(struct view_state *dst, struct view_state *src)
 {

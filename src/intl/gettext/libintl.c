@@ -27,6 +27,7 @@ struct language languages[] = {
 	{N_("System"), "system"},
 	{N_("English"), "en"},
 
+	{N_("Afrikaans"), "af"},
 	{N_("Belarusian"), "be"},
 	{N_("Brazilian Portuguese"), "pt-BR"},
 	{N_("Bulgarian"), "bg"},
@@ -146,7 +147,7 @@ language_to_iso639(int language)
 }
 
 int
-name_to_language(unsigned char *name)
+name_to_language(const unsigned char *name)
 {
 	int i;
 

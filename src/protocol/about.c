@@ -94,13 +94,12 @@ about_protocol_handler(struct connection *conn)
 
 	/* Only do this the first time */
 	if (cached && !cached->content_type) {
-		int len = 0;
-
 #ifndef CONFIG_SMALL
 		{
 			const struct about_page *page = about_pages;
 
 			for (; page->name; page++) {
+				int len;
 				unsigned char *str;
 
 				if (strcmp(conn->uri->data, page->name))
@@ -109,12 +108,11 @@ about_protocol_handler(struct connection *conn)
 				str = page->string;
 				len = strlen(str);
 				add_fragment(cached, 0, str, len);
+				conn->from = len;
 				break;
 			}
 		}
 #endif
-
-		normalize_cache_entry(cached, len);
 
 		/* Set content to known type */
 		mem_free_set(&cached->content_type, stracpy("text/html"));

@@ -1,4 +1,5 @@
-/* CSS token scanner utilities */
+/** CSS token scanner utilities
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -15,8 +16,7 @@
 #include "util/string.h"
 
 
-/* Bitmap entries for the CSS character groups used in the scanner table */
-
+/** Bitmap entries for the CSS character groups used in the scanner table */
 enum css_char_group {
 	CSS_CHAR_ALPHA		= (1 << 0),
 	CSS_CHAR_DIGIT		= (1 << 1),
@@ -158,7 +158,7 @@ scan_css_token(struct scanner *scanner, struct scanner_token *token)
 			type = CSS_TOKEN_NUMBER;
 
 		} else {
-			unsigned char *ident = string;
+			const unsigned char *ident = string;
 
 			scan_css(scanner, string, CSS_CHAR_IDENT);
 			type = map_scanner_string(scanner, ident, string,
@@ -251,7 +251,7 @@ scan_css_token(struct scanner *scanner, struct scanner_token *token)
 	} else if (first_char == '@') {
 		/* Compose token containing @<ident> */
 		if (is_css_ident_start(*string)) {
-			unsigned char *ident = string;
+			const unsigned char *ident = string;
 
 			/* Scan both ident start and ident */
 			scan_css(scanner, string, CSS_CHAR_IDENT);

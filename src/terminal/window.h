@@ -8,13 +8,13 @@ struct terminal;
 struct window;
 
 enum window_type {
-	/* Normal windows: */
-	/* Used for things like dialogs. The default type when adding windows
+	/** Normal windows.
+	 * Used for things like dialogs. The default type when adding windows
 	 * with add_window(). */
 	WINDOW_NORMAL,
 
-	/* Tab windows: */
-	/* Tabs are a separate session and has separate history, current
+	/** Tab windows.
+	 * Tabs are a separate session and has separate history, current
 	 * document and action-in-progress .. basically a separate browsing
 	 * state. */
 	WINDOW_TAB,
@@ -22,27 +22,48 @@ enum window_type {
 
 typedef void (window_handler_T)(struct window *, struct term_event *);
 
+/** A window in the terminal screen.  This structure does not know the
+ * position and size of the window, and no functions are provided for
+ * drawing into a window.  Instead, when window.handler draws the
+ * window, it should decide the position and size of the window, and
+ * then draw directly to the terminal, taking care not to draw outside
+ * the window.  Windows generally do not have their own coordinate
+ * systems; they get mouse events in the coordinate system of the
+ * terminal.  */
 struct window {
-	LIST_HEAD(struct window);
+	LIST_HEAD(struct window); /*!< terminal.windows is the sentinel.  */
 
+	/** Whether this is a normal window or a tab window.  */
 	enum window_type type;
 
-	/* The window event handler */
+	/** The window event handler */
 	window_handler_T *handler;
 
-	/* For tab windows the session is stored in @data. For normal windows
-	 * it can contain dialog data. */
-	/* It is free()'d by delete_window() */
+	/** For tab windows the session is stored in @c data.
+	 * For normal windows it can contain dialog data.
+	 * It is free()'d by delete_window() */
 	void *data;
 
-	/* The terminal (and screen) that hosts the window */
+	/** The terminal (and screen) that hosts the window */
 	struct terminal *term;
 
-	/* Used for tabs focus detection. */
+	/** For ::WINDOW_TAB, the position and size in the tab bar.
+	 * Updated while the tab bar is being drawn, and read if the
+	 * user clicks there with the mouse.  */
 	int xpos, width;
+
+	/** The position of something that has focus in the window.
+	 * Any popup menus are drawn near this position.
+	 * In tab windows, during ::NAVIGATE_CURSOR_ROUTING, this is
+	 * also the position of the cursor that the user can move;
+	 * there is no separate cursor position for each frame.
+	 * In dialog boxes, this is typically the top left corner of
+	 * the focused widget, while the cursor is somewhere within
+	 * the widget.
+	 * @see set_window_ptr, get_parent_ptr, set_cursor */
 	int x, y;
 
-	/* For delayed tab resizing */
+	/** For delayed tab resizing */
 	unsigned int resize:1;
 };
 
@@ -55,5 +76,11 @@ void delete_window_ev(struct window *, struct term_event *ev);
 void get_parent_ptr(struct window *, int *, int *);
 
 void add_empty_window(struct terminal *, void (*)(void *), void *);
+
+#if CONFIG_DEBUG
+void assert_window_stacking(struct terminal *);
+#else
+#define assert_window_stacking(t) ((void) (t))
+#endif
 
 #endif

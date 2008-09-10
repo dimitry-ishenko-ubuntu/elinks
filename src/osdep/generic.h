@@ -46,7 +46,7 @@
 #endif
 
 /* Attempt to workaround the EINTR mess. */
-#if defined(EINTR) && !defined(CONFIG_WIN32)
+#if defined(EINTR) && !defined(CONFIG_OS_WIN32)
 
 #ifdef TEMP_FAILURE_RETRY	/* GNU libc */
 #define safe_read(fd, buf, count) TEMP_FAILURE_RETRY(read(fd, buf, count))
@@ -78,12 +78,12 @@ safe_write(int fd, const void *buf, size_t count) {
 }
 #endif /* TEMP_FAILURE_RETRY */
 
-#else /* EINTR && !CONFIG_WIN32 */
+#else /* EINTR && !CONFIG_OS_WIN32 */
 
 #define safe_read(fd, buf, count) read(fd, buf, count)
 #define safe_write(fd, buf, count) write(fd, buf, count)
 
-#endif /* EINTR && !CONFIG_WIN32 */
+#endif /* EINTR && !CONFIG_OS_WIN32 */
 
 #ifndef HAVE_FTELLO
 #define ftello(stream) ftell(stream)
@@ -102,7 +102,7 @@ safe_write(int fd, const void *buf, size_t count) {
 
 /* Alignment of types.  */
 #define alignof(TYPE) \
-    ((int) &((struct { unsigned char dummy1; TYPE dummy2; } *) 0)->dummy2)
+    offsetof(struct { unsigned char dummy1; TYPE dummy2; }, dummy2)
 
 /* Using this macro to copy structs is both faster and safer than
  * memcpy(destination, source, sizeof(source)). Please, use this macro instead

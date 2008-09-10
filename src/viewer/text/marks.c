@@ -1,4 +1,5 @@
-/* Marks registry */
+/** Marks registry
+ * @file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -10,6 +11,8 @@
 #include "elinks.h"
 
 #include "document/view.h"
+#include "intl/gettext/libintl.h"
+#include "main/module.h"
 #include "protocol/uri.h"
 #include "util/memory.h"
 #include "util/string.h"
@@ -49,7 +52,9 @@
  * --pasky */
 
 
-/* The @marks array is indexed by ASCII code of the mark. */
+/** Number of possible mark characters: upper-case and lower-case
+ * ASCII letters.  The ::marks array is indexed by ASCII code of the
+ * mark. */
 #define MARKS_SIZE 26 * 2
 static struct view_state *marks[MARKS_SIZE];
 
@@ -70,6 +75,7 @@ index_from_char(unsigned char mark)
 void
 goto_mark(unsigned char mark, struct view_state *vs)
 {
+	int old_current_link;
 #ifdef CONFIG_ECMASCRIPT
 	struct ecmascript_interpreter *ecmascript;
 	int ecmascript_fragile;
@@ -87,6 +93,7 @@ goto_mark(unsigned char mark, struct view_state *vs)
 	if (!marks[i] || !compare_uri(marks[i]->uri, vs->uri, 0))
 		return;
 
+	old_current_link = vs->current_link;
 #ifdef CONFIG_ECMASCRIPT
 	ecmascript = vs->ecmascript;
 	ecmascript_fragile = vs->ecmascript_fragile;
@@ -102,6 +109,7 @@ goto_mark(unsigned char mark, struct view_state *vs)
 	vs->ecmascript = ecmascript;
 	vs->ecmascript_fragile = ecmascript_fragile;
 #endif
+	vs->old_current_link = old_current_link;
 }
 
 static void
@@ -136,8 +144,8 @@ set_mark(unsigned char mark, struct view_state *mark_vs)
 	marks[i] = vs;
 }
 
-void
-free_marks(void)
+static void
+done_marks(struct module *xxx)
 {
 	int i;
 
@@ -145,3 +153,13 @@ free_marks(void)
 		free_mark_by_index(i);
 	}
 }
+
+struct module viewer_marks_module = struct_module(
+	/* name: */		N_("Marks"),
+	/* options: */		NULL,
+	/* hooks: */		NULL,
+	/* submodules: */	NULL,
+	/* data: */		NULL,
+	/* init: */		NULL,
+	/* done: */		done_marks
+);

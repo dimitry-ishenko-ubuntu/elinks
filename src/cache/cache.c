@@ -21,9 +21,10 @@
 #include "util/error.h"
 #include "util/memory.h"
 #include "util/string.h"
+#include "util/time.h"
 
 /* The list of cache entries */
-static INIT_LIST_HEAD(cache_entries);
+static INIT_LIST_OF(struct cache_entry, cache_entries);
 
 static unsigned longlong cache_size;
 static int id_counter = 1;
@@ -39,9 +40,11 @@ static void truncate_entry(struct cache_entry *cached, off_t offset, int final);
 
 #define dump_frag(frag, count) \
 do { \
-	DBG(" [%d] f=%p offset=%" OFF_T_FORMAT " length=%" OFF_T_FORMAT \
-	    " real_length=%" OFF_T_FORMAT, \
-	    count, frag, frag->offset, frag->length, frag->real_length); \
+	DBG(" [%d] f=%p offset=%" OFF_PRINT_FORMAT \
+	    " length=%" OFF_PRINT_FORMAT \
+	    " real_length=%" OFF_PRINT_FORMAT, \
+	    count, frag, (off_print_T) frag->offset, \
+	    (off_print_T) frag->length, (off_print_T) frag->real_length); \
 } while (0)
 
 #define dump_frags(entry, comment) \
@@ -181,31 +184,24 @@ get_validated_cache_entry(struct uri *uri, enum cache_mode cache_mode)
 	if (!cached || cached->incomplete)
 		return NULL;
 
-	/* Check if the entry can be deleted */
-	/* FIXME: This does not make sense to me. Why should the usage pattern
-	 * of the cache entry matter? Only reason I can think of is to avoid
-	 * reloading when spawning a new tab which could potentially be a big
-	 * penalty but shouldn't that be taken care of on a higher level?
-	 * --jonas */
-	if (is_object_used(cached)) {
-#if 0
-		/* Never use expired entries. */
-		/* Disabled because it hurts usability too much. */
-		if (cached->expire && cache_entry_has_expired(cached))
-			return NULL;
-#endif
-		return cached;
-	}
 
-	/* A bit of a gray zone. Delete the entry if the it has the stricktest
+	/* A bit of a gray zone. Delete the entry if the it has the strictest
 	 * cache mode and we don't want the most aggressive mode or we have to
 	 * remove the redirect or the entry expired. Please enlighten me.
 	 * --jonas */
 	if ((cached->cache_mode == CACHE_MODE_NEVER && cache_mode != CACHE_MODE_ALWAYS)
 	    || (cached->redirect && !get_opt_bool("document.cache.cache_redirects"))
 	    || (cached->expire && cache_entry_has_expired(cached))) {
-		delete_cache_entry(cached);
+		if (!is_object_used(cached)) delete_cache_entry(cached);
 		return NULL;
+	}
+
+	if (cached->cache_mode <= CACHE_MODE_CHECK_IF_MODIFIED
+	    && cache_mode <= CACHE_MODE_CHECK_IF_MODIFIED
+	    && (cached->last_modified || cached->etag)
+	    && get_opt_int("document.cache.revalidation_interval") >= 0) {
+		if (cached->seconds + get_opt_int("document.cache.revalidation_interval") < time(NULL))
+			return NULL;
 	}
 
 	return cached;
@@ -693,6 +689,7 @@ normalize_cache_entry(struct cache_entry *cached, off_t truncate_length)
 	truncate_entry(cached, truncate_length, 1);
 	cached->incomplete = 0;
 	cached->preformatted = 0;
+	cached->seconds = time(NULL);
 }
 
 
@@ -710,7 +707,7 @@ redirect_cache(struct cache_entry *cached, unsigned char *location,
 	/* XXX: We are assuming here that incomplete will only be zero when
 	 * doing these fake redirects which only purpose is to add an ending
 	 * slash *cough* dirseparator to the end of the URI. */
-	if (incomplete == 0 && location[0] == '/' && location[1] == 0) {
+	if (incomplete == 0 && dir_sep(location[0]) && location[1] == 0) {
 		/* To be sure use get_uri_string() to get rid of post data */
 		uristring = get_uri_string(cached->uri, URI_ORIGINAL);
 		if (uristring) add_to_strn(&uristring, location);
