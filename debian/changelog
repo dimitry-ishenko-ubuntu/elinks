@@ -1,3 +1,10 @@
+elinks (0.11.4-3) unstable; urgency=low
+
+  * Refresh patches (to use git diff instead of diff -Nur) and add
+    comments to patches.
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 19 Sep 2008 20:41:23 +0530
+
 elinks (0.11.4-2) unstable; urgency=low
 
   * Don't let xmlto validate the XML files, just produce the manpage.
@@ -15,7 +22,7 @@ elinks (0.11.4-1) unstable; urgency=low
     - Drop 12_338402_cfmakeraw_exotic_term.diff, merged upstream
     - Drop 13_fsp-display-dir.diff, merged upstream
     - Update and renumber the remaining patches
-	
+
  -- Moritz Muehlenhoff <jmm@debian.org>  Sat, 21 Jun 2008 17:01:47 +0200
 
 elinks (0.11.3-8) unstable; urgency=low

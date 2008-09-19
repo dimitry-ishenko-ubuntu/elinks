@@ -1,7 +1,11 @@
-diff -Naur elinks-0.11.4.orig/doc/Makefile elinks-0.11.4/doc/Makefile
---- elinks-0.11.4.orig/doc/Makefile	2008-06-20 22:19:53.000000000 +0200
-+++ elinks-0.11.4/doc/Makefile	2008-07-29 22:42:32.000000000 +0200
-@@ -138,7 +138,7 @@
+Moritz's patch to disable xmlto validation.  It fails with the latest
+xmlto and this patch fixes #491820
+
+diff --git a/doc/Makefile b/doc/Makefile
+index 6177874..97fc331 100644
+--- a/doc/Makefile
++++ b/doc/Makefile
+@@ -138,7 +138,7 @@ option-%.txt: $(ELINKS) $(HELP2DOC)
              cmd_jw = $(JW) -b $(2) $<
  
     quiet_cmd_xmlto = '    [$(LINK_COLOR)XMLTO$(END_COLOR)]   $(RELPATH)$@'

@@ -1,7 +1,11 @@
-diff -Naur elinks-0.11.4.orig/doc/elinks.1.txt elinks-0.11.4/doc/elinks.1.txt
---- elinks-0.11.4.orig/doc/elinks.1.txt	2008-06-21 21:20:22.000000000 +0200
-+++ elinks-0.11.4/doc/elinks.1.txt	2008-06-21 21:23:02.000000000 +0200
-@@ -141,9 +141,10 @@
+Patch to set various paths etc. for FHS, Debian policy etc. and to point
+bug reporting URL to Debian.
+
+diff --git a/doc/elinks.1.txt b/doc/elinks.1.txt
+index 231b879..1dc82a6 100644
+--- a/doc/elinks.1.txt
++++ b/doc/elinks.1.txt
+@@ -141,9 +141,10 @@ is in state of beta testing.
  BUGS
  ----
  
@@ -15,10 +19,11 @@ diff -Naur elinks-0.11.4.orig/doc/elinks.1.txt elinks-0.11.4/doc/elinks.1.txt
  how to get in contact with developers and getting help can be found on
  http://elinks.cz/community.html[the community page].
  
-diff -Naur elinks-0.11.4.orig/doc/man/man5/elinks.conf.5 elinks-0.11.4/doc/man/man5/elinks.conf.5
---- elinks-0.11.4.orig/doc/man/man5/elinks.conf.5	2008-06-21 21:20:22.000000000 +0200
-+++ elinks-0.11.4/doc/man/man5/elinks.conf.5	2008-06-21 21:26:29.000000000 +0200
-@@ -1128,7 +1128,7 @@
+diff --git a/doc/man/man5/elinks.conf.5 b/doc/man/man5/elinks.conf.5
+index 62a8ea2..9a8c8b3 100644
+--- a/doc/man/man5/elinks.conf.5
++++ b/doc/man/man5/elinks.conf.5
+@@ -1128,7 +1128,7 @@ mime\.mailcap\.enable [0|1] (default: 1)
  Enable mailcap support\.
  .RE
  .PP
@@ -27,7 +32,7 @@ diff -Naur elinks-0.11.4.orig/doc/man/man5/elinks.conf.5 elinks-0.11.4/doc/man/m
  .RS 4
  Mailcap search path\. Colon\-separated list of files\. Leave as "" to use MAILCAP environment variable instead\.
  .RE
-@@ -1170,7 +1170,7 @@
+@@ -1170,7 +1170,7 @@ mime\.mimetypes\.enable [0|1] (default: 1)
  Enable mime\.types support\.
  .RE
  .PP
@@ -36,9 +41,10 @@ diff -Naur elinks-0.11.4.orig/doc/man/man5/elinks.conf.5 elinks-0.11.4/doc/man/m
  .RS 4
  The search path for mime\.types files\. Colon\-separated list of files\.
  .RE
-diff -Naur elinks-0.11.4.orig/src/setup.h elinks-0.11.4/src/setup.h
---- elinks-0.11.4.orig/src/setup.h	2008-06-21 21:20:22.000000000 +0200
-+++ elinks-0.11.4/src/setup.h	2008-06-21 21:25:01.000000000 +0200
+diff --git a/src/setup.h b/src/setup.h
+index 7ac026b..5f9e1c8 100644
+--- a/src/setup.h
++++ b/src/setup.h
 @@ -12,7 +12,7 @@
  
  #define ELINKS_HOMEPAGE			"http://elinks.cz/"
