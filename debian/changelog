@@ -5,8 +5,10 @@ elinks (0.11.4-3) unstable; urgency=low
   * Refresh 04_436817_nostrip.diff for 0.11.4 (it leaves a .orig file
     otherwise)
   * Build-Depend on libgpm-dev instead of transitional libgpmg1-dev
+  * Save and restore stamp-h.in to keep post-"clean" source directory
+    same as the pre-build directory
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 19 Sep 2008 20:50:28 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 19 Sep 2008 21:15:09 +0530
 
 elinks (0.11.4-2) unstable; urgency=low
 
