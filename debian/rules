@@ -109,7 +109,6 @@ ifneq "$(wildcard /usr/share/misc/config.guess)" ""
 endif
 	[ ! -f config.h ] || mv -f config.h config.h.ups
 	[ ! -f Makefile.config ] || mv -f Makefile.config Makefile.config.ups
-	[ ! -f stamp-h.in ] || mv -f stamp-h.in stamp-h.in.ups
 	touch $@
 
 #Architecture 
@@ -136,10 +135,8 @@ clean: clean-patched unpatch
 clean-patched:
 	dh_testdir
 	dh_testroot
-	rm -f stamp-h.in
 	rm -f build-arch-stamp build-indep-stamp save-stamp
 	rm -rf build-lite build-main
-	[ ! -f stamp-h.in.ups ] || mv -f stamp-h.in.ups stamp-h.in
 	[ ! -f Makefile.config.ups ] || mv -f Makefile.config.ups Makefile.config
 	[ ! -f config.h.ups ] || mv -f config.h.ups config.h
 	[ ! -f config/config.guess.ups ] || mv -f config/config.guess.ups config/config.guess
