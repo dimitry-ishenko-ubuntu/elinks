@@ -4,8 +4,9 @@ elinks (0.11.4-3) unstable; urgency=low
     comments to patches.
   * Refresh 04_436817_nostrip.diff for 0.11.4 (it leaves a .orig file
     otherwise)
+  * Build-Depend on libgpm-dev instead of transitional libgpmg1-dev
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 19 Sep 2008 20:45:46 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 19 Sep 2008 20:50:28 +0530
 
 elinks (0.11.4-2) unstable; urgency=low
 
