@@ -1,5 +1,7 @@
 elinks (0.11.4-3) unstable; urgency=low
 
+  * Remove /usr/share/doc/elinks from previous install during upgrade
+    and link to /usr/share/doc/elinks-data (Closes: #499347)
   * Refresh patches (to use git diff instead of diff -Nur) and add
     comments to patches.
   * Refresh 04_436817_nostrip.diff for 0.11.4 (it leaves a .orig file
@@ -7,7 +9,7 @@ elinks (0.11.4-3) unstable; urgency=low
   * Build-Depend on libgpm-dev instead of transitional libgpmg1-dev
   * Update Standards-Version to 3.8.0, added a README.source file
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Fri, 19 Sep 2008 21:26:48 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sat, 20 Sep 2008 21:01:59 +0530
 
 elinks (0.11.4-2) unstable; urgency=low
 
