@@ -1,3 +1,10 @@
+elinks (0.12~pre1-1) experimental; urgency=low
+
+  * New upstream release 0.12pre1
+  * Rename patches to be inline with those in unstable
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 21 Sep 2008 18:37:43 +0530
+
 elinks (0.12~20080527-2) experimental; urgency=low
 
   * Re-enable --enable-debug (it is recommended for development versions of
