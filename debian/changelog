@@ -6,6 +6,39 @@ elinks (0.12~pre1-1) experimental; urgency=low
 
  -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 21 Sep 2008 18:54:18 +0530
 
+elinks (0.11.4-3) unstable; urgency=low
+
+  * Remove /usr/share/doc/elinks from previous install during upgrade
+    and link to /usr/share/doc/elinks-data (Closes: #499347)
+  * Refresh patches (to use git diff instead of diff -Nur) and add
+    comments to patches.
+  * Refresh 04_436817_nostrip.diff for 0.11.4 (it leaves a .orig file
+    otherwise)
+  * Build-Depend on libgpm-dev instead of transitional libgpmg1-dev
+  * Update Standards-Version to 3.8.0, added a README.source file
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sat, 20 Sep 2008 21:01:59 +0530
+
+elinks (0.11.4-2) unstable; urgency=low
+
+  * Don't let xmlto validate the XML files, just produce the manpage.
+    (Closes: #491820)
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Tue, 29 Jul 2008 22:39:55 +0200
+
+elinks (0.11.4-1) unstable; urgency=low
+
+  * New upstream release:
+    - Drop 01_asciidoc7compatible.diff, merged upstream
+    - Drop 03_417789-CVE-2007-2027.diff, merged upstream
+    - Drop 04_380347-entity_cache-overflow.diff, merged upstream
+    - Drop 07_local-CGI-query-fix.diff, merged upstream
+    - Drop 12_338402_cfmakeraw_exotic_term.diff, merged upstream
+    - Drop 13_fsp-display-dir.diff, merged upstream
+    - Update and renumber the remaining patches
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Sat, 21 Jun 2008 17:01:47 +0200
+
 elinks (0.12~20080527-2) experimental; urgency=low
 
   * Re-enable --enable-debug (it is recommended for development versions of
@@ -35,6 +68,16 @@ elinks (0.12~20080527-1) experimental; urgency=low
 
  -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Tue, 27 May 2008 21:03:09 +0530
 
+elinks (0.11.3-8) unstable; urgency=low
+
+  * Fix bash-ism in debian/rules get-orig-source target.  Thanks Raphael
+    Geissert <atomo64@gmail.com> (Closes: #477976)
+  * Update 13_fsp-display-dir.diff to workaround fsplib ABI dependency on
+    _FILE_OFFSET_BITS.  Thanks Kalle Olavi Niemitalo <kon@iki.fi>
+  * Remove perl from Build-Depends, it is build-essential
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Wed, 21 May 2008 17:27:46 +0530
+
 elinks (0.12~20080127-3) experimental; urgency=low
 
   * Rename 09_464384_AMD64_FBTFS.diff as 09_464384_alignof_off_t_FBTFS.diff
@@ -42,6 +85,39 @@ elinks (0.12~20080127-3) experimental; urgency=low
   * Remove patch 13_fsp-display-dir.diff (not necessary for 0.12) 
 
  -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 27 Apr 2008 02:00:57 +0530
+
+elinks (0.11.3-7) unstable; urgency=low
+
+  * Use '<<' versioning rather than '<=' for Conflicts/Replaces.  Thanks Colin
+    Watson <cjwatson@ubuntu.com> (Closes: #475520)
+  * Enable the FSP file transfer protocol (Closes: #478007)
+    + Patch 13_fsp-display-dir.diff to fix bug in directory listing
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 27 Apr 2008 01:36:11 +0530
+
+elinks (0.11.3-6) unstable; urgency=low
+
+  * Remove 11_303164_css_display_none.diff as it is useless without the fix
+    for upstream bug 722.
+  * Change ELinks category in desktop file from Categories=Utility;Network; to
+    Categories=Network;WebBrowser;  Thanks Franklin PIAT <fpiat@bigfoot.com>
+    (Closes: #474393)
+  * Steal a few .desktop file improvements and translations from Ubuntu [from
+    Siegfried-Angel Gevatter Pujals (RainCT) <rainct@ubuntu.com>]
+  * Much improved packages descriptions
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 10 Apr 2008 13:34:13 +0530
+
+elinks (0.11.3-5) unstable; urgency=low
+
+  * Pass --enable-88-colors to configure for main build (Closes: #466483)
+  * Patch 11_303164_css_display_none.diff to handle display:none in CSS
+    (Closes: #303164)
+  * Patch 12_338402_cfmakeraw_exotic_term.diff to fix cfmakeraw() to not
+    disable XON/XOFF flow control (Closes: #338402)
+  * Remove linda overrides files
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 06 Mar 2008 12:11:51 +0530
 
 elinks (0.12~20080127-2) experimental; urgency=low
 
@@ -52,6 +128,23 @@ elinks (0.12~20080127-2) experimental; urgency=low
     warning and -Werror (Closes: #465719).
 
  -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 28 Feb 2008 20:22:34 +0530
+
+elinks (0.11.3-4) unstable; urgency=low
+
+  * Add a DM-Upload-Allowed: yes field
+  * Update 02_setup-bugs-FSSTND.diff to prevent changing contrib/elinks.conf
+    (it is not used anymore).
+  * Update 06_459467_ui.leds.enable_0.diff to set leds.enable to default: 0 in
+    elinks.conf(5).
+  * Enable Ruby scripting support and install contrib/ruby as examples.
+  * Enable local CGI support.  That was what 07_local-CGI-query-fix.diff about
+    anyway :)
+  * Use dh_install for installing lintian/linda overrides and desktop file.
+    This is cleaner than doing it in debian/rules via the 'install' program.
+  * Add libidn11-dev do Build-Depends, IDN isn't enabled otherwise even if it
+    not disabled by default
+
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Wed, 13 Feb 2008 23:09:08 +0530
 
 elinks (0.12~20080127-1) experimental; urgency=low
 
@@ -73,53 +166,6 @@ elinks (0.12~20080127-1) experimental; urgency=low
     to create experimental packages and the patches at #408610.
 
  -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 03 Feb 2008 08:17:52 +0530
-
-elinks (0.11.3-8) unstable; urgency=low
-
-  * Remove perl from Build-Depends, it is build-essential
-
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Wed, 21 May 2008 17:27:46 +0530
-
-elinks (0.11.3-7) unstable; urgency=low
-
-  * Use '<<' versioning rather than '<=' for Conflicts/Replaces.  Thanks Colin
-    Watson <cjwatson@ubuntu.com> (Closes: #475520)
-  * Enable the FSP file transfer protocol (Closes: #478007)
-    + Patch 13_fsp-display-dir.diff to fix bug in directory listing
-
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 27 Apr 2008 01:36:11 +0530
-
-elinks (0.11.3-6) unstable; urgency=low
-
-  * Change ELinks category in desktop file from Categories=Utility;Network; to
-    Categories=Network;WebBrowser;  Thanks Franklin PIAT <fpiat@bigfoot.com>
-    (Closes: #474393)
-  * Steal a few .desktop file improvements and translations from Ubuntu [from
-    Siegfried-Angel Gevatter Pujals (RainCT) <rainct@ubuntu.com>]
-  * Much improved packages descriptions
-
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 10 Apr 2008 13:34:13 +0530
-
-elinks (0.11.3-5) unstable; urgency=low
-
-  * Pass --enable-88-colors to configure for main build (Closes: #466483)
-  * Patch 12_338402_cfmakeraw_exotic_term.diff to fix cfmakeraw() to not
-    disable XON/XOFF flow control (Closes: #338402)
-  * Remove linda overrides files
-
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 06 Mar 2008 12:11:51 +0530
-
-elinks (0.11.3-4) unstable; urgency=low
-
-  * Add a DM-Upload-Allowed: yes field
-  * Update 02_setup-bugs-FSSTND.diff to prevent changing contrib/elinks.conf
-    (it is not used anymore).
-  * Use dh_install for installing lintian/linda overrides and desktop file.
-    This is cleaner than doing it in debian/rules via the 'install' program.
-  * Add libidn11-dev do Build-Depends, IDN isn't enabled otherwise even if it
-    not disabled by default
-
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Wed, 13 Feb 2008 23:09:08 +0530
 
 elinks (0.11.3-3) unstable; urgency=low
 
