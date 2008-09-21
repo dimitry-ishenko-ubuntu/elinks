@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Y Giridhar Appaji Nag <giridhar@appaji.net>
 Uploaders: Moritz Muehlenhoff <jmm@debian.org>
 Build-Depends: debhelper (>= 5), libgnutls-dev, libidn11-dev, libfsplib-dev, libgpm-dev [!hurd-i386 !kfreebsd-i386 !kfreebsd-amd64], liblua50-dev, liblualib50-dev, libbz2-dev, libexpat1-dev (>= 1.95.6), libperl-dev, libsmbclient-dev, guile-1.8-dev | guile-1.6-dev, python-dev, ruby, ruby1.8-dev, libmozjs-dev, heimdal-dev, autotools-dev, gettext, asciidoc, xmlto, docbook-utils
-Standards-Version: 3.7.3
+Standards-Version: 3.8.0
 Homepage: http://elinks.cz/
 Vcs-Git: git://git.debian.org/git/collab-maint/elinks.git
 Vcs-Browser: http://git.debian.org/?p=collab-maint/elinks.git
