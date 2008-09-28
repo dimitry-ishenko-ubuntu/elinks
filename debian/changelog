@@ -1,8 +1,9 @@
-elinks (0.12~pre1-2) experimental; urgency=low
+elinks (0.12~pre2-1) experimental; urgency=low
 
+  * New upstream release 0.12pre2
   * Remove patch 06_417789-CVE-2007-2027, fixed upstream
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Mon, 22 Sep 2008 20:37:13 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Sun, 28 Sep 2008 19:11:22 +0530
 
 elinks (0.12~pre1-1) experimental; urgency=low
 
