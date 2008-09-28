@@ -55,10 +55,10 @@
 
 /* TODO? Are there any which need to be implemented? */
 
-static JSRuntime *jsrt;
+static int js_module_init_ok;
 
-static void
-error_reporter(JSContext *ctx, const char *message, JSErrorReport *report)
+void
+spidermonkey_error_reporter(JSContext *ctx, const char *message, JSErrorReport *report)
 {
 	struct ecmascript_interpreter *interpreter = JS_GetContextPrivate(ctx);
 	struct terminal *term;
@@ -137,19 +137,14 @@ setup_safeguard(struct ecmascript_interpreter *interpreter,
 static void
 spidermonkey_init(struct module *xxx)
 {
-	jsrt = JS_NewRuntime(0x400000UL);
-	/* XXX: This is a hack to avoid a crash on exit. SMJS will crash
-	 * on JS_DestroyRuntime if the given runtime has never had any context
-	 * created, which will be the case if one closes ELinks without having
-	 * loaded any documents. */
-	JS_DestroyContext(JS_NewContext(jsrt, 0));
+	js_module_init_ok = spidermonkey_runtime_addref();
 }
 
 static void
 spidermonkey_done(struct module *xxx)
 {
-	JS_DestroyRuntime(jsrt);
-	JS_ShutDown();
+	if (js_module_init_ok)
+		spidermonkey_runtime_release();
 }
 
 
@@ -161,8 +156,10 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 	         *statusbar_obj, *menubar_obj, *navigator_obj;
 
 	assert(interpreter);
+	if (!js_module_init_ok) return NULL;
 
-	ctx = JS_NewContext(jsrt, 8192 /* Stack allocation chunk size */);
+	ctx = JS_NewContext(spidermonkey_runtime,
+			    8192 /* Stack allocation chunk size */);
 	if (!ctx)
 		return NULL;
 	interpreter->backend_data = ctx;
@@ -174,7 +171,6 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 	/* XXX: JSOPTION_COMPILE_N_GO will go (will it?) when we implement
 	 * some kind of bytecode cache. (If we will ever do that.) */
 	JS_SetOptions(ctx, JSOPTION_VAROBJFIX | JSOPTION_COMPILE_N_GO);
-	JS_SetErrorReporter(ctx, error_reporter);
 
 	window_obj = JS_NewObject(ctx, (JSClass *) &window_class, NULL, NULL);
 	if (!window_obj) {
@@ -236,6 +232,7 @@ spidermonkey_put_interpreter(struct ecmascript_interpreter *interpreter)
 	JSContext *ctx;
 
 	assert(interpreter);
+	if (!js_module_init_ok) return;
 	ctx = interpreter->backend_data;
 	JS_DestroyContext(ctx);
 	interpreter->backend_data = NULL;
@@ -250,6 +247,7 @@ spidermonkey_eval(struct ecmascript_interpreter *interpreter,
 	jsval rval;
 
 	assert(interpreter);
+	if (!js_module_init_ok) return;
 	ctx = interpreter->backend_data;
 	setup_safeguard(interpreter, ctx);
 	interpreter->ret = ret;
@@ -266,6 +264,7 @@ spidermonkey_eval_stringback(struct ecmascript_interpreter *interpreter,
 	jsval rval;
 
 	assert(interpreter);
+	if (!js_module_init_ok) return NULL;
 	ctx = interpreter->backend_data;
 	setup_safeguard(interpreter, ctx);
 	interpreter->ret = NULL;
@@ -293,6 +292,7 @@ spidermonkey_eval_boolback(struct ecmascript_interpreter *interpreter,
 	int ret;
 
 	assert(interpreter);
+	if (!js_module_init_ok) return 0;
 	ctx = interpreter->backend_data;
 	setup_safeguard(interpreter, ctx);
 	interpreter->ret = NULL;

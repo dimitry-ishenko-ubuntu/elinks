@@ -7,7 +7,7 @@
 #include "elinks.h"
 
 #include "config/home.h"
-#include "ecmascript/spidermonkey/util.h"
+#include "ecmascript/spidermonkey-shared.h"
 #include "main/module.h"
 #include "osdep/osdep.h"
 #include "scripting/scripting.h"
@@ -33,8 +33,8 @@ alert_smjs_error(unsigned char *msg)
 	                       smjs_ses, msg);
 }
 
-static void
-error_reporter(JSContext *ctx, const char *message, JSErrorReport *report)
+void
+smjs_error_reporter(JSContext *ctx, const char *message, JSErrorReport *report)
 {
 	unsigned char *strict, *exception, *warning, *error;
 	struct string msg;
@@ -67,8 +67,6 @@ error_reporter(JSContext *ctx, const char *message, JSErrorReport *report)
 reported:
 	JS_ClearPendingException(ctx);
 }
-
-static JSRuntime *smjs_rt;
 
 static int
 smjs_do_file(unsigned char *path)
@@ -127,17 +125,16 @@ smjs_load_hooks(void)
 void
 init_smjs(struct module *module)
 {
-	smjs_rt = JS_NewRuntime(1L * 1024L * 1024L);
-	if (!smjs_rt) return;
+	if (!spidermonkey_runtime_addref()) return;
 
-	smjs_ctx = JS_NewContext(smjs_rt, 8192);
+	/* Set smjs_ctx immediately after creating the JSContext, so
+	 * that any error reports from SpiderMonkey are forwarded to
+	 * smjs_error_reporter().  */
+	smjs_ctx = JS_NewContext(spidermonkey_runtime, 8192);
 	if (!smjs_ctx) {
-		JS_DestroyRuntime(smjs_rt);
-		smjs_rt = NULL;
+		spidermonkey_runtime_release();
 		return;
 	}
-
-	JS_SetErrorReporter(smjs_ctx, error_reporter);
 
 	smjs_init_global_object();
 
@@ -154,6 +151,15 @@ cleanup_smjs(struct module *module)
 {
 	if (!smjs_ctx) return;
 
+	/* JS_DestroyContext also collects garbage in the JSRuntime.
+	 * Because the JSObjects created in smjs_ctx have not been
+	 * made visible to any other JSContext, and the garbage
+	 * collector of SpiderMonkey is precise, SpiderMonkey
+	 * finalizes all of those objects, so cache_entry_finalize
+	 * gets called and resets each cache_entry.jsobject = NULL.
+	 * If the garbage collector were conservative, ELinks would
+	 * have to call smjs_detach_cache_entry_object on each cache
+	 * entry before it releases the runtime here.  */
 	JS_DestroyContext(smjs_ctx);
-	JS_DestroyRuntime(smjs_rt);
+	spidermonkey_runtime_release();
 }

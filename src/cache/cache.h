@@ -42,7 +42,7 @@ struct cache_entry {
 	unsigned char *ssl_info;	/* SSL ciphers used during transfer */
 	unsigned char *encoding_info;	/* Encoding used during transfer */
 
-	unsigned int id;		/* Change each time entry is modified. */
+	unsigned int cache_id;		/* Change each time entry is modified. */
 
 	time_t seconds;			/* Access time. Used by 'If-Modified-Since' */
 
@@ -50,6 +50,9 @@ struct cache_entry {
 	off_t data_size;		/* The actual size of all fragments */
 
 	struct listbox_item *box_item;	/* Dialog data for cache manager */
+#ifdef CONFIG_SCRIPTING_SPIDERMONKEY
+	struct JSObject *jsobject;      /* Instance of cache_entry_class */
+#endif
 
 	timeval_T max_age;		/* Expiration time */
 

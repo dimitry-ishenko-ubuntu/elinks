@@ -66,53 +66,6 @@ static struct option_info ecmascript_options[] = {
 	NULL_OPTION_INFO,
 };
 
-#define NUMBER_OF_URLS_TO_REMEMBER 8
-static struct {
-	unsigned char *url;
-	unsigned char *frame;
-} u[NUMBER_OF_URLS_TO_REMEMBER];
-static int url_index = 0;
-
-int
-ecmascript_check_url(unsigned char *url, unsigned char *frame)
-{
-	int i;
-	/* Because of gradual rendering window.open is called many
-	 * times with the same arguments.
-	 * This workaround remembers NUMBER_OF_URLS_TO_REMEMBER last
-	 * opened URLs and do not let open them again.
-	 */
-
-	for (i = 0; i < NUMBER_OF_URLS_TO_REMEMBER; i++) {
-		if (!u[i].url) break;
-		if (!strcmp(u[i].url, url) && !strcmp(u[i].frame, frame)) {
-			mem_free(url);
-			mem_free(frame);
-			return 0;
-		}
-	}
-	mem_free_if(u[url_index].url);
-	mem_free_if(u[url_index].frame);
-	u[url_index].url = url;
-	u[url_index].frame = frame;
-	url_index++;
-	if (url_index >= NUMBER_OF_URLS_TO_REMEMBER) url_index = 0;
-	return 1;
-}
-
-void
-ecmascript_free_urls(struct module *module)
-{
-	int i;
-
-	for (i = 0; i < NUMBER_OF_URLS_TO_REMEMBER; i++) {
-		mem_free_if(u[i].url);
-		mem_free_if(u[i].frame);
-	}
-}
-
-#undef NUMBER_OF_URLS_TO_REMEMBER
-
 struct ecmascript_interpreter *
 ecmascript_get_interpreter(struct view_state *vs)
 {
@@ -214,6 +167,33 @@ ecmascript_eval_boolback(struct ecmascript_interpreter *interpreter,
 	return result;
 }
 
+void
+ecmascript_detach_form_view(struct form_view *fv)
+{
+#ifdef CONFIG_ECMASCRIPT_SEE
+	see_detach_form_view(fv);
+#else
+	spidermonkey_detach_form_view(fv);
+#endif
+}
+
+void ecmascript_detach_form_state(struct form_state *fs)
+{
+#ifdef CONFIG_ECMASCRIPT_SEE
+	see_detach_form_state(fs);
+#else
+	spidermonkey_detach_form_state(fs);
+#endif
+}
+
+void ecmascript_moved_form_state(struct form_state *fs)
+{
+#ifdef CONFIG_ECMASCRIPT_SEE
+	see_moved_form_state(fs);
+#else
+	spidermonkey_moved_form_state(fs);
+#endif
+}
 
 void
 ecmascript_reset_state(struct view_state *vs)
@@ -221,14 +201,18 @@ ecmascript_reset_state(struct view_state *vs)
 	struct form_view *fv;
 	int i;
 
+	/* Normally, if vs->ecmascript == NULL, the associated
+	 * ecmascript_obj pointers are also NULL.  However, they might
+	 * be non-NULL if the ECMAScript objects have been lazily
+	 * created because of scripts running in sibling HTML frames.  */
+	foreach (fv, vs->forms)
+		ecmascript_detach_form_view(fv);
+	for (i = 0; i < vs->form_info_len; i++)
+		ecmascript_detach_form_state(&vs->form_info[i]);
+
 	vs->ecmascript_fragile = 0;
 	if (vs->ecmascript)
 		ecmascript_put_interpreter(vs->ecmascript);
-
-	foreach (fv, vs->forms)
-		fv->ecmascript_obj = NULL;
-	for (i = 0; i < vs->form_info_len; i++)
-		vs->form_info[i].ecmascript_obj = NULL;
 
 	vs->ecmascript = ecmascript_get_interpreter(vs);
 	if (!vs->ecmascript)
@@ -370,5 +354,5 @@ struct module ecmascript_module = struct_module(
 	/* submodules: */	ecmascript_modules,
 	/* data: */		NULL,
 	/* init: */		NULL,
-	/* done: */		ecmascript_free_urls
+	/* done: */		NULL
 );
