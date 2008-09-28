@@ -75,7 +75,7 @@ span#author {
   color: #527bbd;
   font-family: sans-serif;
   font-weight: bold;
-  font-size: 1.1em;
+  font-size: 1.2em;
 }
 span#email {
 }
@@ -144,9 +144,6 @@ div.sidebarblock > div.content {
   padding: 0.5em;
 }
 
-div.listingblock {
-  margin-right: 0%;
-}
 div.listingblock > div.content {
   border: 1px solid silver;
   background: #f4f4f4;
@@ -225,9 +222,6 @@ div.hlist {
   margin-top: 0.8em;
   margin-bottom: 0.8em;
 }
-div.hlist td {
-  padding-bottom: 5px;
-}
 td.hlist1 {
   vertical-align: top;
   font-style: italic;
@@ -239,32 +233,6 @@ td.hlist2 {
 
 @media print {
   div#footer-badges { display: none; }
-}
-
-div#toctitle {
-  color: #527bbd;
-  font-family: sans-serif;
-  font-size: 1.1em;
-  font-weight: bold;
-  margin-top: 1.0em;
-  margin-bottom: 0.1em;
-}
-
-div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-div.toclevel2 {
-  margin-left: 2em;
-  font-size: 0.9em;
-}
-div.toclevel3 {
-  margin-left: 4em;
-  font-size: 0.9em;
-}
-div.toclevel4 {
-  margin-left: 6em;
-  font-size: 0.9em;
 }
 include1::./stylesheets/xhtml11-manpage.css[]
 /* Workarounds for IE6's broken and incomplete CSS2. */
@@ -295,9 +263,6 @@ div.exampleblock-content {
   border-left: 2px solid silver;
   padding-left: 0.5em;
 }
-
-/* IE6 sets dynamically generated links as visited. */
-div#toc a:visited { color: blue; }
 </style>
 <title>elinks(1)</title>
 </head>
@@ -427,7 +392,7 @@ start up and while running:
 <li>1 means show serious errors and warnings</li>
 <li>2 means show all messages</li>
 </ul></dd><dt><span id="cmdopt:version">-version</span></dt><dd>Print <em>ELinks</em> version information and exit.
-</dd></dl><p>Generated using output from ELinks version 0.12pre1.</p>
+</dd></dl><p>Generated using output from ELinks version 0.12pre2.</p>
 </div>
 <h2>ENVIRONMENT VARIABLES</h2>
 <div class="sectionbody">
@@ -657,7 +622,7 @@ was done by Jonas Fonseca <a href="mailto:fonseca@diku.dk">fonseca@diku.dk</a>.<
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 01-Jul-2008 03:27:27 EEST
+Last updated 21-Sep-2008 14:22:57 EEST
 </div>
 </div>
 </body>
