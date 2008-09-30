@@ -2,10 +2,10 @@
 -Werror, remove that from CFLAGS.
 
 diff --git a/configure b/configure
-index 7e63fd0..6582e58 100755
+index 43471d7..e2e5600 100755
 --- a/configure
 +++ b/configure
-@@ -24899,7 +24899,7 @@ _ACEOF
+@@ -24754,7 +24754,7 @@ fi
  if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
    if test "$CONFIG_DEBUG" = "yes"; then
      # We want to see all warnings and live with none (in debug mode).
@@ -15,10 +15,10 @@ index 7e63fd0..6582e58 100755
  
    case "`$CC -dumpversion`" in
 diff --git a/configure.in b/configure.in
-index a98cff9..f004017 100644
+index 0e9bd99..36b095d 100644
 --- a/configure.in
 +++ b/configure.in
-@@ -1409,7 +1409,7 @@ EL_LOG_CONFIG(LOCALEDIR, [Locale catalogs directory], [])
+@@ -1438,7 +1438,7 @@ fi
  if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
    if test "$CONFIG_DEBUG" = "yes"; then
      # We want to see all warnings and live with none (in debug mode).
