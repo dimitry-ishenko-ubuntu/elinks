@@ -75,7 +75,7 @@ span#author {
   color: #527bbd;
   font-family: sans-serif;
   font-weight: bold;
-  font-size: 1.1em;
+  font-size: 1.2em;
 }
 span#email {
 }
@@ -144,9 +144,6 @@ div.sidebarblock > div.content {
   padding: 0.5em;
 }
 
-div.listingblock {
-  margin-right: 0%;
-}
 div.listingblock > div.content {
   border: 1px solid silver;
   background: #f4f4f4;
@@ -225,9 +222,6 @@ div.hlist {
   margin-top: 0.8em;
   margin-bottom: 0.8em;
 }
-div.hlist td {
-  padding-bottom: 5px;
-}
 td.hlist1 {
   vertical-align: top;
   font-style: italic;
@@ -239,32 +233,6 @@ td.hlist2 {
 
 @media print {
   div#footer-badges { display: none; }
-}
-
-div#toctitle {
-  color: #527bbd;
-  font-family: sans-serif;
-  font-size: 1.1em;
-  font-weight: bold;
-  margin-top: 1.0em;
-  margin-bottom: 0.1em;
-}
-
-div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-div.toclevel2 {
-  margin-left: 2em;
-  font-size: 0.9em;
-}
-div.toclevel3 {
-  margin-left: 4em;
-  font-size: 0.9em;
-}
-div.toclevel4 {
-  margin-left: 6em;
-  font-size: 0.9em;
 }
 /* Workarounds for IE6's broken and incomplete CSS2. */
 
@@ -294,9 +262,6 @@ div.exampleblock-content {
   border-left: 2px solid silver;
   padding-left: 0.5em;
 }
-
-/* IE6 sets dynamically generated links as visited. */
-div#toc a:visited { color: blue; }
 </style>
 <title>The ELinks Manual</title>
 </head>
@@ -530,10 +495,9 @@ smaller executables even for GCC 3.x.</p>
 <div class="admonitionblock">
 <table><tr>
 <td class="icon">
-<div class="title">Note</div>
+<div class="title">Tip</div>
 </td>
 <td class="content">
-<div class="title">Warning</div>
 <p>If you use these <tt>CFLAGS</tt> on Cygwin and you get unresolved symbols (<tt>htons</tt> and
 suite in particular), try removing <tt>-fno-inline</tt> parameter.</p>
 </td>
@@ -551,10 +515,10 @@ suite in particular), try removing <tt>-fno-inline</tt> parameter.</p>
 <div class="admonitionblock">
 <table><tr>
 <td class="icon">
-<div class="title">Note</div>
+<div class="title">Tip</div>
 </td>
 <td class="content">
-<div class="title">Notes</div>
+<div class="title">Other configure options that can reduce the size</div>
 <ul>
 <li>
 <p>
@@ -845,8 +809,8 @@ haven't bothered to implement it at all yet). So better tell us first, and if
 we think it's not our fault we will tell you to go complain to Mozilla (better
 yet if it does not work in the Mozilla browsers neither ;-).</p>
 <h4>Now, I would still like NJS or a new JS engine from scratch&#8230;</h4>
-<div class="title">..and you don't fear some coding? That's fine then! ELinks is in no way tied</div>
-<p>to SpiderMonkey, in fact the ECMAScript support was carefully implemented so
+<p>...and you don't fear some coding? That's fine then! ELinks is in no way tied
+to SpiderMonkey, in fact the ECMAScript support was carefully implemented so
 that there are no SpiderMonkey references outside of
 <tt>src/ecmascript/spidermonkey.*</tt>. If you want to implement an alternative
 ECMAScript backend, go ahead - you will just need to write an autoconf
@@ -1301,7 +1265,7 @@ user extremely dangerous. To prevent such usage simply enable this feature.</p>
 <h2>Frequently Asked Questions</h2>
 <div class="sectionbody">
 <p>This is an attempt to capture some of the questions that appear once in a
-while on the mailing list.</p>
+while on the mailing list or on IRC.</p>
 <h3><a id="instances"></a>I rebuilt/upgraded/reconfigured ELinks and restarted it, but it looks like nothing has changed!</h3>
 <p>ELinks instances connect together so that they share the cache, bookmarks,
 cookies, configuration, etc.  Only the "master" ELinks instance does any real
@@ -1434,6 +1398,44 @@ colors on the Linux console, frame-buffer or not.</p>
 <p>You should therefore check against something like /^ELinks[\/ ]/, since more
 fields can be added inside the parenthesis in subsequent versions.  Note that
 users can change their User-Agent through the options system.</p>
+<h3><a id="droppings"></a>ELinks doesn't erase characters from the screen when it should!</h3>
+<p>When you scroll a web page, you may see ELinks leave some characters
+on the screen even though it should have erased them.  Pressing Ctrl+L
+usually removes these droppings until you scroll again.  There are
+a few possible reasons:</p>
+<ul>
+<li>
+<p>
+ELinks 0.11.* in a UTF-8 locale.  By default, ELinks guesses the
+  charset of the terminal from the environment variables LANG,
+  LC_CTYPE, and LC_ALL.  ELinks 0.11 versions do not support UTF-8
+  as this charset.  To use ELinks 0.11 on a UTF-8 terminal, you
+  should instead enable UTF-8 I/O via the Setup -&gt; Terminal options
+  dialog box, and choose a charset from Setup -&gt; Character set.
+  This limitation has been removed in ELinks 0.12pre1.
+</p>
+</li>
+<li>
+<p>
+Web pages may use nonspacing combining characters or Unicode control
+  characters that ELinks does not recognize as such.  This happens
+  especially on <a href="http://en.wikipedia.org/wiki/Special:RecentChanges">http://en.wikipedia.org/wiki/Special:RecentChanges</a>,
+  where the server generates U+200E LEFT-TO-RIGHT MARK characters.
+  ELinks 0.13.GIT now has some support for these characters; see
+  <a href="http://bugzilla.elinks.cz/show_bug.cgi?id=824">ELinks bug 824</a>.
+</p>
+</li>
+<li>
+<p>
+Some versions of the Terminal application in Mac OS X appear to
+  have a setting that makes line-drawing characters take up the
+  space of two ASCII letters.  ELinks does not expect this.
+  To avoid the incompatibility, either disable the setting in the
+  Terminal application or select "No frames" in the Terminal options
+  dialog box of ELinks.
+</p>
+</li>
+</ul>
 </div>
 <h2>Introduction to the World of ELinks</h2>
 <div class="sectionbody">
@@ -4144,9 +4146,483 @@ More things are possible, I'm sure.  If you have an idea that requires
 </li>
 </ul>
 </div>
+<h2><a id="smjs-scripting"></a>Scripting ELinks with ECMAScript</h2>
+<div class="sectionbody">
+<p>As a user of ELinks, you can control its behaviour by writing scripts
+in ECMAScript.  Unlike <a href="#ecmascript">scripts in SCRIPT elements of HTML</a>, these user scripts run with all the permissions of your user
+account, the same as with <a href="#lua-scripting">Lua</a>.  The object model is
+very different too.</p>
+<p>Support for ECMAScript user scripts was first added in ELinks 0.11.0.
+The <tt>configure</tt> script enables it by default if the required SpiderMonkey
+library has been installed, but you can disable it with <tt>configure
+--disable-sm-scripting</tt> or by <a href="#CONFIG-SCRIPTING-SPIDERMONKEY">editing features.conf</a>.</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">ECMAScript scripting is still a bit experimental: there seem to be
+ways to crash ELinks with it, and the object model may change.  However, if
+you don't have a <tt>hooks.js</tt> file, there is not much risk in enabling the
+feature at compile time.</td>
+</tr></table>
+</div>
+<p>When ELinks starts up, it evaluates the ECMAScript file <tt>hooks.js</tt> in
+your ELinks configuration directory (thus normally <tt>~/.elinks/hooks.js</tt>
+on Unix-like systems), or if the file does not exist there, then in
+the system-wide ELinks configuration directory (the location depends
+on how ELinks was built, but <tt>/etc/elinks/hooks.js</tt> is typical).</p>
+<p>In the ELinks source tree, the <tt>contrib/smjs</tt> directory contains some
+examples about scripting ELinks with ECMAScript.  Please see the
+<tt>README</tt> file in that directory for details.</p>
+<h3><a id="smjs-global-object"></a>Global Object</h3>
+<p>The global object provided to ECMAScript user scripts contains the standard
+ECMAScript classes, as well as the following:</p>
+<h4><a id="smjs-global-methods"></a>Global Object Methods</h4>
+<dl>
+<dt>
+<a id="smjs-global.do_file"></a> do_file(path)
+</dt>
+<dd>
+<p>
+        Load and evaluate the file with the given path (string). For example:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt>do_file("/home/me/.elinks/hooks.js");</tt></pre>
+</div></div>
+<p>will reload your hooks file.</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.0</p>
+</dd>
+</dl>
+<h4><a id="smjs-global-properties"></a>Global Object Properties</h4>
+<dl>
+<dt>
+<a id="smjs-global.elinks"></a> elinks (elinks)
+</dt>
+<dd>
+<p>
+        A reference to the <a href="#smjs-elinks-object">ELinks object</a>.
+</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.0</p>
+</dd>
+</dl>
+<h3><a id="smjs-elinks-object"></a>ELinks Object</h3>
+<p>The global <a href="#smjs-global.elinks"><em>elinks</em></a> property refers to this object.</p>
+<h4><a id="smjs-elinks-methods"></a>ELinks Object Methods</h4>
+<dl>
+<dt>
+<a id="smjs-elinks.alert"></a> elinks.alert(message)
+</dt>
+<dd>
+<p>
+        Display the given message (string) in a message box. For example:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt>elinks.alert("Hello, world!");</tt></pre>
+</div></div>
+<p>will display a friendly greeting.</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.0</p>
+</dd>
+<dt>
+<a id="smjs-elinks.execute"></a> elinks.execute(command)
+</dt>
+<dd>
+<p>
+        Execute the given command (string) on the current terminal.
+        For example:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt>var quoted_uri = "'" + elinks.location.replace(/'/g, "'\\''") + "'";
+elinks.execute("firefox " + quoted_uri);</tt></pre>
+</div></div>
+<p>will run Firefox with the URI of the current document.</p>
+<p><strong>Compatibility:</strong> ELinks 0.12pre1</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">One must be very careful with <em>elinks.execute</em>, because depending
+on the OS, the command may be subject to interpretation by a command
+shell language. When constructing the command string, be sure to quote
+any dubious parts (such as the URI of the current document, as above).</td>
+</tr></table>
+</div>
+</dd>
+<dt>
+<a id="smjs-elinks.load_uri"></a> elinks.load_uri(uri, callback)
+</dt>
+<dd>
+<p>
+        Load the given URI (string). When the URI completes loading, ELinks
+        calls the given callback (function). The callback is passed the
+        <a href="#smjs-cache_entry-object">cache object</a> that corresponds to the URI.
+        For example:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt>elinks.load_uri("http://www.eldar.org/cgi-bin/fortune.pl?text_format=yes",
+                function (cached) { elinks.alert(cached.content); });</tt></pre>
+</div></div>
+<p>displays a fortune.</p>
+<p>The <a href="#smjs-cache_entry-object">cache object</a> will not expire until after the
+callback returns.</p>
+<p><strong>Compatibility:</strong> ELinks 0.12pre1</p>
+</dd>
+</dl>
+<h4><a id="smjs-elinks-properties"></a>ELinks Object Properties</h4>
+<dl>
+<dt>
+<a id="smjs-elinks.home"></a> elinks.home (string)
+</dt>
+<dd>
+<p>
+        ELinks's &#8220;home&#8221; directory, where it stores its configuration files.
+        Read-only. For example,
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt>do_file(elinks.home + "hooks.js");</tt></pre>
+</div></div>
+<p>will reload your hooks file.</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.0</p>
+</dd>
+<dt>
+<a id="smjs-elinks.location"></a> elinks.location (string)
+</dt>
+<dd>
+<p>
+        The URI of the currently open document. This can be read to get a
+        string with the URI or set to load a different document.
+        For example,
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt>elinks.location = elinks.location + "/..";</tt></pre>
+</div></div>
+<p>will go up a directory (if the URI doesn't end in a file).</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.0</p>
+</dd>
+<dt>
+<a id="smjs-elinks.bookmarks"></a> elinks.bookmarks (hash)
+</dt>
+<dd>
+<p>
+        This is a hash, the elements of which correspond to the bookmarks.
+        One can delve into the bookmarks hierarchy in a reasonably nifty
+        fashion, just by using standard ECMAScript syntax:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt>elinks.bookmarks.x.children.y.children.z.children.foo.title</tt></pre>
+</div></div>
+<p>gets the title of the bookmark titled &#8220;foo&#8221; under the folder &#8220;z&#8221;,
+which is a subfolder of &#8220;y&#8221;, which is a subfolder of &#8220;x&#8221;.</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.0</p>
+<p><a id="smjs-bookmark-properties"></a>A bookmark object has these properties:</p>
+<dl>
+<dt>
+<a id="smjs-bookmark.title"></a> item.title (string)
+</dt>
+<dd>
+<p>
+        This is the title of the bookmark. It can be read and set.
+</p>
+</dd>
+<dt>
+<a id="smjs-bookmark.url"></a> item.url (string)
+</dt>
+<dd>
+<p>
+        This is the URI of the bookmark. It can be read and set.
+</p>
+</dd>
+<dt>
+<a id="smjs-bookmark.children"></a> item.children (hash)
+</dt>
+<dd>
+<p>
+        This is a hash, the elements of which are the bookmarks that
+        are children to the item. It is read-only.
+</p>
+</dd>
+</dl>
+</dd>
+<dt>
+<a id="smjs-elinks.globhist"></a> elinks.globhist (hash)
+</dt>
+<dd>
+<p>
+        This is a hash, the elements of which correspond to entries in ELinks's
+        global history. The hash is indexed by URI. For example,
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt>elinks.globhist["file:///"]</tt></pre>
+</div></div>
+<p>will get you the history item for your root directory.</p>
+<p><strong>Compatibility:</strong> ELinks 0.12pre1</p>
+<p><a id="smjs-global_history_item-properties"></a>A history item has these properties:</p>
+<dl>
+<dt>
+<a id="smjs-global_history_item.title"></a> item.title (string)
+</dt>
+<dd>
+<p>
+        This is the title of the history item. It can be read and set.
+</p>
+</dd>
+<dt>
+<a id="smjs-global_history_item.url"></a> item.url (string)
+</dt>
+<dd>
+<p>
+        This is the URI of the history item. It can be read and set.
+</p>
+</dd>
+<dt>
+<a id="smjs-global_history_item.last_visit"></a> item.last_visit (number)
+</dt>
+<dd>
+<p>
+        This is the UNIX time of the last visit time for the item. UNIX time
+        is the number of seconds that have passed between the UNIX epoch
+        (which is 1970-01-01 00:00:00 UTC) and the represented time. Note that
+        this is <em>seconds</em> since the epoch, whereas ECMAScript likes to use
+        <em>milliseconds</em> since the epoch. This property can be set or read.
+</p>
+</dd>
+</dl>
+</dd>
+<dt>
+<a id="smjs-elinks.action"></a> elinks.action (hash)
+</dt>
+<dd>
+<p>
+        This hash lets you call the built-in actions of ELinks.  For example,
+        you can call <tt>elinks.action.auth_manager()</tt> to open the authentication
+        manager.  The names of the actions are the same as in elinks.conf or
+        in the keybinding manager, except they have underscores instead of
+        dashes in order to make them valid ECMAScript identifiers.
+</p>
+<p><strong>Compatibility:</strong> ELinks 0.12pre1</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">When you read an action function from this hash, ELinks binds it to the
+current tab; any later calls to the function affect that tab.  This may be
+changed in a future version.  It is safest to call the function right away,
+rather than save it in a variable and call it later.</td>
+</tr></table>
+</div>
+</dd>
+<dt>
+<a id="smjs-elinks.keymaps"></a> elinks.keymaps (hash)
+</dt>
+<dd>
+<p>
+        This is a hash, the elements of which correspond to ELinks's keymaps.
+        Currently, there are three: <em>elinks.keymaps.main</em>, <em>elinks.keymaps.edit</em>,
+        and <em>elinks.keymaps.menu</em>. These elements are also hashes, the elements of
+        which correspond to bindings. For example, <tt>elinks.keymaps.main["q"]</tt> is
+        the binding to the &#8220;q&#8221; key in the main map. These bindings can be read,
+        to get the name of the action to which the key is bound, or set to one of:
+</p>
+<ul>
+<li>
+<p>
+A string with the name of the ELinks action.
+</p>
+</li>
+<li>
+<p>
+A function, which will thenceforth be called when the key is pressed.
+</p>
+</li>
+<li>
+<p>
+The string <tt>"none"</tt>, to unbind the key.  You can also use the <tt>null</tt>
+  value for this purpose, but that crashes ELinks 0.11.4 and 0.12pre1
+  (<a href="http://bugzilla.elinks.cz/show_bug.cgi?id=1027">bug 1027</a>),
+  so it may be best to use the string for now.
+</p>
+</li>
+</ul>
+<p>For example,</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt>elinks.keymaps.main["!"] = function () { elinks.alert("Hello!"); }</tt></pre>
+</div></div>
+<p>binds the &#8220;!&#8221; key in the main map to a function that displays a friendly
+alert.</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt>elinks.keymaps.main["/"] = "search-typeahead-text";</tt></pre>
+</div></div>
+<p>changes the &#8220;/&#8221; key to use the nice typeahead search function instead of
+opening that ugly old search dialogue box.</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.0, unless you use <tt>null</tt>.</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Do not read a function from <a href="#smjs-elinks.action"><em>elinks.action</em></a>,
+e.g. <tt>elinks.action.search_typeahead_text</tt>, and place it in a keymap.
+ELinks binds such functions to the current tab when the script reads
+them from <em>elinks.action</em>, so they will not work right in other tabs.
+Use the name of the action instead.</td>
+</tr></table>
+</div>
+</dd>
+<dt>
+<a id="smjs-elinks.vs"></a> elinks.vs (view_state)
+</dt>
+<dd>
+<p>
+        This property refers to the <a href="#smjs-view_state-object">view-state         object</a> for the current document, if any.
+</p>
+<p><strong>Compatibility:</strong> ELinks 0.12pre1</p>
+</dd>
+</dl>
+<h4><a id="smjs-elinks-hooks"></a>ELinks Object Hooks</h4>
+<p>These are actually properties, but a special case: one assigns functions
+to them, which functions are called at certain events.</p>
+<p>In the ELinks source tree, <tt>contrib/smjs/hooks.js</tt> provides a mechanism
+with which multiple scripts can add their functions to the same hooks.
+Please see <tt>contrib/smjs/README</tt> for details.</p>
+<dl>
+<dt>
+<a id="smjs-elinks.preformat_html"></a> elinks.preformat_html(cached, vs)
+</dt>
+<dd>
+<p>
+        This function is called every time a document is loaded, before the
+        document is actually rendered, to give scripts the opportunity to
+        modify it. The first parameter is the <a href="#smjs-cache_entry-object">cache         object</a> and the second is the <a href="#smjs-view_state-object">view-state         object</a>.
+</p>
+<p>The <a href="#smjs-cache_entry-object">cache object</a> will not expire until after this
+function returns.</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.1 as described.  ELinks 0.11.0 did not provide
+the <em>vs</em> argument.</p>
+</dd>
+<dt>
+<a id="smjs-elinks.goto_url_hook"></a> elinks.goto_url_hook(url)
+</dt>
+<dd>
+<p>
+        This function is called every time the user enters something in the
+        <em>Go to URL</em> box. The url (string) can be modified or not, and the
+        returned string is substituted for what the user entered.  If the
+        value <tt>false</tt> is returned, the URL is not changed and further hooks
+        in ELinks are not run.
+</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.0</p>
+</dd>
+<dt>
+<a id="smjs-elinks.follow_url_hook"></a> elinks.follow_url_hook(url)
+</dt>
+<dd>
+<p>
+        This function is called every time the user tries to load a document,
+        whether by following a link, by entering a URI in the Go to URL box,
+        by setting <a href="#smjs-elinks.location"><em>elinks.location</em></a>, or whatever.
+        It behaves the same as <a href="#smjs-elinks.goto_url_hook"><em>elinks.goto_url_hook</em></a>
+        above.
+</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.0</p>
+</dd>
+</dl>
+<h3><a id="smjs-cache_entry-object"></a>Cache Object</h3>
+<p>The cache object mentioned in the descriptions of
+<a href="#smjs-elinks.load_uri"><em>elinks.load_uri</em></a> and
+<a href="#smjs-elinks.preformat_html"><em>elinks.preformat_html</em></a> is a wrapper for the
+internal ELinks cache object.  ELinks passes the ECMAScript cache object as an
+argument to your ECMAScript function, and keeps the corresponding document in
+the cache until the function returns.  After that, ELinks may remove the
+document from the cache, even if the function has saved the cache object to
+some global variable.  Such an expired cache object does not work but it does
+not crash ELinks either.</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.0</p>
+<h4><a id="smjs-cache_entry-properties"></a>Cache Object Properties</h4>
+<dl>
+<dt>
+<a id="smjs-cache_entry.content"></a> cached.content (string)
+</dt>
+<dd>
+<p>
+        This is the content received from the server. It can be read and set.
+</p>
+</dd>
+<dt>
+<a id="smjs-cache_entry.type"></a> cached.type (string)
+</dt>
+<dd>
+<p>
+        This is the MIME type of the cache entry. It can be read and set.
+</p>
+</dd>
+<dt>
+<a id="smjs-cache_entry.length"></a> cached.length (number)
+</dt>
+<dd>
+<p>
+        This is the length of cached.content. It is read-only.
+</p>
+</dd>
+<dt>
+<a id="smjs-cache_entry.head"></a> cached.head (string)
+</dt>
+<dd>
+<p>
+        This is the header received from the server. It can be read and set.
+</p>
+</dd>
+<dt>
+<a id="smjs-cache_entry.uri"></a> cached.uri (string)
+</dt>
+<dd>
+<p>
+        This is the URI of the cache entry. It is read-only.
+</p>
+</dd>
+</dl>
+<h3><a id="smjs-view_state-object"></a>View-state Object</h3>
+<p>The view-state object mentioned in the descriptions of
+<a href="#smjs-elinks.preformat_html"><em>elinks.preformat_html</em></a> and
+<a href="#smjs-elinks.vs"><em>elinks.vs</em></a> is a wrapper for the internal ELinks view_state
+object.  The view state holds information on how the current document is being
+displayed.</p>
+<p><strong>Compatibility:</strong> ELinks 0.11.1</p>
+<h4><a id="smjs-view_state-properties"></a>View-state Object Properties</h4>
+<dl>
+<dt>
+<a id="smjs.view_state.plain"></a> vs.plain (boolean)
+</dt>
+<dd>
+<p>
+        Whether the current document is rendered as HTML or displayed
+        as plaintext. This can be read and set.
+</p>
+</dd>
+<dt>
+<a id="smjs.view_state.uri"></a> vs.uri (string)
+</dt>
+<dd>
+<p>
+        This is the URI of the current document. It is read-only.
+</p>
+</dd>
+</dl>
+</div>
 <div id="footer">
 <div id="footer-text">
-Last updated 01-Jul-2008 03:27:39 EEST
+Last updated 21-Sep-2008 14:23:09 EEST
 </div>
 </div>
 </body>

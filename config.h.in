@@ -87,9 +87,6 @@
 /* Define if you want: GNUTLS support */
 #undef CONFIG_GNUTLS
 
-/* Define if you want: GNU TLS OpenSSL compatibility support */
-#undef CONFIG_GNUTLS_OPENSSL_COMPAT
-
 /* Define if you want: Gopher protocol support */
 #undef CONFIG_GOPHER
 
@@ -359,9 +356,6 @@
 
 /* Define to 1 if you have the `getuid' function. */
 #undef HAVE_GETUID
-
-/* Define to 1 if you have the <gnutls/openssl.h> header file. */
-#undef HAVE_GNUTLS_OPENSSL_H
 
 /* Define to 1 if you have the <gpm.h> header file. */
 #undef HAVE_GPM_H
@@ -795,6 +789,17 @@
 
 /* How to invoke XTerm */
 #undef XTERM
+
+/* Define as 1 if you are using Tiny C Compiler with the GNU C Library, and
+   <alloca.h> of glibc would otherwise override the alloca macro defined in
+   <stddef.h> of TCC. If <alloca.h> of glibc sees the _ALLOCA_H macro, it
+   assumes it has already been included, and does not redefine alloca. This
+   might not work in future glibc versions though, because the names of the
+   #include guard macros are not documented. The incompatibility has been
+   reported to the tinycc-devel mailing list on 2008-07-14. If a future
+   version of TCC provides an <alloca.h> of its own, this hack won't be
+   needed. */
+#undef _ALLOCA_H
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS
