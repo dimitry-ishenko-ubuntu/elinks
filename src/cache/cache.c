@@ -18,6 +18,9 @@
 #include "protocol/protocol.h"
 #include "protocol/proxy.h"
 #include "protocol/uri.h"
+#ifdef CONFIG_SCRIPTING_SPIDERMONKEY
+# include "scripting/smjs/smjs.h"
+#endif
 #include "util/error.h"
 #include "util/memory.h"
 #include "util/string.h"
@@ -150,7 +153,7 @@ get_cache_entry(struct uri *uri)
 	cached->valid = 1;
 
 	init_list(cached->frag);
-	cached->id = id_counter++;
+	cached->cache_id = id_counter++;
 	object_nolock(cached, "cache_entry"); /* Debugging purpose. */
 
 	cached->box_item = add_listbox_leaf(&cache_browser, NULL, cached);
@@ -385,7 +388,7 @@ add_fragment(struct cache_entry *cached, off_t offset,
 
 	/* id marks each entry, and change each time it's modified,
 	 * used in HTML renderer. */
-	cached->id = id_counter++;
+	cached->cache_id = id_counter++;
 
 	/* Possibly insert the new data in the middle of existing fragment. */
 	foreach (f, cached->frag) {
@@ -639,7 +642,7 @@ delete_entry_content(struct cache_entry *cached)
 		del_from_list(f);
 		frag_free(f);
 	}
-	cached->id = id_counter++;
+	cached->cache_id = id_counter++;
 	cached->length = 0;
 	cached->incomplete = 1;
 
@@ -656,6 +659,9 @@ done_cache_entry(struct cache_entry *cached)
 	delete_entry_content(cached);
 
 	if (cached->box_item) done_listbox_item(&cache_browser, cached->box_item);
+#ifdef CONFIG_SCRIPTING_SPIDERMONKEY
+	if (cached->jsobject) smjs_detach_cache_entry_object(cached);
+#endif
 
 	if (cached->uri) done_uri(cached->uri);
 	if (cached->proxy_uri) done_uri(cached->proxy_uri);

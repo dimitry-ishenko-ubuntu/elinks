@@ -8,6 +8,8 @@
 #include "main/module.h"
 #include "util/time.h"
 
+struct form_state;
+struct form_view;
 struct string;
 struct terminal;
 struct uri;
@@ -50,7 +52,7 @@ struct ecmascript_interpreter {
 	 * ecmascript_fragile, but it can happen i.e. when the urrent document
 	 * is reloaded in another tab and then you just cause the current tab
 	 * to redraw. */
-	unsigned int onload_snippets_owner;
+	unsigned int onload_snippets_cache_id;
 };
 
 /* Why is the interpreter bound to {struct view_state} instead of {struct
@@ -69,6 +71,10 @@ void ecmascript_free_urls(struct module *module);
 
 struct ecmascript_interpreter *ecmascript_get_interpreter(struct view_state*vs);
 void ecmascript_put_interpreter(struct ecmascript_interpreter *interpreter);
+
+void ecmascript_detach_form_view(struct form_view *fv);
+void ecmascript_detach_form_state(struct form_state *fs);
+void ecmascript_moved_form_state(struct form_state *fs);
 
 void ecmascript_reset_state(struct view_state *vs);
 

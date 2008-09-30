@@ -241,7 +241,7 @@ get_current_download(struct session *ses)
 	else if (have_location(ses))
 		download = &cur_loc(ses)->download;
 
-	if (download && download->state == S_OK) {
+	if (download && is_in_state(download->state, S_OK)) {
 		struct file_to_load *ftl;
 
 		foreach (ftl, ses->more_files)
@@ -255,7 +255,7 @@ get_current_download(struct session *ses)
 }
 
 void
-print_error_dialog(struct session *ses, enum connection_state state,
+print_error_dialog(struct session *ses, struct connection_state state,
 		   struct uri *uri, enum connection_priority priority)
 {
 	struct string msg;
@@ -513,6 +513,17 @@ maybe_pre_format_html(struct cache_entry *cached, struct session *ses)
 	if (!cached || cached->preformatted)
 		return;
 
+	/* The script called from here may indirectly call
+	 * garbage_collection().  If the refcount of the cache entry
+	 * were 0, it could then be freed, and the
+	 * cached->preformatted assignment at the end of this function
+	 * would crash.  Normally, the document has a reference to the
+	 * cache entry, and that suffices.  If the following assertion
+	 * ever fails, object_lock(cached) and object_unlock(cached)
+	 * must be added to this function.  */
+	assert(cached->object.refcount > 0);
+	if_assert_failed return;
+
 	fragment = get_cache_fragment(cached);
 	if (!fragment) return;
 
@@ -591,7 +602,7 @@ doc_loading_callback(struct download *download, struct session *ses)
 
 		start_document_refreshes(ses);
 
-		if (download->state != S_OK) {
+		if (!is_in_state(download->state, S_OK)) {
 			print_error_dialog(ses, download->state,
 					   ses->doc_view->document->uri,
 					   download->pri);
@@ -1105,7 +1116,8 @@ decode_session_info(struct terminal *term, struct terminal_info *info)
 				/* End loop if initialization fails */
 				len = 0;
 			} else if (bad_url) {
-				print_error_dialog(ses, S_BAD_URL, NULL, PRI_MAIN);
+				print_error_dialog(ses, connection_state(S_BAD_URL),
+						   NULL, PRI_MAIN);
 			}
 
 		}

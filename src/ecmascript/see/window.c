@@ -211,7 +211,9 @@ js_window_alert(struct SEE_interpreter *interp, struct SEE_object *self,
 	struct view_state *vs = win->vs;
 	unsigned char *string;
 
-	see_check_class(interp, thisobj, &js_window_object_class);
+	/* Do not check thisobj->objectclass.  ELinks sets this
+	 * function as a property of both the window object and the
+	 * global object, so thisobj may validly refer to either.  */
 
 	SEE_SET_BOOLEAN(res, 1);
 	if (argc < 1)
@@ -239,16 +241,16 @@ js_window_open(struct SEE_interpreter *interp, struct SEE_object *self,
 	struct view_state *vs = win->vs;
 	struct document_view *doc_view = vs->doc_view;
 	struct session *ses = doc_view->session;
-	unsigned char *frame = "";
-	unsigned char *url;
+	unsigned char *frame = NULL;
+	unsigned char *url, *url2;
 	struct uri *uri;
 	struct SEE_value url_value;
-#if 0
 	static time_t ratelimit_start;
 	static int ratelimit_count;
-#endif
 
-	see_check_class(interp, thisobj, &js_window_object_class);
+	/* Do not check thisobj->objectclass.  ELinks sets this
+	 * function as a property of both the window object and the
+	 * global object, so thisobj may validly refer to either.  */
 
 	SEE_SET_OBJECT(res, (struct SEE_object *)win);
 	if (get_opt_bool("ecmascript.block_window_opening")) {
@@ -259,7 +261,7 @@ js_window_open(struct SEE_interpreter *interp, struct SEE_object *self,
 	}
 
 	if (argc < 1) return;
-#if 0
+
 	/* Ratelimit window opening. Recursive window.open() is very nice.
 	 * We permit at most 20 tabs in 2 seconds. The ratelimiter is very
 	 * rough but shall suffice against the usual cases. */
@@ -272,7 +274,7 @@ js_window_open(struct SEE_interpreter *interp, struct SEE_object *self,
 		if (ratelimit_count > 20)
 			return;
 	}
-#endif
+
 	SEE_ToString(interp, argv[0], &url_value);
 	url = see_string_to_unsigned_char(url_value.u.string);
 	if (!url) return;
@@ -286,18 +288,23 @@ js_window_open(struct SEE_interpreter *interp, struct SEE_object *self,
 			mem_free(url);
 			return;
 		}
-		/* url and frame will be freed by ecmascript_check_url */
-		if (!ecmascript_check_url(url, frame)) return;
 	}
 	/* TODO: Support for window naming and perhaps some window features? */
 
-	url = join_urls(doc_view->document->uri, url);
-	if (!url) return;
-	uri = get_uri(url, 0);
+	url2 = join_urls(doc_view->document->uri, url);
 	mem_free(url);
-	if (!uri) return;
+	if (!url2) {
+		mem_free_if(frame);
+		return;
+	}
+	uri = get_uri(url2, 0);
+	mem_free(url2);
+	if (!uri) {
+		mem_free_if(frame);
+		return;
+	}
 
-	if (*frame && strcasecmp(frame, "_blank")) {
+	if (frame && *frame && strcasecmp(frame, "_blank")) {
 		struct delayed_open *deo = mem_calloc(1, sizeof(*deo));
 
 		if (deo) {
@@ -330,6 +337,7 @@ js_window_open(struct SEE_interpreter *interp, struct SEE_object *self,
 
 end:
 	done_uri(uri);
+	mem_free_if(frame);
 }
 
 static void
@@ -341,7 +349,9 @@ js_setTimeout(struct SEE_interpreter *interp, struct SEE_object *self,
 	unsigned char *code;
 	int timeout;
 
-	see_check_class(interp, thisobj, &js_window_object_class);
+	/* Do not check thisobj->objectclass.  ELinks sets this
+	 * function as a property of both the window object and the
+	 * global object, so thisobj may validly refer to either.  */
 
 	if (argc != 2) return;
 	ei = ((struct global_object *)interp)->interpreter;

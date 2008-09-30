@@ -337,8 +337,8 @@ render_document(struct view_state *vs, struct document_view *doc_view,
 
 		if (doc_view->session
 		    && doc_view->session->reloadlevel > CACHE_MODE_NORMAL)
-			while (vs->form_info_len)
-				mem_free_if(vs->form_info[--vs->form_info_len].value);
+			for (; vs->form_info_len > 0; vs->form_info_len--)
+				done_form_state(&vs->form_info[vs->form_info_len - 1]);
 
 		shrink_memory(0);
 
@@ -388,11 +388,12 @@ render_document(struct view_state *vs, struct document_view *doc_view,
 		 * XXX: What happens if a document is still loading in the
 		 * other tab when we press ^L here? */
 		if (vs->ecmascript_fragile
-		    || (vs->ecmascript && vs->ecmascript->onload_snippets_owner
-		       && document->id != vs->ecmascript->onload_snippets_owner))
+		    || (vs->ecmascript
+		       && vs->ecmascript->onload_snippets_cache_id
+		       && document->cache_id != vs->ecmascript->onload_snippets_cache_id))
 			ecmascript_reset_state(vs);
 		assert(vs->ecmascript);
-		vs->ecmascript->onload_snippets_owner = document->id;
+		vs->ecmascript->onload_snippets_cache_id = document->cache_id;
 
 		/* Passing of the onload_snippets pointers gives *_snippets()
 		 * some feeling of universality, shall we ever get any other
