@@ -11,8 +11,9 @@ elinks (0.12~pre2-1) unstable; urgency=low
     intended for development versions
   * Disable features marked experimental (NNTP, EX mode and Bittorrent)
   * Disable SMB support (libsmbclient is GPLv3+)
+  * Correct lots of licensing information in debian/copyright
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 22:13:20 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 22:58:29 +0530
 
 elinks (0.12~pre1-1) experimental; urgency=low
 
