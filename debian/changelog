@@ -4,6 +4,7 @@ elinks (0.12~pre2-1) unstable; urgency=low
     + Renders UTF-8 properly (Closes: #331638)
     + Fixes decompression bug with gzip + chunked (Closes: #486917)
     + Can bind BS (8) and DEL (127) to different actions (Closes: #139984)
+    + ECMAScript support is largely considered stable (Closes: #428549)
   * Refresh patches for 0.12pre2
   * Disable incomplete Guile and Python support in unstable
   * Remove patch 14_debug_disable_Werror and disable debugging support
@@ -11,7 +12,7 @@ elinks (0.12~pre2-1) unstable; urgency=low
   * Disable features marked experimental (NNTP, EX mode and Bittorrent)
   * Disable SMB support (libsmbclient is GPLv3+)
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 22:11:26 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 22:13:20 +0530
 
 elinks (0.12~pre1-1) experimental; urgency=low
 
