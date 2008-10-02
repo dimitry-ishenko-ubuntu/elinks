@@ -1,4 +1,4 @@
-elinks (0.12~pre2-1) unstable; urgency=low
+elinks (0.12~pre2.dfsg0-1) unstable; urgency=low
 
   * New upstream release 0.12pre2
     + Renders UTF-8 properly (Closes: #331638)
@@ -13,7 +13,7 @@ elinks (0.12~pre2-1) unstable; urgency=low
   * Disable SMB support (libsmbclient is GPLv3+)
   * Correct lots of licensing information in debian/copyright
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 22:58:29 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 23:12:07 +0530
 
 elinks (0.12~pre1-1) experimental; urgency=low
 
