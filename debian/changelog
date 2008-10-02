@@ -8,8 +8,10 @@ elinks (0.12~pre2-1) unstable; urgency=low
   * Disable incomplete Guile and Python support in unstable
   * Remove patch 14_debug_disable_Werror and disable debugging support
     intended for development versions
+  * Disable features marked experimental (NNTP, EX mode and Bittorrent)
+  * Disable SMB support (libsmbclient is GPLv3+)
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 21:42:48 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 22:11:26 +0530
 
 elinks (0.12~pre1-1) experimental; urgency=low
 

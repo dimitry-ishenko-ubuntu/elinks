@@ -41,7 +41,7 @@ confopts_main = $(confopts) \
 	--enable-leds \
 	--enable-html-highlight \
 	--enable-fsp \
-	--enable-smb \
+	--disable-smb \
 	--with-perl \
 	--without-guile \
 	--without-python \
