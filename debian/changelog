@@ -12,8 +12,9 @@ elinks (0.12~pre2.dfsg0-1) unstable; urgency=low
   * Disable features marked experimental (NNTP, EX mode and Bittorrent)
   * Disable SMB support (libsmbclient is GPLv3+)
   * Correct lots of licensing information in debian/copyright
+  * Adjust debian/watch file to handle dfsg and pre|rc releases
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 23:12:07 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 23:54:53 +0530
 
 elinks (0.12~pre1-1) experimental; urgency=low
 
