@@ -43,8 +43,8 @@ confopts_main = $(confopts) \
 	--enable-fsp \
 	--enable-smb \
 	--with-perl \
-	--with-guile \
-	--with-python \
+	--without-guile \
+	--without-python \
 	--with-ruby \
 	--with-gssapi \
 	--enable-cgi \
