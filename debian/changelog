@@ -2,9 +2,11 @@ elinks (0.12~pre2-1) unstable; urgency=low
 
   * New upstream release 0.12pre2
     + Renders UTF-8 properly (Closes: #331638)
+    + Fixes decompression bug with gzip + chunked (Closes: #486917)
+    + Can bind BS (8) and DEL (127) to different actions (Closes: #139984)
   * Refresh patches for 0.12pre2
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 21:03:55 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 21:23:19 +0530
 
 elinks (0.12~pre1-1) experimental; urgency=low
 
