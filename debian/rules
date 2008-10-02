@@ -35,7 +35,7 @@ confopts = --prefix=/usr \
 	--with-gnutls=/usr
 
 confopts_main = $(confopts) \
-	--enable-nntp \
+	--disable-nntp \
 	--enable-88-colors \
 	--enable-256-colors \
 	--enable-leds \
@@ -48,8 +48,8 @@ confopts_main = $(confopts) \
 	--with-ruby \
 	--with-gssapi \
 	--enable-cgi \
-	--enable-exmode \
-	--enable-bittorrent \
+	--disable-exmode \
+	--disable-bittorrent \
 	--disable-debug \
 	--with-spidermonkey
 
