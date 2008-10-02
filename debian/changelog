@@ -6,8 +6,10 @@ elinks (0.12~pre2-1) unstable; urgency=low
     + Can bind BS (8) and DEL (127) to different actions (Closes: #139984)
   * Refresh patches for 0.12pre2
   * Disable incomplete Guile and Python support in unstable
+  * Remove patch 14_debug_disable_Werror and disable debugging support
+    intended for development versions
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 21:38:24 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 21:42:48 +0530
 
 elinks (0.12~pre1-1) experimental; urgency=low
 

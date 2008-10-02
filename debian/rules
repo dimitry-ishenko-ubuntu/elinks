@@ -50,7 +50,7 @@ confopts_main = $(confopts) \
 	--enable-cgi \
 	--enable-exmode \
 	--enable-bittorrent \
-	--enable-debug \
+	--disable-debug \
 	--with-spidermonkey
 
 confopts_lite = $(confopts) \
