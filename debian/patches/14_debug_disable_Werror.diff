@@ -1,0 +1,29 @@
+--enable-debug is recommended for development versions of ELinks but adds
+-Werror, remove that from CFLAGS.
+
+diff --git a/configure b/configure
+index 43471d7..e2e5600 100755
+--- a/configure
++++ b/configure
+@@ -24754,7 +24754,7 @@ fi
+ if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
+   if test "$CONFIG_DEBUG" = "yes"; then
+     # We want to see all warnings and live with none (in debug mode).
+-    CFLAGS="$CFLAGS -Werror"
++    CFLAGS="$CFLAGS"
+   fi
+ 
+   case "`$CC -dumpversion`" in
+diff --git a/configure.in b/configure.in
+index 0e9bd99..36b095d 100644
+--- a/configure.in
++++ b/configure.in
+@@ -1438,7 +1438,7 @@ fi
+ if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
+   if test "$CONFIG_DEBUG" = "yes"; then
+     # We want to see all warnings and live with none (in debug mode).
+-    CFLAGS="$CFLAGS -Werror"
++    CFLAGS="$CFLAGS"
+   fi
+ 
+   case "`$CC -dumpversion`" in

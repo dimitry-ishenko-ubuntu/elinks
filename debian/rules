@@ -8,14 +8,6 @@ export DH_OPTIONS
 
 export DH_ALWAYS_EXCLUDE=.gitignore
 
-PKG_NAME=elinks
-PKG_VERS=0.11.3
-UPSTR_SITE=http://$(PKG_NAME).or.cz
-UPSTR_DIR=$(PKG_NAME)-$(PKG_VERS)
-UPSTR_FILE=$(UPSTR_DIR).tar.bz2
-ORIG_DIR=$(UPSTR_DIR).orig
-ORIG_TAR=$(PKG_NAME)_$(PKG_VERS).orig.tar
-
 version=`dpkg-parsechangelog -ldebian/changelog | grep 'Version: ' | sed 's/Version: //g'`
 
 # These are used for cross-compiling and for saving the configure script
@@ -37,6 +29,7 @@ confopts = --prefix=/usr \
 	--mandir=\$${prefix}/share/man \
 	--infodir=\$${prefix}/share/info \
 	--sysconfdir=/etc/elinks \
+	--without-lzma \
 	--without-openssl \
 	--without-x \
 	--with-gnutls=/usr
@@ -47,12 +40,18 @@ confopts_main = $(confopts) \
 	--enable-256-colors \
 	--enable-leds \
 	--enable-html-highlight \
-	--enable-cgi \
 	--enable-fsp \
-	--disable-smb \
+	--enable-smb \
 	--with-perl \
+	--with-guile \
+	--with-python \
 	--with-ruby \
-	--without-spidermonkey
+	--with-gssapi \
+	--enable-cgi \
+	--enable-exmode \
+	--enable-bittorrent \
+	--enable-debug \
+	--with-spidermonkey
 
 confopts_lite = $(confopts) \
 	--disable-nntp \
@@ -68,6 +67,7 @@ confopts_lite = $(confopts) \
 	--disable-marks \
 	--disable-css \
 	--disable-backtrace \
+	--disable-sm-scripting \
 	--enable-fastmem \
 	--enable-small \
 	--without-gpm \
@@ -109,6 +109,9 @@ ifneq "$(wildcard /usr/share/misc/config.guess)" ""
 endif
 	[ ! -f config.h ] || mv -f config.h config.h.ups
 	[ ! -f Makefile.config ] || mv -f Makefile.config Makefile.config.ups
+	[ ! -f doc/man/man1/elinks.1.in ] || cp -af doc/man/man1/elinks.1.in doc/man/man1/elinks.1.in.ups
+	[ ! -f doc/man/man5/elinks.conf.5 ] || cp -af doc/man/man5/elinks.conf.5 doc/man/man5/elinks.conf.5.ups
+	[ ! -f doc/man/man5/elinkskeys.5 ] || cp -af doc/man/man5/elinkskeys.5 doc/man/man5/elinkskeys.5.ups
 	touch $@
 
 #Architecture 
@@ -135,9 +138,11 @@ clean: clean-patched unpatch
 clean-patched:
 	dh_testdir
 	dh_testroot
-	rm -f stamp-h.in
 	rm -f build-arch-stamp build-indep-stamp save-stamp
 	rm -rf build-lite build-main
+	[ ! -f doc/man/man5/elinkskeys.5.ups ] || mv -f doc/man/man5/elinkskeys.5.ups doc/man/man5/elinkskeys.5
+	[ ! -f doc/man/man5/elinks.conf.5.ups ] || mv -f doc/man/man5/elinks.conf.5.ups doc/man/man5/elinks.conf.5
+	[ ! -f doc/man/man1/elinks.1.in.ups ] || mv -f doc/man/man1/elinks.1.in.ups doc/man/man1/elinks.1.in
 	[ ! -f Makefile.config.ups ] || mv -f Makefile.config.ups Makefile.config
 	[ ! -f config.h.ups ] || mv -f config.h.ups config.h
 	[ ! -f config/config.guess.ups ] || mv -f config/config.guess.ups config/config.guess
@@ -145,6 +150,7 @@ clean-patched:
 	rm -f debian/elinks-lite.conf
 	rm -f debian/elinks.conf
 	rm -rf debian/tmp.elinks-data
+	rm -rf docbook2html-dir
 	dh_clean 
 
 unpatch:
@@ -218,24 +224,8 @@ binary-indep: build-indep install-indep
 	$(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
 
 # Build architecture dependant packages using the common target.
-binary-arch: build-arch install-arch
+binary-arch: build-arch install-arch 
 	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
 
-get-orig-source:
-	wget -q $(UPSTR_SITE)/download/$(UPSTR_FILE)
-	tar -jxf $(UPSTR_FILE)
-	mv $(UPSTR_DIR) $(ORIG_DIR)
-	rm -f $(ORIG_DIR)/po/*.gmo
-	rm -f $(ORIG_DIR)/config.log
-	rm -f $(ORIG_DIR)/config.status
-	rm -f $(ORIG_DIR)/features.log
-	rm -rf $(ORIG_DIR)/debian
-	rm -rf $(ORIG_DIR)/po/.deps
-	tar -cf $(ORIG_TAR) $(ORIG_DIR)
-	gzip --best $(ORIG_TAR)
-	rm -rf $(UPSTR_FILE) $(ORIG_DIR)
-	@echo "Re-packaged source file: $(ORIG_TAR).gz"
-	@ls -l $(ORIG_TAR).gz
-
 binary: binary-arch binary-indep
-.PHONY: build clean binary-indep binary-arch binary install install-indep install-arch patch unpatch get-orig-source save-upstream get-orig-source
+.PHONY: build clean binary-indep binary-arch binary install install-indep install-arch patch unpatch save-upstream
