@@ -1,10 +1,10 @@
 elinks (0.12~pre2-1) unstable; urgency=low
 
   * New upstream release 0.12pre2
-  * Remove patch 06_417789-CVE-2007-2027, fixed upstream
+    + Renders UTF-8 properly (Closes: #331638)
   * Refresh patches for 0.12pre2
 
- -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 21:02:00 +0530
+ -- Y Giridhar Appaji Nag <giridhar@appaji.net>  Thu, 02 Oct 2008 21:03:55 +0530
 
 elinks (0.12~pre1-1) experimental; urgency=low
 
