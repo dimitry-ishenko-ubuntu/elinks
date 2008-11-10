@@ -1,3 +1,10 @@
+elinks (0.12~pre2.dfsg0-2) unstable; urgency=low
+
+  * Update Maintainer to official Debian ID
+  * Remove DM-Upload-Allowed: yes
+
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Mon, 10 Nov 2008 17:09:18 +0530
+
 elinks (0.12~pre2.dfsg0-1) unstable; urgency=low
 
   * New upstream release 0.12pre2
