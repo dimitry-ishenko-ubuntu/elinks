@@ -2,8 +2,9 @@ elinks (0.12~pre2.dfsg0-2) unstable; urgency=low
 
   * Update Maintainer to official Debian ID
   * Remove DM-Upload-Allowed: yes
+  * Update Standards-Version to 3.8.1 (no changes required)
 
- -- Y Giridhar Appaji Nag <appaji@debian.org>  Mon, 10 Nov 2008 17:09:18 +0530
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Thu, 19 Mar 2009 10:33:38 +0530
 
 elinks (0.12~pre2.dfsg0-1) unstable; urgency=low
 
