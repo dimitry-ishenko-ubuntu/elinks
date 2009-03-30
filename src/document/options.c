@@ -95,7 +95,7 @@ int
 compare_opt(struct document_options *o1, struct document_options *o2)
 {
 	return memcmp(o1, o2, offsetof(struct document_options, framename))
-		|| strcasecmp(o1->framename, o2->framename)
+		|| c_strcasecmp(o1->framename, o2->framename)
 		|| (o1->box.x != o2->box.x)
 		|| (o1->box.y != o2->box.y)
 		|| ((o1->needs_height || o2->needs_height)
@@ -104,7 +104,7 @@ compare_opt(struct document_options *o1, struct document_options *o2)
 		    && o1->box.width != o2->box.width);
 }
 
-inline void
+NONSTATIC_INLINE void
 copy_opt(struct document_options *o1, struct document_options *o2)
 {
 	copy_struct(o1, o2);

@@ -50,7 +50,7 @@
  *
  * @returns 0 if OK or width needed for the whole number to fit there,
  * if it had to be truncated. A negative value signs an error. */
-int inline
+NONSTATIC_INLINE int
 elinks_ulongcat(unsigned char *s, unsigned int *slen,
 		unsigned long number, unsigned int width,
 		unsigned char fillchar, unsigned int base,
@@ -108,7 +108,7 @@ elinks_ulongcat(unsigned char *s, unsigned int *slen,
 }
 
 /** Similar to elinks_ulongcat() but for @c long number. */
-int inline
+NONSTATIC_INLINE int
 elinks_longcat(unsigned char *s, unsigned int *slen,
 	       long number, unsigned int width,
 	       unsigned char fillchar, unsigned int base,
@@ -313,21 +313,11 @@ add_cp_html_to_string(struct string *string, int src_codepage,
 	const unsigned char *const end = src + len;
 	unicode_val_T unicode;
 
-	while (src != end) {
-		if (is_cp_utf8(src_codepage)) {
-#ifdef CONFIG_UTF8
-			unicode = utf8_to_unicode((unsigned char **) &src,
-						  end);
-			if (unicode == UCS_NO_CHAR)
-				break;
-#else  /* !CONFIG_UTF8 */
-			/* Cannot parse UTF-8 without CONFIG_UTF8.
-			 * Pretend the input is ISO-8859-1 instead.  */
-			unicode = *src++;
-#endif /* !CONFIG_UTF8 */
-		} else {
-			unicode = cp2u(src_codepage, *src++);
-		}
+	for (;;) {
+		unicode = cp_to_unicode(src_codepage,
+					(unsigned char **) &src, end);
+		if (unicode == UCS_NO_CHAR)
+			break;
 
 		if (unicode < 0x20 || unicode >= 0x7F
 		    || unicode == '<' || unicode == '>' || unicode == '&'
@@ -411,7 +401,7 @@ strtolx(unsigned char *str, unsigned char **end)
 	if (errno) return 0;
 	if (!*end) return num;
 
-	postfix = toupper(**end);
+	postfix = c_toupper(**end);
 	if (postfix == 'K') {
 		(*end)++;
 		if (num < -INT_MAX / 1024) return -INT_MAX;
@@ -502,7 +492,10 @@ clr_spaces(unsigned char *str)
 }
 
 /** Replace invalid chars in @a title with ' ' and trim all starting/ending
- * spaces. */
+ * spaces.
+ *
+ * update_bookmark() assumes this function does not switch translation
+ * tables.  */
 void
 sanitize_title(unsigned char *title)
 {
@@ -532,5 +525,101 @@ sanitize_url(unsigned char *url)
 	}
 	trim_chars(url, ' ', NULL);
 	return 1;
+}
+
+
+int c_tolower(int c) {
+	switch (c)
+	{
+		case 'A': return 'a';
+		case 'B': return 'b';
+		case 'C': return 'c';
+		case 'D': return 'd';
+		case 'E': return 'e';
+		case 'F': return 'f';
+		case 'G': return 'g';
+		case 'H': return 'h';
+		case 'I': return 'i';
+		case 'J': return 'j';
+		case 'K': return 'k';
+		case 'L': return 'l';
+		case 'M': return 'm';
+		case 'N': return 'n';
+		case 'O': return 'o';
+		case 'P': return 'p';
+		case 'Q': return 'q';
+		case 'R': return 'r';
+		case 'S': return 's';
+		case 'T': return 't';
+		case 'U': return 'u';
+		case 'V': return 'v';
+		case 'W': return 'w';
+		case 'X': return 'x';
+		case 'Y': return 'y';
+		case 'Z': return 'z';
+		default: return c;
+	}
+}
+
+int c_toupper(int c) {
+	switch (c) {
+		case 'a': return 'A';
+		case 'b': return 'B';
+		case 'c': return 'C';
+		case 'd': return 'D';
+		case 'e': return 'E';
+		case 'f': return 'F';
+		case 'g': return 'G';
+		case 'h': return 'H';
+		case 'i': return 'I';
+		case 'j': return 'J';
+		case 'k': return 'K';
+		case 'l': return 'L';
+		case 'm': return 'M';
+		case 'n': return 'N';
+		case 'o': return 'O';
+		case 'p': return 'P';
+		case 'q': return 'Q';
+		case 'r': return 'R';
+		case 's': return 'S';
+		case 't': return 'T';
+		case 'u': return 'U';
+		case 'v': return 'V';
+		case 'w': return 'W';
+		case 'x': return 'X';
+		case 'y': return 'Y';
+		case 'z': return 'Z';
+		default: return c;
+	}
+}
+
+int c_isupper (int c)
+{
+	switch (c)
+	{
+		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+		case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
+		case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
+		case 'S': case 'T': case 'U': case 'V': case 'W': case 'X':
+		case 'Y': case 'Z':
+			return 1;
+		default:
+			return 0;
+	}
+}
+
+int c_islower (int c)
+{
+	switch (c)
+	{
+		case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+		case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
+		case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
+		case 's': case 't': case 'u': case 'v': case 'w': case 'x':
+		case 'y': case 'z':
+			return 1;
+		default:
+			return 0;
+	}
 }
 

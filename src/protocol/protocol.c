@@ -114,7 +114,7 @@ get_protocol(unsigned char *name, int namelen)
 		unsigned char *pname = protocol_backends[protocol].name;
 		int pnamelen = strlen(pname);
 		int minlen = int_min(pnamelen, namelen);
-		int compare = strncasecmp(pname, name, minlen);
+		int compare = c_strncasecmp(pname, name, minlen);
 
 		if (compare == 0) {
 			if (pnamelen == namelen)
@@ -276,10 +276,10 @@ static struct option_info protocol_options[] = {
 
 	INIT_OPT_STRING("protocol", N_("No-proxy domains"),
 		"no_proxy", 0, "",
-		N_("Comma separated list of domains for which the proxy (HTTP/FTP)\n"
-		"should be disabled. Optionally, a port can be specified for some\n"
-		"domains as well. If it's blank, NO_PROXY environment variable is\n"
-		"checked as well.")),
+		N_("Comma separated list of domains for which the proxy "
+		"(HTTP/FTP) should be disabled. Optionally, a port can be "
+		"specified for some domains as well. If it's blank, "
+		"NO_PROXY environment variable is checked as well.")),
 
 	NULL_OPTION_INFO,
 };

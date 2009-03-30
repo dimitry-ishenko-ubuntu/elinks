@@ -41,8 +41,9 @@ static struct option_info mime_options[] = {
 
 	INIT_OPT_STRING("mime", N_("Default MIME-type"),
 		"default_type", 0, DEFAULT_MIME_TYPE,
-		N_("Document MIME-type to assume by default (when we are unable to\n"
-		"guess it properly from known information about the document).")),
+		N_("Document MIME-type to assume by default "
+		"(when we are unable to guess it properly "
+		"from known information about the document).")),
 
 	NULL_OPTION_INFO,
 };
@@ -249,7 +250,7 @@ get_fragment_content_type(struct cache_entry *cached)
 	if (!sample)
 		return NULL;
 
-	if (strcasestr(sample, "<html>"))
+	if (c_strcasestr(sample, "<html>"))
 		ctype = stracpy("text/html");
 
 	mem_free(sample);
@@ -291,7 +292,7 @@ get_content_type(struct cache_entry *cached)
 		 * is with default (via option system) and mimetypes resolving
 		 * doing that option and hash lookup will not be easy to
 		 * convert. --jonas */
-		convert_to_lowercase(extension, strlen(extension));
+		convert_to_lowercase_locale_indep(extension, strlen(extension));
 
 		ctype = get_extension_content_type(extension);
 		mem_free(extension);

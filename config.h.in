@@ -504,9 +504,6 @@
 /* Define if you have _read_kbd() */
 #undef HAVE_READ_KBD
 
-/* Define if you have regex_t */
-#undef HAVE_REGEX_H
-
 /* Define if you have struct sockaddr_in6 */
 #undef HAVE_SA_IN6
 
@@ -650,6 +647,9 @@
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
 
+/* Define to 1 if you have the <tre/regex.h> header file. */
+#undef HAVE_TRE_REGEX_H
+
 /* Define to 1 if you have the `tsearch' function. */
 #undef HAVE_TSEARCH
 
@@ -695,6 +695,9 @@
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H
 
+/* Define to 1 if you have the `[JS_ReportAllocationOverflow]' function. */
+#undef HAVE__JS_REPORTALLOCATIONOVERFLOW_
+
 /* Define to 1 if you have the `__argz_count' function. */
 #undef HAVE___ARGZ_COUNT
 
@@ -727,6 +730,12 @@
 
 /* Define if you want: man (groff) support */
 #undef MAN_XMLTO
+
+/* Define as inline if the compiler lets you declare a function without
+   inline, then define it with inline, and have that definition refer to
+   identifiers with internal linkage. This is allowed by C99 6.7.4p6 and
+   6.7.4p3 together. Otherwise define as nothing. */
+#undef NONSTATIC_INLINE
 
 /* Package version */
 #undef PACKAGE
@@ -763,6 +772,9 @@
 
 /* The size of `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
+
+/* The size of `wchar_t', as computed by sizeof. */
+#undef SIZEOF_WCHAR_T
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be

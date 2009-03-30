@@ -720,6 +720,10 @@ render_dom_document_end(struct dom_stack *stack, struct dom_node *node, void *da
 		render_dom_flush(renderer, renderer->end);
 	}
 
+	/* It is not necessary to return DOM_CODE_FREE_NODE here.
+	 * Because the parser was created with the SGML_PARSER_STREAM
+	 * type, the stack has the DOM_STACK_FLAG_FREE_NODES flag and
+	 * implicitly frees all nodes popped from it.  */
 	return DOM_CODE_OK;
 }
 
@@ -947,9 +951,11 @@ dom_rss_pop_document(struct dom_stack *stack, struct dom_node *root, void *data)
 		done_dom_string(&renderer->text);
 	mem_free_if(renderer->items);
 
-	done_dom_node(root);
-
-	return DOM_CODE_OK;
+	/* ELinks does not provide any sort of DOM access to the RSS
+	 * document after it has been rendered.  Tell the caller to
+	 * free the document node and all of its children.  Otherwise,
+	 * they would leak.  */
+	return DOM_CODE_FREE_NODE;
 }
 
 
@@ -993,22 +999,22 @@ static struct dom_stack_context_info dom_rss_renderer_context_info = {
 static void
 get_doctype(struct dom_renderer *renderer, struct cache_entry *cached)
 {
-	if (!strcasecmp("application/rss+xml", cached->content_type)) {
+	if (!c_strcasecmp("application/rss+xml", cached->content_type)) {
 		renderer->doctype = SGML_DOCTYPE_RSS;
 
-	} else if (!strcasecmp("application/docbook+xml",
-	                       cached->content_type)) {
+	} else if (!c_strcasecmp("application/docbook+xml",
+				 cached->content_type)) {
 		renderer->doctype = SGML_DOCTYPE_DOCBOOK;
 
-	} else if (!strcasecmp("application/xbel+xml", cached->content_type)
-		   || !strcasecmp("application/x-xbel", cached->content_type)
-		   || !strcasecmp("application/xbel", cached->content_type)) {
+	} else if (!c_strcasecmp("application/xbel+xml", cached->content_type)
+		   || !c_strcasecmp("application/x-xbel", cached->content_type)
+		   || !c_strcasecmp("application/xbel", cached->content_type)) {
 		renderer->doctype = SGML_DOCTYPE_XBEL;
 
 	} else {
-		assertm(!strcasecmp("text/html", cached->content_type)
-			|| !strcasecmp("application/xhtml+xml",
-		                       cached->content_type),
+		assertm(!c_strcasecmp("text/html", cached->content_type)
+			|| !c_strcasecmp("application/xhtml+xml",
+					 cached->content_type),
 			"Couldn't resolve doctype '%s'", cached->content_type);
 
 		renderer->doctype = SGML_DOCTYPE_HTML;

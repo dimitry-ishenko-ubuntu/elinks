@@ -5,10 +5,57 @@ You can see the complete list of recent changes, bugfixes and new features
 in the http://repo.or.cz/w/elinks.git[gitweb interface]. See the ChangeLog
 file for details.
 
+ELinks 0.12pre3:
+----------------
+
+This release also included the changes listed under ``ELinks 0.11.6''
+below.
+
+Incompatibilities:
+
+* bug 1060: Regexp searching now requires the TRE library.
+* lzma disabled by default. It's rarely used and doesn't build with new xz.
+
+Other changes:
+
+* critical: Fix assertion failure if IMG/@usemap refers to a different
+  file.
+* Preserve newlines in hidden input fields, and submit them as CRLF.
+  Previously, they could turn into spaces or disappear entirely.
+* Perl scripts can use modules that dynamically load C libraries, like
+  XML::LibXML::SAX does.
+* bug 153: Preserve Unicode characters in XBEL bookmark files.
+  However, Unicode in URIs (really IRIs) does not work reliably yet;
+  this is being tracked as bug 1066.
+* bug 885: Convert xterm titles to ISO-8859-1 by default, but add an
+  option to disable this.  When removing control characters from a
+  title, note the charset.  Don't truncate titles to the width of the
+  terminal.
+* bug 1061: Correctly truncate UTF-8 titles in the tab bar.
+* bug 1068: ELinks used to display a blank or truncated page if an
+  HTTP/1.1 server sent a compressed body with incorrect Content-Length.
+  That has now been fixed, and a new option (protocol.http.compression)
+  has been added.
+* Don't crash when the search-toggle-regex action is used and no regular
+  expression support is compiled in.
+* minor bug 761: When reading bookmarks from an XBEL file, distinguish
+  attribute names from attribute values.
+* enhancement: Updated ISO 8859-7, ISO 8859-16, KOI8-R, and MacRoman.
+
+Bugs that should be removed from NEWS before the 0.12.0 release:
+
+* critical bug 1067: Fixed a crash in the RSS parser that ``configure
+  --enable-html-highlight'' enables.  ELinks 0.12pre1 was the first
+  release that supported RSS at all.
+* bug 1069: ELinks didn't report ECMAScript errors, even if the
+  ecmascript.error_reporting option was turned on.  ELinks 0.12pre2
+  was the first release that had this bug.
+
 ELinks 0.12pre2:
 ----------------
 
-This release also included the changes listed under "ELinks 0.11.5" below.
+Released on 2008-09-21.  This release also included the changes listed
+under ``ELinks 0.11.5'' below.
 
 * bug 954, enhancement 952: Keep track of ECMAScript form and input
   objects instead of constructing new ones on every access.  When the
@@ -64,8 +111,8 @@ Bugs that should be removed from NEWS before the 0.12.0 release:
 ELinks 0.12pre1:
 ----------------
 
-Released on 2008-07-01.  This release also included all the bug fixes
-of ELinks 0.11.4, but not the ones made in 0.11.4.GIT.
+Released on 2008-07-01.  This release also included the changes listed
+under ``ELinks 0.11.4'' below.
 
 Notable new features:
 
@@ -78,6 +125,7 @@ Notable new features:
   in features.conf.
 * enhancement 844: SMB protocol using libsmbclient.  This replaces
   the smbclient-based code that was disabled in ELinks 0.11.2.
+  Unfortunately, Samba 3.2.0 and later seem GPLv2 incompatible.
 
 Incompatibilities:
 
@@ -218,8 +266,26 @@ Changes in the experimental SGML/DOM implementation:
 * enhancement: incremental parsing
 * and more.
 
+ELinks 0.11.6:
+--------------
+
+Released on 2009-03-21.
+
+* critical: fix double-free crash if EOF immediately follows </MAP>
+* critical bug 1053: fix crash if a download finishes after ELinks has
+  closed the terminal from which the download was started
+* major bug 1004: ignore locales when comparing HTML element names and
+  similar strings, so e.g. ``title'' matches ``TITLE'' even in the
+  Turkish locale
+* minor: clicking a link with the mouse activates that link, rather
+  than the one selected with move-cursor-* actions
+* build bug 1047: attempt to make inline functions satisfy C99 6.7.4p3
+  so that ELinks can be built on OpenSolaris
+
 ELinks 0.11.5:
 --------------
+
+Released on 2008-09-21.
 
 * critical bug 1027 in user SMJS: make elinks.keymaps treat null and
   "none" as equivalent actions, avoiding a segfault

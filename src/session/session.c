@@ -341,7 +341,7 @@ request_frame(struct session *ses, unsigned char *name,
 	foreach (frame, loc->frames) {
 		struct document_view *doc_view;
 
-		if (strcasecmp(frame->name, name))
+		if (c_strcasecmp(frame->name, name))
 			continue;
 
 		foreach (doc_view, ses->scrn_frames) {
@@ -428,7 +428,7 @@ load_ecmascript_imports(struct session *ses, struct document_view *doc_view)
 #define load_ecmascript_imports(ses, doc_view)
 #endif
 
-inline void
+NONSTATIC_INLINE void
 load_frames(struct session *ses, struct document_view *doc_view)
 {
 	struct document *document = doc_view->document;
@@ -518,17 +518,23 @@ maybe_pre_format_html(struct cache_entry *cached, struct session *ses)
 	 * were 0, it could then be freed, and the
 	 * cached->preformatted assignment at the end of this function
 	 * would crash.  Normally, the document has a reference to the
-	 * cache entry, and that suffices.  If the following assertion
-	 * ever fails, object_lock(cached) and object_unlock(cached)
-	 * must be added to this function.  */
-	assert(cached->object.refcount > 0);
-	if_assert_failed return;
+	 * cache entry, and that suffices.  However, if the cache
+	 * entry was loaded to satisfy e.g. USEMAP="imgmap.html#map",
+	 * then cached->object.refcount == 0 here, and must be
+	 * incremented.
+	 * 
+	 * cached->object.refcount == 0 is safe while the cache entry
+	 * is being loaded, because garbage_collection() calls
+	 * is_entry_used(), which checks whether any connection is
+	 * using the cache entry.  But loading has ended before this
+	 * point.  */
+	object_lock(cached);
 
 	fragment = get_cache_fragment(cached);
-	if (!fragment) return;
+	if (!fragment) goto unlock_and_return;
 
 	/* We cannot do anything if the data are fragmented. */
-	if (!list_is_singleton(cached->frag)) return;
+	if (!list_is_singleton(cached->frag)) goto unlock_and_return;
 
 	set_event_id(pre_format_html_event, "pre-format-html");
 	trigger_event(pre_format_html_event, ses, cached);
@@ -536,6 +542,9 @@ maybe_pre_format_html(struct cache_entry *cached, struct session *ses)
 	/* XXX: Keep this after the trigger_event, because hooks might call
 	 * normalize_cache_entry()! */
 	cached->preformatted = 1;
+
+unlock_and_return:
+	object_unlock(cached);
 }
 #endif
 
@@ -816,10 +825,13 @@ setup_first_session(struct session *ses, struct uri *uri)
 
 #ifdef CONFIG_BOOKMARKS
 	} else if (!uri && get_opt_bool("ui.sessions.auto_restore")) {
-		unsigned char *folder;
+		unsigned char *folder; /* UTF-8 */
 
-		folder = get_opt_str("ui.sessions.auto_save_foldername");
-		open_bookmark_folder(ses, folder);
+		folder = get_auto_save_bookmark_foldername_utf8();
+		if (folder) {
+			open_bookmark_folder(ses, folder);
+			mem_free(folder);
+		}
 		return 1;
 #endif
 	}
@@ -959,8 +971,16 @@ init_remote_session(struct session *ses, enum remote_session_flags *remote_ptr,
 
 	} else if (remote & SES_REMOTE_ADD_BOOKMARK) {
 #ifdef CONFIG_BOOKMARKS
+		int uri_cp;
+
 		if (!uri) return;
-		add_bookmark(NULL, 1, struri(uri), struri(uri));
+		/** @todo Bug 1066: What is the encoding of struri()?
+		 * This code currently assumes the system charset.
+		 * It might be best to keep URIs in plain ASCII and
+		 * then have a function that reversibly converts them
+		 * to IRIs for display in a given encoding.  */
+		uri_cp = get_cp_index("System");
+		add_bookmark_cp(NULL, 1, uri_cp, struri(uri), struri(uri));
 #endif
 
 	} else if (remote & SES_REMOTE_INFO_BOX) {
@@ -1238,7 +1258,7 @@ ses_find_frame(struct session *ses, unsigned char *name)
 	if_assert_failed return NULL;
 
 	foreachback (frame, loc->frames)
-		if (!strcasecmp(frame->name, name))
+		if (!c_strcasecmp(frame->name, name))
 			return frame;
 
 	return NULL;

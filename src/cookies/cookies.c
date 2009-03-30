@@ -101,27 +101,29 @@ static struct option_info cookies_options[] = {
 		"max_age", 0, -1, 10000, -1,
 		N_("Cookie maximum age (in days):\n"
 		"-1 is use cookie's expiration date if any\n"
-		"0  is force expiration at the end of session, ignoring cookie's\n"
-		"   expiration date\n"
-		"1+ is use cookie's expiration date, but limit age to the given\n"
-		"   number of days")),
+		"0  is force expiration at the end of session, ignoring\n"
+		"   cookie's expiration date\n"
+		"1+ is use cookie's expiration date, but limit age to the\n"
+		"   given number of days")),
 
 	INIT_OPT_BOOL("cookies", N_("Paranoid security"),
 		"paranoid_security", 0, 0,
-		N_("When enabled, we'll require three dots in cookies domain for all\n"
-		"non-international domains (instead of just two dots). Some countries\n"
-		"have generic second level domains (eg. .com.pl, .co.uk) and allowing\n"
-		"sites to set cookies for these generic domains could potentially be\n"
-		"very bad. Note, it is off by default as it breaks a lot of sites.")),
+		N_("When enabled, we'll require three dots in cookies domain "
+		"for all non-international domains (instead of just two "
+		"dots). Some countries have generic second level domains "
+		"(eg. .com.pl, .co.uk) and allowing sites to set cookies "
+		"for these generic domains could potentially be very bad. "
+		"Note, it is off by default as it breaks a lot of sites.")),
 
 	INIT_OPT_BOOL("cookies", N_("Saving"),
 		"save", 0, 1,
-		N_("Whether cookies should be loaded from and saved to disk.")),
+		N_("Whether cookies should be loaded from and saved to "
+		"disk.")),
 
 	INIT_OPT_BOOL("cookies", N_("Resaving"),
 		"resave", 0, 1,
-		N_("Save cookies after each change in cookies list? No effect when\n"
-		"cookie saving (cookies.save) is off.")),
+		N_("Save cookies after each change in cookies list? "
+		"No effect when cookie saving (cookies.save) is off.")),
 
 	NULL_OPTION_INFO,
 };
@@ -143,7 +145,7 @@ get_cookie_server(unsigned char *host, int hostlen)
 		/* XXX: We must count with cases like "x.co" vs "x.co.uk"
 		 * below! */
 		int cslen = strlen(cs->host);
-		int cmp = strncasecmp(cs->host, host, hostlen);
+		int cmp = c_strncasecmp(cs->host, host, hostlen);
 
 		if (!sort_spot && (cmp > 0 || (cmp == 0 && cslen > hostlen))) {
 			/* This is the first @cs with name greater than @host,
@@ -234,13 +236,13 @@ is_domain_security_ok(unsigned char *domain, unsigned char *server, int server_l
 
 	/* Match domain and server.. */
 
-	/* XXX: Hmm, can't we use strlcasecmp() here? --pasky */
+	/* XXX: Hmm, can't we use c_strlcasecmp() here? --pasky */
 
 	if (domain_len > server_len) return 0;
 
 	/* Ensure that the domain is atleast a substring of the server before
 	 * continuing. */
-	if (strncasecmp(domain, server + server_len - domain_len, domain_len))
+	if (c_strncasecmp(domain, server + server_len - domain_len, domain_len))
 		return 0;
 
 	/* Allow domains which are same as servers. --<rono@sentuny.com.au> */
@@ -498,8 +500,8 @@ accept_cookie(struct cookie *cookie)
 		struct cookie *c, *next;
 
 		foreachsafe (c, next, cookies) {
-			if (strcasecmp(c->name, cookie->name)
-			    || strcasecmp(c->domain, cookie->domain))
+			if (c_strcasecmp(c->name, cookie->name)
+			    || c_strcasecmp(c->domain, cookie->domain))
 				continue;
 
 			delete_cookie(c);
@@ -512,7 +514,7 @@ accept_cookie(struct cookie *cookie)
 
 	/* XXX: This crunches CPU too. --pasky */
 	foreach (cd, c_domains)
-		if (!strcasecmp(cd->domain, cookie->domain))
+		if (!c_strcasecmp(cd->domain, cookie->domain))
 			return;
 
 	domain_len = strlen(cookie->domain);
@@ -534,11 +536,11 @@ delete_cookie(struct cookie *c)
 	struct cookie *d;
 
 	foreach (d, cookies)
-		if (!strcasecmp(d->domain, c->domain))
+		if (!c_strcasecmp(d->domain, c->domain))
 			goto end;
 
 	foreach (cd, c_domains) {
-	       	if (!strcasecmp(cd->domain, c->domain)) {
+	       	if (!c_strcasecmp(cd->domain, c->domain)) {
 			del_from_list(cd);
 			mem_free(cd);
 			break;

@@ -219,6 +219,29 @@ destroy_downloads(struct session *ses)
 	}
 }
 
+void
+detach_downloads_from_terminal(struct terminal *term)
+{
+	struct file_download *file_download, *next;
+
+	assert(term != NULL);
+	if_assert_failed return;
+
+	foreachsafe (file_download, next, downloads) {
+		if (file_download->term != term)
+			continue;
+
+		if (!file_download->external_handler) {
+			file_download->term = NULL;
+			if (file_download->ses
+			    && file_download->ses->tab->term == term)
+				file_download->ses = NULL;
+			continue;
+		}
+
+		abort_download(file_download);
+	}
+}
 
 static void
 download_error_dialog(struct file_download *file_download, int saved_errno)
@@ -305,6 +328,9 @@ static void
 download_data_store(struct download *download, struct file_download *file_download)
 {
 	struct terminal *term = file_download->term;
+
+	assert_terminal_ptr_not_dangling(term);
+	if_assert_failed term = file_download->term = NULL;
 
 	if (!term) {
 		/* No term here, so no beep. --Zas */
@@ -1271,7 +1297,7 @@ setup_download_handler(struct session *ses, struct download *loading,
 		goto plaintext_follow;
 
 	for (i = 0; known_types[i].type; i++) {
-		if (strcasecmp(ctype, known_types[i].type))
+		if (c_strcasecmp(ctype, known_types[i].type))
 			continue;
 
 		plaintext = known_types[i].plain;
@@ -1281,7 +1307,7 @@ setup_download_handler(struct session *ses, struct download *loading,
 	xwin = ses->tab->term->environment & ENV_XWIN;
 	handler = get_mime_type_handler(ctype, xwin);
 
-	if (!handler && strlen(ctype) >= 4 && !strncasecmp(ctype, "text", 4))
+	if (!handler && strlen(ctype) >= 4 && !c_strncasecmp(ctype, "text", 4))
 		goto plaintext_follow;
 
 	type_query = init_type_query(ses, loading, cached);
@@ -1290,8 +1316,8 @@ setup_download_handler(struct session *ses, struct download *loading,
 #ifdef CONFIG_BITTORRENT
 		/* A terrible waste of a good MIME handler here, but we want
 		 * to use the type_query this is easier. */
-		if ((!strcasecmp(ctype, "application/x-bittorrent")
-			|| !strcasecmp(ctype, "application/x-torrent"))
+		if ((!c_strcasecmp(ctype, "application/x-bittorrent")
+			|| !c_strcasecmp(ctype, "application/x-torrent"))
 		    && !get_cmd_opt_bool("anonymous"))
 			query_bittorrent_dialog(type_query);
 		else

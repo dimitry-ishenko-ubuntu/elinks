@@ -88,7 +88,7 @@ get_target(struct document_options *options, unsigned char *a)
 
 	if (!v) return NULL;
 
-	if (!*v || !strcasecmp(v, "_self")) {
+	if (!*v || !c_strcasecmp(v, "_self")) {
 		mem_free_set(&v, stracpy(options->framename));
 	}
 
@@ -337,7 +337,7 @@ search_for_url_param(unsigned char *str, unsigned char **ret)
 	/* Returns now if string @str is empty. */
 	if (!*str) return HEADER_PARAM_NOT_FOUND;
 
-	p = strcasestr(str, "url");
+	p = c_strcasestr(str, "url");
 	if (!p) return HEADER_PARAM_NOT_FOUND;
 	p += 3;
 
@@ -547,7 +547,7 @@ look_for_map(unsigned char **pos, unsigned char *eof, struct uri *uri,
 		return 1;
 	}
 
-	if (strlcasecmp(name, namelen, "MAP", 3)) return 1;
+	if (c_strlcasecmp(name, namelen, "MAP", 3)) return 1;
 
 	if (uri && uri->fragment) {
 		/* FIXME (bug 784): options->cp is the terminal charset;
@@ -555,7 +555,7 @@ look_for_map(unsigned char **pos, unsigned char *eof, struct uri *uri,
 		al = get_attr_val(attr, "name", options->cp);
 		if (!al) return 1;
 
-		if (strlcasecmp(al, -1, uri->fragment, uri->fragmentlen)) {
+		if (c_strlcasecmp(al, -1, uri->fragment, uri->fragmentlen)) {
 			mem_free(al);
 			return 1;
 		}
@@ -602,12 +602,12 @@ look_for_tag(unsigned char **pos, unsigned char *eof,
 
 	if (parse_element(*pos, eof, NULL, NULL, NULL, &pos2)) return 1;
 
-	if (strlcasecmp(name, namelen, "A", 1)
-	    && strlcasecmp(name, namelen, "/A", 2)
-	    && strlcasecmp(name, namelen, "MAP", 3)
-	    && strlcasecmp(name, namelen, "/MAP", 4)
-	    && strlcasecmp(name, namelen, "AREA", 4)
-	    && strlcasecmp(name, namelen, "/AREA", 5)) {
+	if (c_strlcasecmp(name, namelen, "A", 1)
+	    && c_strlcasecmp(name, namelen, "/A", 2)
+	    && c_strlcasecmp(name, namelen, "MAP", 3)
+	    && c_strlcasecmp(name, namelen, "/MAP", 4)
+	    && c_strlcasecmp(name, namelen, "AREA", 4)
+	    && c_strlcasecmp(name, namelen, "/AREA", 5)) {
 		*pos = pos2;
 		return 1;
 	}
@@ -615,6 +615,9 @@ look_for_tag(unsigned char **pos, unsigned char *eof,
 	return 0;
 }
 
+/** @return -1 if EOF is hit without the closing tag; 0 if the closing
+ * tag is found (in which case this also adds *@a menu to *@a ml); or
+ * 1 if this should be called again.  */
 static int
 look_for_link(unsigned char **pos, unsigned char *eof, struct menu_item **menu,
 	      struct memory_list **ml, struct uri *href_base,
@@ -632,7 +635,7 @@ look_for_link(unsigned char **pos, unsigned char *eof, struct menu_item **menu,
 		(*pos)++;
 	}
 
-	if (*pos >= eof) return 0;
+	if (*pos >= eof) return -1;
 
 	if (*pos + 2 <= eof && ((*pos)[1] == '!' || (*pos)[1] == '?')) {
 		*pos = skip_comment(*pos, eof);
@@ -644,12 +647,12 @@ look_for_link(unsigned char **pos, unsigned char *eof, struct menu_item **menu,
 		return 1;
 	}
 
-	if (!strlcasecmp(name, namelen, "A", 1)) {
+	if (!c_strlcasecmp(name, namelen, "A", 1)) {
 		while (look_for_tag(pos, eof, name, namelen, &label));
 
-		if (*pos >= eof) return 0;
+		if (*pos >= eof) return -1;
 
-	} else if (!strlcasecmp(name, namelen, "AREA", 4)) {
+	} else if (!c_strlcasecmp(name, namelen, "AREA", 4)) {
 		/* FIXME (bug 784): options->cp is the terminal charset;
 		 * should use the document charset instead.  */
 		unsigned char *alt = get_attr_val(attr, "alt", options->cp);
@@ -663,7 +666,7 @@ look_for_link(unsigned char **pos, unsigned char *eof, struct menu_item **menu,
 			label = NULL;
 		}
 
-	} else if (!strlcasecmp(name, namelen, "/MAP", 4)) {
+	} else if (!c_strlcasecmp(name, namelen, "/MAP", 4)) {
 		/* This is the only successful return from here! */
 		add_to_ml(ml, (void *) *menu, (void *) NULL);
 		return 0;
@@ -765,6 +768,7 @@ get_image_map(unsigned char *head, unsigned char *pos, unsigned char *eof,
 {
 	struct conv_table *ct;
 	struct string hd;
+	int look_result;
 
 	if (!init_string(&hd)) return -1;
 
@@ -785,10 +789,13 @@ get_image_map(unsigned char *head, unsigned char *pos, unsigned char *eof,
 
 	*ml = NULL;
 
-	while (look_for_link(&pos, eof, menu, ml, uri, target_base, ct, options))
-		;
+	do {
+		/* This call can modify both *ml and *menu.  */
+		look_result = look_for_link(&pos, eof, menu, ml, uri,
+					    target_base, ct, options);
+	} while (look_result > 0);
 
-	if (pos >= eof) {
+	if (look_result < 0) {
 		freeml(*ml);
 		mem_free(*menu);
 		return -1;

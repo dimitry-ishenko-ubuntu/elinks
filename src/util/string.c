@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "elinks.h"
 
@@ -233,18 +234,70 @@ elinks_strlcmp(const unsigned char *s1, size_t n1,
 
 int
 elinks_strlcasecmp(const unsigned char *s1, size_t n1,
-		   const unsigned char *s2, size_t n2)
+		   const unsigned char *s2, size_t n2,
+		   const int locale_indep)
 {
-	strlcmp_device("strlcasecmp", s1, n1, s2, n2, toupper(s1[p]), toupper(s2[p]));
+	if (locale_indep) {
+		strlcmp_device("strlcasecmp", s1, n1, s2, n2, c_toupper(s1[p]), c_toupper(s2[p]));
+	}
+	else {
+		strlcmp_device("strlcasecmp", s1, n1, s2, n2, toupper(s1[p]), toupper(s2[p]));
+	}
 }
 
+int
+c_strcasecmp(const char *s1, const char *s2)
+{
+	for (;; s1++, s2++) {
+		unsigned char c1 = c_tolower(*(const unsigned char *) s1);
+		unsigned char c2 = c_tolower(*(const unsigned char *) s2);
+		
+		if (c1 != c2)
+			return (c1 < c2) ? -1: +1;
+		if (c1 == '\0')
+			return 0;
+	}
+}
+
+int c_strncasecmp(const char *s1, const char *s2, size_t n)
+{
+	for (; n > 0; n--, s1++, s2++) {
+		unsigned char c1 = c_tolower(*(const unsigned char *) s1);
+		unsigned char c2 = c_tolower(*(const unsigned char *) s2);
+		
+		if (c1 != c2)
+			return (c1 < c2) ? -1: +1;
+		if (c1 == '\0')
+			return 0;
+	}
+	return 0;
+}
+
+/* c_strcasestr - adapted from src/osdep/stub.c */
+char * c_strcasestr(const char *haystack, const char *needle)
+{
+	size_t haystack_length = strlen(haystack);
+	size_t needle_length = strlen(needle);
+	int i;
+
+	if (haystack_length < needle_length)
+		return NULL;
+
+	for (i = haystack_length - needle_length + 1; i; i--) {
+		if (!c_strncasecmp(haystack, needle, needle_length))
+			return (char *) haystack;
+		haystack++;
+	}
+
+	return NULL;
+}
 
 /* The new string utilities: */
 
 /* TODO Currently most of the functions use add_bytes_to_string() as a backend
  *	instead we should optimize each function. */
 
-inline struct string *
+NONSTATIC_INLINE struct string *
 #ifdef DEBUG_MEMLEAK
 init_string__(const unsigned char *file, int line, struct string *string)
 #else
@@ -269,7 +322,7 @@ init_string(struct string *string)
 	return string;
 }
 
-inline void
+NONSTATIC_INLINE void
 done_string(struct string *string)
 {
 	assertm(string != NULL, "[done_string]");
@@ -288,7 +341,7 @@ done_string(struct string *string)
 }
 
 /** @relates string */
-inline struct string *
+NONSTATIC_INLINE struct string *
 add_to_string(struct string *string, const unsigned char *source)
 {
 	assertm(string && source, "[add_to_string]");
@@ -302,7 +355,7 @@ add_to_string(struct string *string, const unsigned char *source)
 }
 
 /** @relates string */
-inline struct string *
+NONSTATIC_INLINE struct string *
 add_crlf_to_string(struct string *string)
 {
 	assertm(string != NULL, "[add_crlf_to_string]");
@@ -321,7 +374,7 @@ add_crlf_to_string(struct string *string)
 }
 
 /** @relates string */
-inline struct string *
+NONSTATIC_INLINE struct string *
 add_string_to_string(struct string *string, const struct string *from)
 {
 	assertm(string && from, "[add_string_to_string]");
@@ -398,7 +451,7 @@ string_concat(struct string *string, ...)
 }
 
 /** @relates string */
-inline struct string *
+NONSTATIC_INLINE struct string *
 add_char_to_string(struct string *string, unsigned char character)
 {
 	assertm(string && character, "[add_char_to_string]");
@@ -415,7 +468,7 @@ add_char_to_string(struct string *string, unsigned char character)
 	return string;
 }
 
-inline struct string *
+NONSTATIC_INLINE struct string *
 add_xchar_to_string(struct string *string, unsigned char character, int times)
 {
 	int newlength;

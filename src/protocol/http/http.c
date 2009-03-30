@@ -103,8 +103,8 @@ static struct option_info http_options[] = {
 
 	INIT_OPT_BOOL("protocol.http.bugs", N_("Do not send Accept-Charset"),
 		"accept_charset", 0, 1,
-		N_("The Accept-Charset header is quite long and sending it can trigger\n"
-		"bugs in some rarely found servers.")),
+		N_("The Accept-Charset header is quite long and sending it "
+		"can trigger bugs in some rarely found servers.")),
 
 	INIT_OPT_BOOL("protocol.http.bugs", N_("Allow blacklisting"),
 		"allow_blacklist", 0, 1,
@@ -112,9 +112,10 @@ static struct option_info http_options[] = {
 
 	INIT_OPT_BOOL("protocol.http.bugs", N_("Broken 302 redirects"),
 		"broken_302_redirect", 0, 1,
-		N_("Broken 302 redirect (violates RFC but compatible with Netscape).\n"
-		"This is a problem for a lot of web discussion boards and the like.\n"
-		"If they will do strange things to you, try to play with this.")),
+		N_("Broken 302 redirect (violates RFC but compatible with "
+		"Netscape). This is a problem for a lot of web discussion "
+		"boards and the like. If they will do strange things to you, "
+		"try to play with this.")),
 
 	INIT_OPT_BOOL("protocol.http.bugs", N_("No keepalive after POST requests"),
 		"post_no_keepalive", 0, 0,
@@ -130,8 +131,9 @@ static struct option_info http_options[] = {
 
 	INIT_OPT_STRING("protocol.http.proxy", N_("Host and port-number"),
 		"host", 0, "",
-		N_("Host and port-number (host:port) of the HTTP proxy, or blank.\n"
-		"If it's blank, HTTP_PROXY environment variable is checked as well.")),
+		N_("Host and port-number (host:port) of the HTTP proxy, "
+		"or blank. If it's blank, HTTP_PROXY environment variable "
+		"is checked as well.")),
 
 	INIT_OPT_STRING("protocol.http.proxy", N_("Username"),
 		"user", 0, "",
@@ -144,12 +146,13 @@ static struct option_info http_options[] = {
 
 	INIT_OPT_TREE("protocol.http", N_("Referer sending"),
 		"referer", 0,
-		N_("HTTP referer sending options. HTTP referer is a special header\n"
-		"sent in the HTTP requests, which is supposed to contain the previous\n"
-		"page visited by the browser. This way, the server can know what link\n"
-		"did you follow when accessing that page. However, this behaviour\n"
-		"can unfortunately considerably affect privacy and can lead even to a\n"
-		"security problem on some badly designed web pages.")),
+		N_("HTTP referer sending options. HTTP referer is a special "
+		"header sent in the HTTP requests, which is supposed to "
+		"contain the previous page visited by the browser."
+		"This way, the server can know what link did you follow "
+		"when accessing that page. However, this behaviour can "
+		"unfortunately considerably affect privacy and can lead even "
+		"to a security problem on some badly designed web pages.")),
 
 	INIT_OPT_INT("protocol.http.referer", N_("Policy"),
 		"policy", 0,
@@ -171,31 +174,54 @@ static struct option_info http_options[] = {
 
 	INIT_OPT_BOOL("protocol.http", N_("Use UI language as Accept-Language"),
 		"accept_ui_language", 0, 1,
-		N_("Request localised versions of documents from web-servers (using the\n"
-		"Accept-Language header) using the language you have configured for\n"
-		"ELinks' user-interface (this also affects navigator.language ECMAScript\n"
-		"value available to scripts). Note that some see this as a potential\n"
-		"security risk because it tells web-masters and the FBI sniffers about\n"
-		"your language preference.")),
+		N_("Request localised versions of documents from web-servers "
+		"(using the Accept-Language header) using the language "
+		"you have configured for ELinks' user-interface (this also "
+		"affects navigator.language ECMAScript value available to "
+		"scripts). Note that some see this as a potential security "
+		"risk because it tells web-masters and the FBI sniffers "
+		"about your language preference.")),
+
+	/* After the compression support has been tested enough,
+	 * we might wrap this option in #if CFG_DEBUG.  */
+	INIT_OPT_BOOL("protocol.http", N_("Enable on-the-fly compression"),
+		"compression", 0, 1,
+		N_("If enabled, the capability to receive compressed content "
+		"(gzip and/or bzip2) is announced to the server, which "
+		"usually sends the reply compressed, thus saving some "
+		"bandwidth at slight CPU expense.\n"
+		"\n"
+		"If ELinks displays a incomplete page or garbage, try "
+		"disabling this option. If that helps, there may be a bug in "
+		"the decompression part of ELinks. Please report such bugs.\n"
+		"\n"
+		"If ELinks has been compiled without compression support, "
+		"this option has no effect. To check the supported features, "
+		"see Help -> About.")),
 
 	INIT_OPT_BOOL("protocol.http", N_("Activate HTTP TRACE debugging"),
 		"trace", 0, 0,
-		N_("If active, all HTTP requests are sent with TRACE as their method\n"
-		"rather than GET or POST. This is useful for debugging of both ELinks\n"
-		"and various server-side scripts --- the server only returns the client's\n"
-		"request back to the client verbatim. Note that this type of request may\n"
+		N_("If active, all HTTP requests are sent with TRACE as "
+		"their method rather than GET or POST. This is useful for "
+		"debugging of both ELinks and various server-side scripts "
+		"--- the server only returns the client's request back to "
+		"the client verbatim. Note that this type of request may "
 		"not be enabled on all servers.")),
 
 	/* OSNews.com is supposed to be relying on the textmode token, at least. */
 	INIT_OPT_STRING("protocol.http", N_("User-agent identification"),
 		"user_agent", 0, "ELinks/%v (textmode; %s; %t-%b)",
-		N_("Change the User Agent ID. That means identification string, which\n"
-		"is sent to HTTP server when a document is requested. The 'textmode'\n"
-		"token in the first field is our silent attempt to establish this as\n"
-		"a standard for new textmode user agents, so that the webmasters can\n"
-		"have just a single uniform test for these if they are e.g. pushing\n"
-		"some lite version to them automagically.\n"
-		"Use \" \" if you don't want any User-Agent header to be sent at all.\n"
+		N_("Change the User Agent ID. That means identification "
+		"string, which is sent to HTTP server when a document is "
+		"requested. The 'textmode' token in the first field is our "
+		"silent attempt to establish this as a standard for new "
+		"textmode user agents, so that the webmasters can have "
+		"just a single uniform test for these if they are e.g. "
+		"pushing some lite version to them automagically.\n"
+		"\n"
+		"Use \" \" if you don't want any User-Agent header to be sent "
+		"at all.\n"
+		"\n"
 		"%v in the string means ELinks version,\n"
 		"%s in the string means system identification,\n"
 		"%t in the string means size of the terminal,\n"
@@ -212,8 +238,9 @@ static struct option_info http_options[] = {
 
 	INIT_OPT_STRING("protocol.https.proxy", N_("Host and port-number"),
 	  	"host", 0, "",
-		N_("Host and port-number (host:port) of the HTTPS CONNECT proxy, or blank.\n"
-		"If it's blank, HTTPS_PROXY environment variable is checked as well.")),
+		N_("Host and port-number (host:port) of the HTTPS CONNECT "
+		"proxy, or blank. If it's blank, HTTPS_PROXY environment "
+		"variable is checked as well.")),
 	NULL_OPTION_INFO,
 };
 
@@ -393,8 +420,8 @@ get_http_code(struct read_buffer *rb, int *code, struct http_version *version)
 	while (*head == ' ') head++;
 
 	/* HTTP/ */
-	if (toupper(*head) != 'H' || toupper(*++head) != 'T' ||
-	    toupper(*++head) != 'T' || toupper(*++head) != 'P'
+	if (c_toupper(*head) != 'H' || c_toupper(*++head) != 'T' ||
+	    c_toupper(*++head) != 'T' || c_toupper(*++head) != 'P'
 	    || *++head != '/')
 		return -1;
 
@@ -772,7 +799,8 @@ http_send_header(struct socket *socket)
 	add_to_string(&header, "Accept: */*");
 	add_crlf_to_string(&header);
 
-	accept_encoding_header(&header);
+	if (get_opt_bool("protocol.http.compression"))
+		accept_encoding_header(&header);
 
 	if (!accept_charset) {
 		init_accept_charset();
@@ -1012,7 +1040,7 @@ decompress_data(struct connection *conn, unsigned char *data, int len,
 	int *length_of_block;
 	unsigned char *output = NULL;
 
-#define BIG_READ 65536
+#define BIG_READ 655360
 
 	if (http->length == LEN_CHUNKED) {
 		if (http->chunk_remaining == CHUNK_ZERO_SIZE)
@@ -1100,6 +1128,7 @@ decompress_data(struct connection *conn, unsigned char *data, int len,
 
 	if (state == FINISHING) shutdown_connection_stream(conn);
 	return output;
+#undef BIG_READ
 }
 
 static int
@@ -1306,7 +1335,8 @@ read_normal_http_data(struct connection *conn, struct read_buffer *rb)
 
 	kill_buffer_data(rb, len);
 
-	if (!http->length && conn->socket->state == SOCKET_RETRY_ONCLOSE) {
+	if (!http->length && (conn->socket->state == SOCKET_RETRY_ONCLOSE
+		|| conn->socket->state == SOCKET_CLOSED)) {
 		return 2;
 	}
 
@@ -1321,7 +1351,7 @@ read_http_data(struct socket *socket, struct read_buffer *rb)
 	int ret;
 
 	if (socket->state == SOCKET_CLOSED) {
-		if (conn->content_encoding && http->length == -1) {
+		if (conn->content_encoding) {
 			/* Flush decompression first. */
 			http->length = 0;
 		} else {
@@ -1364,7 +1394,7 @@ get_header(struct read_buffer *rb)
 	/* XXX: We will have to do some guess about whether an HTTP header is
 	 * coming or not, in order to support HTTP/0.9 reply correctly. This
 	 * means a little code duplication with get_http_code(). --pasky */
-	if (rb->length > 4 && strncasecmp(rb->data, "HTTP/", 5))
+	if (rb->length > 4 && c_strncasecmp(rb->data, "HTTP/", 5))
 		return -2;
 
 	for (i = 0; i < rb->length; i++) {
@@ -1401,7 +1431,7 @@ check_http_authentication(struct connection *conn, struct uri *uri,
 
 	d = parse_header(header, header_field, &str);
 	while (d) {
-		if (!strncasecmp(d, "Basic", 5)) {
+		if (!c_strncasecmp(d, "Basic", 5)) {
 			unsigned char *realm = get_header_param(d, "realm");
 
 			if (realm) {
@@ -1410,7 +1440,7 @@ check_http_authentication(struct connection *conn, struct uri *uri,
 				mem_free(d);
 				break;
 			}
-		} else if (!strncasecmp(d, "Digest", 6)) {
+		} else if (!c_strncasecmp(d, "Digest", 6)) {
 			unsigned char *realm = get_header_param(d, "realm");
 			unsigned char *nonce = get_header_param(d, "nonce");
 			unsigned char *opaque = get_header_param(d, "opaque");
@@ -1424,13 +1454,13 @@ check_http_authentication(struct connection *conn, struct uri *uri,
 			break;
 		}
 #ifdef CONFIG_GSSAPI
-		else if (!strncasecmp(d, HTTPNEG_GSS_STR, HTTPNEG_GSS_STRLEN)) {
+		else if (!c_strncasecmp(d, HTTPNEG_GSS_STR, HTTPNEG_GSS_STRLEN)) {
 			if (http_negotiate_input(conn, uri, HTTPNEG_GSS, str)==0)
 				ret = 1;
 			mem_free(d);
 			break;
 		}
-		else if (!strncasecmp(d, HTTPNEG_NEG_STR, HTTPNEG_NEG_STRLEN)) {
+		else if (!c_strncasecmp(d, HTTPNEG_NEG_STR, HTTPNEG_NEG_STRLEN)) {
 			if (http_negotiate_input(conn, uri, HTTPNEG_NEG, str)==0)
 				ret = 1;
 			mem_free(d);
@@ -1685,7 +1715,7 @@ again:
 
 		d = parse_header(conn->cached->head, "Proxy-Authenticate", &str);
 		while (d) {
-			if (!strncasecmp(d, "Basic", 5)) {
+			if (!c_strncasecmp(d, "Basic", 5)) {
 				unsigned char *realm = get_header_param(d, "realm");
 
 				if (realm) {
@@ -1695,7 +1725,7 @@ again:
 					break;
 				}
 
-			} else if (!strncasecmp(d, "Digest", 6)) {
+			} else if (!c_strncasecmp(d, "Digest", 6)) {
 				unsigned char *realm = get_header_param(d, "realm");
 				unsigned char *nonce = get_header_param(d, "nonce");
 				unsigned char *opaque = get_header_param(d, "opaque");
@@ -1721,7 +1751,7 @@ again:
 
 	if ((d = parse_header(conn->cached->head, "Connection", NULL))
 	     || (d = parse_header(conn->cached->head, "Proxy-Connection", NULL))) {
-		if (!strcasecmp(d, "close")) http->close = 1;
+		if (!c_strcasecmp(d, "close")) http->close = 1;
 		mem_free(d);
 	} else if (PRE_HTTP_1_1(version)) {
 		http->close = 1;
@@ -1733,7 +1763,7 @@ again:
 	if (d) {
 		if (strlen(d) > 6) {
 			d[5] = 0;
-			if (isdigit(d[6]) && !strcasecmp(d, "bytes")) {
+			if (isdigit(d[6]) && !c_strcasecmp(d, "bytes")) {
 				int f;
 
 				errno = 0;
@@ -1789,7 +1819,7 @@ again:
 		d = parse_header(conn->cached->head, "Accept-Ranges", NULL);
 
 		if (d) {
-			if (!strcasecmp(d, "none"))
+			if (!c_strcasecmp(d, "none"))
 				conn->unrestartable = 1;
 			mem_free(d);
 		} else {
@@ -1800,7 +1830,7 @@ again:
 
 	d = parse_header(conn->cached->head, "Transfer-Encoding", NULL);
 	if (d) {
-		if (!strcasecmp(d, "chunked")) {
+		if (!c_strcasecmp(d, "chunked")) {
 			http->length = LEN_CHUNKED;
 			http->chunk_remaining = CHUNK_SIZE;
 		}
@@ -1810,7 +1840,7 @@ again:
 
 	d = parse_header(conn->cached->head, "Last-Modified", NULL);
 	if (d) {
-		if (conn->cached->last_modified && strcasecmp(conn->cached->last_modified, d)) {
+		if (conn->cached->last_modified && c_strcasecmp(conn->cached->last_modified, d)) {
 			delete_entry_content(conn->cached);
 			if (conn->from) {
 				conn->from = 0;
@@ -1872,21 +1902,21 @@ again:
 		 * will leave the saved file with the correct encoding. */
 #ifdef CONFIG_GZIP
 		if (file_encoding != ENCODING_GZIP
-		    && (!strcasecmp(d, "gzip") || !strcasecmp(d, "x-gzip")))
+		    && (!c_strcasecmp(d, "gzip") || !c_strcasecmp(d, "x-gzip")))
 		    	conn->content_encoding = ENCODING_GZIP;
-		if (!strcasecmp(d, "deflate") || !strcasecmp(d, "x-deflate"))
+		if (!c_strcasecmp(d, "deflate") || !c_strcasecmp(d, "x-deflate"))
 			conn->content_encoding = ENCODING_DEFLATE;
 #endif
 
 #ifdef CONFIG_BZIP2
 		if (file_encoding != ENCODING_BZIP2
-		    && (!strcasecmp(d, "bzip2") || !strcasecmp(d, "x-bzip2")))
+		    && (!c_strcasecmp(d, "bzip2") || !c_strcasecmp(d, "x-bzip2")))
 			conn->content_encoding = ENCODING_BZIP2;
 #endif
 
 #ifdef CONFIG_LZMA
 		if (file_encoding != ENCODING_LZMA
-		    && (!strcasecmp(d, "lzma") || !strcasecmp(d, "x-lzma")))
+		    && (!c_strcasecmp(d, "lzma") || !c_strcasecmp(d, "x-lzma")))
 			conn->content_encoding = ENCODING_LZMA;
 #endif
 		mem_free(d);
