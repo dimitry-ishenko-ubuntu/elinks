@@ -69,6 +69,19 @@ struct codepage_desc {
 #include "intl/uni_7b.inc"
 #include "intl/entity.inc"
 
+/* Declare the external-linkage inline functions defined in this file.
+ * Avoid the GCC 4.3.1 warning: `foo' declared inline after being
+ * called.  The functions are not declared inline in charsets.h
+ * because C99 6.7.4p6 says that every external-linkage function
+ * declared inline shall be defined in the same translation unit.
+ * The non-inline declarations in charsets.h also make sure that the
+ * compiler emits global definitions for the symbols so that the
+ * functions can be called from other translation units.  */
+NONSTATIC_INLINE unsigned char *encode_utf8(unicode_val_T u);
+NONSTATIC_INLINE int utf8charlen(const unsigned char *p);
+NONSTATIC_INLINE int unicode_to_cell(unicode_val_T c);
+NONSTATIC_INLINE unicode_val_T utf8_to_unicode(unsigned char **string,
+					       const unsigned char *end);
 
 static const char strings[256][2] = {
 	"\000", "\001", "\002", "\003", "\004", "\005", "\006", "\007",
@@ -178,10 +191,8 @@ u2cp_(unicode_val_T u, int to, enum nbsp_mode nbsp_mode)
 
 	to &= ~SYSTEM_CHARSET_FLAG;
 
-#ifdef CONFIG_UTF8
 	if (is_cp_ptr_utf8(&codepages[to]))
 		return encode_utf8(u);
-#endif /* CONFIG_UTF8 */
 
 	/* To mark non breaking spaces in non-UTF-8 strings, we use a
 	 * special char NBSP_CHAR. */
@@ -214,13 +225,8 @@ u2cp_(unicode_val_T u, int to, enum nbsp_mode nbsp_mode)
 
 static unsigned char utf_buffer[7];
 
-#ifdef CONFIG_UTF8
-inline unsigned char *
+NONSTATIC_INLINE unsigned char *
 encode_utf8(unicode_val_T u)
-#else
-static unsigned char *
-encode_utf8(unicode_val_T u)
-#endif /* CONFIG_UTF8 */
 {
 	memset(utf_buffer, 0, 7);
 
@@ -254,7 +260,6 @@ encode_utf8(unicode_val_T u)
 	return utf_buffer;
 }
 
-#ifdef CONFIG_UTF8
 /* Number of bytes utf8 character indexed by first byte. Illegal bytes are
  * equal ones and handled different. */
 static const char utf8char_len_tab[256] = {
@@ -268,12 +273,14 @@ static const char utf8char_len_tab[256] = {
 	3,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3, 4,4,4,4,4,4,4,4, 5,5,5,5,6,6,1,1,
 };
 
-inline int utf8charlen(const unsigned char *p)
+#ifdef CONFIG_UTF8
+NONSTATIC_INLINE int
+utf8charlen(const unsigned char *p)
 {
 	return p ? utf8char_len_tab[*p] : 0;
 }
 
-inline int
+int
 strlen_utf8(unsigned char **str)
 {
 	unsigned char *s = *str;
@@ -294,7 +301,7 @@ strlen_utf8(unsigned char **str)
 
 /* Start from @current and move back to @pos char. This pointer return. The
  * most left pointer is @start. */
-inline unsigned char *
+unsigned char *
 utf8_prevchar(unsigned char *current, int pos, unsigned char *start)
 {
 	if (current == NULL || start == NULL || pos < 0)
@@ -589,7 +596,7 @@ invalid_arg:
  * 		TODO: May be extended to return 0 for zero-width glyphs
  * 		(like composing, maybe unprintable too).
  */
-inline int
+NONSTATIC_INLINE int
 unicode_to_cell(unicode_val_T c)
 {
 	if (c >= 0x1100
@@ -630,8 +637,9 @@ unicode_fold_label_case(unicode_val_T c)
 		return c;
 #endif /* !(__STDC_ISO_10646__ && HAVE_WCTYPE_H) */
 }
+#endif /* CONFIG_UTF8 */
 
-inline unicode_val_T
+NONSTATIC_INLINE unicode_val_T
 utf8_to_unicode(unsigned char **string, const unsigned char *end)
 {
 	unsigned char *str = *string;
@@ -714,7 +722,6 @@ invalid_utf8:
 	*string = str + length;
 	return u;
 }
-#endif /* CONFIG_UTF8 */
 
 /* The common part of cp2u and cp2utf_8.  */
 static unicode_val_T
@@ -753,9 +760,8 @@ cp2utf8(int from, int c)
 	return encode_utf8(cp2u_shared(&codepages[from], c));
 }
 
-#ifdef CONFIG_UTF8
 unicode_val_T
-cp_to_unicode(int codepage, unsigned char **string, unsigned char *end)
+cp_to_unicode(int codepage, unsigned char **string, const unsigned char *end)
 {
 	unicode_val_T ret;
 
@@ -769,7 +775,6 @@ cp_to_unicode(int codepage, unsigned char **string, unsigned char *end)
 	++*string;
 	return ret;
 }
-#endif	/* CONFIG_UTF8 */
 
 
 static void
@@ -1313,7 +1318,7 @@ get_cp_index(const unsigned char *name)
 	int i, a;
 	int syscp = 0;
 
-	if (!strcasecmp(name, "System")) {
+	if (!c_strcasecmp(name, "System")) {
 #if HAVE_LANGINFO_CODESET
 		name = nl_langinfo(CODESET);
 		syscp = SYSTEM_CHARSET_FLAG;
@@ -1336,7 +1341,7 @@ get_cp_index(const unsigned char *name)
 			 * once. So we will do a simple strcasecmp() here.
 			 */
 
-			if (!strcasecmp(name, codepages[i].aliases[a]))
+			if (!c_strcasecmp(name, codepages[i].aliases[a]))
 				return i | syscp;
 		}
 	}
@@ -1394,7 +1399,7 @@ get_cp_index(const unsigned char *name)
 	const struct codepage_desc *codepage;
 	int syscp = 0;
 
-	if (!strcasecmp(name, "System")) {
+	if (!c_strcasecmp(name, "System")) {
 #if HAVE_LANGINFO_CODESET
 		name = nl_langinfo(CODESET);
 		syscp = SYSTEM_CHARSET_FLAG;

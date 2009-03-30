@@ -14,7 +14,7 @@ AC_CONFIG_SRCDIR([src/main/main.c])
 AC_CONFIG_AUX_DIR(config)
 
 PACKAGE=elinks
-VERSION=0.12pre2
+VERSION=0.12pre3
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Package version])
@@ -225,6 +225,29 @@ AC_SUBST(CONFIG_INTERLINK)
 AC_STRUCT_TM
 AC_C_CONST
 AC_C_INLINE
+AC_MSG_CHECKING([[C99-conforming inline]])
+AC_COMPILE_IFELSE([[
+	int add(int x);
+
+	static int sum;
+
+	inline int
+	add(int change)
+	{
+		sum += change;
+		return sum;
+	}
+
+	int
+	sub(int change)
+	{
+		return add(-change);
+	}]],
+	[AC_MSG_RESULT([[yes]])
+	 AC_DEFINE([NONSTATIC_INLINE], [inline],
+		[Define as inline if the compiler lets you declare a function without inline, then define it with inline, and have that definition refer to identifiers with internal linkage.  This is allowed by C99 6.7.4p6 and 6.7.4p3 together.  Otherwise define as nothing.])],
+	[AC_MSG_RESULT([[no]])
+	 AC_DEFINE([NONSTATIC_INLINE], [])])
 EL_CHECK_CODE(typeof, HAVE_TYPEOF, [], [int a; typeof(a) b;])
 
 AC_SYS_LARGEFILE
@@ -249,12 +272,6 @@ EL_CHECK_CODE([variadic macros], HAVE_VARIADIC_MACROS,
 		[#include <stdio.h>
 		 #define a(b,c...) printf(b,##c)],
                 [a("foo");a("%s","bar");a("%s%s","baz","quux");])
-
-# ===================================================================
-# Check for POSIX <regex.h>
-# ===================================================================
-
-EL_CHECK_SYS_TYPE(regex_t, HAVE_REGEX_H, [#include <regex.h>])
 
 # ===================================================================
 # Checks for library functions.
@@ -435,11 +452,12 @@ AC_DEFUN([EL_CHECK_OPTIONAL_LIBRARY],
 dnl EL_CONFIG_OPTIONAL_LIBRARY(define, name, header, lib, function, confhelp)
 AC_DEFUN([EL_CONFIG_OPTIONAL_LIBRARY],
 [
-	$1=yes
+	if test "x[$]$1" != xno; then $1=yes; fi
 	WITHVAL_$1=
 
 	AC_ARG_WITH([$2], [$6], [WITHVAL_$1="[$]withval"])
 	if test "x[$]WITHVAL_$1" = xno; then $1=no; fi
+	if test "x[$]WITHVAL_$1" = xyes; then $1=yes; fi
 
 	EL_CHECK_OPTIONAL_LIBRARY([$1], [$2], [$3], [$4], [$5])
 
@@ -463,13 +481,15 @@ EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_BZIP2, bzlib, bzlib.h, bz2, BZ2_bzReadOpen,
 EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_IDN, idn, idna.h, idn, stringprep_check_version,
 	[  --without-idn           disable international domain names support])
 
-if test "x{with_gc}" != xno; then
+if test "x${with_gc}" != xno; then
 	EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_GC, gc, gc.h, gc, GC_init,
 		[  --with-gc               enable Boehm's garbage collector])
 fi
 
+# LZMA disabled by default, because of little usability and compilation problems
+# with new xz
 EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_LZMA, lzma, lzma.h, lzma, lzma_code,
-	[  --without-lzma          disable lzma encoding support])
+	[  --with-lzma             enable lzma encoding support])
 
 # ===================================================================
 # Check for GSSAPI, optional even if installed.
@@ -557,7 +577,7 @@ AC_ARG_WITH(see, [  --with-see              enable Simple Ecmascript Engine (SEE
             [ if test "x$withval" != xno; then enable_see=yes; fi ])
 
 # The following is probably bad, ugly and so on. Stolen from Guile's (1.4)
-# SEE_FLAGS but I really don't want to require people to have Guile in order
+# GUILE_FLAGS but I really don't want to require people to have Guile in order
 # to compile CVS. Also, the macro seems to be really stupid regarding searching
 # for Guile in $PATH etc. --pasky
 
@@ -635,6 +655,9 @@ fi
 
 AC_MSG_RESULT($cf_result)
 CONFIG_SPIDERMONKEY="$cf_result"
+if test "$cf_result" = "yes"; then
+	AC_CHECK_FUNCS([[JS_ReportAllocationOverflow]])
+fi
 EL_RESTORE_FLAGS
 
 if test "x$CONFIG_SPIDERMONKEY" = xyes &&
@@ -792,7 +815,7 @@ fi
 # ===================================================================
 enable_python="no";
 
-AC_ARG_WITH(python, [  --with-python=[DIR]     enable Python support],
+AC_ARG_WITH(python, [[  --with-python[=DIR]     enable Python support]],
             [ if test "x$withval" != xno; then enable_python=yes; fi ])
 
 EL_SAVE_FLAGS
@@ -906,6 +929,48 @@ else
 	AC_SUBST(LUA_CFLAGS)
 fi
 
+# ===================================================================
+# Check for TRE library
+# ===================================================================
+
+AC_MSG_CHECKING([[for TRE in pkg-config]])
+if pkg-config tre; then
+	TRE_CFLAGS=`pkg-config --cflags tre`
+	TRE_LIBS=`pkg-config --libs tre`
+	AC_MSG_RESULT([[yes]])
+else
+	# <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=513055>
+	# "libtre-dev: /usr/lib/pkgconfig/tre.pc missing"
+	# so we look for the library even if pkg-config doesn't know about it.
+	TRE_CFLAGS=
+	TRE_LIBS=-ltre
+	AC_MSG_RESULT([[no, but let's try defaults]])
+fi
+
+AC_MSG_CHECKING([[for TRE header and library]])
+EL_SAVE_FLAGS
+CFLAGS="$TRE_CFLAGS $CFLAGS"
+LIBS="$TRE_LIBS $LIBS"
+AC_TRY_LINK([#include <tre/regex.h>],
+	    [regex_t re;
+	     regmatch_t match[1];
+	     regwcomp(&re, L"zap", REG_ICASE);
+	     regwexec(&re, L"ELIZAPROGRAM", 1, match, 0);],
+	    [AC_MSG_RESULT([[yes]])
+	     AC_DEFINE([HAVE_TRE_REGEX_H], [1],
+		       [Define to 1 if you have the <tre/regex.h> header file.])
+	     # TRE_CFLAGS will be used only where needed.
+	     # TRE_LIBS will be kept in LIBS and used everywhere.
+	     EL_RESTORE_FLAGS
+	     LIBS="$TRE_LIBS $LIBS"],
+	    [AC_MSG_RESULT([[no]])
+	     TRE_CFLAGS=
+	     TRE_LIBS=
+	     EL_RESTORE_FLAGS])
+AC_SUBST(TRE_CFLAGS)
+AC_SUBST(TRE_LIBS)
+
+AC_CHECK_SIZEOF([wchar_t], [4], [[#include <wchar.h>]])
 
 # ===================================================================
 # Check for Ruby, optional even if installed.
@@ -943,7 +1008,7 @@ enable_gnutls=""
 
 AC_ARG_WITH(gnutls, [  --without-gnutls        disable GNUTLS SSL support],
 	    [if test "$with_gnutls" = no;  then disable_gnutls=yes; fi])
-AC_ARG_WITH(gnutls, [  --with-gnutls[=DIR]     enable GNUTLS SSL support],
+AC_ARG_WITH(gnutls, [[  --with-gnutls[=DIR]     enable GNUTLS SSL support]],
 	    [if test "$with_gnutls" != no;  then enable_gnutls=yes; fi])
 gnutls_withval="$withval"
 
@@ -953,7 +1018,7 @@ fi
 
 AC_ARG_WITH(openssl, [  --without-openssl       disable OpenSSL support],
 	    [if test "$with_openssl" = no;  then disable_openssl=yes; fi])
-AC_ARG_WITH(openssl, [  --with-openssl[=DIR]    enable OpenSSL support (default)])
+AC_ARG_WITH(openssl, [[  --with-openssl[=DIR]    enable OpenSSL support (default)]])
 openssl_withval="$withval"
 
 # ---- OpenSSL

@@ -495,6 +495,79 @@ weird and ancient systems and we are already used to C89 anyway. The most
 remarkable implication of no C99 are no C++ (//) comments and declarations
 at the start of block only.</p>
 </div>
+<h2>Inline functions</h2>
+<div class="sectionbody">
+<p>Various standards and compilers set restrictions on inline functions:</p>
+<ul>
+<li>
+<p>
+C89 doesn't support them at all.
+</p>
+</li>
+<li>
+<p>
+According to C99 6.7.4p6, if a translation unit declares a function
+  as inline and not static, then it must also define that function.
+</p>
+</li>
+<li>
+<p>
+According to C99 6.7.4p3, an inline definition of a non-static
+  function must not contain any non-const static variables, and must
+  not refer to anything static outside of it.  According to C99
+  6.7.4p6 however, if the function is ever declared without inline or
+  with extern, then its definition is not an inline definition even if
+  the definition includes the inline keyword.
+</p>
+</li>
+<li>
+<p>
+Sun Studio 11 on Solaris 9 does not let non-static inline functions
+  refer to static identifiers.  Unlike C99 6.7.4p3, this seems to
+  apply to all definitions of inline functions, not only inline
+  definitions.  See ELinks bug 1047.
+</p>
+</li>
+<li>
+<p>
+GCC 4.3.1 warns if a function is declared inline after being called.
+  Perhaps it means such calls cannot be inlined.
+</p>
+</li>
+<li>
+<p>
+In C99, a function definition with extern inline means the compiler
+  should inline calls to that function and must also emit out-of-line
+  code that other translation units can call.  In GCC 4.3.1, it
+  instead means the out-of-line definition is elsewhere.
+</p>
+</li>
+</ul>
+<p>So to be portable to all of those, we use inline functions in only
+these ways:</p>
+<ul>
+<li>
+<p>
+Define as static inline in a *.c file.  Perhaps declare in that same
+  file.  On C89, we #define inline to nothing.
+</p>
+</li>
+<li>
+<p>
+Define as static inline in a *.h file.  Perhaps declare in that same
+  file.  On C89, we #define inline to nothing, and extra copies of the
+  function may then get emitted but anyway it'll work.
+</p>
+</li>
+<li>
+<p>
+Declare without inline in a <strong>.h file, and define with NONSTATIC_INLINE
+  in a </strong>.c file.  Perhaps also declare with NONSTATIC_INLINE in the same
+  *.c file.  On Sun Studio 11, we #define NONSTATIC_INLINE to nothing.
+</p>
+</li>
+</ul>
+</div>
 <h2>Comments</h2>
 <div class="sectionbody">
 <p>Use blank lines frequently to separate chunks of code.  And use magic <tt>/*</tt> and
@@ -862,7 +935,7 @@ diff -ru elinks/ elinks+mysuperfeature/ &gt;elinks-mysuperfeature.patch</tt></pr
 </div></div>
 <p>Please manually remove any bloat like changes in ./configure, whitespace
 changes etc. ;-).</p>
-<p>We also accept output from <tt>cvs diff -u</tt> :).  The statement about bloat
+<p>We also accept output from <tt>git diff</tt> :).  The statement about bloat
 removing above still applies.</p>
 <p>Big patches are hard to review so if your feature involves a lot of changes
 please consider splitting it in appropriate bits. Appropriate could mean:</p>
@@ -904,7 +977,7 @@ to compile or execute in one of these modes, then rework it.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 21-Sep-2008 14:23:05 EEST
+Last updated 29-Mar-2009 13:29:28 EEST
 </div>
 </div>
 </body>

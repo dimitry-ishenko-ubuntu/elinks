@@ -279,6 +279,7 @@ Julian Kinraid <jkinraid@clear.net.nz>
 	QNX-related fixes
 
 Kalle Olavi Niemitalo <kon@iki.fi>
+	I allow relicensing under "GNU GPL v2 or later", or preferably under the ISC licence ("and/or" version).  This applies only to code or other works that I intended to be added to ELinks.
 	Scanning PO files for accelerator conflicts (msgaccel)
 	UTF-8 and terminal support enhancements
 	Build system fixes
@@ -342,6 +343,10 @@ M. K. Srikant <srix@vsnl.com>
 
 M. Levinson <levinsm@users.sourceforge.net>
 	Python scripting fixes
+
+M. Vefa Bicakci <bicave@superonline.com>
+	Licenses modifications under "GPL version 2 or any later version."
+	Locale-independent case-insensitive comparisons
 
 Malcolm Parsons <malcolm.parsons@gmail.com>
 	Typo fixes
@@ -443,6 +448,10 @@ Pavol Babincak <scroolik@gmail.com>
 
 Peder Stray <peder@ifi.uio.no>
 	Fix handling of key presses turning up as key prefixes
+
+Peter Collingbourne <peter@peter.uk.to>
+	Allows relicensing under GPLv2-or-later and linking with OpenSSL
+	Fixed bug relating to newlines in hidden input fields
 
 Peter Gervai <grin@tolna.net>
 	Manpage updates

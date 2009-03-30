@@ -165,7 +165,7 @@ init_form_state(struct document_view *doc_view,
 
 	doc_cp = doc_view->document->cp;
 	term = doc_view->session->tab->term;
-	viewer_cp = get_opt_codepage_tree(term->spec, "charset");
+	viewer_cp = get_terminal_codepage(term);
 
 	mem_free_set(&fs->value, NULL);
 
@@ -795,6 +795,30 @@ get_successful_controls(struct document_view *doc_view,
 	sort_submitted_values(list);
 }
 
+unsigned char *
+encode_crlf(struct submitted_value *sv)
+{
+	struct string newtext;
+	int i;
+
+	assert(sv && sv->value);
+	if_assert_failed return NULL;
+
+	if (!init_string(&newtext)) return NULL;
+
+	for (i = 0; sv->value[i]; i++) {
+		if (sv->value[i] == '\r') {
+			if (sv->value[i+1] != '\n')
+				add_crlf_to_string(&newtext);
+		} else if (sv->value[i] == '\n')
+			add_crlf_to_string(&newtext);
+		else
+			add_char_to_string(&newtext, sv->value[i]);
+	}
+
+	return newtext.source;
+}
+
 static void
 encode_controls(LIST_OF(struct submitted_value) *l, struct string *data,
 		int cp_from, int cp_to)
@@ -838,6 +862,8 @@ encode_controls(LIST_OF(struct submitted_value) *l, struct string *data,
 
 			p2 = convert_string(convert_table, sv->value,
 					    strlen(sv->value), -1, CSM_FORM, NULL, NULL, NULL);
+		} else if (sv->type == FC_HIDDEN) {
+			p2 = encode_crlf(sv);
 		} else {
 			p2 = stracpy(sv->value);
 		}
@@ -1134,6 +1160,10 @@ encode_text_plain(LIST_OF(struct submitted_value) *l, struct string *data,
 			value = area51 = encode_textarea(sv);
 			if (!area51) break;
 			/* Fall through */
+		case FC_HIDDEN:
+			if (!area51) value = area51 = encode_crlf(sv);
+			if (!area51) break;
+			/* Fall through */
 		case FC_TEXT:
 		case FC_PASSWORD:
 			/* Convert back to original encoding (see
@@ -1218,7 +1248,7 @@ get_form_uri(struct session *ses, struct document_view *doc_view,
 
 	get_successful_controls(doc_view, fc, &submit);
 
-	cp_from = get_opt_codepage_tree(ses->tab->term->spec, "charset");
+	cp_from = get_terminal_codepage(ses->tab->term);
 	cp_to = doc_view->document->cp;
 	switch (form->method) {
 	case FORM_METHOD_GET:
@@ -1816,8 +1846,7 @@ field_op(struct session *ses, struct document_view *doc_view,
 #ifdef CONFIG_UTF8
 			/* fs->value is in the charset of the terminal.  */
 			ctext = u2cp_no_nbsp(get_kbd_key(ev),
-					     get_opt_codepage_tree(ses->tab->term->spec,
-								   "charset"));
+					     get_terminal_codepage(ses->tab->term));
 			length = strlen(ctext);
 
 			if (strlen(fs->value) + length > fc->maxlength

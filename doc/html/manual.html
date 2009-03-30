@@ -351,8 +351,8 @@ have the following libraries and programs installed:</p>
 <table rules="none"
 frame="hsides"
 cellspacing="0" cellpadding="4">
-<col width="274" />
-<col width="605" />
+<col width="249" />
+<col width="550" />
 <thead>
   <tr>
     <th align="left">
@@ -377,7 +377,7 @@ cellspacing="0" cellpadding="4">
     zlib 1.2.0.2 or later
     </td>
     <td align="left">
-    For handling gzip or deflate compressed documents                           both locally and sent from server.
+    For handling gzip or deflate compressed documents                            both locally and sent from server.
     </td>
   </tr>
   <tr>
@@ -393,7 +393,7 @@ cellspacing="0" cellpadding="4">
     LZMA Utils
     </td>
     <td align="left">
-    Likewise, for LZMA compressed documents.                                    Version 4.32.5 should work.
+    Likewise, for LZMA compressed documents.                                     Version 4.32.5 should work.  XZ Utils does not work.
     </td>
   </tr>
   <tr>
@@ -422,10 +422,18 @@ cellspacing="0" cellpadding="4">
   </tr>
   <tr>
     <td align="left">
-    smbclient
+    <a href="http://laurikari.net/tre/">TRE</a>
     </td>
     <td align="left">
-    Program needed for smb:// protocol support.
+    For regexp searching.  Version 0.7.5 works.
+    </td>
+  </tr>
+  <tr>
+    <td align="left">
+    libsmbclient
+    </td>
+    <td align="left">
+    Library needed for smb:// protocol support.
     </td>
   </tr>
   <tr>
@@ -939,7 +947,7 @@ so most servers probably won't use it.</p>
 Version 4.32.5 works; 4.42.2alpha also works and understands a
 newer LZMA file format.  This version of ELinks does not support
 LZMA SDK from 7-Zip.</p>
-<p><strong>Default:</strong>  enabled if the library is installed</p>
+<p><strong>Default:</strong>  disabled</p>
 <h4><a id="CONFIG-IPV6"></a>IPv6 Protocol Support (<tt>CONFIG_IPV6</tt>)</h4>
 <p>You know this thing that was designed to obsolete IPv4 but only pasky,
 weirdos and projects supported with big funds really use. ;-)</p>
@@ -4622,7 +4630,7 @@ displayed.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 21-Sep-2008 14:23:09 EEST
+Last updated 29-Mar-2009 13:29:32 EEST
 </div>
 </div>
 </body>
