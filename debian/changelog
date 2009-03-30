@@ -8,8 +8,9 @@ elinks (0.12~pre3-1) unstable; urgency=low
    + Refresh patches for 0.12~pre3
   * Update to debian/compat 6 and use dh_lintian instead of dh_installing
     the override file.
+  * Use krb5-dev instead of heimdal-dev for GSSAPI (Closes: #488633)
 
- -- Y Giridhar Appaji Nag <appaji@debian.org>  Tue, 31 Mar 2009 00:16:33 +0530
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Tue, 31 Mar 2009 00:21:30 +0530
 
 elinks (0.12~pre2.dfsg0-1) unstable; urgency=low
 
