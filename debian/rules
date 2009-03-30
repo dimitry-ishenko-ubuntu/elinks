@@ -197,6 +197,7 @@ install-arch:
 	rm -f $(CURDIR)/debian/tmp.elinks-data/usr/share/locale/locale.alias
 	dh_link -pelinks usr/share/doc/elinks-data usr/share/doc/elinks
 	dh_install -s
+	dh_lintian -s
 
 # Must not depend on anything. This is to be called by
 # binary-arch/binary-indep

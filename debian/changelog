@@ -6,8 +6,10 @@ elinks (0.12~pre3-1) unstable; urgency=low
   * New upstream release
    + Fixes crash in RSS renderer (Closes: #514544)
    + Refresh patches for 0.12~pre3
+  * Update to debian/compat 6 and use dh_lintian instead of dh_installing
+    the override file.
 
- -- Y Giridhar Appaji Nag <appaji@debian.org>  Mon, 30 Mar 2009 23:43:59 +0530
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Tue, 31 Mar 2009 00:16:33 +0530
 
 elinks (0.12~pre2.dfsg0-1) unstable; urgency=low
 
