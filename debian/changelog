@@ -4,9 +4,10 @@ elinks (0.12~pre3-1) unstable; urgency=low
   * Remove DM-Upload-Allowed: yes
   * Update Standards-Version to 3.8.1 (no changes required)
   * New upstream release
+   + Fixes crash in RSS renderer (Closes: #514544)
    + Refresh patches for 0.12~pre3
 
- -- Y Giridhar Appaji Nag <appaji@debian.org>  Mon, 30 Mar 2009 23:26:03 +0530
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Mon, 30 Mar 2009 23:43:59 +0530
 
 elinks (0.12~pre2.dfsg0-1) unstable; urgency=low
 
