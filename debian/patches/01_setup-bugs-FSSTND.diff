@@ -19,32 +19,32 @@ index 71fceef..f0f55ec 100644
  how to get in contact with developers and getting help can be found on
  http://elinks.cz/community.html[the community page].
 diff --git a/doc/html/elinks.conf.5.html b/doc/html/elinks.conf.5.html
-index 9616dd3..1ec6571 100644
+index b350f4d..712357a 100644
 --- a/doc/html/elinks.conf.5.html
 +++ b/doc/html/elinks.conf.5.html
-@@ -776,7 +776,7 @@ Do <strong>not</strong> put single- or double-quotes around the % sign.
+@@ -781,7 +781,7 @@ around the % sign.
  </dd></dl><h3 id="mime.mailcap">mime.mailcap (Mailcap)</h3>
  <p>Options for mailcap support.
  </p><dl><dt id="mime.mailcap.enable">mime.mailcap.enable [0|1] (default: 1)</dt><dd>Enable mailcap support.
--</dd><dt id="mime.mailcap.path">mime.mailcap.path &#60;str&#62; (default: "~/.mailcap:/etc/mailcap:/usr/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap")</dt><dd>Mailcap search path. Colon-separated list of files.
-+</dd><dt id="mime.mailcap.path">mime.mailcap.path &#60;str&#62; (default: "~/.mailcap:/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap")</dt><dd>Mailcap search path. Colon-separated list of files.
- Leave as "" to use <tt>MAILCAP</tt> environment variable instead.
+-</dd><dt id="mime.mailcap.path">mime.mailcap.path &#60;str&#62; (default: "~/.mailcap:/etc/mailcap:/usr/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap")</dt><dd>Mailcap search path. Colon-separated list of files. Leave as "" to
++</dd><dt id="mime.mailcap.path">mime.mailcap.path &#60;str&#62; (default: "~/.mailcap:/etc/mailcap:/usr/local/etc/mailcap:/usr/share/mailcap:/usr/share/misc/mailcap")</dt><dd>Mailcap search path. Colon-separated list of files. Leave as "" to
+ use <tt>MAILCAP</tt> environment variable instead.
  </dd><dt id="mime.mailcap.ask">mime.mailcap.ask [0|1] (default: 1)</dt><dd>Ask before using the handlers defined by mailcap.
- </dd><dt id="mime.mailcap.description">mime.mailcap.description &#60;num&#62; (default: 0)</dt><dd>Type of description to show in "what to do with this file"
-@@ -792,7 +792,7 @@ also be checked before deciding the handler.
- can be used to find the content type of a URL by looking at
- the extension of the file name.
+ </dd><dt id="mime.mailcap.description">mime.mailcap.description &#60;num&#62; (default: 0)</dt><dd>Type of description to show in "what to do with this file" query
+@@ -798,7 +798,7 @@ checked before deciding the handler.
+ used to find the content type of a URL by looking at the extension
+ of the file name.
  </p><dl><dt id="mime.mimetypes.enable">mime.mimetypes.enable [0|1] (default: 1)</dt><dd>Enable <tt>mime.types</tt> support.
--</dd><dt id="mime.mimetypes.path">mime.mimetypes.path &#60;str&#62; (default: "~/.mime.types:/etc/mime.types:/usr/etc/mime.types:/usr/local/etc/mime.types:/usr/share/mime.types:/usr/share/misc/mime.types")</dt><dd>The search path for <tt>mime.types</tt> files. Colon-separated list of files.
-+</dd><dt id="mime.mimetypes.path">mime.mimetypes.path &#60;str&#62; (default: "~/.mime.types:/etc/mime.types:/usr/local/etc/mime.types:/usr/share/mime.types:/usr/share/misc/mime.types")</dt><dd>The search path for <tt>mime.types</tt> files. Colon-separated list of files.
+-</dd><dt id="mime.mimetypes.path">mime.mimetypes.path &#60;str&#62; (default: "~/.mime.types:/etc/mime.types:/usr/etc/mime.types:/usr/local/etc/mime.types:/usr/share/mime.types:/usr/share/misc/mime.types")</dt><dd>The search path for <tt>mime.types</tt> files. Colon-separated list of
++</dd><dt id="mime.mimetypes.path">mime.mimetypes.path &#60;str&#62; (default: "~/.mime.types:/etc/mime.types:/usr/local/etc/mime.types:/usr/share/mime.types:/usr/share/misc/mime.types")</dt><dd>The search path for <tt>mime.types</tt> files. Colon-separated list of
+ files.
  </dd></dl><h3 id="mime.type">mime.type (MIME type associations)</h3>
  <p>Handler &#8596; MIME type association. The first sub-tree is the MIME
- class while the second sub-tree is the MIME type (ie. image/gif
 diff --git a/doc/man/man5/elinks.conf.5 b/doc/man/man5/elinks.conf.5
-index d7711f5..1daa16d 100644
+index 4a0fec7..070dc9d 100644
 --- a/doc/man/man5/elinks.conf.5
 +++ b/doc/man/man5/elinks.conf.5
-@@ -1121,7 +1121,7 @@ mime\&.mailcap\&.enable \fB[0|1]\fR (default: 1)
+@@ -1143,7 +1143,7 @@ mime\&.mailcap\&.enable \fB[0|1]\fR (default: 1)
  Enable mailcap support\&.
  .RE
  .PP
@@ -53,7 +53,7 @@ index d7711f5..1daa16d 100644
  .RS 4
  Mailcap search path\&. Colon\-separated list of files\&. Leave as "" to use
  \fBMAILCAP\fR
-@@ -1164,7 +1164,7 @@ Enable
+@@ -1186,7 +1186,7 @@ Enable
  support\&.
  .RE
  .PP
