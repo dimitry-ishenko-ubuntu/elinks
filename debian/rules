@@ -76,7 +76,8 @@ confopts_lite = $(confopts) \
 	--without-zlib \
 	--without-bzlib \
 	--without-idn \
-	--without-lua
+	--without-lua \
+	--without-tre
 
 save-upstream: patch save-stamp
 patch: patch-stamp
