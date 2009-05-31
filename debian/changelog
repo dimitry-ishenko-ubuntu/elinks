@@ -1,12 +1,13 @@
 elinks (0.12~pre4-1) unstable; urgency=low
 
   * New upstream release 0.12pre4
+    + Refresh patches for new upstream release
     + Includes asciidoc.py from AsciiDoc 7.1.2 (Closes: #526349)
     + With GNUTLS 2.1.7 or later disable few TLS extensions -- helps
       handshaking with SSLv3-only bugzilla.novell.com (Closes: #528661)
   * Compile elinks-lite with --without-tre
 
- -- Y Giridhar Appaji Nag <appaji@debian.org>  Mon, 01 Jun 2009 00:03:40 +0530
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Mon, 01 Jun 2009 00:25:15 +0530
 
 elinks (0.12~pre3-2) unstable; urgency=low
 

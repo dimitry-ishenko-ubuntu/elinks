@@ -2,10 +2,10 @@ Moritz's patch to disable xmlto validation.  It fails with the latest
 xmlto and this patch fixes #491820
 
 diff --git a/doc/Makefile b/doc/Makefile
-index ab14be1..ae88e4f 100644
+index 2ba565f..30cf775 100644
 --- a/doc/Makefile
 +++ b/doc/Makefile
-@@ -151,7 +151,7 @@ option-%.frag.xhtml: $(ELINKS) $(HELP2XML)
+@@ -150,7 +150,7 @@ option-%.frag.xhtml: $(ELINKS) $(HELP2XML)
              cmd_jw = $(JW) -b $(2) $<
  
     quiet_cmd_xmlto = '    [$(LINK_COLOR)XMLTO$(END_COLOR)]   $(RELPATH)$@'
