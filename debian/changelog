@@ -1,9 +1,10 @@
 elinks (0.12~pre4-1) unstable; urgency=low
 
   * New upstream release 0.12pre4
+    + Includes asciidoc.py from AsciiDoc 7.1.2 (Closes: #526349)
   * Compile elinks-lite with --without-tre
 
- -- Y Giridhar Appaji Nag <appaji@debian.org>  Sun, 31 May 2009 23:30:27 +0530
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Sun, 31 May 2009 23:46:39 +0530
 
 elinks (0.12~pre3-2) unstable; urgency=low
 
