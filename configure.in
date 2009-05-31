@@ -6,15 +6,16 @@ dnl discards them.  Other comments begin with "#", and they get copied
 dnl to the configure script, hopefully making it easier to read.
 
 dnl Autoconf 2.13 generates an incomplete config.h.in; see ELinks bug 936.
-dnl Autoconf 2.59 is installed in the computer that generates our nightly
-dnl snapshots, so we need to be compatible with that.
-AC_PREREQ(2.59)
+dnl Autoconf 2.61 is installed in the computer that generates our nightly
+dnl snapshots, so we need to be compatible with that.  (Also, some files
+dnl in Autoconf 2.62 and 2.63 sources are not GPLv2 compatible.)
+AC_PREREQ(2.61)
 AC_INIT
 AC_CONFIG_SRCDIR([src/main/main.c])
 AC_CONFIG_AUX_DIR(config)
 
 PACKAGE=elinks
-VERSION=0.12pre3
+VERSION=0.12pre4
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Package version])
@@ -70,17 +71,11 @@ CONFIG_XMLTO="no"
 CONFIG_JW="no"
 
 if test "x$CONFIG_DOC" != xno; then
-	AC_PATH_PROGS(ASCIIDOC, "asciidoc")
-	if test "x$ASCIIDOC" != "x"; then
+	AC_PATH_PROGS(PYTHON, "python")
+	if test "x$PYTHON" != "x"; then
 		EL_CONFIG(CONFIG_ASCIIDOC, [AsciiDoc])
 		EL_CONFIG(MANUAL_ASCIIDOC, [HTML (one file)])
 		EL_CONFIG(MAN_ASCIIDOC, [HTML])
-
-		echo > config.asciidoc-unsafe.txt
-		if "$ASCIIDOC" --unsafe config.asciidoc-unsafe.txt >/dev/null 2>/dev/null; then
-			ASCIIDOC_FLAGS=--unsafe
-		fi
-		rm config.asciidoc-unsafe.*
 	fi
 
 	AC_PATH_PROGS(XMLTO, "xmlto")
@@ -109,7 +104,6 @@ if test "x$CONFIG_DOC" != xno; then
 	fi
 fi
 
-AC_SUBST(ASCIIDOC_FLAGS)
 AC_SUBST(CONFIG_ASCIIDOC)
 AC_SUBST(CONFIG_DOXYGEN)
 AC_SUBST(CONFIG_POD2HTML)
@@ -225,9 +219,9 @@ AC_SUBST(CONFIG_INTERLINK)
 AC_STRUCT_TM
 AC_C_CONST
 AC_C_INLINE
-AC_MSG_CHECKING([[C99-conforming inline]])
+AC_MSG_CHECKING([[for C99-conforming inline]])
 AC_COMPILE_IFELSE([[
-	int add(int x);
+	int add(int change);
 
 	static int sum;
 
@@ -932,45 +926,50 @@ fi
 # ===================================================================
 # Check for TRE library
 # ===================================================================
+#
+# This section only checks that --without-tre is not given and the
+# library seems to work, and sets TRE_CFLAGS, TRE_LIBS, and
+# tre_log.  It does not define CONFIG_TRE, and always resets
+# LIBS and CFLAGS back to their original values.
+#
+# After any --enable-utf-8 and --disable-utf-8 options have been
+# handled, a separate section decides whether to actually use TRE.
 
-AC_MSG_CHECKING([[for TRE in pkg-config]])
-if pkg-config tre; then
-	TRE_CFLAGS=`pkg-config --cflags tre`
-	TRE_LIBS=`pkg-config --libs tre`
-	AC_MSG_RESULT([[yes]])
+AC_ARG_WITH([[tre]], [[  --without-tre           disable TRE regex search support]])
+if test "$with_tre" = no; then
+	AC_MSG_CHECKING([[for TRE]])
+	AC_MSG_RESULT([[disabled]])
+	tre_log="no (explicitly disabled)"
 else
-	# <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=513055>
-	# "libtre-dev: /usr/lib/pkgconfig/tre.pc missing"
-	# so we look for the library even if pkg-config doesn't know about it.
-	TRE_CFLAGS=
-	TRE_LIBS=-ltre
-	AC_MSG_RESULT([[no, but let's try defaults]])
+	AC_MSG_CHECKING([[for TRE in pkg-config]])
+	if pkg-config tre; then
+		TRE_CFLAGS=`pkg-config --cflags tre`
+		TRE_LIBS=`pkg-config --libs tre`
+		AC_MSG_RESULT([[yes]])
+	else
+		# <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=513055>
+		# "libtre-dev: /usr/lib/pkgconfig/tre.pc missing"
+		# so we look for the library even if pkg-config doesn't know about it.
+		TRE_CFLAGS=
+		TRE_LIBS=-ltre
+		AC_MSG_RESULT([[no, but let's try defaults]])
+	fi
+
+	AC_MSG_CHECKING([[for TRE header and library]])
+	EL_SAVE_FLAGS
+	CFLAGS="$TRE_CFLAGS $CFLAGS"
+	LIBS="$TRE_LIBS $LIBS"
+	AC_TRY_LINK([#include <tre/regex.h>],
+		    [regex_t re;
+		     regmatch_t match[1];
+		     regwcomp(&re, L"zap", REG_ICASE);
+		     regwexec(&re, L"ELIZAPROGRAM", 1, match, 0);],
+		    [AC_MSG_RESULT([[yes]])
+		     tre_log="available"],
+		    [AC_MSG_RESULT([[no]])
+		     tre_log="no (TRE not found)"])
+	EL_RESTORE_FLAGS
 fi
-
-AC_MSG_CHECKING([[for TRE header and library]])
-EL_SAVE_FLAGS
-CFLAGS="$TRE_CFLAGS $CFLAGS"
-LIBS="$TRE_LIBS $LIBS"
-AC_TRY_LINK([#include <tre/regex.h>],
-	    [regex_t re;
-	     regmatch_t match[1];
-	     regwcomp(&re, L"zap", REG_ICASE);
-	     regwexec(&re, L"ELIZAPROGRAM", 1, match, 0);],
-	    [AC_MSG_RESULT([[yes]])
-	     AC_DEFINE([HAVE_TRE_REGEX_H], [1],
-		       [Define to 1 if you have the <tre/regex.h> header file.])
-	     # TRE_CFLAGS will be used only where needed.
-	     # TRE_LIBS will be kept in LIBS and used everywhere.
-	     EL_RESTORE_FLAGS
-	     LIBS="$TRE_LIBS $LIBS"],
-	    [AC_MSG_RESULT([[no]])
-	     TRE_CFLAGS=
-	     TRE_LIBS=
-	     EL_RESTORE_FLAGS])
-AC_SUBST(TRE_CFLAGS)
-AC_SUBST(TRE_LIBS)
-
-AC_CHECK_SIZEOF([wchar_t], [4], [[#include <wchar.h>]])
 
 # ===================================================================
 # Check for Ruby, optional even if installed.
@@ -1002,36 +1001,40 @@ AC_SUBST(CONFIG_SCRIPTING)
 # For wiping SSL hooks..
 #ifdef CONFIG_SSL
 
-disable_openssl=""
-disable_gnutls=""
-enable_gnutls=""
+chosen_ssl_library=""
 
-AC_ARG_WITH(gnutls, [  --without-gnutls        disable GNUTLS SSL support],
-	    [if test "$with_gnutls" = no;  then disable_gnutls=yes; fi])
-AC_ARG_WITH(gnutls, [[  --with-gnutls[=DIR]     enable GNUTLS SSL support]],
-	    [if test "$with_gnutls" != no;  then enable_gnutls=yes; fi])
-gnutls_withval="$withval"
+AC_ARG_WITH(gnutls, [[  --without-gnutls        disable GNUTLS SSL support]])
+AC_ARG_WITH(gnutls, [[  --with-gnutls           enable GNUTLS SSL support]],
+	    [case "$with_gnutls" in
+		"no")	: ;;
+		"yes")	chosen_ssl_library="GNUTLS" ;;
+		*)	chosen_ssl_library="GNUTLS"
+			AC_MSG_WARN([[Support for --with-gnutls=DIR has been removed.
+You may have to set the PKG_CONFIG_PATH environment variable instead.]]) ;;
+	     esac])
 
-if test "$enable_gnutls" = yes; then
-	disable_openssl=yes;
-fi
-
-AC_ARG_WITH(openssl, [  --without-openssl       disable OpenSSL support],
-	    [if test "$with_openssl" = no;  then disable_openssl=yes; fi])
-AC_ARG_WITH(openssl, [[  --with-openssl[=DIR]    enable OpenSSL support (default)]])
-openssl_withval="$withval"
+AC_ARG_WITH(openssl, [[  --without-openssl       disable OpenSSL support]])
+AC_ARG_WITH(openssl, [[  --with-openssl[=DIR]    enable OpenSSL support (default)]],
+	    [case "$with_openssl" in
+		"no")	: ;;
+		*)	chosen_ssl_library="OpenSSL" ;;
+	     esac])
 
 # ---- OpenSSL
 
 AC_MSG_CHECKING([for OpenSSL])
 
 EL_SAVE_FLAGS
-cf_result="no"
 
-if test "$disable_openssl" = yes; then
-	cf_result="not used"
+if test "$with_openssl" = no; then
+	cf_result="explicitly disabled"
+
+elif test -n "$chosen_ssl_library" && test "$chosen_ssl_library" != "OpenSSL"; then
+	cf_result="not used, because $chosen_ssl_library was chosen"
+
 else
-	for ssldir in "$openssl_withval" "" /usr /usr/local/openssl \
+	cf_result=no
+	for ssldir in "$with_openssl" "" /usr /usr/local/openssl \
 			 /usr/lib/openssl /usr/local/ssl \
 			 /usr/local/www /usr/lib/ssl /usr/local \
 			 /usr/pkg /opt /opt/openssl; do
@@ -1057,12 +1060,13 @@ else
 	done
 
 	if test "$cf_result" != yes; then
-		if test -n "$openssl_withval" && test "x$openssl_withval" != xno; then
+		if test "${with_openssl-no}" != "no"; then
 			AC_MSG_ERROR([OpenSSL not found])
 		fi
 		EL_RESTORE_FLAGS
 	else
 		EL_CONFIG(CONFIG_OPENSSL, [OpenSSL])
+		chosen_ssl_library="OpenSSL"
 
 		CFLAGS="$CFLAGS_X"
 		AC_SUBST(OPENSSL_CFLAGS)
@@ -1071,69 +1075,70 @@ fi
 
 AC_MSG_RESULT($cf_result)
 
-CONFIG_GNUTLS_OPENSSL_COMPAT=no
 # ---- GNU TLS
-dnl We can't have AC_MSG_CHECKING here, because AC_PATH_PROG prints its own and
-dnl it looks ugly then.
 
-if test "$cf_result" = yes; then
-	cf_result="not used"
+# GnuTLS 2.2.0 changed libgnutls-openssl from GPLv2+
+# to GPLv3+.  Don't link that with the GPLv2 ELinks.
+# ELinks will use its internal MD5 code instead.
+CONFIG_GNUTLS_OPENSSL_COMPAT=no
+
+if test "$with_gnutls" = no; then
+	AC_MSG_CHECKING([[for GNUTLS]])
+	AC_MSG_RESULT([[explicitly disabled]])
+
+elif test -n "$chosen_ssl_library" && test "$chosen_ssl_library" != "GNUTLS"; then
+	AC_MSG_CHECKING([[for GNUTLS]])
+	AC_MSG_RESULT([[not used, because $chosen_ssl_library was chosen]])
 
 else
-	EL_SAVE_FLAGS
-	cf_result="no"
+	cf_result=no
+	AC_MSG_CHECKING([[for GNUTLS (1.2 or later) in pkg-config]])
+	if pkg-config --atleast-version=1.2 gnutls; then
+		GNUTLS_CFLAGS=`pkg-config --cflags gnutls`
+		GNUTLS_LIBS=`pkg-config --libs gnutls`
+		AC_MSG_RESULT([[yes: $GNUTLS_CFLAGS $GNUTLS_LIBS]])
 
-	if test -z "$disable_gnutls"; then
-		# Sure, we maybe _could_ use their macro, but how to ensure
-		# that the ./configure script won't fail if the macro won't be
-		# found..? :( --pasky
+		EL_SAVE_FLAGS
+		LIBS="$GNUTLS_LIBS $LIBS"
+		CFLAGS="$CFLAGS $GNUTLS_CFLAGS"
+		CPPFLAGS="$CPPFLAGS $GNUTLS_CFLAGS"
 
-		GNUTLS_PATH="$PATH:/usr/local/gnutls:/opt:/opt/gnutls"
-
-		if test -d "$gnutls_withval"; then
-			GNUTLS_PATH="$gnutls_withval:$GNUTLS_PATH"
-		fi
-
-		AC_PATH_PROG(LIBGNUTLS_CONFIG, libgnutls-config, no, $GNUTLS_PATH)
-
-		if test "$LIBGNUTLS_CONFIG" = "no" ; then
-			cf_result=no
-		else
-			GNUTLS_CFLAGS=`$LIBGNUTLS_CONFIG --cflags`
-			GNUTLS_LIBS=`$LIBGNUTLS_CONFIG --libs`
-
-			LIBS="$GNUTLS_LIBS $LIBS_X"
-			CFLAGS="$CFLAGS_X $GNUTLS_CFLAGS"
-			CPPFLAGS="$CPPFLAGS_X $GNUTLS_CFLAGS"
-
-			# Verify if it's really usable.  gnutls_session was
-			# renamed to gnutls_session_t before GNU TLS 1.2.0
-			# (on 2004-06-13); ELinks now requires this.
-			AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]], [[gnutls_session_t dummy;
-				     gnutls_check_version(NULL)]])],[cf_result=yes],[cf_result=no])
-		fi
+		# Verify if it's really usable.  gnutls_session was
+		# renamed to gnutls_session_t before GNU TLS 1.2.0
+		# (on 2004-06-13); ELinks now requires this.
+		AC_MSG_CHECKING([[whether GNUTLS can be linked with]])
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]],
+						[[gnutls_session_t dummy;
+						  gnutls_check_version(NULL)]])],
+			       [cf_result=yes],
+			       [cf_result=no])
+		AC_MSG_RESULT([[$cf_result]])
 
 		if test "$cf_result" = yes; then
-			EL_CONFIG(CONFIG_GNUTLS, [GNUTLS])
-
-			CFLAGS="$CFLAGS_X"
-			AC_SUBST(GNUTLS_CFLAGS)
-
-			# GnuTLS 2.2.0 changed libgnutls-openssl from GPLv2+
-			# to GPLv3+.  Don't link that with the GPLv2 ELinks.
-			# ELinks will use its internal MD5 code instead.
-			CONFIG_GNUTLS_OPENSSL_COMPAT=no
-		else
-			if test -n "$gnutls_withval" && test "x$gnutls_withval" != xno; then
-				AC_MSG_ERROR([GNUTLS (1.2 or later) not found.  ELinks no longer supports GNUTLS 1.1.])
-			fi
-			EL_RESTORE_FLAGS
+			# According to gnutls/NEWS, the function was originally
+			# added as gnutls_set_default_priority2 in GNUTLS 2.1.4
+			# (released 2007-10-27) and then renamed to
+			# gnutls_priority_set_direct in GNUTLS 2.1.7 (released
+			# 2007-11-29).
+			AC_CHECK_FUNCS([gnutls_priority_set_direct])
 		fi
+
+		EL_RESTORE_FLAGS
+	else
+		AC_MSG_RESULT([[$cf_result]])
+	fi
+
+	if test "$cf_result" = yes; then
+		EL_CONFIG(CONFIG_GNUTLS, [GNUTLS])
+		chosen_ssl_library="GNUTLS"
+
+		LIBS="$GNUTLS_LIBS $LIBS"
+		AC_SUBST(GNUTLS_CFLAGS)
+
+	elif test "${with_gnutls-no}" != "no"; then
+		AC_MSG_ERROR([[GNUTLS (1.2 or later) not found.  ELinks no longer supports GNUTLS 1.1.]])
 	fi
 fi
-
-AC_MSG_CHECKING([for GNU TLS (1.2 or later)])
-AC_MSG_RESULT($cf_result)
 
 # Final SSL setup
 
@@ -1384,6 +1389,66 @@ AC_ARG_ENABLE(weehoofooboomookerchoo,
     Also check out the features.conf file for more information about features!
 	      ],
 	      [AC_MSG_ERROR(Are you strange, or what?)])
+
+
+# ===================================================================
+# Decide whether to use TRE
+# ===================================================================
+#
+# This must be done after the CONFIG_UTF8 check above.
+# The first part of the TRE check is separate, to get
+# the configure --help output in a sensible order.
+
+if test "$tre_log" = "available"; then
+	if test "$CONFIG_UTF8" = "yes"; then
+		# When CONFIG_UTF8 and CONFIG_TRE are both defined,
+		# src/viewer/text/search.c makes a string of
+		# unicode_val_T and gives it to regwexec(), which
+		# expects a string of wchar_t.  If the unicode_val_T
+		# and wchar_t types are too different, this won't
+		# work, so try to detect that and disable regexp
+		# operations entirely in that case.
+		#
+		# Currently, this code only compares the sizes of the
+		# types.  src/intl/charsets.h defines unicode_val_T as
+		# uint32_t, so we check whether wchar_t has exactly 32
+		# bits.  But don't use AC_CHECK_SIZEOF for this, because
+		# there doesn't seem to be a documented way to get the
+		# result of that for use in the configure script.
+		#
+		# C99 says the implementation can define
+		# __STDC_ISO_10646__ if wchar_t values match ISO 10646
+		# (or Unicode) numbers in all locales.  Do not check
+		# that macro here, because it is too restrictive: it
+		# should be enough for ELinks if the values match in
+		# the locales where ELinks is actually run.
+		AC_MSG_CHECKING([[whether wchar_t is exactly 32-bit]])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <limits.h>
+#include <stddef.h>
+int dummy[(sizeof(wchar_t) * CHAR_BIT == 32) ? 1 : -1];]], [])],
+			[AC_MSG_RESULT([[yes]])
+			 tre_log="TRE"],
+			[AC_MSG_RESULT([[no]])
+			 tre_log="no (unsuitable wchar_t)"])
+	else
+		# If UTF-8 is not used, then wchar_t doesn't matter.
+		tre_log="TRE"
+	fi
+fi
+
+if test "$tre_log" = "TRE"; then
+	AC_DEFINE([CONFIG_TRE], [1],
+		[Define as 1 to use the TRE library for regular expression searching.  This requires the <tre/regex.h> header file.  If you define CONFIG_UTF8 too, then wchar_t must be exactly 32-bit so that it matches unicode_val_T.])
+	# TRE_CFLAGS will be used only where needed.
+	LIBS="$LIBS $TRE_LIBS"
+else
+	TRE_LIBS=
+	TRE_CFLAGS=
+fi
+AC_SUBST(TRE_CFLAGS)
+AC_SUBST(TRE_LIBS)
+EL_LOG_CONFIG([CONFIG_TRE], [[Regexp searching]], [[$tre_log]])
 
 
 # ===================================================================

@@ -670,13 +670,12 @@ INSTALL_SCRIPT
 INSTALL_DATA
 GIT
 SPARSE
-ASCIIDOC
+PYTHON
 XMLTO
 JW
 POD2HTML
 DOXYGEN
 api_srcdir
-ASCIIDOC_FLAGS
 CONFIG_ASCIIDOC
 CONFIG_DOXYGEN
 CONFIG_POD2HTML
@@ -717,13 +716,10 @@ GUILE_CONFIG
 GUILE_CFLAGS
 PERL_LIBS
 PERL_CFLAGS
-PYTHON
 PYTHON_LIBS
 PYTHON_CFLAGS
 LUA_LIBS
 LUA_CFLAGS
-TRE_CFLAGS
-TRE_LIBS
 CONFIG_SCRIPTING_RUBY
 RUBY_CFLAGS
 RUBY_LIBS
@@ -734,7 +730,6 @@ CONFIG_SCRIPTING_PERL
 CONFIG_SCRIPTING_PYTHON
 CONFIG_SCRIPTING_SPIDERMONKEY
 OPENSSL_CFLAGS
-LIBGNUTLS_CONFIG
 GNUTLS_CFLAGS
 CONFIG_SSL
 CONFIG_GNUTLS_OPENSSL_COMPAT
@@ -798,6 +793,9 @@ CONFIG_FASTMEM
 CONFIG_OWN_LIBC
 CONFIG_SMALL
 CONFIG_UTF8
+TRE_CFLAGS
+TRE_LIBS
+CONFIG_TRE
 CONFDIR
 LOCALEDIR
 LIBDIR
@@ -1449,9 +1447,10 @@ Optional Packages:
   --with-perl             enable Perl support
   --with-python[=DIR]     enable Python support
   --without-lua           disable Lua support
+  --without-tre           disable TRE regex search support
   --with-ruby             enable Ruby support
   --without-gnutls        disable GNUTLS SSL support
-  --with-gnutls[=DIR]     enable GNUTLS SSL support
+  --with-gnutls           enable GNUTLS SSL support
   --without-openssl       disable OpenSSL support
   --with-openssl[=DIR]    enable OpenSSL support (default)
   --with-x                use the X Window System
@@ -1924,7 +1923,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 PACKAGE=elinks
-VERSION=0.12pre3
+VERSION=0.12pre4
 
 
 
@@ -3455,18 +3454,18 @@ CONFIG_XMLTO="no"
 CONFIG_JW="no"
 
 if test "x$CONFIG_DOC" != xno; then
-	for ac_prog in "asciidoc"
+	for ac_prog in "python"
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
 { echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_ASCIIDOC+set}" = set; then
+if test "${ac_cv_path_PYTHON+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  case $ASCIIDOC in
+  case $PYTHON in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_ASCIIDOC="$ASCIIDOC" # Let the user override the test with a path.
+  ac_cv_path_PYTHON="$PYTHON" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -3476,7 +3475,7 @@ do
   test -z "$as_dir" && as_dir=.
   for ac_exec_ext in '' $ac_executable_extensions; do
   if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_ASCIIDOC="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_PYTHON="$as_dir/$ac_word$ac_exec_ext"
     echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -3487,20 +3486,20 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-ASCIIDOC=$ac_cv_path_ASCIIDOC
-if test -n "$ASCIIDOC"; then
-  { echo "$as_me:$LINENO: result: $ASCIIDOC" >&5
-echo "${ECHO_T}$ASCIIDOC" >&6; }
+PYTHON=$ac_cv_path_PYTHON
+if test -n "$PYTHON"; then
+  { echo "$as_me:$LINENO: result: $PYTHON" >&5
+echo "${ECHO_T}$PYTHON" >&6; }
 else
   { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
 fi
 
 
-  test -n "$ASCIIDOC" && break
+  test -n "$PYTHON" && break
 done
 
-	if test "x$ASCIIDOC" != "x"; then
+	if test "x$PYTHON" != "x"; then
 
 	  CONFIG_ASCIIDOC=yes
 	  ABOUT_CONFIG_ASCIIDOC="AsciiDoc"
@@ -3525,12 +3524,6 @@ cat >>confdefs.h <<\_ACEOF
 #define MAN_ASCIIDOC 1
 _ACEOF
 
-
-		echo > config.asciidoc-unsafe.txt
-		if "$ASCIIDOC" --unsafe config.asciidoc-unsafe.txt >/dev/null 2>/dev/null; then
-			ASCIIDOC_FLAGS=--unsafe
-		fi
-		rm config.asciidoc-unsafe.*
 	fi
 
 	for ac_prog in "xmlto"
@@ -3783,7 +3776,6 @@ _ACEOF
 
 	fi
 fi
-
 
 
 
@@ -8445,11 +8437,11 @@ _ACEOF
     ;;
 esac
 
-{ echo "$as_me:$LINENO: checking C99-conforming inline" >&5
-echo $ECHO_N "checking C99-conforming inline... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking for C99-conforming inline" >&5
+echo $ECHO_N "checking for C99-conforming inline... $ECHO_C" >&6; }
 cat >conftest.$ac_ext <<_ACEOF
 
-	int add(int x);
+	int add(int change);
 
 	static int sum;
 
@@ -19234,25 +19226,46 @@ fi
 # ===================================================================
 # Check for TRE library
 # ===================================================================
+#
+# This section only checks that --without-tre is not given and the
+# library seems to work, and sets TRE_CFLAGS, TRE_LIBS, and
+# tre_log.  It does not define CONFIG_TRE, and always resets
+# LIBS and CFLAGS back to their original values.
+#
+# After any --enable-utf-8 and --disable-utf-8 options have been
+# handled, a separate section decides whether to actually use TRE.
 
-{ echo "$as_me:$LINENO: checking for TRE in pkg-config" >&5
-echo $ECHO_N "checking for TRE in pkg-config... $ECHO_C" >&6; }
-if pkg-config tre; then
-	TRE_CFLAGS=`pkg-config --cflags tre`
-	TRE_LIBS=`pkg-config --libs tre`
-	{ echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-else
-	# <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=513055>
-	# "libtre-dev: /usr/lib/pkgconfig/tre.pc missing"
-	# so we look for the library even if pkg-config doesn't know about it.
-	TRE_CFLAGS=
-	TRE_LIBS=-ltre
-	{ echo "$as_me:$LINENO: result: no, but let's try defaults" >&5
-echo "${ECHO_T}no, but let's try defaults" >&6; }
+
+# Check whether --with-[tre] was given.
+if test "${with_tre+set}" = set; then
+  withval=$with_tre;
 fi
 
-{ echo "$as_me:$LINENO: checking for TRE header and library" >&5
+if test "$with_tre" = no; then
+	{ echo "$as_me:$LINENO: checking for TRE" >&5
+echo $ECHO_N "checking for TRE... $ECHO_C" >&6; }
+	{ echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6; }
+	tre_log="no (explicitly disabled)"
+else
+	{ echo "$as_me:$LINENO: checking for TRE in pkg-config" >&5
+echo $ECHO_N "checking for TRE in pkg-config... $ECHO_C" >&6; }
+	if pkg-config tre; then
+		TRE_CFLAGS=`pkg-config --cflags tre`
+		TRE_LIBS=`pkg-config --libs tre`
+		{ echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	else
+		# <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=513055>
+		# "libtre-dev: /usr/lib/pkgconfig/tre.pc missing"
+		# so we look for the library even if pkg-config doesn't know about it.
+		TRE_CFLAGS=
+		TRE_LIBS=-ltre
+		{ echo "$as_me:$LINENO: result: no, but let's try defaults" >&5
+echo "${ECHO_T}no, but let's try defaults" >&6; }
+	fi
+
+	{ echo "$as_me:$LINENO: checking for TRE header and library" >&5
 echo $ECHO_N "checking for TRE header and library... $ECHO_C" >&6; }
 
 	CFLAGS_X="$CFLAGS";
@@ -19260,9 +19273,9 @@ echo $ECHO_N "checking for TRE header and library... $ECHO_C" >&6; }
 	LDFLAGS_X="$LDFLAGS";
 	LIBS_X="$LIBS";
 
-CFLAGS="$TRE_CFLAGS $CFLAGS"
-LIBS="$TRE_LIBS $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
+	CFLAGS="$TRE_CFLAGS $CFLAGS"
+	LIBS="$TRE_LIBS $LIBS"
+	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -19273,9 +19286,9 @@ int
 main ()
 {
 regex_t re;
-	     regmatch_t match[1];
-	     regwcomp(&re, L"zap", REG_ICASE);
-	     regwexec(&re, L"ELIZAPROGRAM", 1, match, 0);
+		     regmatch_t match[1];
+		     regwcomp(&re, L"zap", REG_ICASE);
+		     regwexec(&re, L"ELIZAPROGRAM", 1, match, 0);
   ;
   return 0;
 }
@@ -19300,28 +19313,18 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
        $as_test_x conftest$ac_exeext; then
   { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_TRE_REGEX_H 1
-_ACEOF
-
-	     # TRE_CFLAGS will be used only where needed.
-	     # TRE_LIBS will be kept in LIBS and used everywhere.
-
-	CFLAGS="$CFLAGS_X";
-	CPPFLAGS="$CPPFLAGS_X";
-	LDFLAGS="$LDFLAGS_X";
-	LIBS="$LIBS_X";
-
-	     LIBS="$TRE_LIBS $LIBS"
+		     tre_log="available"
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
 	{ echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
-	     TRE_CFLAGS=
-	     TRE_LIBS=
+		     tre_log="no (TRE not found)"
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
 
 	CFLAGS="$CFLAGS_X";
 	CPPFLAGS="$CPPFLAGS_X";
@@ -19329,424 +19332,6 @@ echo "${ECHO_T}no" >&6; }
 	LIBS="$LIBS_X";
 
 fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-
-
-
-{ echo "$as_me:$LINENO: checking for wchar_t" >&5
-echo $ECHO_N "checking for wchar_t... $ECHO_C" >&6; }
-if test "${ac_cv_type_wchar_t+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <wchar.h>
-
-typedef wchar_t ac__type_new_;
-int
-main ()
-{
-if ((ac__type_new_ *) 0)
-  return 0;
-if (sizeof (ac__type_new_))
-  return 0;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_cv_type_wchar_t=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_type_wchar_t=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_type_wchar_t" >&5
-echo "${ECHO_T}$ac_cv_type_wchar_t" >&6; }
-
-# The cast to long int works around a bug in the HP C Compiler
-# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
-# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
-# This bug is HP SR number 8606223364.
-{ echo "$as_me:$LINENO: checking size of wchar_t" >&5
-echo $ECHO_N "checking size of wchar_t... $ECHO_C" >&6; }
-if test "${ac_cv_sizeof_wchar_t+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test "$cross_compiling" = yes; then
-  # Depending upon the size, compute the lo and hi bounds.
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <wchar.h>
-
-   typedef wchar_t ac__type_sizeof_;
-int
-main ()
-{
-static int test_array [1 - 2 * !(((long int) (sizeof (ac__type_sizeof_))) >= 0)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_lo=0 ac_mid=0
-  while :; do
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <wchar.h>
-
-   typedef wchar_t ac__type_sizeof_;
-int
-main ()
-{
-static int test_array [1 - 2 * !(((long int) (sizeof (ac__type_sizeof_))) <= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_hi=$ac_mid; break
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_lo=`expr $ac_mid + 1`
-			if test $ac_lo -le $ac_mid; then
-			  ac_lo= ac_hi=
-			  break
-			fi
-			ac_mid=`expr 2 '*' $ac_mid + 1`
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  done
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <wchar.h>
-
-   typedef wchar_t ac__type_sizeof_;
-int
-main ()
-{
-static int test_array [1 - 2 * !(((long int) (sizeof (ac__type_sizeof_))) < 0)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_hi=-1 ac_mid=-1
-  while :; do
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <wchar.h>
-
-   typedef wchar_t ac__type_sizeof_;
-int
-main ()
-{
-static int test_array [1 - 2 * !(((long int) (sizeof (ac__type_sizeof_))) >= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_lo=$ac_mid; break
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_hi=`expr '(' $ac_mid ')' - 1`
-			if test $ac_mid -le $ac_hi; then
-			  ac_lo= ac_hi=
-			  break
-			fi
-			ac_mid=`expr 2 '*' $ac_mid`
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  done
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_lo= ac_hi=
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-# Binary search between lo and hi bounds.
-while test "x$ac_lo" != "x$ac_hi"; do
-  ac_mid=`expr '(' $ac_hi - $ac_lo ')' / 2 + $ac_lo`
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <wchar.h>
-
-   typedef wchar_t ac__type_sizeof_;
-int
-main ()
-{
-static int test_array [1 - 2 * !(((long int) (sizeof (ac__type_sizeof_))) <= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_hi=$ac_mid
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_lo=`expr '(' $ac_mid ')' + 1`
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-done
-case $ac_lo in
-?*) ac_cv_sizeof_wchar_t=$ac_lo;;
-'') if test "$ac_cv_type_wchar_t" = yes; then
-     { { echo "$as_me:$LINENO: error: cannot compute sizeof (wchar_t)
-See \`config.log' for more details." >&5
-echo "$as_me: error: cannot compute sizeof (wchar_t)
-See \`config.log' for more details." >&2;}
-   { (exit 77); exit 77; }; }
-   else
-     ac_cv_sizeof_wchar_t=0
-   fi ;;
-esac
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <wchar.h>
-
-   typedef wchar_t ac__type_sizeof_;
-static long int longval () { return (long int) (sizeof (ac__type_sizeof_)); }
-static unsigned long int ulongval () { return (long int) (sizeof (ac__type_sizeof_)); }
-#include <stdio.h>
-#include <stdlib.h>
-int
-main ()
-{
-
-  FILE *f = fopen ("conftest.val", "w");
-  if (! f)
-    return 1;
-  if (((long int) (sizeof (ac__type_sizeof_))) < 0)
-    {
-      long int i = longval ();
-      if (i != ((long int) (sizeof (ac__type_sizeof_))))
-	return 1;
-      fprintf (f, "%ld\n", i);
-    }
-  else
-    {
-      unsigned long int i = ulongval ();
-      if (i != ((long int) (sizeof (ac__type_sizeof_))))
-	return 1;
-      fprintf (f, "%lu\n", i);
-    }
-  return ferror (f) || fclose (f) != 0;
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_sizeof_wchar_t=`cat conftest.val`
-else
-  echo "$as_me: program exited with status $ac_status" >&5
-echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-( exit $ac_status )
-if test "$ac_cv_type_wchar_t" = yes; then
-     { { echo "$as_me:$LINENO: error: cannot compute sizeof (wchar_t)
-See \`config.log' for more details." >&5
-echo "$as_me: error: cannot compute sizeof (wchar_t)
-See \`config.log' for more details." >&2;}
-   { (exit 77); exit 77; }; }
-   else
-     ac_cv_sizeof_wchar_t=0
-   fi
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f conftest.val
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_sizeof_wchar_t" >&5
-echo "${ECHO_T}$ac_cv_sizeof_wchar_t" >&6; }
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define SIZEOF_WCHAR_T $ac_cv_sizeof_wchar_t
-_ACEOF
-
-
 
 # ===================================================================
 # Check for Ruby, optional even if installed.
@@ -20041,33 +19626,28 @@ _ACEOF
 # For wiping SSL hooks..
 #ifdef CONFIG_SSL
 
-disable_openssl=""
-disable_gnutls=""
-enable_gnutls=""
+chosen_ssl_library=""
 
 
 # Check whether --with-gnutls was given.
 if test "${with_gnutls+set}" = set; then
-  withval=$with_gnutls; if test "$with_gnutls" = no;  then disable_gnutls=yes; fi
+  withval=$with_gnutls;
 fi
 
 
 # Check whether --with-gnutls was given.
 if test "${with_gnutls+set}" = set; then
-  withval=$with_gnutls; if test "$with_gnutls" != no;  then enable_gnutls=yes; fi
+  withval=$with_gnutls; case "$with_gnutls" in
+		"no")	: ;;
+		"yes")	chosen_ssl_library="GNUTLS" ;;
+		*)	chosen_ssl_library="GNUTLS"
+			{ echo "$as_me:$LINENO: WARNING: Support for --with-gnutls=DIR has been removed.
+You may have to set the PKG_CONFIG_PATH environment variable instead." >&5
+echo "$as_me: WARNING: Support for --with-gnutls=DIR has been removed.
+You may have to set the PKG_CONFIG_PATH environment variable instead." >&2;} ;;
+	     esac
 fi
 
-gnutls_withval="$withval"
-
-if test "$enable_gnutls" = yes; then
-	disable_openssl=yes;
-fi
-
-
-# Check whether --with-openssl was given.
-if test "${with_openssl+set}" = set; then
-  withval=$with_openssl; if test "$with_openssl" = no;  then disable_openssl=yes; fi
-fi
 
 
 # Check whether --with-openssl was given.
@@ -20075,7 +19655,15 @@ if test "${with_openssl+set}" = set; then
   withval=$with_openssl;
 fi
 
-openssl_withval="$withval"
+
+# Check whether --with-openssl was given.
+if test "${with_openssl+set}" = set; then
+  withval=$with_openssl; case "$with_openssl" in
+		"no")	: ;;
+		*)	chosen_ssl_library="OpenSSL" ;;
+	     esac
+fi
+
 
 # ---- OpenSSL
 
@@ -20088,12 +19676,16 @@ echo $ECHO_N "checking for OpenSSL... $ECHO_C" >&6; }
 	LDFLAGS_X="$LDFLAGS";
 	LIBS_X="$LIBS";
 
-cf_result="no"
 
-if test "$disable_openssl" = yes; then
-	cf_result="not used"
+if test "$with_openssl" = no; then
+	cf_result="explicitly disabled"
+
+elif test -n "$chosen_ssl_library" && test "$chosen_ssl_library" != "OpenSSL"; then
+	cf_result="not used, because $chosen_ssl_library was chosen"
+
 else
-	for ssldir in "$openssl_withval" "" /usr /usr/local/openssl \
+	cf_result=no
+	for ssldir in "$with_openssl" "" /usr /usr/local/openssl \
 			 /usr/lib/openssl /usr/local/ssl \
 			 /usr/local/www /usr/lib/ssl /usr/local \
 			 /usr/pkg /opt /opt/openssl; do
@@ -20203,7 +19795,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
 	done
 
 	if test "$cf_result" != yes; then
-		if test -n "$openssl_withval" && test "x$openssl_withval" != xno; then
+		if test "${with_openssl-no}" != "no"; then
 			{ { echo "$as_me:$LINENO: error: OpenSSL not found" >&5
 echo "$as_me: error: OpenSSL not found" >&2;}
    { (exit 1); exit 1; }; }
@@ -20223,6 +19815,7 @@ cat >>confdefs.h <<\_ACEOF
 #define CONFIG_OPENSSL 1
 _ACEOF
 
+		chosen_ssl_library="OpenSSL"
 
 		CFLAGS="$CFLAGS_X"
 
@@ -20232,88 +19825,51 @@ fi
 { echo "$as_me:$LINENO: result: $cf_result" >&5
 echo "${ECHO_T}$cf_result" >&6; }
 
-CONFIG_GNUTLS_OPENSSL_COMPAT=no
 # ---- GNU TLS
 
-if test "$cf_result" = yes; then
-	cf_result="not used"
+# GnuTLS 2.2.0 changed libgnutls-openssl from GPLv2+
+# to GPLv3+.  Don't link that with the GPLv2 ELinks.
+# ELinks will use its internal MD5 code instead.
+CONFIG_GNUTLS_OPENSSL_COMPAT=no
+
+if test "$with_gnutls" = no; then
+	{ echo "$as_me:$LINENO: checking for GNUTLS" >&5
+echo $ECHO_N "checking for GNUTLS... $ECHO_C" >&6; }
+	{ echo "$as_me:$LINENO: result: explicitly disabled" >&5
+echo "${ECHO_T}explicitly disabled" >&6; }
+
+elif test -n "$chosen_ssl_library" && test "$chosen_ssl_library" != "GNUTLS"; then
+	{ echo "$as_me:$LINENO: checking for GNUTLS" >&5
+echo $ECHO_N "checking for GNUTLS... $ECHO_C" >&6; }
+	{ echo "$as_me:$LINENO: result: not used, because $chosen_ssl_library was chosen" >&5
+echo "${ECHO_T}not used, because $chosen_ssl_library was chosen" >&6; }
 
 else
+	cf_result=no
+	{ echo "$as_me:$LINENO: checking for GNUTLS (1.2 or later) in pkg-config" >&5
+echo $ECHO_N "checking for GNUTLS (1.2 or later) in pkg-config... $ECHO_C" >&6; }
+	if pkg-config --atleast-version=1.2 gnutls; then
+		GNUTLS_CFLAGS=`pkg-config --cflags gnutls`
+		GNUTLS_LIBS=`pkg-config --libs gnutls`
+		{ echo "$as_me:$LINENO: result: yes: $GNUTLS_CFLAGS $GNUTLS_LIBS" >&5
+echo "${ECHO_T}yes: $GNUTLS_CFLAGS $GNUTLS_LIBS" >&6; }
+
 
 	CFLAGS_X="$CFLAGS";
 	CPPFLAGS_X="$CPPFLAGS";
 	LDFLAGS_X="$LDFLAGS";
 	LIBS_X="$LIBS";
 
-	cf_result="no"
+		LIBS="$GNUTLS_LIBS $LIBS"
+		CFLAGS="$CFLAGS $GNUTLS_CFLAGS"
+		CPPFLAGS="$CPPFLAGS $GNUTLS_CFLAGS"
 
-	if test -z "$disable_gnutls"; then
-		# Sure, we maybe _could_ use their macro, but how to ensure
-		# that the ./configure script won't fail if the macro won't be
-		# found..? :( --pasky
-
-		GNUTLS_PATH="$PATH:/usr/local/gnutls:/opt:/opt/gnutls"
-
-		if test -d "$gnutls_withval"; then
-			GNUTLS_PATH="$gnutls_withval:$GNUTLS_PATH"
-		fi
-
-		# Extract the first word of "libgnutls-config", so it can be a program name with args.
-set dummy libgnutls-config; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_LIBGNUTLS_CONFIG+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $LIBGNUTLS_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_LIBGNUTLS_CONFIG="$LIBGNUTLS_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $GNUTLS_PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_LIBGNUTLS_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_LIBGNUTLS_CONFIG" && ac_cv_path_LIBGNUTLS_CONFIG="no"
-  ;;
-esac
-fi
-LIBGNUTLS_CONFIG=$ac_cv_path_LIBGNUTLS_CONFIG
-if test -n "$LIBGNUTLS_CONFIG"; then
-  { echo "$as_me:$LINENO: result: $LIBGNUTLS_CONFIG" >&5
-echo "${ECHO_T}$LIBGNUTLS_CONFIG" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-
-		if test "$LIBGNUTLS_CONFIG" = "no" ; then
-			cf_result=no
-		else
-			GNUTLS_CFLAGS=`$LIBGNUTLS_CONFIG --cflags`
-			GNUTLS_LIBS=`$LIBGNUTLS_CONFIG --libs`
-
-			LIBS="$GNUTLS_LIBS $LIBS_X"
-			CFLAGS="$CFLAGS_X $GNUTLS_CFLAGS"
-			CPPFLAGS="$CPPFLAGS_X $GNUTLS_CFLAGS"
-
-			# Verify if it's really usable.  gnutls_session was
-			# renamed to gnutls_session_t before GNU TLS 1.2.0
-			# (on 2004-06-13); ELinks now requires this.
-			cat >conftest.$ac_ext <<_ACEOF
+		# Verify if it's really usable.  gnutls_session was
+		# renamed to gnutls_session_t before GNU TLS 1.2.0
+		# (on 2004-06-13); ELinks now requires this.
+		{ echo "$as_me:$LINENO: checking whether GNUTLS can be linked with" >&5
+echo $ECHO_N "checking whether GNUTLS can be linked with... $ECHO_C" >&6; }
+		cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -20324,7 +19880,7 @@ int
 main ()
 {
 gnutls_session_t dummy;
-				     gnutls_check_version(NULL)
+						  gnutls_check_version(NULL)
   ;
   return 0;
 }
@@ -20357,9 +19913,123 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
-		fi
+		{ echo "$as_me:$LINENO: result: $cf_result" >&5
+echo "${ECHO_T}$cf_result" >&6; }
 
 		if test "$cf_result" = yes; then
+			# According to gnutls/NEWS, the function was originally
+			# added as gnutls_set_default_priority2 in GNUTLS 2.1.4
+			# (released 2007-10-27) and then renamed to
+			# gnutls_priority_set_direct in GNUTLS 2.1.7 (released
+			# 2007-11-29).
+
+for ac_func in gnutls_priority_set_direct
+do
+as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
+{ echo "$as_me:$LINENO: checking for $ac_func" >&5
+echo $ECHO_N "checking for $ac_func... $ECHO_C" >&6; }
+if { as_var=$as_ac_var; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define $ac_func to an innocuous variant, in case <limits.h> declares $ac_func.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define $ac_func innocuous_$ac_func
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $ac_func (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef $ac_func
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char $ac_func ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined __stub_$ac_func || defined __stub___$ac_func
+choke me
+#endif
+
+int
+main ()
+{
+return $ac_func ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  eval "$as_ac_var=yes"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	eval "$as_ac_var=no"
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+ac_res=`eval echo '${'$as_ac_var'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+if test `eval echo '${'$as_ac_var'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+		fi
+
+
+	CFLAGS="$CFLAGS_X";
+	CPPFLAGS="$CPPFLAGS_X";
+	LDFLAGS="$LDFLAGS_X";
+	LIBS="$LIBS_X";
+
+	else
+		{ echo "$as_me:$LINENO: result: $cf_result" >&5
+echo "${ECHO_T}$cf_result" >&6; }
+	fi
+
+	if test "$cf_result" = yes; then
 
 	  CONFIG_GNUTLS=yes
 	  ABOUT_CONFIG_GNUTLS="GNUTLS"
@@ -20368,34 +20038,17 @@ cat >>confdefs.h <<\_ACEOF
 #define CONFIG_GNUTLS 1
 _ACEOF
 
+		chosen_ssl_library="GNUTLS"
 
-			CFLAGS="$CFLAGS_X"
+		LIBS="$GNUTLS_LIBS $LIBS"
 
 
-			# GnuTLS 2.2.0 changed libgnutls-openssl from GPLv2+
-			# to GPLv3+.  Don't link that with the GPLv2 ELinks.
-			# ELinks will use its internal MD5 code instead.
-			CONFIG_GNUTLS_OPENSSL_COMPAT=no
-		else
-			if test -n "$gnutls_withval" && test "x$gnutls_withval" != xno; then
-				{ { echo "$as_me:$LINENO: error: GNUTLS (1.2 or later) not found.  ELinks no longer supports GNUTLS 1.1." >&5
+	elif test "${with_gnutls-no}" != "no"; then
+		{ { echo "$as_me:$LINENO: error: GNUTLS (1.2 or later) not found.  ELinks no longer supports GNUTLS 1.1." >&5
 echo "$as_me: error: GNUTLS (1.2 or later) not found.  ELinks no longer supports GNUTLS 1.1." >&2;}
    { (exit 1); exit 1; }; }
-			fi
-
-	CFLAGS="$CFLAGS_X";
-	CPPFLAGS="$CPPFLAGS_X";
-	LDFLAGS="$LDFLAGS_X";
-	LIBS="$LIBS_X";
-
-		fi
 	fi
 fi
-
-{ echo "$as_me:$LINENO: checking for GNU TLS (1.2 or later)" >&5
-echo $ECHO_N "checking for GNU TLS (1.2 or later)... $ECHO_C" >&6; }
-{ echo "$as_me:$LINENO: result: $cf_result" >&5
-echo "${ECHO_T}$cf_result" >&6; }
 
 # Final SSL setup
 
@@ -25116,6 +24769,131 @@ fi
 
 
 # ===================================================================
+# Decide whether to use TRE
+# ===================================================================
+#
+# This must be done after the CONFIG_UTF8 check above.
+# The first part of the TRE check is separate, to get
+# the configure --help output in a sensible order.
+
+if test "$tre_log" = "available"; then
+	if test "$CONFIG_UTF8" = "yes"; then
+		# When CONFIG_UTF8 and CONFIG_TRE are both defined,
+		# src/viewer/text/search.c makes a string of
+		# unicode_val_T and gives it to regwexec(), which
+		# expects a string of wchar_t.  If the unicode_val_T
+		# and wchar_t types are too different, this won't
+		# work, so try to detect that and disable regexp
+		# operations entirely in that case.
+		#
+		# Currently, this code only compares the sizes of the
+		# types.  src/intl/charsets.h defines unicode_val_T as
+		# uint32_t, so we check whether wchar_t has exactly 32
+		# bits.  But don't use AC_CHECK_SIZEOF for this, because
+		# there doesn't seem to be a documented way to get the
+		# result of that for use in the configure script.
+		#
+		# C99 says the implementation can define
+		# __STDC_ISO_10646__ if wchar_t values match ISO 10646
+		# (or Unicode) numbers in all locales.  Do not check
+		# that macro here, because it is too restrictive: it
+		# should be enough for ELinks if the values match in
+		# the locales where ELinks is actually run.
+		{ echo "$as_me:$LINENO: checking whether wchar_t is exactly 32-bit" >&5
+echo $ECHO_N "checking whether wchar_t is exactly 32-bit... $ECHO_C" >&6; }
+		cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <limits.h>
+#include <stddef.h>
+int dummy[(sizeof(wchar_t) * CHAR_BIT == 32) ? 1 : -1];
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+			 tre_log="TRE"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+			 tre_log="no (unsuitable wchar_t)"
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	else
+		# If UTF-8 is not used, then wchar_t doesn't matter.
+		tre_log="TRE"
+	fi
+fi
+
+if test "$tre_log" = "TRE"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_TRE 1
+_ACEOF
+
+	# TRE_CFLAGS will be used only where needed.
+	LIBS="$LIBS $TRE_LIBS"
+else
+	TRE_LIBS=
+	TRE_CFLAGS=
+fi
+
+
+
+	about="Regexp searching"
+	value="$tre_log"
+	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
+	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
+	msgdots0="`echo $msgdots1 | sed 's/[A-Z]/./g'`"
+	msgdots="`echo $msgdots0 | sed 's/[-_ ()]/./g'`"
+	DOTS="................................"
+	dots=`echo $DOTS | sed "s/$msgdots//"`
+
+	# $msgdots too big?
+	if test "$dots" = "$DOTS"; then
+		dots=""
+	fi
+
+	if test -z "$value"; then
+		value="$CONFIG_TRE"
+	fi
+
+	echo "$about $dots $value" >> features.log
+
+
+
+
+# ===================================================================
 # Further LDFLAGS tweaks
 # ===================================================================
 
@@ -26362,13 +26140,12 @@ INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
 GIT!$GIT$ac_delim
 SPARSE!$SPARSE$ac_delim
-ASCIIDOC!$ASCIIDOC$ac_delim
+PYTHON!$PYTHON$ac_delim
 XMLTO!$XMLTO$ac_delim
 JW!$JW$ac_delim
 POD2HTML!$POD2HTML$ac_delim
 DOXYGEN!$DOXYGEN$ac_delim
 api_srcdir!$api_srcdir$ac_delim
-ASCIIDOC_FLAGS!$ASCIIDOC_FLAGS$ac_delim
 CONFIG_ASCIIDOC!$CONFIG_ASCIIDOC$ac_delim
 CONFIG_DOXYGEN!$CONFIG_DOXYGEN$ac_delim
 CONFIG_POD2HTML!$CONFIG_POD2HTML$ac_delim
@@ -26402,6 +26179,7 @@ SEE_CFLAGS!$SEE_CFLAGS$ac_delim
 CONFIG_ECMASCRIPT!$CONFIG_ECMASCRIPT$ac_delim
 CONFIG_ECMASCRIPT_SEE!$CONFIG_ECMASCRIPT_SEE$ac_delim
 CONFIG_ECMASCRIPT_SMJS!$CONFIG_ECMASCRIPT_SMJS$ac_delim
+SPIDERMONKEY_LIBS!$SPIDERMONKEY_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -26443,20 +26221,16 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-SPIDERMONKEY_LIBS!$SPIDERMONKEY_LIBS$ac_delim
 SPIDERMONKEY_CFLAGS!$SPIDERMONKEY_CFLAGS$ac_delim
 CONFIG_SPIDERMONKEY!$CONFIG_SPIDERMONKEY$ac_delim
 GUILE_CONFIG!$GUILE_CONFIG$ac_delim
 GUILE_CFLAGS!$GUILE_CFLAGS$ac_delim
 PERL_LIBS!$PERL_LIBS$ac_delim
 PERL_CFLAGS!$PERL_CFLAGS$ac_delim
-PYTHON!$PYTHON$ac_delim
 PYTHON_LIBS!$PYTHON_LIBS$ac_delim
 PYTHON_CFLAGS!$PYTHON_CFLAGS$ac_delim
 LUA_LIBS!$LUA_LIBS$ac_delim
 LUA_CFLAGS!$LUA_CFLAGS$ac_delim
-TRE_CFLAGS!$TRE_CFLAGS$ac_delim
-TRE_LIBS!$TRE_LIBS$ac_delim
 CONFIG_SCRIPTING_RUBY!$CONFIG_SCRIPTING_RUBY$ac_delim
 RUBY_CFLAGS!$RUBY_CFLAGS$ac_delim
 RUBY_LIBS!$RUBY_LIBS$ac_delim
@@ -26467,7 +26241,6 @@ CONFIG_SCRIPTING_PERL!$CONFIG_SCRIPTING_PERL$ac_delim
 CONFIG_SCRIPTING_PYTHON!$CONFIG_SCRIPTING_PYTHON$ac_delim
 CONFIG_SCRIPTING_SPIDERMONKEY!$CONFIG_SCRIPTING_SPIDERMONKEY$ac_delim
 OPENSSL_CFLAGS!$OPENSSL_CFLAGS$ac_delim
-LIBGNUTLS_CONFIG!$LIBGNUTLS_CONFIG$ac_delim
 GNUTLS_CFLAGS!$GNUTLS_CFLAGS$ac_delim
 CONFIG_SSL!$CONFIG_SSL$ac_delim
 CONFIG_GNUTLS_OPENSSL_COMPAT!$CONFIG_GNUTLS_OPENSSL_COMPAT$ac_delim
@@ -26531,6 +26304,9 @@ CONFIG_FASTMEM!$CONFIG_FASTMEM$ac_delim
 CONFIG_OWN_LIBC!$CONFIG_OWN_LIBC$ac_delim
 CONFIG_SMALL!$CONFIG_SMALL$ac_delim
 CONFIG_UTF8!$CONFIG_UTF8$ac_delim
+TRE_CFLAGS!$TRE_CFLAGS$ac_delim
+TRE_LIBS!$TRE_LIBS$ac_delim
+CONFIG_TRE!$CONFIG_TRE$ac_delim
 CONFDIR!$CONFDIR$ac_delim
 LOCALEDIR!$LOCALEDIR$ac_delim
 LIBDIR!$LIBDIR$ac_delim
@@ -26538,7 +26314,7 @@ MAKE_COLOR!$MAKE_COLOR$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 93; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 91; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
