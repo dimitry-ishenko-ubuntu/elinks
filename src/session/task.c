@@ -68,7 +68,7 @@ struct task {
 	struct session_task session_task;
 };
 
-static void
+void
 ses_load(struct session *ses, struct uri *uri, unsigned char *target_frame,
 	 struct location *target_location, enum cache_mode cache_mode,
 	 enum task_type task_type)
@@ -535,6 +535,7 @@ loading_callback(struct download *download, struct session *ses)
 
 	if (d == DO_MOVE_DISPLAY) {
 		download->callback = (download_callback_T *) doc_loading_callback;
+		download->data = ses;
 		display_timer(ses);
 	}
 
