@@ -6,9 +6,11 @@ elinks (0.12~pre4-1) unstable; urgency=low
     + With GNUTLS 2.1.7 or later disable few TLS extensions -- helps
       handshaking with SSLv3-only bugzilla.novell.com (Closes: #528661)
     + Fixes crash while viewing RSS files (Closes: #514544)
+    + Prevents FTBFS with gnutls26 >= 2.7.x:  Build-Depends: pkg-config to
+      use 'pkg-config gnutls' instead of 'libgnutls-config' (Closes: #529821)
   * Compile elinks-lite with --without-tre
 
- -- Y Giridhar Appaji Nag <appaji@debian.org>  Mon, 01 Jun 2009 16:35:03 +0530
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Mon, 01 Jun 2009 16:38:57 +0530
 
 elinks (0.12~pre3-2) unstable; urgency=low
 
