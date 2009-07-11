@@ -5,8 +5,9 @@ elinks (0.12~pre5-1) unstable; urgency=low
     + Fixes crash - get regfree from libtre instead of libc (Closes: #532502)
   * Update Standards-Version to 3.8.2 (no changes required)
   * Enable finger support in elinks and elinks-lite (Closes: #535750)
+  * Remove dh_desktop, now deprecated and is a no-op.
 
- -- Y Giridhar Appaji Nag <appaji@debian.org>  Sat, 11 Jul 2009 18:15:07 +0530
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Sat, 11 Jul 2009 20:49:34 +0530
 
 elinks (0.12~pre4-1) unstable; urgency=low
 
