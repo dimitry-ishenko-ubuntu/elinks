@@ -1923,7 +1923,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 PACKAGE=elinks
-VERSION=0.12pre4
+VERSION=0.12pre5
 
 
 
@@ -19274,7 +19274,7 @@ echo $ECHO_N "checking for TRE header and library... $ECHO_C" >&6; }
 	LIBS_X="$LIBS";
 
 	CFLAGS="$TRE_CFLAGS $CFLAGS"
-	LIBS="$TRE_LIBS $LIBS"
+	LIBS="$TRE_LIBS $LIBS" # must be first, because of regfree conflict
 	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -24775,6 +24775,9 @@ fi
 # This must be done after the CONFIG_UTF8 check above.
 # The first part of the TRE check is separate, to get
 # the configure --help output in a sensible order.
+#
+# After this section, nothing else must be added to the
+# beginning of $LIBS.
 
 if test "$tre_log" = "available"; then
 	if test "$CONFIG_UTF8" = "yes"; then
@@ -24862,7 +24865,39 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 	# TRE_CFLAGS will be used only where needed.
-	LIBS="$LIBS $TRE_LIBS"
+	#
+	# Bug 1081: If both TRE and libc define the regfree function,
+	# ELinks needs to use the version defined by TRE because
+	# that's the one compatible with regex_t initialized by the
+	# regwcomp function of TRE.  Therefore put $TRE_LIBS at the
+	# very beginning of $LIBS so that the linker hopefully finds
+	# regfree there before it examines libc.  In particular,
+	# $PERL_LIBS appears to often include "-lc".
+	#
+	# This scheme still risks a crash if ELinks is linked with
+	# some static library that uses GNU <regex.h> extensions that
+	# TRE does not implement.  For example, the library might call
+	# re_compile_pattern, which is found in GNU libc, and then
+	# regfree, which is found in TRE and probably crashes with the
+	# GNU-initialized regex_t.  Ways to avoid such crashes:
+	#
+	# - Change TRE so it defines only tre_... functions and does
+	#   not attempt to override the POSIX names by default.
+	#
+	# - Change ELinks to access TRE only via dlopen and dlsym.
+	#   The problem then is how to find the correct file name.
+	#   There might be libtre.so.4 and libtre.so.5 with different
+	#   ABI.  How can this configure script detect which of them
+	#   matches the <tre/regex.h> in the include path?
+	#
+	# - Replace the static library with a shared library.  At
+	#   least on GNU/Linux, when the shared library is built, the
+	#   linker should note that e.g. regfree is defined in libc
+	#   and has the GLIBC_2.0 version there, and write that
+	#   version string to the shared library as well; because TRE
+	#   does not provide regfree with that version, any regfree
+	#   calls at run time should then get resolved to libc.
+	LIBS="$TRE_LIBS $LIBS"
 else
 	TRE_LIBS=
 	TRE_CFLAGS=

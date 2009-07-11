@@ -51,13 +51,327 @@ static int dump_pos;
 static struct download dump_download;
 static int dump_redir_count = 0;
 
-static int dump_to_file_16(struct document *document, int fd);
+#define D_BUF	65536
+
+/** A place where dumping functions write their output.  The data
+ * first goes to the buffer in this structure.  When the buffer is
+ * full enough, it is flushed to a file descriptor or to a string.  */
+struct dump_output {
+	/** How many bytes are in #buf already.  */
+	size_t bufpos;
+
+	/** A string to which the buffer should eventually be flushed,
+	 * or NULL.  */
+	struct string *string;
+
+	/** A file descriptor to which the buffer should eventually be
+	 * flushed, or -1.  */
+	int fd;
+
+	/** Bytes waiting to be flushed.  */
+	unsigned char buf[D_BUF];
+};
+
+/** Allocate and initialize a struct dump_output.
+ * The caller should eventually free the structure with mem_free().
+ *
+ * @param fd
+ *   The file descriptor to which the output will be written.
+ *   Use -1 if the output should go to a string instead.
+ *
+ * @param string
+ *   The string to which the output will be appended.
+ *   Use NULL if the output should go to a file descriptor instead.
+ *
+ * @return The new structure, or NULL on error.
+ *
+ * @relates dump_output */
+static struct dump_output *
+dump_output_alloc(int fd, struct string *string)
+{
+	struct dump_output *out;
+
+	assert((fd == -1) ^ (string == NULL));
+	if_assert_failed return NULL;
+
+	out = mem_alloc(sizeof(*out));
+	if (out) {
+		out->fd = fd;
+		out->string = string;
+		out->bufpos = 0;
+	}
+	return out;
+}
+
+/** Flush buffered output to the file or string.
+ *
+ * @return 0 on success, or -1 on error.
+ *
+ * @post If this succeeds, then out->bufpos == 0, so that the buffer
+ * has room for more data.
+ *
+ * @relates dump_output */
+static int
+dump_output_flush(struct dump_output *out)
+{
+	if (out->string) {
+		if (!add_bytes_to_string(out->string, out->buf, out->bufpos))
+			return -1;
+	}
+	else {
+		if (hard_write(out->fd, out->buf, out->bufpos) != out->bufpos)
+			return -1;
+	}
+
+	out->bufpos = 0;
+	return 0;
+}
+
+static int
+write_char(unsigned char c, struct dump_output *out)
+{
+	if (out->bufpos >= D_BUF) {
+		if (dump_output_flush(out))
+			return -1;
+	}
+
+	out->buf[out->bufpos++] = c;
+	return 0;
+}
+
+static int
+write_color_16(unsigned char color, struct dump_output *out)
+{
+	unsigned char bufor[] = "\033[0;30;40m";
+	unsigned char *data = bufor;
+	int background = (color >> 4) & 7;
+	int foreground = color & 7;
+
+	bufor[5] += foreground;
+	if (background)	bufor[8] += background;
+	else {
+		bufor[6] = 'm';
+		bufor[7] = '\0';
+	}
+	while(*data) {
+		if (write_char(*data++, out)) return -1;
+	}
+	return 0;
+}
+
+#define DUMP_COLOR_MODE_16
+#define DUMP_FUNCTION_COLOR   dump_16color
+#define DUMP_FUNCTION_UTF8    dump_16color_utf8
+#define DUMP_FUNCTION_UNIBYTE dump_16color_unibyte
+#include "dump-color-mode.h"
+#undef DUMP_COLOR_MODE_16
+#undef DUMP_FUNCTION_COLOR
+#undef DUMP_FUNCTION_UTF8
+#undef DUMP_FUNCTION_UNIBYTE
+
+/* configure --enable-debug uses gcc -Wall -Werror, and -Wall includes
+ * -Wunused-function, so declaring or defining any unused function
+ * would break the build. */
 #if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
-static int dump_to_file_256(struct document *document, int fd);
-#endif
+
+static int
+write_color_256(const unsigned char *str, unsigned char color,
+		struct dump_output *out)
+{
+	unsigned char bufor[16];
+	unsigned char *data = bufor;
+
+	snprintf(bufor, 16, "\033[%s;5;%dm", str, color);
+	while(*data) {
+		if (write_char(*data++, out)) return -1;
+	}
+	return 0;
+}
+
+#define DUMP_COLOR_MODE_256
+#define DUMP_FUNCTION_COLOR   dump_256color
+#define DUMP_FUNCTION_UTF8    dump_256color_utf8
+#define DUMP_FUNCTION_UNIBYTE dump_256color_unibyte
+#include "dump-color-mode.h"
+#undef DUMP_COLOR_MODE_256
+#undef DUMP_FUNCTION_COLOR
+#undef DUMP_FUNCTION_UTF8
+#undef DUMP_FUNCTION_UNIBYTE
+
+#endif /* defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS) */
+
 #ifdef CONFIG_TRUE_COLOR
-static int dump_to_file_true_color(struct document *document, int fd);
+
+static int
+write_true_color(const unsigned char *str, const unsigned char *color,
+		 struct dump_output *out)
+{
+	unsigned char bufor[24];
+	unsigned char *data = bufor;
+
+	snprintf(bufor, 24, "\033[%s;2;%d;%d;%dm", str, color[0], color[1], color[2]);
+	while(*data) {
+		if (write_char(*data++, out)) return -1;
+	}
+	return 0;
+}
+
+#define DUMP_COLOR_MODE_TRUE
+#define DUMP_FUNCTION_COLOR   dump_truecolor
+#define DUMP_FUNCTION_UTF8    dump_truecolor_utf8
+#define DUMP_FUNCTION_UNIBYTE dump_truecolor_unibyte
+#include "dump-color-mode.h"
+#undef DUMP_COLOR_MODE_TRUE
+#undef DUMP_FUNCTION_COLOR
+#undef DUMP_FUNCTION_UTF8
+#undef DUMP_FUNCTION_UNIBYTE
+
+#endif /* CONFIG_TRUE_COLOR */
+
+#define DUMP_COLOR_MODE_NONE
+#define DUMP_FUNCTION_COLOR   dump_nocolor
+#define DUMP_FUNCTION_UTF8    dump_nocolor_utf8
+#define DUMP_FUNCTION_UNIBYTE dump_nocolor_unibyte
+#include "dump-color-mode.h"
+#undef DUMP_COLOR_MODE_NONE
+#undef DUMP_FUNCTION_COLOR
+#undef DUMP_FUNCTION_UTF8
+#undef DUMP_FUNCTION_UNIBYTE
+
+/*! @return 0 on success, -1 on error */
+static int
+dump_references(struct document *document, int fd, unsigned char buf[D_BUF])
+{
+	if (document->nlinks && get_opt_bool("document.dump.references")) {
+		int x;
+		unsigned char *header = "\nReferences\n\n   Visible links\n";
+		int headlen = strlen(header);
+
+		if (hard_write(fd, header, headlen) != headlen)
+			return -1;
+
+		for (x = 0; x < document->nlinks; x++) {
+			struct link *link = &document->links[x];
+			unsigned char *where = link->where;
+			size_t reflen;
+
+			if (!where) continue;
+
+			if (document->options.links_numbering) {
+				if (link->title && *link->title)
+					snprintf(buf, D_BUF, "%4d. %s\n\t%s\n",
+						 x + 1, link->title, where);
+				else
+					snprintf(buf, D_BUF, "%4d. %s\n",
+						 x + 1, where);
+			} else {
+				if (link->title && *link->title)
+					snprintf(buf, D_BUF, "   . %s\n\t%s\n",
+						 link->title, where);
+				else
+					snprintf(buf, D_BUF, "   . %s\n", where);
+			}
+
+			reflen = strlen(buf);
+			if (hard_write(fd, buf, reflen) != reflen)
+				return -1;
+		}
+	}
+
+	return 0;
+}
+
+int
+dump_to_file(struct document *document, int fd)
+{
+	struct dump_output *out = dump_output_alloc(fd, NULL);
+	int error;
+
+	if (!out) return -1;
+
+	error = dump_nocolor(document, out);
+	if (!error)
+		error = dump_references(document, fd, out->buf);
+
+	mem_free(out);
+	return error;
+}
+
+/* This dumps the given @cached's formatted output onto @fd. */
+static void
+dump_formatted(int fd, struct download *download, struct cache_entry *cached)
+{
+	struct document_options o;
+	struct document_view formatted;
+	struct view_state vs;
+	int width;
+	struct dump_output *out;
+
+	if (!cached) return;
+
+	memset(&formatted, 0, sizeof(formatted));
+
+	init_document_options(&o);
+	width = get_opt_int("document.dump.width");
+	set_box(&o.box, 0, 1, width, DEFAULT_TERMINAL_HEIGHT);
+
+	o.cp = get_opt_codepage("document.dump.codepage");
+	o.color_mode = get_opt_int("document.dump.color_mode");
+	o.plain = 0;
+	o.frames = 0;
+	o.links_numbering = get_opt_bool("document.dump.numbering");
+
+	init_vs(&vs, cached->uri, -1);
+
+	render_document(&vs, &formatted, &o);
+
+	out = dump_output_alloc(fd, NULL);
+	if (out) {
+		int error;
+
+		switch (o.color_mode) {
+		case COLOR_MODE_DUMP:
+		case COLOR_MODE_MONO: /* FIXME: inversion */
+			error = dump_nocolor(formatted.document, out);
+			break;
+
+		default:
+			/* If the desired color mode was not compiled in,
+			 * use 16 colors.  */
+		case COLOR_MODE_16:
+			error = dump_16color(formatted.document, out);
+			break;
+
+#ifdef CONFIG_88_COLORS
+		case COLOR_MODE_88:
+			error = dump_256color(formatted.document, out);
+			break;
 #endif
+
+#ifdef CONFIG_256_COLORS
+		case COLOR_MODE_256:
+			error = dump_256color(formatted.document, out);
+			break;
+#endif
+
+#ifdef CONFIG_TRUE_COLOR
+		case COLOR_MODE_TRUE_COLOR:
+			error = dump_truecolor(formatted.document, out);
+			break;
+#endif
+		}
+
+		if (!error)
+			dump_references(formatted.document, fd, out->buf);
+
+		mem_free(out);
+	} /* if out */
+
+	detach_formatted(&formatted);
+	destroy_vs(&vs, 1);
+}
+
+#undef D_BUF
 
 /* This dumps the given @cached's source onto @fd nothing more. It returns 0 if it
  * all went fine and 1 if something isn't quite right and we should terminate
@@ -99,64 +413,6 @@ nextfrag:
 	}
 
 	return 0;
-}
-
-/* This dumps the given @cached's formatted output onto @fd. */
-static void
-dump_formatted(int fd, struct download *download, struct cache_entry *cached)
-{
-	struct document_options o;
-	struct document_view formatted;
-	struct view_state vs;
-	int width;
-
-	if (!cached) return;
-
-	memset(&formatted, 0, sizeof(formatted));
-
-	init_document_options(&o);
-	width = get_opt_int("document.dump.width");
-	set_box(&o.box, 0, 1, width, DEFAULT_TERMINAL_HEIGHT);
-
-	o.cp = get_opt_codepage("document.dump.codepage");
-	o.color_mode = get_opt_int("document.dump.color_mode");
-	o.plain = 0;
-	o.frames = 0;
-	o.links_numbering = get_opt_bool("document.dump.numbering");
-
-	init_vs(&vs, cached->uri, -1);
-
-	render_document(&vs, &formatted, &o);
-	switch(o.color_mode) {
-	case COLOR_MODE_DUMP:
-	case COLOR_MODE_MONO: /* FIXME: inversion */
-		dump_to_file(formatted.document, fd);
-		break;
-	default:
-		/* If the desired color mode was not compiled in,
-		 * use 16 colors.  */
-	case COLOR_MODE_16:
-		dump_to_file_16(formatted.document, fd);
-		break;
-#ifdef CONFIG_88_COLORS
-	case COLOR_MODE_88:
-		dump_to_file_256(formatted.document, fd);
-		break;
-#endif
-#ifdef CONFIG_256_COLORS
-	case COLOR_MODE_256:
-		dump_to_file_256(formatted.document, fd);
-		break;
-#endif
-#ifdef CONFIG_TRUE_COLOR
-	case COLOR_MODE_TRUE_COLOR:
-		dump_to_file_true_color(formatted.document, fd);
-		break;
-#endif
-	}
-
-	detach_formatted(&formatted);
-	destroy_vs(&vs, 1);
 }
 
 static unsigned char *
@@ -345,650 +601,20 @@ dump_next(LIST_OF(struct string_list_item) *url_list)
 	}
 }
 
-/* Using this function in dump_to_file() is unfortunately slightly slower than
- * the current code.  However having this here instead of in the scripting
- * backends is better. */
 struct string *
 add_document_to_string(struct string *string, struct document *document)
 {
-	int y;
+	struct dump_output *out;
+	int error;
 
 	assert(string && document);
 	if_assert_failed return NULL;
 
-#ifdef CONFIG_UTF8
-	if (is_cp_utf8(document->options.cp))
-		goto utf8;
-#endif /* CONFIG_UTF8 */
+	out = dump_output_alloc(-1, string);
+	if (!out) return NULL;
 
-	for (y = 0; y < document->height; y++) {
-		int white = 0;
-		int x;
+	error = dump_nocolor(document, out);
 
-		for (x = 0; x < document->data[y].length; x++) {
-			struct screen_char *pos = &document->data[y].chars[x];
-			unsigned char data = pos->data;
-			unsigned int frame = (pos->attr & SCREEN_ATTR_FRAME);
-
-			if (!isscreensafe(data)) {
-				white++;
-				continue;
-			} else {
-				if (frame && data >= 176 && data < 224)
-					data = frame_dumb[data - 176];
-
-				if (data <= ' ') {
-					/* Count spaces. */
-					white++;
-				} else {
-					/* Print spaces if any. */
-					if (white) {
-						add_xchar_to_string(string, ' ', white);
-						white = 0;
-					}
-					add_char_to_string(string, data);
-				}
-			}
-		}
-
-		add_char_to_string(string, '\n');
-	}
-#ifdef CONFIG_UTF8
-	goto end;
-utf8:
-	for (y = 0; y < document->height; y++) {
-		int white = 0;
-		int x;
-
-		for (x = 0; x < document->data[y].length; x++) {
-			struct screen_char *pos = &document->data[y].chars[x];
-			unicode_val_T data = pos->data;
-			unsigned int frame = (pos->attr & SCREEN_ATTR_FRAME);
-
-			if (!isscreensafe_ucs(data)) {
-				white++;
-				continue;
-			} else {
-				if (frame && data >= 176 && data < 224)
-					data = frame_dumb[data - 176];
-
-				if (data <= ' ') {
-					/* Count spaces. */
-					white++;
-				} else if (data == UCS_NO_CHAR) {
-					/* This is the second cell of
-					 * a double-cell character.  */
-				} else {
-					/* Print spaces if any. */
-					if (white) {
-						add_xchar_to_string(string, ' ', white);
-						white = 0;
-					}
-					add_to_string(string, encode_utf8(data));
-				}
-			}
-		}
-
-		add_char_to_string(string, '\n');
-	}
-end:
-#endif /* CONFIG_UTF8 */
-	return string;
+	mem_free(out);
+	return error ? NULL : string;
 }
-
-#define D_BUF	65536
-
-static int
-write_char(unsigned char c, int fd, unsigned char *buf, int *bptr)
-{
-	buf[(*bptr)++] = c;
-	if ((*bptr) >= D_BUF) {
-		if (hard_write(fd, buf, (*bptr)) != (*bptr))
-			return -1;
-		(*bptr) = 0;
-	}
-
-	return 0;
-}
-
-static int
-write_color_16(unsigned char color, int fd, unsigned char *buf, int *bptr)
-{
-	unsigned char bufor[] = "\033[0;30;40m";
-	unsigned char *data = bufor;
-	int background = (color >> 4) & 7;
-	int foreground = color & 7;
-
-	bufor[5] += foreground;
-	if (background)	bufor[8] += background;
-	else {
-		bufor[6] = 'm';
-		bufor[7] = '\0';
-	}
-	while(*data) {
-		if (write_char(*data++, fd, buf, bptr)) return -1;
-	}
-	return 0;
-}
-
-
-static int
-dump_to_file_16(struct document *document, int fd)
-{
-	int y;
-	int bptr = 0;
-	unsigned char *buf = mem_alloc(D_BUF);
-	unsigned char color = 0;
-	int width = get_opt_int("document.dump.width");
-
-	if (!buf) return -1;
-
-	for (y = 0; y < document->height; y++) {
-		int white = 0;
-		int x;
-
-		write_color_16(color, fd, buf, &bptr);
-		for (x = 0; x < document->data[y].length; x++) {
-			unsigned char c;
-			unsigned char attr = document->data[y].chars[x].attr;
-			unsigned char color1 = document->data[y].chars[x].color[0];
-
-			if (color != color1) {
-				color = color1;
-				if (write_color_16(color, fd, buf, &bptr))
-					goto fail;
-			}
-
-			c = document->data[y].chars[x].data;
-
-			if ((attr & SCREEN_ATTR_FRAME)
-			    && c >= 176 && c < 224)
-				c = frame_dumb[c - 176];
-
-			if (c <= ' ') {
-				/* Count spaces. */
-				white++;
-				continue;
-			}
-
-			/* Print spaces if any. */
-			while (white) {
-				if (write_char(' ', fd, buf, &bptr))
-					goto fail;
-				white--;
-			}
-
-			/* Print normal char. */
-			if (write_char(c, fd, buf, &bptr))
-				goto fail;
-		}
-		for (;x < width; x++) {
-			if (write_char(' ', fd, buf, &bptr))
-				goto fail;
-		}
-
-		/* Print end of line. */
-		if (write_char('\n', fd, buf, &bptr))
-			goto fail;
-	}
-
-	if (hard_write(fd, buf, bptr) != bptr) {
-fail:
-		mem_free(buf);
-		return -1;
-	}
-
-	if (document->nlinks && get_opt_bool("document.dump.references")) {
-		int x;
-		unsigned char *header = "\nReferences\n\n   Visible links\n";
-		int headlen = strlen(header);
-
-		if (hard_write(fd, header, headlen) != headlen)
-			goto fail;
-
-		for (x = 0; x < document->nlinks; x++) {
-			struct link *link = &document->links[x];
-			unsigned char *where = link->where;
-
-			if (!where) continue;
-
-			if (document->options.links_numbering) {
-				if (link->title && *link->title)
-					snprintf(buf, D_BUF, "%4d. %s\n\t%s\n",
-						 x + 1, link->title, where);
-				else
-					snprintf(buf, D_BUF, "%4d. %s\n",
-						 x + 1, where);
-			} else {
-				if (link->title && *link->title)
-					snprintf(buf, D_BUF, "   . %s\n\t%s\n",
-						 link->title, where);
-				else
-					snprintf(buf, D_BUF, "   . %s\n", where);
-			}
-
-			bptr = strlen(buf);
-			if (hard_write(fd, buf, bptr) != bptr)
-				goto fail;
-		}
-	}
-
-	mem_free(buf);
-	return 0;
-}
-
-/* configure --enable-debug uses gcc -Wall -Werror, and -Wall includes
- * -Wunused-function, so declaring or defining any unused function
- * would break the build. */
-#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
-
-static int
-write_color_256(unsigned char *str, unsigned char color, int fd, unsigned char *buf, int *bptr)
-{
-	unsigned char bufor[16];
-	unsigned char *data = bufor;
-
-	snprintf(bufor, 16, "\033[%s;5;%dm", str, color);
-	while(*data) {
-		if (write_char(*data++, fd, buf, bptr)) return -1;
-	}
-	return 0;
-}
-
-static int
-dump_to_file_256(struct document *document, int fd)
-{
-	int y;
-	int bptr = 0;
-	unsigned char *buf = mem_alloc(D_BUF);
-	unsigned char foreground = 0;
-	unsigned char background = 0;
-	int width = get_opt_int("document.dump.width");
-
-	if (!buf) return -1;
-
-	for (y = 0; y < document->height; y++) {
-		int white = 0;
-		int x;
-		write_color_256("38", foreground, fd, buf, &bptr);
-		write_color_256("48", background, fd, buf, &bptr);
-
-		for (x = 0; x < document->data[y].length; x++) {
-			unsigned char c;
-			unsigned char attr = document->data[y].chars[x].attr;
-			unsigned char color1 = document->data[y].chars[x].color[0];
-			unsigned char color2 = document->data[y].chars[x].color[1];
-
-			if (foreground != color1) {
-				foreground = color1;
-				if (write_color_256("38", foreground, fd, buf, &bptr))
-					goto fail;
-			}
-
-			if (background != color2) {
-				background = color2;
-				if (write_color_256("48", background, fd, buf, &bptr))
-					goto fail;
-			}
-
-			c = document->data[y].chars[x].data;
-
-			if ((attr & SCREEN_ATTR_FRAME)
-			    && c >= 176 && c < 224)
-				c = frame_dumb[c - 176];
-
-			if (c <= ' ') {
-				/* Count spaces. */
-				white++;
-				continue;
-			}
-
-			/* Print spaces if any. */
-			while (white) {
-				if (write_char(' ', fd, buf, &bptr))
-					goto fail;
-				white--;
-			}
-
-			/* Print normal char. */
-			if (write_char(c, fd, buf, &bptr))
-				goto fail;
-		}
-		for (;x < width; x++) {
-			if (write_char(' ', fd, buf, &bptr))
-				goto fail;
-		}
-
-		/* Print end of line. */
-		if (write_char('\n', fd, buf, &bptr))
-			goto fail;
-	}
-
-	if (hard_write(fd, buf, bptr) != bptr) {
-fail:
-		mem_free(buf);
-		return -1;
-	}
-
-	if (document->nlinks && get_opt_bool("document.dump.references")) {
-		int x;
-		unsigned char *header = "\nReferences\n\n   Visible links\n";
-		int headlen = strlen(header);
-
-		if (hard_write(fd, header, headlen) != headlen)
-			goto fail;
-
-		for (x = 0; x < document->nlinks; x++) {
-			struct link *link = &document->links[x];
-			unsigned char *where = link->where;
-
-			if (!where) continue;
-
-			if (document->options.links_numbering) {
-				if (link->title && *link->title)
-					snprintf(buf, D_BUF, "%4d. %s\n\t%s\n",
-						 x + 1, link->title, where);
-				else
-					snprintf(buf, D_BUF, "%4d. %s\n",
-						 x + 1, where);
-			} else {
-				if (link->title && *link->title)
-					snprintf(buf, D_BUF, "   . %s\n\t%s\n",
-						 link->title, where);
-				else
-					snprintf(buf, D_BUF, "   . %s\n", where);
-			}
-
-			bptr = strlen(buf);
-			if (hard_write(fd, buf, bptr) != bptr)
-				goto fail;
-		}
-	}
-
-	mem_free(buf);
-	return 0;
-}
-
-#endif /* defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS) */
-
-#ifdef CONFIG_TRUE_COLOR
-
-static int
-write_true_color(unsigned char *str, unsigned char *color, int fd, unsigned char *buf, int *bptr)
-{
-	unsigned char bufor[24];
-	unsigned char *data = bufor;
-
-	snprintf(bufor, 24, "\033[%s;2;%d;%d;%dm", str, color[0], color[1], color[2]);
-	while(*data) {
-		if (write_char(*data++, fd, buf, bptr)) return -1;
-	}
-	return 0;
-}
-
-static int
-dump_to_file_true_color(struct document *document, int fd)
-{
-	static unsigned char color[6] = {255, 255, 255, 0, 0, 0};
-	int y;
-	int bptr = 0;
-	unsigned char *buf = mem_alloc(D_BUF);
-	unsigned char *foreground = &color[0];
-	unsigned char *background = &color[3];
-	int width = get_opt_int("document.dump.width");
-
-	if (!buf) return -1;
-
-	for (y = 0; y < document->height; y++) {
-		int white = 0;
-		int x;
-		write_true_color("38", foreground, fd, buf, &bptr);
-		write_true_color("48", background, fd, buf, &bptr);
-
-		for (x = 0; x < document->data[y].length; x++) {
-			unsigned char c;
-			unsigned char attr = document->data[y].chars[x].attr;
-			unsigned char *new_foreground = &document->data[y].chars[x].color[0];
-			unsigned char *new_background = &document->data[y].chars[x].color[3];
-
-			if (memcmp(foreground, new_foreground, 3)) {
-				foreground = new_foreground;
-				if (write_true_color("38", foreground, fd, buf, &bptr))
-					goto fail;
-			}
-
-			if (memcmp(background, new_background, 3)) {
-				background = new_background;
-				if (write_true_color("48", background, fd, buf, &bptr))
-					goto fail;
-			}
-
-			c = document->data[y].chars[x].data;
-
-			if ((attr & SCREEN_ATTR_FRAME)
-			    && c >= 176 && c < 224)
-				c = frame_dumb[c - 176];
-
-			if (c <= ' ') {
-				/* Count spaces. */
-				white++;
-				continue;
-			}
-
-			/* Print spaces if any. */
-			while (white) {
-				if (write_char(' ', fd, buf, &bptr))
-					goto fail;
-				white--;
-			}
-
-			/* Print normal char. */
-			if (write_char(c, fd, buf, &bptr))
-				goto fail;
-		}
-		for (;x < width; x++) {
-			if (write_char(' ', fd, buf, &bptr))
-				goto fail;
-		}
-
-		/* Print end of line. */
-		if (write_char('\n', fd, buf, &bptr))
-			goto fail;
-	}
-
-	if (hard_write(fd, buf, bptr) != bptr) {
-fail:
-		mem_free(buf);
-		return -1;
-	}
-
-	if (document->nlinks && get_opt_bool("document.dump.references")) {
-		int x;
-		unsigned char *header = "\nReferences\n\n   Visible links\n";
-		int headlen = strlen(header);
-
-		if (hard_write(fd, header, headlen) != headlen)
-			goto fail;
-
-		for (x = 0; x < document->nlinks; x++) {
-			struct link *link = &document->links[x];
-			unsigned char *where = link->where;
-
-			if (!where) continue;
-
-			if (document->options.links_numbering) {
-				if (link->title && *link->title)
-					snprintf(buf, D_BUF, "%4d. %s\n\t%s\n",
-						 x + 1, link->title, where);
-				else
-					snprintf(buf, D_BUF, "%4d. %s\n",
-						 x + 1, where);
-			} else {
-				if (link->title && *link->title)
-					snprintf(buf, D_BUF, "   . %s\n\t%s\n",
-						 link->title, where);
-				else
-					snprintf(buf, D_BUF, "   . %s\n", where);
-			}
-
-			bptr = strlen(buf);
-			if (hard_write(fd, buf, bptr) != bptr)
-				goto fail;
-		}
-	}
-
-	mem_free(buf);
-	return 0;
-}
-
-#endif /* CONFIG_TRUE_COLOR */
-int
-dump_to_file(struct document *document, int fd)
-{
-	int y;
-	int bptr = 0;
-	unsigned char *buf = mem_alloc(D_BUF);
-
-	if (!buf) return -1;
-
-#ifdef CONFIG_UTF8
-	if (is_cp_utf8(document->options.cp))
-		goto utf8;
-#endif /* CONFIG_UTF8 */
-
-	for (y = 0; y < document->height; y++) {
-		int white = 0;
-		int x;
-
-		for (x = 0; x < document->data[y].length; x++) {
-			unsigned char c;
-			unsigned char attr = document->data[y].chars[x].attr;
-
-			c = document->data[y].chars[x].data;
-
-			if ((attr & SCREEN_ATTR_FRAME)
-			    && c >= 176 && c < 224)
-				c = frame_dumb[c - 176];
-
-			if (c <= ' ') {
-				/* Count spaces. */
-				white++;
-				continue;
-			}
-
-			/* Print spaces if any. */
-			while (white) {
-				if (write_char(' ', fd, buf, &bptr))
-					goto fail;
-				white--;
-			}
-
-			/* Print normal char. */
-			if (write_char(c, fd, buf, &bptr))
-				goto fail;
-		}
-
-		/* Print end of line. */
-		if (write_char('\n', fd, buf, &bptr))
-			goto fail;
-	}
-#ifdef CONFIG_UTF8
-	goto ref;
-utf8:
-	for (y = 0; y < document->height; y++) {
-		int white = 0;
-		int x;
-
-		for (x = 0; x < document->data[y].length; x++) {
-			unicode_val_T c;
-			unsigned char attr = document->data[y].chars[x].attr;
-
-			c = document->data[y].chars[x].data;
-
-			if ((attr & SCREEN_ATTR_FRAME)
-			    && c >= 176 && c < 224)
-				c = frame_dumb[c - 176];
-			else {
-				unsigned char *utf8_buf = encode_utf8(c);
-
-				while (*utf8_buf) {
-					if (write_char(*utf8_buf++,
-						fd, buf, &bptr)) goto fail;
-				}
-
-				x += unicode_to_cell(c) - 1;
-
-				continue;
-			}
-
-			if (c <= ' ') {
-				/* Count spaces. */
-				white++;
-				continue;
-			}
-
-			/* Print spaces if any. */
-			while (white) {
-				if (write_char(' ', fd, buf, &bptr))
-					goto fail;
-				white--;
-			}
-
-			/* Print normal char. */
-			if (write_char(c, fd, buf, &bptr))
-				goto fail;
-		}
-
-		/* Print end of line. */
-		if (write_char('\n', fd, buf, &bptr))
-			goto fail;
-	}
-ref:
-#endif /* CONFIG_UTF8 */
-
-	if (hard_write(fd, buf, bptr) != bptr) {
-fail:
-		mem_free(buf);
-		return -1;
-	}
-
-	if (document->nlinks && get_opt_bool("document.dump.references")) {
-		int x;
-		unsigned char *header = "\nReferences\n\n   Visible links\n";
-		int headlen = strlen(header);
-
-		if (hard_write(fd, header, headlen) != headlen)
-			goto fail;
-
-		for (x = 0; x < document->nlinks; x++) {
-			struct link *link = &document->links[x];
-			unsigned char *where = link->where;
-
-			if (!where) continue;
-
-			if (document->options.links_numbering) {
-				if (link->title && *link->title)
-					snprintf(buf, D_BUF, "%4d. %s\n\t%s\n",
-						 x + 1, link->title, where);
-				else
-					snprintf(buf, D_BUF, "%4d. %s\n",
-						 x + 1, where);
-			} else {
-				if (link->title && *link->title)
-					snprintf(buf, D_BUF, "   . %s\n\t%s\n",
-						 link->title, where);
-				else
-					snprintf(buf, D_BUF, "   . %s\n", where);
-			}
-
-			bptr = strlen(buf);
-			if (hard_write(fd, buf, bptr) != bptr)
-				goto fail;
-		}
-	}
-
-	mem_free(buf);
-	return 0;
-}
-
-#undef D_BUF
