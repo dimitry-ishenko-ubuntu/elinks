@@ -32,6 +32,7 @@ confopts = --prefix=/usr \
 	--without-lzma \
 	--without-openssl \
 	--without-x \
+	--enable-finger \
 	--with-gnutls=/usr
 
 confopts_main = $(confopts) \
