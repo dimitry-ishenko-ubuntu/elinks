@@ -1,3 +1,10 @@
+elinks (0.12~pre5-1) unstable; urgency=low
+
+  * New upstream release 0.12pre5
+    + Fixes crash in case of OOM w/ SpiderMonkey enabled (Closes: #534835)
+
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Sat, 11 Jul 2009 13:53:41 +0530
+
 elinks (0.12~pre4-1) unstable; urgency=low
 
   * New upstream release 0.12pre4
