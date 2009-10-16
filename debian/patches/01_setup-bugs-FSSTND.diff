@@ -19,7 +19,7 @@ index 71fceef..f0f55ec 100644
  how to get in contact with developers and getting help can be found on
  http://elinks.cz/community.html[the community page].
 diff --git a/doc/html/elinks.conf.5.html b/doc/html/elinks.conf.5.html
-index b350f4d..712357a 100644
+index 724f232..df8dda9 100644
 --- a/doc/html/elinks.conf.5.html
 +++ b/doc/html/elinks.conf.5.html
 @@ -781,7 +781,7 @@ around the % sign.
@@ -41,7 +41,7 @@ index b350f4d..712357a 100644
  </dd></dl><h3 id="mime.type">mime.type (MIME type associations)</h3>
  <p>Handler &#8596; MIME type association. The first sub-tree is the MIME
 diff --git a/doc/man/man5/elinks.conf.5 b/doc/man/man5/elinks.conf.5
-index 4a0fec7..070dc9d 100644
+index 84f665c..2ee427f 100644
 --- a/doc/man/man5/elinks.conf.5
 +++ b/doc/man/man5/elinks.conf.5
 @@ -1143,7 +1143,7 @@ mime\&.mailcap\&.enable \fB[0|1]\fR (default: 1)
@@ -62,6 +62,19 @@ index 4a0fec7..070dc9d 100644
  .RS 4
  The search path for
  \fImime\&.types\fR
+diff --git a/src/document/html/parser/general.c b/src/document/html/parser/general.c
+index f4d5834..1b20678 100644
+--- a/src/document/html/parser/general.c
++++ b/src/document/html/parser/general.c
+@@ -841,7 +841,7 @@ roman(unsigned char *p, unsigned n)
+ 		}
+ 		i++;
+ 		assertm(!(n && !roman_tbl[i].n),
+-			"BUG in roman number convertor");
++			"BUG in roman number converter");
+ 		if_assert_failed break;
+ 	}
+ }
 diff --git a/src/setup.h b/src/setup.h
 index 572610f..9e94b6b 100644
 --- a/src/setup.h
