@@ -1,9 +1,9 @@
 elinks (0.12~pre5-2) unstable; urgency=low
 
   * New patch 06_550868_SMJS-FTBFS.diff to fix FTBFS caused by change of
-    JS_SetBranchCallback to JS_SetOperationCallback (Closes: #550868)
+    JS_SetBranchCallback to JS_SetOperationCallback (Closes: #551238)
 
- -- Y Giridhar Appaji Nag <appaji@debian.org>  Fri, 16 Oct 2009 23:52:10 +0530
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Sat, 17 Oct 2009 00:27:17 +0530
 
 elinks (0.12~pre5-1) unstable; urgency=low
 
