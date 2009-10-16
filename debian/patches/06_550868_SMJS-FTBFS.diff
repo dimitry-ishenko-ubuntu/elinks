@@ -1,0 +1,16 @@
+JS_SetBranchCallback has been replaced with JS_SetOperationCallback.  This
+patch is to fix the FTBFS reported in #550868
+
+diff --git a/src/ecmascript/spidermonkey.c b/src/ecmascript/spidermonkey.c
+index 78c3bca..14267ce 100644
+--- a/src/ecmascript/spidermonkey.c
++++ b/src/ecmascript/spidermonkey.c
+@@ -130,7 +130,7 @@ setup_safeguard(struct ecmascript_interpreter *interpreter,
+                 JSContext *ctx)
+ {
+ 	interpreter->exec_start = time(NULL);
+-	JS_SetBranchCallback(ctx, safeguard);
++	JS_SetOperationCallback(ctx, safeguard);
+ }
+ 
+ 
