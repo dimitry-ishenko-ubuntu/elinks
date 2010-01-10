@@ -5,8 +5,10 @@ elinks (0.12~pre5-2) unstable; urgency=low
     <miciah.masters@gmail.com> (Closes: #551238)
   * Update Standards-Version to 3.8.3 (No changes required)
   * Modified 01_setup-bugs-FSSTND.diff to fix a typo error.
+  * Add ${misc:Depends} to all binary packages, fixes lintian warning
+    debhelper-but-no-misc-depends
 
- -- Y Giridhar Appaji Nag <appaji@debian.org>  Sun, 10 Jan 2010 12:16:33 +0530
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Sun, 10 Jan 2010 12:31:12 +0530
 
 elinks (0.12~pre5-1) unstable; urgency=low
 
