@@ -1,6 +1,6 @@
 JS_SetBranchCallback has been replaced with JS_SetOperationCallback.
 This patch is to fix the FTBFS reported in #550868.  Patch based on an
-upstream patch in git 9d8abd040749bd8105a8d63c67a4603690e2cfd4 from
+upstream patch in git f31cf6f9fe805539d50ed55b62b05ce12daf7cb0 from
 Miciah Dashiel Butler Masters <miciah.masters@gmail.com>
 
 diff --git a/Makefile.config.in b/Makefile.config.in
@@ -11,7 +11,7 @@ index c463868..c2681f2 100644
  SPARSE = @SPARSE@
  SPIDERMONKEY_CFLAGS = @SPIDERMONKEY_CFLAGS@
  SPIDERMONKEY_LIBS = @SPIDERMONKEY_LIBS@
-+HAVE_JS_TRIGGEROPERATIONCALLBACK = @HAVE_JS_TRIGGEROPERATIONCALLBACK@
++CONFIG_ECMASCRIPT_SMJS_HEARTBEAT = @CONFIG_ECMASCRIPT_SMJS_HEARTBEAT@
  TRE_CFLAGS = @TRE_CFLAGS@
  TRE_LIBS = @TRE_LIBS@
  VERSION = @VERSION@
@@ -23,7 +23,7 @@ index b8e22ce..d8e5e98 100755
  CONFIG_XBEL_BOOKMARKS
  SEE_CONFIG
  SEE_CFLAGS
-+HAVE_JS_TRIGGEROPERATIONCALLBACK
++CONFIG_ECMASCRIPT_SMJS_HEARTBEAT
  CONFIG_ECMASCRIPT
  CONFIG_ECMASCRIPT_SEE
  CONFIG_ECMASCRIPT_SMJS
@@ -221,10 +221,18 @@ index b8e22ce..d8e5e98 100755
  
  	CFLAGS="$CFLAGS_X";
 diff --git a/configure.in b/configure.in
-index 155358e..eb5545b 100644
+index 4a7143d..08c4bbc 100644
 --- a/configure.in
 +++ b/configure.in
-@@ -651,9 +651,13 @@ AC_MSG_RESULT($cf_result)
+@@ -283,6 +283,7 @@ AC_CHECK_FUNCS(snprintf vsnprintf asprintf vasprintf)
+ AC_CHECK_FUNCS(getifaddrs getpwnam inet_pton inet_ntop)
+ AC_CHECK_FUNCS(fflush fsync fseeko ftello sigaction)
+ AC_CHECK_FUNCS(gettimeofday clock_gettime)
++AC_CHECK_FUNCS(setitimer, HAVE_SETITIMER=yes)
+ 
+ AC_CHECK_FUNCS([cygwin_conv_to_full_win32_path])
+ 
+@@ -651,6 +652,8 @@ AC_MSG_RESULT($cf_result)
  CONFIG_SPIDERMONKEY="$cf_result"
  if test "$cf_result" = "yes"; then
  	AC_CHECK_FUNCS([[JS_ReportAllocationOverflow]])
@@ -233,11 +241,22 @@ index 155358e..eb5545b 100644
  fi
  EL_RESTORE_FLAGS
  
-+AC_SUBST(HAVE_JS_TRIGGEROPERATIONCALLBACK)
+@@ -665,6 +668,15 @@ EL_CONFIG_DEPENDS(CONFIG_ECMASCRIPT, [CONFIG_ECMASCRIPT_SEE CONFIG_ECMASCRIPT_SM
+ AC_SUBST(CONFIG_ECMASCRIPT_SEE)
+ AC_SUBST(CONFIG_ECMASCRIPT_SMJS)
+ 
++if test "x$CONFIG_ECMASCRIPT_SMJS" = xyes &&
++   test "x$HAVE_JS_TRIGGEROPERATIONCALLBACK" = xyes &&
++   test "x$HAVE_SETITIMER" = xyes; then
++	EL_CONFIG(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT, [ECMAScript heartbeat support])
++else
++	CONFIG_ECMASCRIPT_SMJS_HEARTBEAT=no
++fi
++AC_SUBST(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 +
- if test "x$CONFIG_SPIDERMONKEY" = xyes &&
-    test "x$CONFIG_ECMASCRIPT_SEE" != xyes; then
- 	EL_CONFIG(CONFIG_ECMASCRIPT_SMJS, [SpiderMonkey document scripting])
+ 
+ # ===================================================================
+ # Optional Spidermonkey-based ECMAScript browser scripting
 diff --git a/src/ecmascript/ecmascript.h b/src/ecmascript/ecmascript.h
 index e8d84b5..53d40ae 100644
 --- a/src/ecmascript/ecmascript.h
@@ -246,7 +265,7 @@ index e8d84b5..53d40ae 100644
  	/* The code evaluated by setTimeout() */
  	struct string code;
  
-+#if defined(HAVE_JS_TRIGGEROPERATIONCALLBACK)
++#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 +	struct heartbeat *heartbeat;
 +#elif defined(HAVE_JS_SETBRANCHCALLBACK)
  	time_t exec_start;
@@ -270,7 +289,7 @@ index 78c3bca..7c83cec 100644
  	JS_ClearPendingException(ctx);
  }
  
-+#if !defined(HAVE_JS_TRIGGEROPERATIONCALLBACK) && defined(HAVE_JS_SETBRANCHCALLBACK)
++#if !defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT) && defined(HAVE_JS_SETBRANCHCALLBACK)
  static JSBool
  safeguard(JSContext *ctx, JSScript *script)
  {
@@ -286,7 +305,7 @@ index 78c3bca..7c83cec 100644
  	 * some kind of bytecode cache. (If we will ever do that.) */
  	JS_SetOptions(ctx, JSOPTION_VAROBJFIX | JSOPTION_COMPILE_N_GO);
  	JS_SetErrorReporter(ctx, error_reporter);
-+#if defined(HAVE_JS_TRIGGEROPERATIONCALLBACK)
++#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 +	JS_SetOperationCallback(ctx, heartbeat_callback);
 +#endif
  
@@ -296,7 +315,7 @@ index 78c3bca..7c83cec 100644
  	assert(interpreter);
  	if (!js_module_init_ok) return;
  	ctx = interpreter->backend_data;
-+#if defined(HAVE_JS_TRIGGEROPERATIONCALLBACK)
++#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 +	interpreter->heartbeat = add_heartbeat(interpreter);
 +#elif defined(HAVE_JS_SETBRANCHCALLBACK)
  	setup_safeguard(interpreter, ctx);
@@ -304,7 +323,7 @@ index 78c3bca..7c83cec 100644
  	interpreter->ret = ret;
  	JS_EvaluateScript(ctx, JS_GetGlobalObject(ctx),
  	                  code->source, code->length, "", 0, &rval);
-+#if defined(HAVE_JS_TRIGGEROPERATIONCALLBACK)
++#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 +	done_heartbeat(interpreter->heartbeat);
 +#endif
  }
@@ -326,14 +345,14 @@ index 78c3bca..7c83cec 100644
 -	if (JS_EvaluateScript(ctx, JS_GetGlobalObject(ctx),
 -			      code->source, code->length, "", 0, &rval)
 -	    == JS_FALSE) {
-+#if defined(HAVE_JS_TRIGGEROPERATIONCALLBACK)
++#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 +	interpreter->heartbeat = add_heartbeat(interpreter);
 +#elif defined(HAVE_JS_SETBRANCHCALLBACK)
 +	setup_safeguard(interpreter, ctx);
 +#endif
 +	ret = JS_EvaluateScript(ctx, JS_GetGlobalObject(ctx),
 +	                        code->source, code->length, "", 0, &rval);
-+#if defined(HAVE_JS_TRIGGEROPERATIONCALLBACK)
++#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 +	done_heartbeat(interpreter->heartbeat);
 +#endif
 +	if (ret == JS_FALSE) {
@@ -351,13 +370,13 @@ index 78c3bca..7c83cec 100644
  	if (!fun)
  		return -1;
  
-+#if defined(HAVE_JS_TRIGGEROPERATIONCALLBACK)
++#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 +	interpreter->heartbeat = add_heartbeat(interpreter);
 +#elif defined(HAVE_JS_SETBRANCHCALLBACK)
 +	setup_safeguard(interpreter, ctx);
 +#endif
  	ret = JS_CallFunction(ctx, NULL, fun, 0, NULL, &rval);
-+#if defined(HAVE_JS_TRIGGEROPERATIONCALLBACK)
++#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 +	done_heartbeat(interpreter->heartbeat);
 +#endif
  	if (ret == 2) { /* onClick="history.back()" */
@@ -371,7 +390,7 @@ index f1c0fef..fd98dc5 100644
  include $(top_builddir)/Makefile.config
  INCLUDES += $(SPIDERMONKEY_CFLAGS)
  
-+OBJS-$(HAVE_JS_TRIGGEROPERATIONCALLBACK) += heartbeat.o
++OBJS-$(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT) += heartbeat.o
 +
  OBJS = document.o form.o location.o navigator.o unibar.o window.o
  
@@ -388,9 +407,9 @@ index 0000000..1fb87a6
 +#include "config.h"
 +#endif
 +
-+#include <sys/time.h>
++#include <sys/time.h>      /* setitimer(2) */
 +
-+#include "elinks.h"      /* setitimer(2) */
++#include "elinks.h"
 +
 +#include "ecmascript/spidermonkey/util.h"
 +
@@ -413,23 +432,29 @@ index 0000000..1fb87a6
 +static struct itimerval heartbeat_timer = { { 1, 0 }, { 1, 0 } };
 +
 +
++/* This callback is installed by JS_SetOperationCallback and triggered
++ * by JS_TriggerOperationCallback in the heartbeat code below.  Returning
++ * JS_FALSE terminates script execution immediately. */
 +JSBool
 +heartbeat_callback(JSContext *ctx)
 +{
 +        return JS_FALSE;
 +}
 +
++/* Callback for SIGVTALRM.  Go through all heartbeats, decrease each
++ * one's TTL, and call JS_TriggerOperationCallback if a heartbeat's TTL
++ * goes to 0. */
 +static void
 +check_heartbeats(void *data)
 +{
-+        int next_beat = INT_MAX;
 +        struct heartbeat *hb;
 +
 +        foreach (hb, heartbeats) {
++                assert(hb->interpreter);
 +                --hb->ttl;
 +
 +                if (hb->ttl <= 0) {
-+			if (hb->interpreter && hb->interpreter->vs
++			if (hb->interpreter->vs
 +			    && hb->interpreter->vs->doc_view
 +			    && hb->interpreter->vs->doc_view->session
 +			    && hb->interpreter->vs->doc_view->session->tab
@@ -447,13 +472,15 @@ index 0000000..1fb87a6
 +        install_signal_handler(SIGVTALRM, check_heartbeats, NULL, 1);
 +}
 +
++/* Create a new heartbeat for the given interpreter. */
 +struct heartbeat *
 +add_heartbeat(struct ecmascript_interpreter *interpreter)
 +{
 +	struct session *ses;
-+        struct heartbeat *hb;
++	struct heartbeat *hb;
++	assert(interpreter);
 +
-+	if (!interpreter || !interpreter->vs || !interpreter->vs->doc_view)
++	if (!interpreter->vs || !interpreter->vs->doc_view)
 +		ses = NULL;
 +	else
 +		ses = interpreter->vs->doc_view->session;
@@ -480,9 +507,12 @@ index 0000000..1fb87a6
 +        return hb;
 +}
 +
++/* Destroy the given heartbeat. */
 +void
 +done_heartbeat(struct heartbeat *hb)
 +{
++        assert(hb->interpreter);
++
 +        /* Stop the heartbeat timer if this heartbeat is the only one. */
 +        if (list_is_singleton(*hb)) {
 +                heartbeat_timer.it_value.tv_sec = 0;
