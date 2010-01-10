@@ -16,7 +16,7 @@ index c463868..bcbebc0 100644
  CONFIG_FASTMEM = @CONFIG_FASTMEM@
  CONFIG_FINGER = @CONFIG_FINGER@
 diff --git a/configure b/configure
-index b8e22ce..9df2deb 100755
+index b8e22ce..350e587 100755
 --- a/configure
 +++ b/configure
 @@ -709,6 +709,7 @@ SEE_CFLAGS
@@ -319,7 +319,7 @@ index b8e22ce..9df2deb 100755
  fi
  
  	CFLAGS="$CFLAGS_X";
-@@ -18476,6 +18755,21 @@ _ACEOF
+@@ -18476,6 +18755,22 @@ _ACEOF
  
  
  
@@ -328,10 +328,11 @@ index b8e22ce..9df2deb 100755
 +   test "x$HAVE_SETITIMER" = xyes; then
 +
 +	  CONFIG_ECMASCRIPT_SMJS_HEARTBEAT=yes
-+	  ABOUT_CONFIG_ECMASCRIPT_SMJS_HEARTBEAT="ECMAScript heartbeat
-+support"
++	  ABOUT_CONFIG_ECMASCRIPT_SMJS_HEARTBEAT="ECMAScript heartbeat support"
 +
-+$as_echo "#define CONFIG_ECMASCRIPT_SMJS_HEARTBEAT 1" >>confdefs.h
++cat >>confdefs.h <<\_ACEOF
++#define CONFIG_ECMASCRIPT_SMJS_HEARTBEAT 1
++_ACEOF
 +
 +else
 +	CONFIG_ECMASCRIPT_SMJS_HEARTBEAT=no
