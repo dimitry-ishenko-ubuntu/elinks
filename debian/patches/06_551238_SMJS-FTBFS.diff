@@ -583,7 +583,7 @@ index 0000000..1fb87a6
 +			    && hb->interpreter->vs->doc_view->session->tab->term) {
 +				struct session *ses = hb->interpreter->vs->doc_view->session;
 +				struct terminal *term = ses->tab->term;
-+				int max_exec_time = get_opt_int("ecmascript.max_exec_time", ses);
++				int max_exec_time = get_opt_int("ecmascript.max_exec_time");
 +
 +				ecmascript_timeout_dialog(term, max_exec_time);
 +			}
@@ -598,19 +598,13 @@ index 0000000..1fb87a6
 +struct heartbeat *
 +add_heartbeat(struct ecmascript_interpreter *interpreter)
 +{
-+	struct session *ses;
 +	struct heartbeat *hb;
 +	assert(interpreter);
-+
-+	if (!interpreter->vs || !interpreter->vs->doc_view)
-+		ses = NULL;
-+	else
-+		ses = interpreter->vs->doc_view->session;
 +
 +        hb = mem_alloc(sizeof(struct heartbeat));
 +        if (!hb) return NULL;
 +
-+        hb->ttl = get_opt_int("ecmascript.max_exec_time", ses);
++        hb->ttl = get_opt_int("ecmascript.max_exec_time");
 +        hb->interpreter = interpreter;
 +
 +        add_to_list(heartbeats, hb);

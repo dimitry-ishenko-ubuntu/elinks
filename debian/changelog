@@ -1,3 +1,9 @@
+elinks (0.12~pre5-3) unstable; urgency=low
+
+  * First jab at fixing the spidermonkey heartbeat patch (Closes: #592466)
+
+ -- Y Giridhar Appaji Nag <appaji@debian.org>  Fri, 10 Sep 2010 14:03:00 +0530
+
 elinks (0.12~pre5-2) unstable; urgency=low
 
   * New patch 06_550868_SMJS-FTBFS.diff to fix FTBFS caused by removing
