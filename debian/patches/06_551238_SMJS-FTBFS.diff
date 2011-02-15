@@ -522,7 +522,7 @@ new file mode 100644
 index 0000000..1fb87a6
 --- /dev/null
 +++ b/src/ecmascript/spidermonkey/heartbeat.c
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,116 @@
 +/* The SpiderMonkey ECMAScript backend heartbeat fuctionality. */
 +
 +#ifdef HAVE_CONFIG_H
