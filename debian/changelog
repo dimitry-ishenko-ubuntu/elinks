@@ -1,3 +1,11 @@
+elinks (0.12~pre5-3.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix offset in debian/patches/06_551238_SMJS-FTBFS.diff
+    (Closes: #613475)
+
+ -- Kumar Appaiah <akumar@debian.org>  Fri, 15 Apr 2011 18:00:17 -0500
+
 elinks (0.12~pre5-3) unstable; urgency=low
 
   * First jab at fixing the spidermonkey heartbeat patch (Closes: #592466)
