@@ -52,7 +52,7 @@ confopts_main = $(confopts) \
 	--disable-exmode \
 	--disable-bittorrent \
 	--disable-debug \
-	--with-spidermonkey
+	--without-spidermonkey
 
 confopts_lite = $(confopts) \
 	--disable-nntp \

@@ -1,3 +1,16 @@
+elinks (0.12~pre5-4) unstable; urgency=low
+
+  * Acknowledge NMUs, thanks Kumar! (Closes: #617713, Closes: #613475)
+  * Disable support for Spidermonkey. Javascript support has always been
+    an experimental feature and of limited use (since most websites
+    which make extensive use of Javascript usually involve further
+    features not available). Mozilla seems to focus on a standalone
+    Firefox these days and the libs are treated as second class
+    citizens.
+  * Update to standards version 3.9.2 (no changes necessary)
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Sat, 11 Jun 2011 17:08:17 +0200
+
 elinks (0.12~pre5-3.2) unstable; urgency=medium
 
   * Non-maintainer upload.
