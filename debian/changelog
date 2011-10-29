@@ -1,3 +1,9 @@
+elinks (0.12~pre5-5) unstable; urgency=low
+
+  * Fix sparc64 compat. Thanks to Aurelien Jarno (Closes: #596139)
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Sat, 29 Oct 2011 17:03:02 +0200
+
 elinks (0.12~pre5-4) unstable; urgency=low
 
   * Acknowledge NMUs, thanks Kumar! (Closes: #617713, Closes: #613475)
