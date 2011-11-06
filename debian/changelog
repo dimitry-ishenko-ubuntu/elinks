@@ -1,3 +1,16 @@
+elinks (0.12~pre5-6) unstable; urgency=low
+
+  * Remove now obsolete 06_551238_SMJS-FTBFS.diff patch
+  * Stop using a hardcoded list of non-Linux architectures 
+    for the GPM dependency (Closes: #634376)
+  * Stop using deprecated GNU TLS functions. Backport upstream
+    commits by Kalle Olavi Niemitalo. Thanks to Andreas Metzler
+    for the report (Closes: #624064, Closes: #624084)
+  * Enable hardened build flags through dpkg-buildflags
+  * Add a Build-Conflicts on libgc-dev (Closes: #650704)
+	
+ -- Moritz Muehlenhoff <jmm@debian.org>  Sun, 06 Nov 2011 11:12:55 +0100
+
 elinks (0.12~pre5-5) unstable; urgency=low
 
   * Fix sparc64 compat. Thanks to Aurelien Jarno (Closes: #596139)
