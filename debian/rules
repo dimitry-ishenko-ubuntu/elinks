@@ -23,6 +23,8 @@ CFLAGS_COMMON += `dpkg-buildflags --get CFLAGS`
 LDFLAGS_COMMON="-Wl,-z,defs"
 LDFLAGS_COMMON += `dpkg-buildflags --get LDFLAGS`
 
+CPPFLAGS_COMMON = `dpkg-buildflags --get CPPFLAGS`
+
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
 	CFLAGS_COMMON += -O0
 	CFLAGS_LITE=
@@ -129,11 +131,11 @@ build-arch: build-arch-stamp
 build-arch-stamp: patch-stamp save-stamp
 	mkdir $(CURDIR)/build-main && cd $(CURDIR)/build-main && \
 		$(CURDIR)/configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
-		$(confopts_main) CFLAGS="$(CFLAGS_COMMON)" LDFLAGS="$(LDFLAGS_COMMON)"
+		$(confopts_main) CPPFLAGS="$(CPPFLAGS_COMMON)" CFLAGS="$(CFLAGS_COMMON)" LDFLAGS="$(LDFLAGS_COMMON)"
 	$(MAKE) -C $(CURDIR)/build-main
 	mkdir $(CURDIR)/build-lite && cd $(CURDIR)/build-lite && \
 		$(CURDIR)/configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
-		$(confopts_lite) CFLAGS="$(CFLAGS_COMMON) $(CFLAGS_LITE)" LDFLAGS="$(LDFLAGS_COMMON)"
+		$(confopts_lite) CPPFLAGS="$(CPPFLAGS_COMMON)" CFLAGS="$(CFLAGS_COMMON) $(CFLAGS_LITE)" LDFLAGS="$(LDFLAGS_COMMON)"
 	$(MAKE) -C $(CURDIR)/build-lite
 	touch $@
 

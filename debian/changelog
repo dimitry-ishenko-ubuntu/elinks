@@ -1,3 +1,11 @@
+elinks (0.12~pre5-7) unstable; urgency=low
+
+  * Fix handling of CPPFLAGS, thanks to Simon Ruderich (Closes: #652449)
+    I won't enable pie and znow for now, they'll be activated in the
+    default flags at some point.	 
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Mon, 19 Dec 2011 23:47:27 +0100
+
 elinks (0.12~pre5-6) unstable; urgency=low
 
   * Remove now obsolete 06_551238_SMJS-FTBFS.diff patch
