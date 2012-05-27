@@ -7,6 +7,7 @@
 export DH_OPTIONS
 
 export DH_ALWAYS_EXCLUDE=.gitignore
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 
 
@@ -54,7 +55,7 @@ confopts_main = $(confopts) \
 	--with-perl \
 	--without-guile \
 	--without-python \
-	--with-ruby \
+	--without-ruby \
 	--with-gssapi \
 	--enable-cgi \
 	--disable-exmode \

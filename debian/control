@@ -5,8 +5,8 @@ Maintainer: Y Giridhar Appaji Nag <appaji@debian.org>
 Uploaders: Moritz Muehlenhoff <jmm@debian.org>
 Build-Depends: debhelper (>= 6.0.7~), libtre-dev, libgnutls-dev, libidn11-dev,
 	libfsplib-dev, libgpm-dev [linux-any],
-	liblua50-dev, liblualib50-dev, libbz2-dev, libexpat1-dev (>= 1.95.6),
-	libperl-dev, ruby, ruby1.8-dev, libkrb5-dev, gettext,
+	liblua5.1-dev, libbz2-dev, libexpat1-dev (>= 1.95.6),
+	libperl-dev, libkrb5-dev, gettext,
 	autotools-dev, python, xmlto, docbook-utils, pkg-config
 Build-Conflicts: libgc-dev
 Standards-Version: 3.9.2
