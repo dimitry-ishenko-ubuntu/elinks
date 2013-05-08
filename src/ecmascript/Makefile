@@ -1,11 +1,9 @@
 top_builddir=../..
 include $(top_builddir)/Makefile.config
-INCLUDES += $(SPIDERMONKEY_CFLAGS) $(SEE_CFLAGS)
+INCLUDES += $(SPIDERMONKEY_CFLAGS)
 
-SUBDIRS-$(CONFIG_ECMASCRIPT_SEE)	+= see
 SUBDIRS-$(CONFIG_ECMASCRIPT_SMJS)	+= spidermonkey
 
-OBJS-$(CONFIG_ECMASCRIPT_SEE)		+= see.o
 OBJS-$(CONFIG_ECMASCRIPT_SMJS)		+= spidermonkey.o
 
 ifeq ($(CONFIG_ECMASCRIPT_SMJS), yes)
@@ -18,6 +16,6 @@ endif
 
 OBJS-$(CONFIG_ANY_SPIDERMONKEY) += spidermonkey-shared.o
 
-OBJS	= ecmascript.o
+OBJS	= ecmascript.o location-goto.o
 
 include $(top_srcdir)/Makefile.lib

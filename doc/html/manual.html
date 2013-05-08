@@ -2757,7 +2757,7 @@ supports colors just fine, so select <em>16 colors</em>, or, if you are running 
 within a terminal emulator that supports 256 colors and you have compiled both
 Screen and ELinks to support it, choose <em>256 colors</em>.</p>
 </div>
-<h2>Introduction to MIME handling</h2>
+<h2><a id="mime"></a>Introduction to MIME handling</h2>
 <div class="sectionbody">
 <p>At some time along the 0.4 prereleases, ELinks replaced the old Links file
 configuration system with its own one. Now, the configuration is stored in
@@ -4431,9 +4431,10 @@ which is a subfolder of &#8220;y&#8221;, which is a subfolder of &#8220;x&#8221;
 <div class="title">Note</div>
 </td>
 <td class="content">When you read an action function from this hash, ELinks binds it to the
-current tab; any later calls to the function affect that tab.  This may be
-changed in a future version.  It is safest to call the function right away,
-rather than save it in a variable and call it later.</td>
+current tab; any later calls to the function throw errors if that tab no
+longer has the focus (in its terminal).  This may be changed in a future
+version.  It is safest to call the function right away, rather than save it
+in a variable and call it later.</td>
 </tr></table>
 </div>
 </dd>
@@ -4638,7 +4639,7 @@ displayed.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 08-Jul-2009 13:05:53 EEST
+Last updated 28-Oct-2012 15:02:00 EEST
 </div>
 </div>
 </body>

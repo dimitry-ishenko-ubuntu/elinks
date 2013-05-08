@@ -1,3 +1,12 @@
+elinks (0.12~pre6-1) unstable; urgency=low
+
+  * New upstream release
+    - Dropped 10-CVE-2012-4545.diff (included upstream)	 
+    - Dropped 07-big-endian-64-bit.diff	 
+  * Standards-Version 3.9.4 (no changes needed)
+	
+ -- Moritz Muehlenhoff <jmm@debian.org>  Thu, 09 May 2013 01:18:18 +0200
+
 elinks (0.12~pre5-9) unstable; urgency=medium
 
   * Fix CVE-2012-4545

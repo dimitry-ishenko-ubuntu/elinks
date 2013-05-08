@@ -1615,8 +1615,11 @@ save_as(struct session *ses, struct document_view *doc_view, int magic)
 	return FRAME_EVENT_OK;
 }
 
+/*! save_formatted() passes this function as a ::cdf_callback_T to
+ * create_download_finish().  */
 static void
-save_formatted_finish(struct terminal *term, int h, void *data, int resume)
+save_formatted_finish(struct terminal *term, int h,
+		      void *data, enum download_flags flags)
 {
 	struct document *document = data;
 
@@ -1643,7 +1646,8 @@ save_formatted(void *data, unsigned char *file)
 	assert(doc_view && doc_view->document);
 	if_assert_failed return;
 
-	create_download_file(ses->tab->term, file, NULL, 0, 0,
+	create_download_file(ses->tab->term, file, NULL,
+			     DOWNLOAD_RESUME_DISABLED,
 			     save_formatted_finish, doc_view->document);
 }
 

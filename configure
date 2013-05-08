@@ -704,10 +704,7 @@ CONFIG_LZMA
 CONFIG_GSSAPI
 CONFIG_BOOKMARKS
 CONFIG_XBEL_BOOKMARKS
-SEE_CONFIG
-SEE_CFLAGS
 CONFIG_ECMASCRIPT
-CONFIG_ECMASCRIPT_SEE
 CONFIG_ECMASCRIPT_SMJS
 SPIDERMONKEY_LIBS
 SPIDERMONKEY_CFLAGS
@@ -1441,7 +1438,6 @@ Optional Packages:
   --with-gc               enable Boehm's garbage collector
   --with-lzma             enable lzma encoding support
   --with-gssapi           enable GSSAPI support
-  --with-see              enable Simple Ecmascript Engine (SEE) support
   --without-spidermonkey  disable SpiderMonkey Mozilla JavaScript engine support
   --with-guile            enable Guile support
   --with-perl             enable Perl support
@@ -1923,7 +1919,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 PACKAGE=elinks
-VERSION=0.12pre5
+VERSION=0.12pre6
 
 
 
@@ -18057,162 +18053,6 @@ done
 fi
 
 # ===================================================================
-# Check for SEE (Simple Ecmascript Engine)
-# ===================================================================
-
-# Check whether --with-see was given.
-if test "${with_see+set}" = set; then
-  withval=$with_see;  if test "x$withval" != xno; then enable_see=yes; fi
-fi
-
-
-# The following is probably bad, ugly and so on. Stolen from Guile's (1.4)
-# GUILE_FLAGS but I really don't want to require people to have Guile in order
-# to compile CVS. Also, the macro seems to be really stupid regarding searching
-# for Guile in $PATH etc. --pasky
-
-CONFIG_ECMASCRIPT_SEE=no
-
-if test "$enable_see" = "yes"; then
-	if test -d "$withval"; then
-		SEE_PATH="$withval:$PATH"
-	else
-		SEE_PATH="$PATH"
-	fi
-
-	# Extract the first word of "libsee-config", so it can be a program name with args.
-set dummy libsee-config; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_SEE_CONFIG+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $SEE_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_SEE_CONFIG="$SEE_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $SEE_PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_SEE_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_SEE_CONFIG" && ac_cv_path_SEE_CONFIG="no"
-  ;;
-esac
-fi
-SEE_CONFIG=$ac_cv_path_SEE_CONFIG
-if test -n "$SEE_CONFIG"; then
-  { echo "$as_me:$LINENO: result: $SEE_CONFIG" >&5
-echo "${ECHO_T}$SEE_CONFIG" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-	{ echo "$as_me:$LINENO: checking for SEE (2.0.1131 or later)" >&5
-echo $ECHO_N "checking for SEE (2.0.1131 or later)... $ECHO_C" >&6; }
-	if test "$SEE_CONFIG" != no; then
-
-	CFLAGS_X="$CFLAGS";
-	CPPFLAGS_X="$CPPFLAGS";
-	LDFLAGS_X="$LDFLAGS";
-	LIBS_X="$LIBS";
-
-		SEE_LIBS="`$SEE_CONFIG --libs`"
-		SEE_CFLAGS="`$SEE_CONFIG --cppflags`"
-		CPPFLAGS="$SEE_CFLAGS $CPPFLAGS"
-		LIBS="$SEE_LIBS $LIBS_X"
-		cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <see/see.h>
-int
-main ()
-{
-#if SEE_VERSION_API_MAJOR < 2
-			#error SEE too old
-			#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  cf_result=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	cf_result=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-
-	CFLAGS="$CFLAGS_X";
-	CPPFLAGS="$CPPFLAGS_X";
-	LDFLAGS="$LDFLAGS_X";
-	LIBS="$LIBS_X";
-
-		if test "$cf_result" = yes; then
-			LIBS="$SEE_LIBS $LIBS"
-
-	  CONFIG_ECMASCRIPT_SEE=yes
-	  ABOUT_CONFIG_ECMASCRIPT_SEE="SEE"
-
-cat >>confdefs.h <<\_ACEOF
-#define CONFIG_ECMASCRIPT_SEE 1
-_ACEOF
-
-
-		fi
-		{ echo "$as_me:$LINENO: result: $cf_result" >&5
-echo "${ECHO_T}$cf_result" >&6; }
-	else
-		if test -n "$withval" && test "x$withval" != xno; then
-			{ { echo "$as_me:$LINENO: error: SEE not found" >&5
-echo "$as_me: error: SEE not found" >&2;}
-   { (exit 1); exit 1; }; }
-		else
-			{ echo "$as_me:$LINENO: WARNING: SEE support disabled" >&5
-echo "$as_me: WARNING: SEE support disabled" >&2;}
-		fi
-	fi
-fi
-
-# ===================================================================
 # Check for SpiderMonkey, optional even if installed.
 # ===================================================================
 
@@ -18405,8 +18245,7 @@ fi
 	LIBS="$LIBS_X";
 
 
-if test "x$CONFIG_SPIDERMONKEY" = xyes &&
-   test "x$CONFIG_ECMASCRIPT_SEE" != xyes; then
+if test "x$CONFIG_SPIDERMONKEY" = xyes; then
 
 	  CONFIG_ECMASCRIPT_SMJS=yes
 	  ABOUT_CONFIG_ECMASCRIPT_SMJS="SpiderMonkey document scripting"
@@ -18423,7 +18262,7 @@ fi
 	CONFIG_ECMASCRIPT=no
 	el_value=
 
-	for dependency in CONFIG_ECMASCRIPT_SEE CONFIG_ECMASCRIPT_SMJS; do
+	for dependency in CONFIG_ECMASCRIPT_SMJS; do
 		# Hope this is portable?!? --jonas
 		eval el_config_value=$`echo $dependency`
 
@@ -18470,7 +18309,6 @@ _ACEOF
 	fi
 
 	echo "$about $dots $value" >> features.log
-
 
 
 
@@ -25477,7 +25315,7 @@ fi
 # Colored make output
 # ===================================================================
 
-if test $(`which tput` colors) -ge 4; then
+if test $(`which tput` colors 2> /dev/null || echo 0) -ge 4; then
 	MAKE_COLOR=1
 
 fi
@@ -26209,12 +26047,12 @@ CONFIG_LZMA!$CONFIG_LZMA$ac_delim
 CONFIG_GSSAPI!$CONFIG_GSSAPI$ac_delim
 CONFIG_BOOKMARKS!$CONFIG_BOOKMARKS$ac_delim
 CONFIG_XBEL_BOOKMARKS!$CONFIG_XBEL_BOOKMARKS$ac_delim
-SEE_CONFIG!$SEE_CONFIG$ac_delim
-SEE_CFLAGS!$SEE_CFLAGS$ac_delim
 CONFIG_ECMASCRIPT!$CONFIG_ECMASCRIPT$ac_delim
-CONFIG_ECMASCRIPT_SEE!$CONFIG_ECMASCRIPT_SEE$ac_delim
 CONFIG_ECMASCRIPT_SMJS!$CONFIG_ECMASCRIPT_SMJS$ac_delim
 SPIDERMONKEY_LIBS!$SPIDERMONKEY_LIBS$ac_delim
+SPIDERMONKEY_CFLAGS!$SPIDERMONKEY_CFLAGS$ac_delim
+CONFIG_SPIDERMONKEY!$CONFIG_SPIDERMONKEY$ac_delim
+GUILE_CONFIG!$GUILE_CONFIG$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -26256,9 +26094,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-SPIDERMONKEY_CFLAGS!$SPIDERMONKEY_CFLAGS$ac_delim
-CONFIG_SPIDERMONKEY!$CONFIG_SPIDERMONKEY$ac_delim
-GUILE_CONFIG!$GUILE_CONFIG$ac_delim
 GUILE_CFLAGS!$GUILE_CFLAGS$ac_delim
 PERL_LIBS!$PERL_LIBS$ac_delim
 PERL_CFLAGS!$PERL_CFLAGS$ac_delim
@@ -26349,7 +26184,7 @@ MAKE_COLOR!$MAKE_COLOR$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 91; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 88; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

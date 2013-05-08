@@ -9,7 +9,7 @@ Build-Depends: debhelper (>= 6.0.7~), libtre-dev, libgnutls-dev, libidn11-dev,
 	libperl-dev, libkrb5-dev, gettext,
 	autotools-dev, python, xmlto, docbook-utils, pkg-config
 Build-Conflicts: libgc-dev
-Standards-Version: 3.9.2
+Standards-Version: 3.9.4
 Homepage: http://elinks.cz/
 Vcs-Git: git://git.debian.org/git/collab-maint/elinks.git
 Vcs-Browser: http://git.debian.org/?p=collab-maint/elinks.git

@@ -9,8 +9,10 @@
 
 <body style="background-color: white">
 
-<p><a name="__index__"></a></p>
+
 <!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
 
 <ul>
 
@@ -22,9 +24,11 @@
 	<li><a href="#simple_dialogs">SIMPLE DIALOGS</a></li>
 	<li><a href="#authors">AUTHORS</a></li>
 </ul>
+
+<hr name="index" />
+</div>
 <!-- INDEX END -->
 
-<hr />
 <p>
 </p>
 <h1><a name="name">NAME</a></h1>
@@ -35,7 +39,7 @@
 <h1><a name="introduction">INTRODUCTION</a></h1>
 <p>This document aims to describe the ELinks (powerful text WWW browser) interface
 for Perl (powerful and enchanting programming language). This interface falls
-to the ``internal scripting'' domain of ELinks, therefore it concerns scripts
+to the &quot;internal scripting&quot; domain of ELinks, therefore it concerns scripts
 which affect ELinks general behaviour, <em>not</em> scripts embedded in the WWW
 documents.</p>
 <p>The interface consists of two largely separate and independent parts. The first
@@ -92,7 +96,7 @@ internal bookmarks list.</p>
 <hr />
 <h1><a name="configuration_subsystem">CONFIGURATION SUBSYSTEM</a></h1>
 <dl>
-<dt><strong><a name="item__options">%options</a></strong></dt>
+<dt><strong><a name="_options" class="item">%options</a></strong></dt>
 
 <dd>
 <p>This hash is keyed by option names and contains the respective value - either
@@ -112,7 +116,7 @@ unset in this hash. Deleting options from this hash merely sets the
         $options{'config'}-&gt;{'document'}-&gt;{'download'}-&gt;{'notify_bell'}++;</pre>
 <p><strong>TODO</strong></p>
 </dd>
-<dt><strong><a name="item__extoptions">%extoptions</a></strong></dt>
+<dt><strong><a name="_extoptions" class="item">%extoptions</a></strong></dt>
 
 <dd>
 <p>This hash is keyed the same way as <em>%options</em>, however it contains all the
@@ -121,7 +125,7 @@ information about the option.</p>
 setting the <em>type</em> member first. You can delete options from this hash,
 which wipes them altogether, but <strong>never do that</strong>!</p>
 <dl>
-<dt><strong><a name="item_type">type</a></strong></dt>
+<dt><strong><a name="type" class="item">type</a></strong></dt>
 
 <dd>
 <p>String containing <em>bool</em> (<strong>not</strong> considered an integer type), <em>int</em> (basic
@@ -129,9 +133,9 @@ integer type), <em>long</em> (big integer), <em>string</em>, <em>codepage</em>, 
 <em>color</em>, <em>command</em> (the <em>value</em> is undefined in this case), <em>alias</em>, or
 <em>tree</em> (the <em>value</em> member is a hash reference).</p>
 </dd>
-<dt><strong><a name="item_value">value</a></strong></dt>
+<dt><strong><a name="value" class="item">value</a></strong></dt>
 
-<dt><strong><a name="item_flags">flags</a></strong></dt>
+<dt><strong><a name="flags" class="item">flags</a></strong></dt>
 
 <dd>
 <p>Reference of array of strings, which can be: <em>hidden</em> (never touch those
@@ -145,21 +149,21 @@ merely a shadow neccesary for appropriate edit of the configuration file).</p>
 <p>Note that ELinks internally uses some other flags too, those are of no value
 whatsoever for the Perl scripts though, so you cannot see them.</p>
 </dd>
-<dt><strong><a name="item_min">min</a></strong></dt>
+<dt><strong><a name="min" class="item">min</a></strong></dt>
 
 <dd>
 <p>Meaningful only for integer types.</p>
 </dd>
-<dt><strong><a name="item_max">max</a></strong></dt>
+<dt><strong><a name="max" class="item">max</a></strong></dt>
 
 <dd>
 <p>Meaningful only for integer types.</p>
 </dd>
-<dt><strong><a name="item_description">description</a></strong></dt>
+<dt><strong><a name="description" class="item">description</a></strong></dt>
 
-<dt><strong><a name="item_caption">caption</a></strong></dt>
+<dt><strong><a name="caption" class="item">caption</a></strong></dt>
 
-<dt><strong><a name="item_changehook">changehook</a></strong></dt>
+<dt><strong><a name="changehook" class="item">changehook</a></strong></dt>
 
 <dd>
 <p><strong>TODO</strong>: A way to bind Perl coderef as a changehook.</p>
@@ -180,7 +184,7 @@ whatsoever for the Perl scripts though, so you cannot see them.</p>
         delete $options{'config'}-&gt;{'bookmarks'}-&gt;{'cool'};</pre>
 <p><strong>TODO</strong></p>
 </dd>
-<dt><strong><a name="item__keybindings">%keybindings</a></strong></dt>
+<dt><strong><a name="_keybindings" class="item">%keybindings</a></strong></dt>
 
 <dd>
 <p>This hash is keyed by the keymap name (<em>main</em>, <em>menu</em>, and <em>edit</em>) on the
@@ -198,7 +202,7 @@ in future as the required infrastructure for them will be added.</p>
         $keybindings{'main'}-&gt;{'q'} = \&amp;quit_wrapper;</pre>
 <p><strong>TODO</strong></p>
 </dd>
-<dt><strong><a name="item__actbindings">%actbindings</a></strong></dt>
+<dt><strong><a name="_actbindings" class="item">%actbindings</a></strong></dt>
 
 <dd>
 <p>This hash is keyed by the keymap name (<em>main</em>, <em>menu</em>, and <em>edit</em>) on the
@@ -217,7 +221,7 @@ from another possible occurence.</p>
         push(@{$keybindings{'main'}-&gt;{\&amp;quit_wrapper}}, 'q');</pre>
 <p><strong>TODO</strong></p>
 </dd>
-<dt><strong><a name="item_conf_eval">ELinks::conf_eval($string)</a></strong></dt>
+<dt><strong><a name="conf_eval" class="item">ELinks::conf_eval($string)</a></strong></dt>
 
 <dd>
 <p>This function takes the supplied <em>$string</em> and evaluates it as a [set of]
@@ -239,14 +243,14 @@ array signifies successful evaluation.</p>
 construing complex custom dialogs from widgets is described in the CUSTOM
 DIALOGS section.</p>
 <dl>
-<dt><strong><a name="item_alert">ELinks::alert(...)</a></strong></dt>
+<dt><strong><a name="alert" class="item">ELinks::alert(...)</a></strong></dt>
 
 <dd>
 <p>This function shows a trivial window containing only the supplied text and an
 <code>[ OK ]</code> button.</p>
 <p>The function takes either a single parameter with the text, or a hash with the
-<em>message</em> and optional <em>title</em> key. The window title defaults to ``Perl
-Alert'').</p>
+<em>message</em> and optional <em>title</em> key. The window title defaults to &quot;Perl
+Alert&quot;).</p>
 <p>The function returns nothing (or rather, anything).</p>
 <p><strong>Example:</strong></p>
 <pre>
@@ -255,14 +259,14 @@ Alert'').</p>
                       message =&gt; 'I must not fear. Fear is the mind-killer...');</pre>
 <p><strong>TODO</strong></p>
 </dd>
-<dt><strong><a name="item_confirm">ELinks::confirm(...)</a></strong></dt>
+<dt><strong><a name="confirm" class="item">ELinks::confirm(...)</a></strong></dt>
 
 <dd>
 <p>This function shows a simple window containing only the supplied text and two
 <code>[ Yes ]</code> and <code>[ No ]</code> buttons.</p>
 <p>The function takes either a single parameter with the text, or a hash with the
-<em>message</em> and optional <em>title</em> (window title) key, which defaults to ``Perl
-Confirmation''. You can also pass optional <em>yes</em> and <em>no</em> keys, changing the
+<em>message</em> and optional <em>title</em> (window title) key, which defaults to &quot;Perl
+Confirmation&quot;. You can also pass optional <em>yes</em> and <em>no</em> keys, changing the
 default button labels.</p>
 <p>The function returns true if the yes button was pressed, false otherwise.</p>
 <p><strong>Example:</strong></p>
@@ -278,15 +282,15 @@ default button labels.</p>
                 { ELinks::alert('*Smack*'); }</pre>
 <p><strong>TODO</strong></p>
 </dd>
-<dt><strong><a name="item_inputbox">ELinks::inputbox(...)</a></strong></dt>
+<dt><strong><a name="inputbox" class="item">ELinks::inputbox(...)</a></strong></dt>
 
 <dd>
 <p>This functionn shows a simple window containing the supplied label, an input
 box, and the <code>[ OK ]</code> and <code>[ Cancel ]</code> buttons. So it will look like e.g.
 the Goto URL dialog.</p>
 <p>The function takes either a single parameter with the label, or a hash with the
-<em>label</em> and and optional <em>title</em> (window title) key, which defaults to ``Perl
-Input''.</p>
+<em>label</em> and and optional <em>title</em> (window title) key, which defaults to &quot;Perl
+Input&quot;.</p>
 <p>The function returns the input value if the OK button was pressed, undef
 otherwise.</p>
 <p><strong>Example:</strong></p>

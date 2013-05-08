@@ -35,7 +35,7 @@
 #include "util/env.h"
 #include "util/string.h"
 
-static struct option_info cgi_options[] = {
+static union option_info cgi_options[] = {
 	INIT_OPT_TREE("protocol.file", N_("Local CGI"),
 		"cgi", 0,
 		N_("Local CGI specific options.")),
@@ -308,7 +308,6 @@ execute_cgi(struct connection *conn)
 {
 	unsigned char *last_slash;
 	unsigned char *script;
-	int scriptlen;
 	struct stat buf;
 	pid_t pid;
 	struct connection_state state = connection_state(S_OK);
@@ -327,7 +326,6 @@ execute_cgi(struct connection *conn)
 		goto end2;
 	}
 	decode_uri(script);
-	scriptlen = strlen(script);
 
 	if (stat(script, &buf) || !(S_ISREG(buf.st_mode))
 		|| !(buf.st_mode & S_IXUSR)) {

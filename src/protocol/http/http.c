@@ -91,7 +91,7 @@ static struct auth_entry proxy_auth;
 static unsigned char *accept_charset = NULL;
 
 
-static struct option_info http_options[] = {
+static union option_info http_options[] = {
 	INIT_OPT_TREE("protocol", N_("HTTP"),
 		"http", 0,
 		N_("HTTP-specific options.")),
@@ -1121,16 +1121,12 @@ decompress_data(struct connection *conn, unsigned char *data, int len,
 
 		did_read = read_encoded(conn->stream, output + *new_len, BIG_READ);
 
-		/* Do not break from the loop if did_read == 0.  It
-		 * means no decoded data is available yet, but some may
-		 * become available later.  This happens especially with
-		 * the bzip2 decoder, which needs an entire compressed
-		 * block as input before it generates any output.  */
-		if (did_read < 0) {
+		if (did_read > 0)
+			*new_len += did_read;
+		else if (did_read != READENC_EAGAIN) {
 			state = FINISHING;
 			break;
 		}
-		*new_len += did_read;
 	} while (len || (did_read == BIG_READ));
 
 	if (state == FINISHING) shutdown_connection_stream(conn);
