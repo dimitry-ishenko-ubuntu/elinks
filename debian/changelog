@@ -1,3 +1,12 @@
+elinks (0.12~pre6-2) unstable; urgency=low
+
+  * Remove 05_skip-xmlto-validation.diff, no longer needed. Thanks to
+    Ahmed El-Mahmoudy for the report.
+  * Pass --disable-silent-rules to configure to avoid silent build
+    logs. Tools like blhc and toolchain maintainers need full logs.
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Wed, 18 Sep 2013 16:43:12 +0200
+
 elinks (0.12~pre6-1) unstable; urgency=low
 
   * New upstream release

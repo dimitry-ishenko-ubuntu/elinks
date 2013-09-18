@@ -133,11 +133,11 @@ build-arch-stamp: patch-stamp save-stamp
 	mkdir $(CURDIR)/build-main && cd $(CURDIR)/build-main && \
 		$(CURDIR)/configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		$(confopts_main) CPPFLAGS="$(CPPFLAGS_COMMON)" CFLAGS="$(CFLAGS_COMMON)" LDFLAGS="$(LDFLAGS_COMMON)"
-	$(MAKE) -C $(CURDIR)/build-main
+	$(MAKE) -C $(CURDIR)/build-main V=1
 	mkdir $(CURDIR)/build-lite && cd $(CURDIR)/build-lite && \
 		$(CURDIR)/configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		$(confopts_lite) CPPFLAGS="$(CPPFLAGS_COMMON)" CFLAGS="$(CFLAGS_COMMON) $(CFLAGS_LITE)" LDFLAGS="$(LDFLAGS_COMMON)"
-	$(MAKE) -C $(CURDIR)/build-lite
+	$(MAKE) -C $(CURDIR)/build-lite V=1
 	touch $@
 
 build-indep: build-indep-stamp
