@@ -1,3 +1,16 @@
+elinks (0.12~pre6-3) unstable; urgency=low
+
+  * Flip Maintainers/Uploaders, Giridhar has been inactive for a while
+  * Drop the elinks-lite package. It was introduced nearly ten years ago
+    and the potential saving in disk space is negligable these days.
+    Also, many of the previously used external libs/bindings (Guile, 
+    Ruby, Spidermonkey and Python) are no longer used in the current
+    elinks package. elinks-lite is now a transition package to elinks.
+  * Fix smart url for current IMDB site, thanks to Matthew Fischer for
+    the patch (Closes: #728143)	
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Wed, 13 Nov 2013 22:55:35 +0100
+
 elinks (0.12~pre6-2) unstable; urgency=low
 
   * Remove 05_skip-xmlto-validation.diff, no longer needed. Thanks to

@@ -9,8 +9,6 @@ export DH_OPTIONS
 export DH_ALWAYS_EXCLUDE=.gitignore
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
-
-
 version=`dpkg-parsechangelog -ldebian/changelog | grep 'Version: ' | sed 's/Version: //g'`
 
 # These are used for cross-compiling and for saving the configure script
@@ -26,14 +24,6 @@ LDFLAGS_COMMON += `dpkg-buildflags --get LDFLAGS`
 
 CPPFLAGS_COMMON = `dpkg-buildflags --get CPPFLAGS`
 
-ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-	CFLAGS_COMMON += -O0
-	CFLAGS_LITE=
-else
-	CFLAGS_COMMON += -O2
-	CFLAGS_LITE=-Os -fno-inline
-endif
-
 confopts = --prefix=/usr \
 	--mandir=\$${prefix}/share/man \
 	--infodir=\$${prefix}/share/info \
@@ -42,9 +32,7 @@ confopts = --prefix=/usr \
 	--without-openssl \
 	--without-x \
 	--enable-finger \
-	--with-gnutls=/usr
-
-confopts_main = $(confopts) \
+	--with-gnutls=/usr \
 	--disable-nntp \
 	--enable-88-colors \
 	--enable-256-colors \
@@ -62,32 +50,6 @@ confopts_main = $(confopts) \
 	--disable-bittorrent \
 	--disable-debug \
 	--without-spidermonkey
-
-confopts_lite = $(confopts) \
-	--disable-nntp \
-	--disable-256-colors \
-	--disable-leds \
-	--disable-nls \
-	--disable-formhist \
-	--disable-xbel \
-	--disable-data \
-	--disable-uri-rewrite \
-	--disable-smb \
-	--disable-mouse \
-	--disable-marks \
-	--disable-css \
-	--disable-backtrace \
-	--disable-sm-scripting \
-	--enable-fastmem \
-	--enable-small \
-	--without-gpm \
-	--without-perl \
-	--without-spidermonkey \
-	--without-zlib \
-	--without-bzlib \
-	--without-idn \
-	--without-lua \
-	--without-tre
 
 save-upstream: patch save-stamp
 patch: patch-stamp
@@ -107,8 +69,6 @@ save-stamp:
 	dh_testdir
 	rm -f debian/elinks.conf
 	cat debian/elinks.config | sed "s/%v/$(version)/g" > debian/elinks.conf
-	rm -f debian/elinks-lite.conf
-	cat debian/elinks.config | sed "s/%v/$(version)-lite/g" > debian/elinks-lite.conf
 	# Add here commands to configure the package.
 ifneq "$(wildcard /usr/share/misc/config.sub)" ""
 	[ ! -f config/config.sub ] || mv -f config/config.sub config/config.sub.ups
@@ -132,12 +92,8 @@ build-arch: build-arch-stamp
 build-arch-stamp: patch-stamp save-stamp
 	mkdir $(CURDIR)/build-main && cd $(CURDIR)/build-main && \
 		$(CURDIR)/configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
-		$(confopts_main) CPPFLAGS="$(CPPFLAGS_COMMON)" CFLAGS="$(CFLAGS_COMMON)" LDFLAGS="$(LDFLAGS_COMMON)"
+		$(confopts) CPPFLAGS="$(CPPFLAGS_COMMON)" CFLAGS="$(CFLAGS_COMMON)" LDFLAGS="$(LDFLAGS_COMMON)"
 	$(MAKE) -C $(CURDIR)/build-main V=1
-	mkdir $(CURDIR)/build-lite && cd $(CURDIR)/build-lite && \
-		$(CURDIR)/configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
-		$(confopts_lite) CPPFLAGS="$(CPPFLAGS_COMMON)" CFLAGS="$(CFLAGS_COMMON) $(CFLAGS_LITE)" LDFLAGS="$(LDFLAGS_COMMON)"
-	$(MAKE) -C $(CURDIR)/build-lite V=1
 	touch $@
 
 build-indep: build-indep-stamp
@@ -150,7 +106,7 @@ clean-patched:
 	dh_testdir
 	dh_testroot
 	rm -f build-arch-stamp build-indep-stamp save-stamp
-	rm -rf build-lite build-main
+	rm -rf build-main
 	[ ! -f doc/man/man5/elinkskeys.5.ups ] || mv -f doc/man/man5/elinkskeys.5.ups doc/man/man5/elinkskeys.5
 	[ ! -f doc/man/man5/elinks.conf.5.ups ] || mv -f doc/man/man5/elinks.conf.5.ups doc/man/man5/elinks.conf.5
 	[ ! -f doc/man/man1/elinks.1.in.ups ] || mv -f doc/man/man1/elinks.1.in.ups doc/man/man1/elinks.1.in
@@ -158,7 +114,6 @@ clean-patched:
 	[ ! -f config.h.ups ] || mv -f config.h.ups config.h
 	[ ! -f config/config.guess.ups ] || mv -f config/config.guess.ups config/config.guess
 	[ ! -f config/config.sub.ups ] || mv -f config/config.sub.ups config/config.sub
-	rm -f debian/elinks-lite.conf
 	rm -f debian/elinks.conf
 	rm -rf debian/tmp.elinks-data
 	rm -rf docbook2html-dir
@@ -198,10 +153,6 @@ install-arch:
 	$(MAKE) -C build-main DESTDIR=$(CURDIR)/debian/elinks install
 	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks.conf \
 		$(CURDIR)/debian/elinks/etc/elinks/elinks.conf
-	# Install elinks-lite binaries and elinks.conf
-	$(MAKE) -C build-lite DESTDIR=$(CURDIR)/debian/elinks-lite install
-	install -o root -g root -p -D -m 0644 $(CURDIR)/debian/elinks-lite.conf \
-		$(CURDIR)/debian/elinks-lite/etc/elinks/elinks.conf
 	# Move elinks arch-indep parts to temp location for elinks-data
 	mkdir -p $(CURDIR)/debian/tmp.elinks-data/usr/
 	mv -f $(CURDIR)/debian/elinks/usr/share $(CURDIR)/debian/tmp.elinks-data/usr/
