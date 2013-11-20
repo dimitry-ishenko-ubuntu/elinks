@@ -51,19 +51,7 @@ confopts = --prefix=/usr \
 	--disable-debug \
 	--without-spidermonkey
 
-save-upstream: patch save-stamp
-patch: patch-stamp
-patch-stamp:
-	mkdir -p debian/patched
-	for pfile in debian/patches/*.diff; do \
-		[ -f "$$pfile" ] || continue; \
-		pname="$$(basename $$pfile .diff)"; \
-		[ ! -f "debian/patched/$$pname.patched" ] || continue; \
-		echo "### Applying patch $$pname"; \
-		patch -p1 -N < $$pfile; \
-		cp -f "$$pfile" "debian/patched/$$pname.patched"; \
-	done
-	touch $@
+save-upstream: save-stamp
 
 save-stamp:
 	dh_testdir
@@ -89,7 +77,7 @@ endif
 build: build-arch build-indep
 
 build-arch: build-arch-stamp
-build-arch-stamp: patch-stamp save-stamp
+build-arch-stamp: save-stamp
 	mkdir $(CURDIR)/build-main && cd $(CURDIR)/build-main && \
 		$(CURDIR)/configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		$(confopts) CPPFLAGS="$(CPPFLAGS_COMMON)" CFLAGS="$(CFLAGS_COMMON)" LDFLAGS="$(LDFLAGS_COMMON)"
@@ -97,11 +85,11 @@ build-arch-stamp: patch-stamp save-stamp
 	touch $@
 
 build-indep: build-indep-stamp
-build-indep-stamp: patch-stamp save-stamp
+build-indep-stamp: save-stamp
 	$(MAKE) -C $(CURDIR)/build-main/doc all-docs
 	touch $@
 
-clean: clean-patched unpatch
+clean: clean-patched
 clean-patched:
 	dh_testdir
 	dh_testroot
@@ -118,17 +106,6 @@ clean-patched:
 	rm -rf debian/tmp.elinks-data
 	rm -rf docbook2html-dir
 	dh_clean 
-
-unpatch:
-	for pfile in debian/patched/*.patched ; do \
-		[ -f "$$pfile" ] || continue; \
-		pname="$$(basename $$pfile .patched)"; \
-		[ -f "debian/patches/$$pname.diff" ] || continue; \
-		echo "### Reverting patch $$pname"; \
-		patch -p1 -N -R < $$pfile; \
-		rm -f "debian/patched/$$pname.patched"; \
-	done
-	rm -rf debian/patched patch-stamp
 
 install: install-indep install-arch
 install-indep:
@@ -190,4 +167,4 @@ binary-arch: build-arch install-arch
 	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
 
 binary: binary-arch binary-indep
-.PHONY: build clean binary-indep binary-arch binary install install-indep install-arch patch unpatch save-upstream
+.PHONY: build clean binary-indep binary-arch binary install install-indep install-arch save-upstream

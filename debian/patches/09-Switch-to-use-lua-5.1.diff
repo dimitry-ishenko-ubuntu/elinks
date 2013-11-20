@@ -10,11 +10,11 @@ Subject: [PATCH] Switch to use lua 5.1
  src/scripting/lua/hooks.c |    2 +-
  4 files changed, 15 insertions(+), 9 deletions(-)
 
-diff --git a/configure.in b/configure.in
-index 155358e..56a4d9d 100644
---- a/configure.in
-+++ b/configure.in
-@@ -883,6 +883,16 @@ if test -z "$disable_lua"; then
+Index: elinks-0.12~pre6/configure.in
+===================================================================
+--- elinks-0.12~pre6.orig/configure.in	2012-10-28 13:57:15.000000000 +0100
++++ elinks-0.12~pre6/configure.in	2013-11-20 11:35:54.750218506 +0100
+@@ -833,6 +833,16 @@
  	if test ! -d "$withval"; then
  		withval="";
  	fi
@@ -31,11 +31,11 @@ index 155358e..56a4d9d 100644
  	for luadir in "$withval" "" /usr /usr/local; do
  		for suffix in "" 50; do
  			if test "$cf_result" = no && ( test -f "$luadir/include/lua.h" || \
-diff --git a/src/scripting/lua/core.c b/src/scripting/lua/core.c
-index 8aec3a9..2fc534c 100644
---- a/src/scripting/lua/core.c
-+++ b/src/scripting/lua/core.c
-@@ -658,7 +658,7 @@ do_hooks_file(LS, unsigned char *prefix, unsigned char *filename)
+Index: elinks-0.12~pre6/src/scripting/lua/core.c
+===================================================================
+--- elinks-0.12~pre6.orig/src/scripting/lua/core.c	2012-10-28 13:57:15.000000000 +0100
++++ elinks-0.12~pre6/src/scripting/lua/core.c	2013-11-20 11:35:54.750218506 +0100
+@@ -658,7 +658,7 @@
  	if (file_can_read(file)) {
  		int oldtop = lua_gettop(S);
  
@@ -44,7 +44,7 @@ index 8aec3a9..2fc534c 100644
  			sleep(3); /* Let some time to see error messages. */
  		lua_settop(S, oldtop);
  	}
-@@ -671,11 +671,7 @@ init_lua(struct module *module)
+@@ -671,11 +671,7 @@
  {
  	L = lua_open();
  
@@ -57,7 +57,7 @@ index 8aec3a9..2fc534c 100644
  
  	lua_register(L, LUA_ALERT, l_alert);
  	lua_register(L, "current_url", l_current_url);
-@@ -780,7 +776,7 @@ handle_ret_eval(struct session *ses)
+@@ -780,7 +776,7 @@
  		int oldtop = lua_gettop(L);
  
  		if (prepare_lua(ses) == 0) {
@@ -66,11 +66,11 @@ index 8aec3a9..2fc534c 100644
  			lua_settop(L, oldtop);
  			finish_lua();
  		}
-diff --git a/src/scripting/lua/hooks.c b/src/scripting/lua/hooks.c
-index d79ad80..6613c50 100644
---- a/src/scripting/lua/hooks.c
-+++ b/src/scripting/lua/hooks.c
-@@ -200,7 +200,7 @@ static enum evhook_status
+Index: elinks-0.12~pre6/src/scripting/lua/hooks.c
+===================================================================
+--- elinks-0.12~pre6.orig/src/scripting/lua/hooks.c	2012-10-28 13:57:15.000000000 +0100
++++ elinks-0.12~pre6/src/scripting/lua/hooks.c	2013-11-20 11:35:54.750218506 +0100
+@@ -200,7 +200,7 @@
  script_hook_quit(va_list ap, void *data)
  {
  	if (!prepare_lua(NULL)) {
@@ -79,6 +79,3 @@ index d79ad80..6613c50 100644
  		finish_lua();
  	}
  
--- 
-1.7.10
-

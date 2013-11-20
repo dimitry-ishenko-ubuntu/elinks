@@ -1,3 +1,18 @@
+elinks (0.12~pre6-4) unstable; urgency=low
+
+  * Switch to source format 3 (quilt) and drop previously used custom
+    patch system
+  * Remove 01_setup-bugs-FSSTND.diff (don't hide upstream bugzilla, users
+    are smart enough to choose the appropriate BTS)
+  * Cleanup www-browser alternative upon removal, thanks Andreas Beckmann!
+    (Closes: #730056)
+  * Copy full license for the BSD-licensed code and stop referring to
+    /usr/share/common-licenses/BSD, spotted by Lintian
+  * Add Replaces/Breaks for old elinks-lite packages, thanks Andreas Beckmann!
+    (Closes: #730265)
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Thu, 21 Nov 2013 00:20:46 +0100
+
 elinks (0.12~pre6-3) unstable; urgency=low
 
   * Flip Maintainers/Uploaders, Giridhar has been inactive for a while

@@ -1,9 +1,10 @@
 Backport of upstream commits b228fe82ab7c8bf79f7ab67b957e4fe72708ff58 and
 2d8fd9cecfc7c71ade541f9a0593a62244e0bdc8.
 
-diff -aur elinks-0.12~pre5.orig//src/network/ssl/socket.c elinks-0.12~pre5/src/network/ssl/socket.c
---- elinks-0.12~pre5.orig//src/network/ssl/socket.c	2009-07-07 14:23:17.000000000 +0200
-+++ elinks-0.12~pre5/src/network/ssl/socket.c	2011-11-06 11:34:55.000000000 +0100
+Index: elinks-0.12~pre6/src/network/ssl/socket.c
+===================================================================
+--- elinks-0.12~pre6.orig/src/network/ssl/socket.c	2012-10-28 13:57:15.000000000 +0100
++++ elinks-0.12~pre6/src/network/ssl/socket.c	2013-11-20 11:35:54.514215938 +0100
 @@ -70,14 +70,9 @@
  	((ssl_t *) socket->ssl)->options |= SSL_OP_NO_TLSv1;
  #elif defined(CONFIG_GNUTLS)
@@ -62,10 +63,10 @@ diff -aur elinks-0.12~pre5.orig//src/network/ssl/socket.c elinks-0.12~pre5/src/n
  #endif
  				break;
  
-Nur in elinks-0.12~pre5/src/network/ssl: socket.c~.
-diff -aur elinks-0.12~pre5.orig//src/network/ssl/ssl.c elinks-0.12~pre5/src/network/ssl/ssl.c
---- elinks-0.12~pre5.orig//src/network/ssl/ssl.c	2009-07-07 14:23:17.000000000 +0200
-+++ elinks-0.12~pre5/src/network/ssl/ssl.c	2011-11-06 11:33:12.000000000 +0100
+Index: elinks-0.12~pre6/src/network/ssl/ssl.c
+===================================================================
+--- elinks-0.12~pre6.orig/src/network/ssl/ssl.c	2012-10-28 13:57:15.000000000 +0100
++++ elinks-0.12~pre6/src/network/ssl/ssl.c	2013-11-20 11:35:54.514215938 +0100
 @@ -264,12 +264,15 @@
  #else
  	gnutls_set_default_priority(*state);
