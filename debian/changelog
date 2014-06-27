@@ -1,3 +1,17 @@
+elinks (0.12~pre6-5) unstable; urgency=medium
+
+  * Remove desktop file. Elinks is predominantly an application which
+    people use who run an X-less system or which is used for scripts.
+    A desktop file clutters the menu of the full-blown desktop
+    environments. And the Debian menu entry still stays around anyway.
+    (Closes: #748098)
+  * Build against libgnutls28-dev (Closes: #753023)	
+  * Bump standards version
+  * Convert copyright file to UTF8, spotted by Lintian
+  * Trim default value for protocol.http.user_agent in default config.
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Fri, 27 Jun 2014 17:05:07 +0200
+
 elinks (0.12~pre6-4) unstable; urgency=low
 
   * Switch to source format 3 (quilt) and drop previously used custom
