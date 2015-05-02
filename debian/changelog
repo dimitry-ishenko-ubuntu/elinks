@@ -1,3 +1,12 @@
+elinks (0.12~pre6-6) unstable; urgency=low
+
+  * Switch to a minimal rules file based on dh
+  * Remove transition package elinks-lite, jessie has been released
+  * Drop outdated README.source
+  * Trim the installed documentation
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Sun, 03 May 2015 00:14:34 +0200
+
 elinks (0.12~pre6-5) unstable; urgency=medium
 
   * Remove desktop file. Elinks is predominantly an application which

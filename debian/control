@@ -76,14 +76,4 @@ Description: advanced text-mode WWW browser - documentation
  .
  This package contains the documentation and manuals for ELinks.
 
-Package: elinks-lite
-Priority: extra
-Architecture: any
-Depends: elinks, ${misc:Depends}
-Description: advanced text-mode WWW browser (transitional package)
- ELinks is a feature-rich program for browsing the web in text mode.  It is
- like enhanced Lynx and Links.
- .
- This is a transitional package for the move from elinks-lite to elinks.
- It can be safely removed.
 
