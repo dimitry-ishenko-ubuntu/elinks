@@ -1,3 +1,11 @@
+elinks (0.12~pre6-7) unstable; urgency=low
+
+  * Actually bump debhelper to 9, this got lost on the way. Thanks, Simon.
+    (Closes: #784194)
+  * Trim postinst. Thanks, Jakub. (Closes: #784217)
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Tue, 05 May 2015 22:23:54 +0200
+
 elinks (0.12~pre6-6) unstable; urgency=low
 
   * Switch to a minimal rules file based on dh
