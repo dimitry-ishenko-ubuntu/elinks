@@ -1,3 +1,10 @@
+elinks (0.12~pre6-8) unstable; urgency=medium
+
+  * Make the build reproducible by stripping the __DATE__ and __TIME__
+    macros (only used in "elinks --version").
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Sun, 07 Jun 2015 12:22:04 +0200
+
 elinks (0.12~pre6-7) unstable; urgency=low
 
   * Actually bump debhelper to 9, this got lost on the way. Thanks, Simon.

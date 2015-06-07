@@ -4,3 +4,4 @@
 08_524696_fix_imdb_urls.diff
 08-drop-deprecated-gnutls-functions.diff
 09-Switch-to-use-lua-5.1.diff
+10-reproducible-build.diff

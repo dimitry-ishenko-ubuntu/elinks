@@ -1,0 +1,25 @@
+Description: Don't embed the build date
+ Debian strives for reproducible builds. Stop using the __DATE__ and __TIME__
+ macros which shown when running "elinks --version".
+Author: Moritz Muehlenhoff <jmm@debian.org>
+
+--- elinks-0.12~pre6.orig/src/main/version.c
++++ elinks-0.12~pre6/src/main/version.c
+@@ -100,8 +100,6 @@ get_dyn_full_version(struct terminal *te
+ 	}
+ 
+ 	add_char_to_string(&string, '\n');
+-	add_format_to_string(&string, _("Built on %s %s", term),
+-			     build_date, build_time);
+ 
+ 	if (more) {
+ 		add_to_string(&string, "\n\n");
+--- elinks-0.12~pre6.orig/src/vernum.c
++++ elinks-0.12~pre6/src/vernum.c
+@@ -8,6 +8,4 @@
+ 
+ #include "vernum.h"
+ 
+-unsigned char *build_date = __DATE__;
+-unsigned char *build_time = __TIME__;
+ unsigned char *build_id = BUILD_ID;
