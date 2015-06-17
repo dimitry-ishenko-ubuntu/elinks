@@ -7,7 +7,8 @@ Build-Depends: debhelper, libtre-dev, libgnutls28-dev, libidn11-dev,
 	libfsplib-dev, libgpm-dev [linux-any],
 	liblua5.1-dev, libbz2-dev, libexpat1-dev,
 	libperl-dev, libkrb5-dev, gettext,
-	autotools-dev, python, xmlto, docbook-utils, pkg-config
+	autotools-dev, python, xmlto, docbook-utils, pkg-config,
+        dh-autoreconf
 Build-Conflicts: libgc-dev
 Standards-Version: 3.9.5
 Homepage: http://elinks.cz/
