@@ -15,6 +15,7 @@ Homepage: http://elinks.cz/
 Package: elinks
 Architecture: any
 Depends: ${shlibs:Depends}, elinks-data (= ${source:Version}), ${misc:Depends}
+Pre-Depends: ${misc:Pre-Depends}
 Suggests: elinks-doc
 Provides: www-browser
 Description: advanced text-mode WWW browser
@@ -34,6 +35,7 @@ Description: advanced text-mode WWW browser
 Package: elinks-data
 Architecture: all
 Depends: ${misc:Depends}
+Pre-Depends: ${misc:Pre-Depends}
 Recommends: elinks (= ${source:Version})
 Conflicts: elinks (<< 0.11.3-1)
 Replaces: elinks (<< 0.11.3-1), elinks-lite (<< 0.12~pre6-3)
@@ -58,6 +60,7 @@ Package: elinks-doc
 Section: doc
 Architecture: all
 Depends: ${misc:Depends}
+Pre-Depends: ${misc:Pre-Depends}
 Suggests: elinks
 Conflicts: elinks (<< 0.11.3-1), elinks-lite (<< 0.11.3-1)
 Description: advanced text-mode WWW browser - documentation
