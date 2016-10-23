@@ -1,3 +1,9 @@
+elinks (0.12~pre6-12) unstable; urgency=medium
+
+  * Fix maint script (Closes: #788160)
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Sun, 23 Oct 2016 21:17:47 +0200
+
 elinks (0.12~pre6-11) unstable; urgency=medium
 
   * Add maint script for dir_to_symlink (Closes: #788160)
