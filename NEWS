@@ -5,8 +5,62 @@ You can see the complete list of recent changes, bugfixes and new features
 in the http://repo.or.cz/w/elinks.git[gitweb interface]. See the ChangeLog
 file for details.
 
+ELinks 0.12pre6
+---------------
+
+Security fix:
+
+* bug 1124, CVE-2012-4545: Do not delegate GSSAPI credentials in HTTP
+  Negotiate or GSS-Negotiate authentication.  Reported by Marko Myllynen.
+  (ELinks 0.12pre1 was the first release that supported GSSAPI; earlier
+  releases are not vulnerable.)
+
+Fixed crashes and hangs:
+
+* critical bug 943: Don't let user JavaScripts call any methods of
+  ``elinks.action'' in tabs that do not have the focus.  If a tab was
+  closed with ``elinks.action.tab_close'' while it had pop-up windows,
+  ELinks could crash; as a precaution, don't allow other actions
+  either.  (ELinks 0.12pre1 was the first release that supported
+  ``elinks.action''.)
+* critical bug 1083: Avoid an infinite loop when trying to decompress
+  malformed data.  Caused by the bug 1068 fix in ELinks 0.12pre3.
+* Fix a possible crash or information disclosure on big-endian 64-bit
+  systems using HTTP Negotiate or GSS-Negotiate authentication.
+
+Incompatibilities:
+
+* Dropped support for SEE.  (ELinks 0.12pre1 was the first release
+  that supported SEE.)
+* Guile 2.0.0 (released on 2011-02-16) changed its license to
+  LGPLv3-or-later, which is not compatible with the GPLv2 that covers
+  ELinks.  Also, Guile has deprecated many of the functions that
+  ELinks calls.
+
+Other changes:
+
+* major bug 764: Correctly initialize options on big-endian 64-bit
+  systems.
+* bug 983: Give preference to the Content-Type specified in the HTTP
+  header over that specified via the HTML meta tag.
+* bug 1084: Allow option names containing '+' and '*' in the option
+  manager.
+* bug 1112: Map most numeric character references &#x80; ... &#x9F;
+  to graphical characters also when the output charset is UTF-8.
+  (ELinks 0.12pre1 was the first release that supported UTF-8 as the
+  terminal charset, and ELinks 0.12pre5 was the first release that
+  supported UTF-8 as the dump charset.)
+* minor bug 1113: Fix a small memory leak if a mailcap file is malformed.
+* minor bug 1114: Decode SGML entities and NCRs only once in link/@title
+  and other attributes.
+* build: Fix several warnings reported by GCC 4.7.1.  Harmless at
+  runtime but could break the build if configured --enable-debug.
+  (This version does not fix all such warnings.)
+
 ELinks 0.12pre5:
 ----------------
+
+Released on 2009-07-08.
 
 * Debian bug 534835: Check the return values of some SpiderMonkey
   functions, to avoid crashes if out of memory.
@@ -29,8 +83,7 @@ Bugs that should be removed from NEWS before the 0.12.0 release:
 ELinks 0.12pre4:
 ----------------
 
-Released on 2009-05-31.  This release also included the changes listed
-under ``ELinks 0.11.6'' below.
+Released on 2009-05-31.
 
 Incompatibilities:
 
@@ -319,13 +372,15 @@ Changes in the experimental SGML/DOM implementation:
 * enhancement: incremental parsing
 * and more.
 
-ELinks 0.11.6.GIT now:
-----------------------
+ELinks 0.11.7:
+--------------
 
-To be released as 0.11.7.
+Released on 2009-08-22.
 
 * critical bug 1077: fix crash opening a ``javascript:'' link in a new
   tab
+* major bug 764: remove int/long/pointer type punning in union
+  option_value, especially harmful on sparc64
 
 ELinks 0.11.6:
 --------------
@@ -377,8 +432,8 @@ Released on 2008-06-20.
   that may have been collected as garbage.  This fix causes bug 954.
 * CVE-2007-2027: check if the program path contains "src/" before
   using ../po files
-* important Debian bug 380347: prevent a buffer overflow in entity_cache
-  and a possible subsequent crash
+* important Debian bug 380347, CVE-2008-7224: prevent a buffer
+  overflow in entity_cache and a possible subsequent crash
 * major bug 788: don't read STRLEN n_a, which isn't initialized by
   POPpx of Perl v5.8.8 and later
 * fix query parsing in file: URIs for local CGI (was broken in 0.11.3)

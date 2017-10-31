@@ -233,7 +233,6 @@ import_css_stylesheet(struct css_stylesheet *css, struct uri *base_uri,
 void
 html_focusable(struct html_context *html_context, unsigned char *a)
 {
-	struct document_options *options;
 	unsigned char *accesskey;
 	int cp;
 	int tabindex;
@@ -243,7 +242,6 @@ html_focusable(struct html_context *html_context, unsigned char *a)
 
 	if (!a) return;
 
-	options = html_context->options;
 	cp = html_context->doc_cp;
 
 	accesskey = get_attr_val(a, "accesskey", cp);
@@ -658,8 +656,10 @@ look_for_link(unsigned char **pos, unsigned char *eof, struct menu_item **menu,
 		unsigned char *alt = get_attr_val(attr, "alt", options->cp);
 
 		if (alt) {
+			/* CSM_NONE because get_attr_val() already
+			 * decoded entities.  */
 			label = convert_string(ct, alt, strlen(alt),
-			                       options->cp, CSM_DEFAULT,
+			                       options->cp, CSM_NONE,
 			                       NULL, NULL, NULL);
 			mem_free(alt);
 		} else {
@@ -858,7 +858,11 @@ done_html_parser_state(struct html_context *html_context,
 
 /* This function does not set html_context.doc_cp = document.cp,
  * because it does not know the document, and because the codepage has
- * not even been decided when it is called.  */
+ * not even been decided when it is called.
+ *
+ * @param[out] title
+ *   The title of the document.  This is in the document charset,
+ *   and entities have not been decoded.  */
 struct html_context *
 init_html_parser(struct uri *uri, struct document_options *options,
 		 unsigned char *start, unsigned char *end,
