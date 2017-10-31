@@ -22,6 +22,9 @@
 #include "util/string.h"
 #include "vernum.h"
 
+#if defined(CONFIG_LIBEV) || defined(CONFIG_LIBEVENT)
+extern int event_enabled;
+#endif 
 
 static void
 add_module_to_string(struct string *string, struct module *module,
@@ -70,7 +73,7 @@ wrap_string(struct string *string, int start_at, int maxlen)
 	if (maxlen <= 0) return;
 
 	pos = start_pos = &string->source[start_at];
-	while ((pos = strchr(pos, ' '))) {
+	while ((pos = strchr((const char *)pos, ' '))) {
 		int len = pos - start_pos;
 
 		if (len < maxlen) {
@@ -128,6 +131,9 @@ get_dyn_full_version(struct terminal *term, int more)
 #ifdef CONFIG_IPV6
 		comma, "IPv6",
 #endif
+#ifdef CONFIG_BROTLI
+		comma, "brotli",
+#endif
 #ifdef CONFIG_GZIP
 		comma, "gzip",
 #endif
@@ -143,6 +149,18 @@ get_dyn_full_version(struct terminal *term, int more)
 #ifdef CONFIG_UTF8
 		comma, "UTF-8",
 #endif
+#ifdef CONFIG_COMBINE
+		comma, _("Combining characters", term),
+#endif
+#ifdef CONFIG_LIBEV
+		comma, (event_enabled ? _("libev", term) : _("libev (disabled)", term)),
+#endif
+#ifdef CONFIG_LIBEVENT
+		comma, (event_enabled ? _("libevent", term) : _("libevent (disabled)", term)),
+#endif
+#ifdef CONFIG_TERMINFO
+		comma, (get_cmd_opt_bool("terminfo") ? _("terminfo", term) : _("terminfo (disabled)", term)),
+#endif
 		comma,
 		(unsigned char *) NULL
 	);
@@ -151,7 +169,7 @@ get_dyn_full_version(struct terminal *term, int more)
 
 	if (!more) {
 		int start_at = 0;
-		unsigned char *last_newline = strrchr(string.source, '\n');
+		unsigned char *last_newline = strrchr((const char *)string.source, '\n');
 
 		if (last_newline) {
 			start_at = last_newline - string.source + 1;

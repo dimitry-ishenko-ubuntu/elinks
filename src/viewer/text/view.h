@@ -14,6 +14,9 @@ struct terminal;
  * But doesn't free() the @a doc_view. */
 void detach_formatted(struct document_view *doc_view);
 
+enum frame_event_status move_current_top(struct session *ses, struct document_view *doc_view);
+enum frame_event_status move_half_page_down(struct session *ses, struct document_view *doc_view);
+enum frame_event_status move_half_page_up(struct session *ses, struct document_view *doc_view);
 enum frame_event_status move_page_down(struct session *ses, struct document_view *doc_view);
 enum frame_event_status move_page_up(struct session *ses, struct document_view *doc_view);
 enum frame_event_status move_link(struct session *ses, struct document_view *doc_view,
@@ -39,6 +42,8 @@ enum frame_event_status scroll_up(struct session *ses, struct document_view *doc
 enum frame_event_status scroll_down(struct session *ses, struct document_view *doc_view);
 enum frame_event_status scroll_left(struct session *ses, struct document_view *doc_view);
 enum frame_event_status scroll_right(struct session *ses, struct document_view *doc_view);
+enum frame_event_status horizontal_scroll_extended(struct session *ses, struct document_view *doc_view, int steps, int extended);
+enum frame_event_status vertical_scroll(struct session *ses, struct document_view *doc_view, int steps);
 
 enum frame_event_status move_document_start(struct session *ses, struct document_view *doc_view);
 enum frame_event_status move_document_end(struct session *ses, struct document_view *doc_view);
@@ -91,6 +96,8 @@ void send_event(struct session *, struct term_event *);
 enum frame_event_status save_formatted_dlg(struct session *ses, struct document_view *doc_view, int xxxx);
 enum frame_event_status view_image(struct session *ses, struct document_view *doc_view, int xxxx);
 enum frame_event_status download_link(struct session *ses, struct document_view *doc_view, action_id_T action_id);
+
+void open_link_dialog(struct session *ses);
 
 /** @}  */
 

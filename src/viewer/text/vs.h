@@ -11,6 +11,10 @@ struct session;
 struct uri;
 
 struct view_state {
+#ifdef CONFIG_SCRIPTING_SPIDERMONKEY
+	struct JSObject *jsobject; /* Instance of view_state_class */
+#endif
+
 	struct document_view *doc_view;
 	struct uri *uri;
 
@@ -32,6 +36,7 @@ struct view_state {
 	 * or -1 of none.  */
 	int current_link;
 	int old_current_link;
+	int current_search_number;
 
 	int plain;
 	unsigned int wrap:1;

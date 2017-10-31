@@ -15,9 +15,6 @@
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
-#ifdef HAVE_SYS_SIGNAL_H
-#include <sys/signal.h>
-#endif
 #include <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>	/* Need to be after sys/types.h */
@@ -413,7 +410,7 @@ set_window_title(unsigned char *title, int codepage)
 
 #ifndef HAVE_SYS_CYGWIN_H
 	/* Check if we're in a xterm-like terminal. */
-	if (!is_xterm() && !is_gnuscreen()) return;
+	if (!is_xterm()) return;
 #endif
 
 	if (!init_string(&filtered)) return;

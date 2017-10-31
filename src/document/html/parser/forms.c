@@ -96,12 +96,12 @@ html_form(struct html_context *html_context, unsigned char *a,
 		form->action = get_uri_string(html_context->base_href, components);
 
 		/* No action URI should contain post data */
-		assert(!form->action || !strchr(form->action, POST_CHAR));
+		assert(!form->action || !strchr((const char *)form->action, POST_CHAR));
 
 		/* GET method URIs should not have '?'. */
 		assert(!form->action
 			|| form->method != FORM_METHOD_GET
-			|| !strchr(form->action, '?'));
+			|| !strchr((const char *)form->action, '?'));
 	}
 
 	al = get_target(html_context->options, a);
@@ -195,7 +195,7 @@ html_input_format(struct html_context *html_context, unsigned char *a,
 	html_stack_dup(html_context, ELEMENT_KILLABLE);
 	html_focusable(html_context, a);
 	format.form = fc;
-	if (format.title) mem_free(format.title);
+	mem_free_if(format.title);
 	format.title = get_attr_val(a, "title", html_context->doc_cp);
 	switch (fc->type) {
 		case FC_TEXT:
@@ -316,8 +316,8 @@ html_input(struct html_context *html_context, unsigned char *a,
 	if (fc->size == -1)
 		fc->size = html_context->options->default_form_input_size;
 	fc->size++;
-	if (fc->size > html_context->options->box.width)
-		fc->size = html_context->options->box.width;
+	if (fc->size > html_context->options->document_width)
+		fc->size = html_context->options->document_width;
 	fc->maxlength = get_num(a, "maxlength", cp);
 	if (fc->maxlength == -1) fc->maxlength = INT_MAX;
 	if (fc->type == FC_CHECKBOX || fc->type == FC_RADIO)
@@ -494,10 +494,10 @@ end_parse:
 	fc->labels = labels;
 
 	menu_labels(fc->menu, "", labels);
-	put_chrs(html_context, "[", 1);
 	html_stack_dup(html_context, ELEMENT_KILLABLE);
 	format.form = fc;
 	format.style.attr |= AT_BOLD;
+	put_chrs(html_context, "[&nbsp;", 7);
 
 	max_width = 0;
 	for (i = 0; i < order; i++) {
@@ -514,8 +514,8 @@ end_parse:
 	for (i = 0; i < max_width; i++)
 		put_chrs(html_context, "_", 1);
 
+	put_chrs(html_context, "&nbsp;]", 7);
 	pop_html_element(html_context);
-	put_chrs(html_context, "]", 1);
 	html_context->special_f(html_context, SP_CONTROL, fc);
 }
 
@@ -678,8 +678,8 @@ pp:
 		cols = html_context->options->default_form_input_size;
 	cols++; /* Add 1 column, other browsers may have different
 		   behavior here (mozilla adds 2) --Zas */
-	if (cols > html_context->options->box.width)
-		cols = html_context->options->box.width;
+	if (cols > html_context->options->document_width)
+		cols = html_context->options->document_width;
 	fc->cols = cols;
 
 	rows = get_num(attr, "rows", html_context->doc_cp);

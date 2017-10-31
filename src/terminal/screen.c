@@ -21,6 +21,9 @@
 #include "terminal/kbd.h"
 #include "terminal/screen.h"
 #include "terminal/terminal.h"
+#ifdef CONFIG_TERMINFO
+#include "terminal/terminfo.h"
+#endif
 #include "util/conv.h"
 #include "util/error.h"
 #include "util/memory.h"
@@ -174,6 +177,16 @@ static const struct string vt100_frame_seqs[] = {
 	/* begin border: */	TERM_STRING("\x0e"),
 };
 
+/** Italic begin/end sequences using ECMA-48 SGR.
+ * ECMA-48: CSI Ps... 06/13 = SGR - SELECT GRAPHIC RENDITION
+ * - Ps =  3 = italicized
+ * - Ps = 20 = Fraktur (Gothic)
+ * - Ps = 23 = not italicized, not fraktur */
+static const struct string italic_seqs[] = {
+	/* end italics: */	TERM_STRING("\033[23m"),
+	/* begin italics: */	TERM_STRING("\033[3m"),
+};
+
 /** Underline begin/end sequences using ECMA-48 SGR.
  * ECMA-48: CSI Ps... 06/13 = SGR - SELECT GRAPHIC RENDITION
  * - Ps =  4 = singly underlined
@@ -182,6 +195,65 @@ static const struct string vt100_frame_seqs[] = {
 static const struct string underline_seqs[] = {
 	/* end underline: */	TERM_STRING("\033[24m"),
 	/* begin underline: */	TERM_STRING("\033[4m"),
+};
+
+/* elinks --dump has a separate implementation of color-changing
+ * sequences and does not use these.  */
+#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
+static const struct string color256_seqs[] = {
+	/* foreground: */	TERM_STRING("\033[0;38;5;%dm"),
+	/* background: */	TERM_STRING("\033[48;5;%dm"),
+};
+
+static const struct string fbterm_color256_seqs[] = {
+	/* foreground: */	TERM_STRING("\033[m\033[1;%d}"),
+	/* background: */	TERM_STRING("\033[2;%d}"),
+};
+#endif
+
+struct screen_driver_opt {
+	/** Charsets when doing UTF-8 I/O.
+	 * [0] is the common charset and [1] is the frame charset.
+	 * Test whether to use UTF-8 I/O using the use_utf8_io() macro.  */
+	int charsets[2];
+
+	/** The frame translation table. May be NULL. */
+	const unsigned char *frame;
+
+	/** The frame mode setup and teardown sequences. May be NULL. */
+	const struct string *frame_seqs;
+
+	/** The italic mode setup and teardown sequences. May be NULL. */
+	const struct string *italic;
+
+	/** The underline mode setup and teardown sequences. May be NULL. */
+	const struct string *underline;
+
+	/** The color mode */
+	enum color_mode color_mode;
+
+#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
+	const struct string *color256_seqs;
+#endif
+	/** These are directly derived from the terminal options. */
+	unsigned int transparent:1;
+
+#ifdef CONFIG_UTF8
+	/* Whether the charset of the terminal is UTF-8.  This
+	 * is the same as is_cp_utf8(charsets[0]), except the
+	 * latter might crash if UTF-8 I/O is disabled.  */
+	unsigned int utf8_cp:1;
+#endif /* CONFIG_UTF8 */
+
+#ifdef CONFIG_COMBINE
+	/* Whether the terminal supports combining characters. */
+	unsigned int combine:1;
+#endif /* CONFIG_COMBINE */
+
+#ifdef CONFIG_TERMINFO
+	/* Whether use terminfo. */
+	unsigned int terminfo:1;
+#endif
 };
 
 /** Used in @c add_char*() and @c redraw_screen() to reduce the logic.
@@ -197,34 +269,7 @@ struct screen_driver {
 	enum term_mode_type type;
 
 	/** set_screen_driver_opt() sets these.  */
-	struct screen_driver_opt {
-		/** Charsets when doing UTF-8 I/O.
-		 * [0] is the common charset and [1] is the frame charset.
-		 * Test whether to use UTF-8 I/O using the use_utf8_io() macro.  */
-		int charsets[2];
-
-		/** The frame translation table. May be NULL. */
-		const unsigned char *frame;
-
-		/** The frame mode setup and teardown sequences. May be NULL. */
-		const struct string *frame_seqs;
-
-		/** The underline mode setup and teardown sequences. May be NULL. */
-		const struct string *underline;
-
-		/** The color mode */
-		enum color_mode color_mode;
-
-		/** These are directly derived from the terminal options. */
-		unsigned int transparent:1;
-
-#ifdef CONFIG_UTF8
-		/* Whether the charset of the terminal is UTF-8.  This
-		 * is the same as is_cp_utf8(charsets[0]), except the
-		 * latter might crash if UTF-8 I/O is disabled.  */
-		unsigned int utf8_cp:1;
-#endif /* CONFIG_UTF8 */
-	} opt;
+	struct screen_driver_opt opt;
 
 	/* The terminal._template_ name. */
 	unsigned char name[1]; /* XXX: Keep last! */
@@ -235,12 +280,22 @@ static const struct screen_driver_opt dumb_screen_driver_opt = {
 	/* charsets: */		{ -1, -1 },	/* No UTF8 I/O */
 	/* frame: */		frame_dumb,
 	/* frame_seqs: */	NULL,
+	/* italic: */		italic_seqs,
 	/* underline: */	underline_seqs,
 	/* color_mode: */	COLOR_MODE_16,
+#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
+	/* color256_seqs: */	color256_seqs,
+#endif
 	/* transparent: */	1,
 #ifdef CONFIG_UTF8
 	/* utf8_cp: */		0,
 #endif /* CONFIG_UTF8 */
+#ifdef CONFIG_COMBINE
+	/* combine */		0,
+#endif /* CONFIG_COMBINE */
+#ifdef CONFIG_TERMINFO
+	/* terminfo */		0,
+#endif
 };
 
 /** Default options for ::TERM_VT100.  */
@@ -248,12 +303,22 @@ static const struct screen_driver_opt vt100_screen_driver_opt = {
 	/* charsets: */		{ -1, -1 },	/* No UTF8 I/O */
 	/* frame: */		frame_vt100,
 	/* frame_seqs: */	vt100_frame_seqs,
+	/* italic: */		italic_seqs,
 	/* underline: */	underline_seqs,
 	/* color_mode: */	COLOR_MODE_16,
+#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
+	/* color256_seqs: */	color256_seqs,
+#endif
 	/* transparent: */	1,
 #ifdef CONFIG_UTF8
 	/* utf8_cp: */		0,
 #endif /* CONFIG_UTF8 */
+#ifdef CONFIG_COMBINE
+	/* combine */		0,
+#endif /* CONFIG_COMBINE */
+#ifdef CONFIG_TERMINFO
+	/* terminfo */		0,
+#endif
 };
 
 /** Default options for ::TERM_LINUX.  */
@@ -261,12 +326,22 @@ static const struct screen_driver_opt linux_screen_driver_opt = {
 	/* charsets: */		{ -1, -1 },	/* No UTF8 I/O */
 	/* frame: */		NULL,		/* No restrict_852 */
 	/* frame_seqs: */	NULL,		/* No m11_hack */
+	/* italic: */		italic_seqs,
 	/* underline: */	underline_seqs,
 	/* color_mode: */	COLOR_MODE_16,
+#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
+	/* color256_seqs: */	color256_seqs,
+#endif
 	/* transparent: */	1,
 #ifdef CONFIG_UTF8
 	/* utf8_cp: */		0,
 #endif /* CONFIG_UTF8 */
+#ifdef CONFIG_COMBINE
+	/* combine */		0,
+#endif /* CONFIG_COMBINE */
+#ifdef CONFIG_TERMINFO
+	/* terminfo */		0,
+#endif
 };
 
 /** Default options for ::TERM_KOI8.  */
@@ -274,12 +349,22 @@ static const struct screen_driver_opt koi8_screen_driver_opt = {
 	/* charsets: */		{ -1, -1 },	/* No UTF8 I/O */
 	/* frame: */		frame_koi,
 	/* frame_seqs: */	NULL,
+	/* italic: */		italic_seqs,
 	/* underline: */	underline_seqs,
 	/* color_mode: */	COLOR_MODE_16,
+#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
+	/* color256_seqs: */	color256_seqs,
+#endif
 	/* transparent: */	1,
 #ifdef CONFIG_UTF8
 	/* utf8_cp: */		0,
 #endif /* CONFIG_UTF8 */
+#ifdef CONFIG_COMBINE
+	/* combine */		0,
+#endif /* CONFIG_COMBINE */
+#ifdef CONFIG_TERMINFO
+	/* terminfo */		0,
+#endif
 };
 
 /** Default options for ::TERM_FREEBSD.  */
@@ -287,12 +372,45 @@ static const struct screen_driver_opt freebsd_screen_driver_opt = {
 	/* charsets: */		{ -1, -1 },	/* No UTF8 I/O */
 	/* frame: */		frame_freebsd,
 	/* frame_seqs: */	NULL,		/* No m11_hack */
+	/* italic: */		italic_seqs,
 	/* underline: */	underline_seqs,
 	/* color_mode: */	COLOR_MODE_16,
+#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
+	/* color256_seqs: */	color256_seqs,
+#endif
 	/* transparent: */	1,
 #ifdef CONFIG_UTF8
 	/* utf8_cp: */		0,
 #endif /* CONFIG_UTF8 */
+#ifdef CONFIG_COMBINE
+	/* combine */		0,
+#endif /* CONFIG_COMBINE */
+#ifdef CONFIG_TERMINFO
+	/* terminfo */		0,
+#endif
+};
+
+/** Default options for ::TERM_FBTERM.  */
+static const struct screen_driver_opt fbterm_screen_driver_opt = {
+	/* charsets: */		{ -1, -1 },	/* No UTF8 I/O */
+	/* frame: */		NULL,
+	/* frame_seqs: */	NULL,		/* No m11_hack */
+	/* italic: */		italic_seqs,
+	/* underline: */	underline_seqs,
+	/* color_mode: */	COLOR_MODE_16,
+#if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
+	/* color256_seqs: */	fbterm_color256_seqs,
+#endif
+	/* transparent: */	1,
+#ifdef CONFIG_UTF8
+	/* utf8_cp: */		0,
+#endif /* CONFIG_UTF8 */
+#ifdef CONFIG_COMBINE
+	/* combine */		0,
+#endif /* CONFIG_COMBINE */
+#ifdef CONFIG_TERMINFO
+	/* terminfo */		0,
+#endif
 };
 
 /** Default options for all the different types of terminals.
@@ -303,6 +421,7 @@ static const struct screen_driver_opt *const screen_driver_opts[] = {
 	/* TERM_LINUX: */	&linux_screen_driver_opt,
 	/* TERM_KOI8: */	&koi8_screen_driver_opt,
 	/* TERM_FREEBSD: */	&freebsd_screen_driver_opt,
+	/* TERM_FBTERM: */	&fbterm_screen_driver_opt,
 };
 
 #define use_utf8_io(driver)	((driver)->opt.charsets[0] != -1)
@@ -317,13 +436,16 @@ static INIT_LIST_OF(struct screen_driver, active_screen_drivers);
 static void
 set_screen_driver_opt(struct screen_driver *driver, struct option *term_spec)
 {
-	const int cp = get_opt_codepage_tree(term_spec, "charset");
-	int utf8_io = get_opt_bool_tree(term_spec, "utf_8_io");
+	const int cp = get_opt_codepage_tree(term_spec, "charset", NULL);
+	int utf8_io = get_opt_bool_tree(term_spec, "utf_8_io", NULL);
 
 	/* Copy all the original options from constants, so that this
 	 * function need not carefully restore options one by one.  */
 	copy_struct(&driver->opt, screen_driver_opts[driver->type]);
 
+#ifdef CONFIG_COMBINE
+	driver->opt.combine = get_opt_bool_tree(term_spec, "combine", NULL);
+#endif /* CONFIG_COMBINE */
 #ifdef CONFIG_UTF8
 	/* Force UTF-8 I/O if the UTF-8 charset is selected.  Various
 	 * places assume that the terminal's charset is unibyte if
@@ -336,10 +458,17 @@ set_screen_driver_opt(struct screen_driver *driver, struct option *term_spec)
 	}
 #endif /* CONFIG_UTF8 */
 
-	driver->opt.color_mode = get_opt_int_tree(term_spec, "colors");
-	driver->opt.transparent = get_opt_bool_tree(term_spec, "transparency");
+	driver->opt.color_mode = get_opt_int_tree(term_spec, "colors", NULL);
+	driver->opt.transparent = get_opt_bool_tree(term_spec, "transparency",
+	                                            NULL);
 
-	if (get_opt_bool_tree(term_spec, "underline")) {
+	if (get_opt_bool_tree(term_spec, "italic", NULL)) {
+		driver->opt.italic = italic_seqs;
+	} else {
+		driver->opt.italic = NULL;
+	}
+
+	if (get_opt_bool_tree(term_spec, "underline", NULL)) {
 		driver->opt.underline = underline_seqs;
 	} else {
 		driver->opt.underline = NULL;
@@ -353,8 +482,8 @@ set_screen_driver_opt(struct screen_driver *driver, struct option *term_spec)
 		 * characters encoded in UTF-8 are already unambiguous.  */
 		driver->opt.frame_seqs = NULL;
 
-		if (driver->type == TERM_LINUX) {
-			if (get_opt_bool_tree(term_spec, "restrict_852"))
+		if (driver->type == TERM_LINUX || driver->type == TERM_FBTERM) {
+			if (get_opt_bool_tree(term_spec, "restrict_852", NULL))
 				driver->opt.frame = frame_restrict;
 			driver->opt.charsets[1] = get_cp_index("cp437");
 
@@ -385,27 +514,69 @@ set_screen_driver_opt(struct screen_driver *driver, struct option *term_spec)
 		driver->opt.charsets[0] = -1;
 
 		if (driver->type == TERM_LINUX) {
-			if (get_opt_bool_tree(term_spec, "restrict_852"))
+			if (get_opt_bool_tree(term_spec, "restrict_852", NULL))
 				driver->opt.frame = frame_restrict;
 
-			if (get_opt_bool_tree(term_spec, "m11_hack"))
+			if (get_opt_bool_tree(term_spec, "m11_hack", NULL))
 				driver->opt.frame_seqs = m11_hack_frame_seqs;
 
 		} else if (driver->type == TERM_FREEBSD) {
-			if (get_opt_bool_tree(term_spec, "m11_hack"))
+			if (get_opt_bool_tree(term_spec, "m11_hack", NULL))
 				driver->opt.frame_seqs = m11_hack_frame_seqs;
 
 		} else if (driver->type == TERM_VT100) {
 			driver->opt.frame = frame_vt100;
 		}
- 	} /* !utf8_io */
+	} /* !utf8_io */
+#ifdef CONFIG_TERMINFO
+	driver->opt.terminfo = get_cmd_opt_bool("terminfo");
+	if (!driver->opt.terminfo) {
+		return;
+	} 
+#ifdef CONFIG_TRUE_COLOR
+	if (driver->opt.color_mode == COLOR_MODE_TRUE_COLOR) {
+		driver->opt.terminfo = 0;
+		return;
+	}
+#endif
+	if (driver->opt.color_mode == COLOR_MODE_MONO) {
+		driver->opt.terminfo = 0;
+		return;
+	}
+
+	switch (terminfo_max_colors()) {
+	case 88:
+#ifdef CONFIG_88_COLORS
+		driver->opt.color_mode = COLOR_MODE_88;
+#else
+		driver->opt.color_mode = COLOR_MODE_16;
+#endif
+		break;
+
+	case 256:
+#ifdef CONFIG_256_COLORS
+		driver->opt.color_mode = COLOR_MODE_256;
+#else
+		driver->opt.color_mode = COLOR_MODE_16;
+#endif
+		break;
+
+	case 16:
+	case 8:
+		driver->opt.color_mode = COLOR_MODE_16;
+		break;
+	default:
+		driver->opt.color_mode = COLOR_MODE_MONO;
+		break;
+	}
+#endif
 }
 
 static int
 screen_driver_change_hook(struct session *ses, struct option *term_spec,
 			  struct option *changed)
 {
-	enum term_mode_type type = get_opt_int_tree(term_spec, "type");
+	enum term_mode_type type = get_opt_int_tree(term_spec, "type", NULL);
 	struct screen_driver *driver;
 	unsigned char *name = term_spec->name;
 
@@ -446,7 +617,7 @@ add_screen_driver(enum term_mode_type type, struct terminal *term, int env_len)
 static inline struct screen_driver *
 get_screen_driver(struct terminal *term)
 {
-	enum term_mode_type type = get_opt_int_tree(term->spec, "type");
+	enum term_mode_type type = get_opt_int_tree(term->spec, "type", NULL);
 	unsigned char *name = term->spec->name;
 	int len = strlen(name);
 	struct screen_driver *driver;
@@ -481,8 +652,13 @@ done_screen_drivers(struct module *xxx)
 static inline struct string *
 add_cursor_move_to_string(struct string *screen, int y, int x)
 {
+#ifdef CONFIG_TERMINFO
+	if (get_cmd_opt_bool("terminfo")) {
+		return add_to_string(screen, terminfo_cursor_address(y-1, x-1));
+	} else
+#endif
 #define CURSOR_NUM_LEN 10 /* 10 chars for @y and @x numbers should be more than enough. */
-	unsigned char code[4 + 2 * CURSOR_NUM_LEN + 1];
+{	unsigned char code[4 + 2 * CURSOR_NUM_LEN + 1];
 	unsigned int length = 2;
 
 	code[0] = '\033';
@@ -499,11 +675,13 @@ add_cursor_move_to_string(struct string *screen, int y, int x)
 	code[length++] = 'H';
 
 	return add_bytes_to_string(screen, code, length);
+}
 #undef CURSOR_NUM_LEN
 }
 
 struct screen_state {
 	unsigned char border;
+	unsigned char italic;
 	unsigned char underline;
 	unsigned char bold;
 	unsigned char attr;
@@ -512,11 +690,11 @@ struct screen_state {
 };
 
 #if defined(CONFIG_TRUE_COLOR)
-#define INIT_SCREEN_STATE 	{ 0xFF, 0xFF, 0xFF, 0, { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} }
+#define INIT_SCREEN_STATE 	{ 0xFF, 0xFF, 0xFF, 0xFF, 0, { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} }
 #elif defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
-#define INIT_SCREEN_STATE 	{ 0xFF, 0xFF, 0xFF, 0, { 0xFF, 0xFF } }
+#define INIT_SCREEN_STATE 	{ 0xFF, 0xFF, 0xFF, 0xFF, 0, { 0xFF, 0xFF } }
 #else
-#define INIT_SCREEN_STATE 	{ 0xFF, 0xFF, 0xFF, 0, { 0xFF } }
+#define INIT_SCREEN_STATE 	{ 0xFF, 0xFF, 0xFF, 0xFF, 0, { 0xFF } }
 #endif
 
 #ifdef CONFIG_TRUE_COLOR
@@ -638,6 +816,23 @@ add_char_data(struct string *screen, struct screen_driver *driver,
 		}
 		if (data == UCS_NO_CHAR)
 			return;
+#ifdef CONFIG_COMBINE
+		if (data >= UCS_BEGIN_COMBINED && data <= last_combined) {
+			unicode_val_T *text = combined[data - UCS_BEGIN_COMBINED];
+
+			if (driver->opt.combine) {
+				/* XTerm */
+				while (*text != UCS_END_COMBINED) {
+					add_to_string(screen, encode_utf8(*text));
+					text++;
+				}
+				return;
+			} else {
+				/* Others */
+				data = *text;
+			}
+		}
+#endif /* CONFIG_COMBINE */
 		if (!isscreensafe_ucs(data))
 			data = UCS_SPACE;
 		add_to_string(screen, encode_utf8(data));
@@ -664,6 +859,7 @@ add_char16(struct string *screen, struct screen_driver *driver,
 	   struct screen_char *ch, struct screen_state *state)
 {
 	unsigned char border = (ch->attr & SCREEN_ATTR_FRAME);
+	unsigned char italic = (ch->attr & SCREEN_ATTR_ITALIC);
 	unsigned char underline = (ch->attr & SCREEN_ATTR_UNDERLINE);
 	unsigned char bold = (ch->attr & SCREEN_ATTR_BOLD);
 
@@ -681,10 +877,34 @@ add_char16(struct string *screen, struct screen_driver *driver,
 #ifdef CONFIG_UTF8
 	    !(driver->opt.utf8_cp && ch->data == UCS_NO_CHAR) &&
 #endif /* CONFIG_UTF8 */
+	    italic != state->italic && driver->opt.italic
+	   ) {
+		state->italic = italic;
+#ifdef CONFIG_TERMINFO
+		if (driver->opt.terminfo) {
+			add_to_string(screen, terminfo_set_italics(italic));
+		} else
+#endif
+		{
+			add_term_string(screen, driver->opt.italic[!!italic]);
+		}
+	}
+
+	if (
+#ifdef CONFIG_UTF8
+	    !(driver->opt.utf8_cp && ch->data == UCS_NO_CHAR) &&
+#endif /* CONFIG_UTF8 */
 	    underline != state->underline && driver->opt.underline
 	   ) {
 		state->underline = underline;
-		add_term_string(screen, driver->opt.underline[!!underline]);
+#ifdef CONFIG_TERMINFO
+		if (driver->opt.terminfo) {
+			add_to_string(screen, terminfo_set_underline(underline));
+		} else
+#endif
+		{
+			add_term_string(screen, driver->opt.underline[!!underline]);
+		}
 	}
 
 	if (
@@ -695,10 +915,17 @@ add_char16(struct string *screen, struct screen_driver *driver,
 	   ) {
 		state->bold = bold;
 		if (bold) {
-			add_bytes_to_string(screen, "\033[1m", 4);
+#ifdef CONFIG_TERMINFO
+			if (driver->opt.terminfo) {
+				add_to_string(screen, terminfo_set_bold(bold));
+			} else
+#endif
+			{
+				add_bytes_to_string(screen, "\033[1m", 4);
+			}
 		} else {
 			/* Force repainting of the other attributes. */
-			state->color[0] = ch->color[0] + 1;
+			state->color[0] = ch->c.color[0] + 1;
 		}
 	}
 
@@ -706,60 +933,75 @@ add_char16(struct string *screen, struct screen_driver *driver,
 #ifdef CONFIG_UTF8
 	    !(driver->opt.utf8_cp && ch->data == UCS_NO_CHAR) &&
 #endif /* CONFIG_UTF8 */
-	    !compare_color_16(ch->color, state->color)
+	    !compare_color_16(ch->c.color, state->color)
 	   ) {
-		copy_color_16(state->color, ch->color);
+		copy_color_16(state->color, ch->c.color);
 
-		add_bytes_to_string(screen, "\033[0", 3);
+#ifdef CONFIG_TERMINFO
+		if (driver->opt.terminfo) {
+			add_to_string(screen, terminfo_set_bold(bold));
+			add_to_string(screen, terminfo_set_foreground(TERM_COLOR_FOREGROUND_16(ch->c.color)));
+			add_to_string(screen, terminfo_set_background(TERM_COLOR_BACKGROUND_16(ch->c.color)));
 
-		/* @set_screen_driver_opt has set @driver->opt.color_mode
-		 * according to terminal-type-specific options.
-		 * The caller of @add_char16 has already partially
-		 * checked it, but there are still these possibilities:
-		 * - COLOR_MODE_MONO.  Then don't show colors, but
-		 *   perhaps use the standout attribute.
-		 * - COLOR_MODE_16.  Use 16 colors.
-		 * - An unsupported color mode.  Use 16 colors.  */
-		if (driver->opt.color_mode != COLOR_MODE_MONO) {
-			unsigned char code[6] = ";30;40";
-			unsigned char bgcolor = TERM_COLOR_BACKGROUND_16(ch->color);
+			if (italic)
+				add_to_string(screen, terminfo_set_italics(italic));
 
-			code[2] += TERM_COLOR_FOREGROUND_16(ch->color);
+			if (underline)
+				add_to_string(screen, terminfo_set_underline(underline));
 
-			if (!driver->opt.transparent || bgcolor != 0) {
-				code[5] += bgcolor;
-				add_bytes_to_string(screen, code, 6);
-			} else {
-				add_bytes_to_string(screen, code, 3);
+		} else
+#endif
+		{
+			add_bytes_to_string(screen, "\033[0", 3);
+
+			/* @set_screen_driver_opt has set @driver->opt.color_mode
+			 * according to terminal-type-specific options.
+			 * The caller of @add_char16 has already partially
+			 * checked it, but there are still these possibilities:
+			 * - COLOR_MODE_MONO.  Then don't show colors, but
+			 *   perhaps use the standout attribute.
+			 * - COLOR_MODE_16.  Use 16 colors.
+			 * - An unsupported color mode.  Use 16 colors.  */
+			if (driver->opt.color_mode != COLOR_MODE_MONO) {
+				unsigned char code[6] = ";30;40";
+				unsigned char bgcolor = TERM_COLOR_BACKGROUND_16(ch->c.color);
+
+				code[2] += TERM_COLOR_FOREGROUND_16(ch->c.color);
+
+				if (!driver->opt.transparent || bgcolor != 0) {
+					code[5] += bgcolor;
+					add_bytes_to_string(screen, code, 6);
+				} else {
+					add_bytes_to_string(screen, code, 3);
+				}
+
+			} else if (ch->attr & SCREEN_ATTR_STANDOUT) {
+				/* Flip the fore- and background colors for highlighing
+				 * purposes. */
+				add_bytes_to_string(screen, ";7", 2);
 			}
 
-		} else if (ch->attr & SCREEN_ATTR_STANDOUT) {
-			/* Flip the fore- and background colors for highlighing
-			 * purposes. */
-			add_bytes_to_string(screen, ";7", 2);
-		}
+			if (italic && driver->opt.italic) {
+				add_bytes_to_string(screen, ";3", 2);
+			}
 
-		if (underline && driver->opt.underline) {
-			add_bytes_to_string(screen, ";4", 2);
-		}
+			if (underline && driver->opt.underline) {
+				add_bytes_to_string(screen, ";4", 2);
+			}
 
-		/* Check if the char should be rendered bold. */
-		if (bold) {
-			add_bytes_to_string(screen, ";1", 2);
-		}
+			/* Check if the char should be rendered bold. */
+			if (bold) {
+				add_bytes_to_string(screen, ";1", 2);
+			}
 
-		add_bytes_to_string(screen, "m", 1);
+			add_bytes_to_string(screen, "m", 1);
+		}
 	}
 
 	add_char_data(screen, driver, ch->data, border);
 }
 
 #if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
-static const struct string color256_seqs[] = {
-	/* foreground: */	TERM_STRING("\033[0;38;5;%dm"),
-	/* background: */	TERM_STRING("\033[48;5;%dm"),
-};
-
 static inline void
 add_char_color(struct string *screen, const struct string *seq, unsigned char color)
 {
@@ -807,8 +1049,8 @@ add_char_color(struct string *screen, const struct string *seq, unsigned char co
 	add_bytes_to_string(screen, &seq->source[seq_pos], seq->length - seq_pos);
 }
 
-#define add_background_color(str, seq, chr) add_char_color(str, &(seq)[1], (chr)->color[1])
-#define add_foreground_color(str, seq, chr) add_char_color(str, &(seq)[0], (chr)->color[0])
+#define add_background_color(str, seq, chr) add_char_color(str, &(seq)[1], (chr)->c.color[1])
+#define add_foreground_color(str, seq, chr) add_char_color(str, &(seq)[0], (chr)->c.color[0])
 
 /** Time critical section. */
 static inline void
@@ -828,17 +1070,43 @@ add_char256(struct string *screen, struct screen_driver *driver,
 			add_term_string(screen, driver->opt.frame_seqs[state->border]);
 		}
 
+		if ((attr_delta & SCREEN_ATTR_ITALIC) && driver->opt.italic) {
+			state->italic = !!(ch->attr & SCREEN_ATTR_ITALIC);
+#ifdef CONFIG_TERMINFO
+			if (driver->opt.terminfo) {
+				add_to_string(screen, terminfo_set_italics(state->italic));
+			} else
+#endif
+			{
+				add_term_string(screen, driver->opt.italic[state->italic]);
+			}
+		}
+
 		if ((attr_delta & SCREEN_ATTR_UNDERLINE) && driver->opt.underline) {
 			state->underline = !!(ch->attr & SCREEN_ATTR_UNDERLINE);
-			add_term_string(screen, driver->opt.underline[state->underline]);
+#ifdef CONFIG_TERMINFO
+			if (driver->opt.terminfo) {
+				add_to_string(screen, terminfo_set_underline(state->underline));
+			} else
+#endif
+			{
+				add_term_string(screen, driver->opt.underline[state->underline]);
+			}
 		}
 
 		if (attr_delta & SCREEN_ATTR_BOLD) {
 			if (ch->attr & SCREEN_ATTR_BOLD) {
-				add_bytes_to_string(screen, "\033[1m", 4);
+#ifdef CONFIG_TERMINFO
+				if (driver->opt.terminfo) {
+					add_to_string(screen, terminfo_set_bold(1));
+				} else
+#endif
+				{
+					add_bytes_to_string(screen, "\033[1m", 4);
+				}
 			} else {
 				/* Force repainting of the other attributes. */
-				state->color[0] = ch->color[0] + 1;
+				state->color[0] = ch->c.color[0] + 1;
 			}
 		}
 
@@ -849,21 +1117,44 @@ add_char256(struct string *screen, struct screen_driver *driver,
 #ifdef CONFIG_UTF8
 	    !(driver->opt.utf8_cp && ch->data == UCS_NO_CHAR) &&
 #endif /* CONFIG_UTF8 */
-	    !compare_color_256(ch->color, state->color)
+	    !compare_color_256(ch->c.color, state->color)
 	   ) {
-		copy_color_256(state->color, ch->color);
+		copy_color_256(state->color, ch->c.color);
+#ifdef CONFIG_TERMINFO
+		if (driver->opt.terminfo) {
+			add_to_string(screen, terminfo_set_bold(ch->attr & SCREEN_ATTR_BOLD));
+			add_to_string(screen, terminfo_set_foreground(ch->c.color[0]));
+			add_to_string(screen, terminfo_set_background(ch->c.color[1]));
 
-		add_foreground_color(screen, color256_seqs, ch);
-		if (!driver->opt.transparent || ch->color[1] != 0) {
-			add_background_color(screen, color256_seqs, ch);
-		}
+			if (ch->attr & SCREEN_ATTR_ITALIC && driver->opt.italic) {
+				state->italic = !!(ch->attr & SCREEN_ATTR_ITALIC);
+				add_to_string(screen, terminfo_set_italics(state->italic));
+			}
 
-		if (ch->attr & SCREEN_ATTR_BOLD)
-			add_bytes_to_string(screen, "\033[1m", 4);
+			if (ch->attr & SCREEN_ATTR_UNDERLINE && driver->opt.underline) {
+				state->underline = !!(ch->attr & SCREEN_ATTR_UNDERLINE);
+				add_to_string(screen, terminfo_set_underline(state->underline));
+			}
+		} else
+#endif
+		{
+			add_foreground_color(screen, driver->opt.color256_seqs, ch);
+			if (!driver->opt.transparent || ch->c.color[1] != 0) {
+				add_background_color(screen, driver->opt.color256_seqs, ch);
+			}
 
-		if (ch->attr & SCREEN_ATTR_UNDERLINE && driver->opt.underline) {
-			state->underline = !!(ch->attr & SCREEN_ATTR_UNDERLINE);
-			add_term_string(screen, driver->opt.underline[state->underline]);
+			if (ch->attr & SCREEN_ATTR_BOLD)
+				add_bytes_to_string(screen, "\033[1m", 4);
+
+			if (ch->attr & SCREEN_ATTR_ITALIC && driver->opt.italic) {
+				state->italic = !!(ch->attr & SCREEN_ATTR_ITALIC);
+				add_term_string(screen, driver->opt.italic[state->italic]);
+			}
+
+			if (ch->attr & SCREEN_ATTR_UNDERLINE && driver->opt.underline) {
+				state->underline = !!(ch->attr & SCREEN_ATTR_UNDERLINE);
+				add_term_string(screen, driver->opt.underline[state->underline]);
+			}
 		}
 	}
 
@@ -876,8 +1167,8 @@ static const struct string color_true_seqs[] = {
 	/* foreground: */	TERM_STRING("\033[0;38;2"),
 	/* background: */	TERM_STRING("\033[48;2"),
 };
-#define add_true_background_color(str, seq, chr) add_char_true_color(str, &(seq)[1], &(chr)->color[3])
-#define add_true_foreground_color(str, seq, chr) add_char_true_color(str, &(seq)[0], &(chr)->color[0])
+#define add_true_background_color(str, seq, chr) add_char_true_color(str, &(seq)[1], &(chr)->c.color[3])
+#define add_true_foreground_color(str, seq, chr) add_char_true_color(str, &(seq)[0], &(chr)->c.color[0])
 static inline void
 add_char_true_color(struct string *screen, const struct string *seq, unsigned char *colors)
 {
@@ -943,6 +1234,11 @@ add_char_true(struct string *screen, struct screen_driver *driver,
 			add_term_string(screen, driver->opt.frame_seqs[state->border]);
 		}
 
+		if ((attr_delta & SCREEN_ATTR_ITALIC) && driver->opt.italic) {
+			state->italic = !!(ch->attr & SCREEN_ATTR_ITALIC);
+			add_term_string(screen, driver->opt.italic[state->italic]);
+		}
+
 		if ((attr_delta & SCREEN_ATTR_UNDERLINE) && driver->opt.underline) {
 			state->underline = !!(ch->attr & SCREEN_ATTR_UNDERLINE);
 			add_term_string(screen, driver->opt.underline[state->underline]);
@@ -953,7 +1249,7 @@ add_char_true(struct string *screen, struct screen_driver *driver,
 				add_bytes_to_string(screen, "\033[1m", 4);
 			} else {
 				/* Force repainting of the other attributes. */
-				state->color[0] = ch->color[0] + 1;
+				state->color[0] = ch->c.color[0] + 1;
 			}
 		}
 
@@ -964,17 +1260,22 @@ add_char_true(struct string *screen, struct screen_driver *driver,
 #ifdef CONFIG_UTF8
 	    !(driver->opt.utf8_cp && ch->data == UCS_NO_CHAR) &&
 #endif /* CONFIG_UTF8 */
-	    !compare_color_true(ch->color, state->color)
+	    !compare_color_true(ch->c.color, state->color)
 	   ) {
-		copy_color_true(state->color, ch->color);
+		copy_color_true(state->color, ch->c.color);
 
 		add_true_foreground_color(screen, color_true_seqs, ch);
-		if (!driver->opt.transparent || !background_is_black(ch->color)) {
+		if (!driver->opt.transparent || !background_is_black(ch->c.color)) {
 			add_true_background_color(screen, color_true_seqs, ch);
 		}
 
 		if (ch->attr & SCREEN_ATTR_BOLD)
 			add_bytes_to_string(screen, "\033[1m", 4);
+
+		if (ch->attr & SCREEN_ATTR_ITALIC && driver->opt.italic) {
+			state->italic = !!(ch->attr & SCREEN_ATTR_ITALIC);
+			add_term_string(screen, driver->opt.italic[state->italic]);
+		}
 
 		if (ch->attr & SCREEN_ATTR_UNDERLINE && driver->opt.underline) {
 			state->underline = !!(ch->attr & SCREEN_ATTR_UNDERLINE);
@@ -990,19 +1291,19 @@ add_char_true(struct string *screen, struct screen_driver *driver,
 {										\
 	struct terminal_screen *screen = (term_)->screen;			\
 	int y = screen->dirty_from;					\
-	int ypos = y * (term_)->width;						\
-	int prev_y = -1;							\
 	int xmax = (term_)->width - 1;						\
 	int ymax = (term_)->height - 1;						\
-	struct screen_char *current = &screen->last_image[ypos];	\
-	struct screen_char *pos = &screen->image[ypos];		\
-	struct screen_char *prev_pos = NULL; /* Warning prevention. */	\
 										\
 	int_upper_bound(&screen->dirty_to, ymax);				\
 										\
 	for (; y <= screen->dirty_to; y++) {					\
+		int ypos = y * (term_)->width;					\
+		struct screen_char *current = &screen->last_image[ypos];	\
+		struct screen_char *pos = &screen->image[ypos];			\
+		struct screen_char *start_of_line = pos;			\
 		int is_last_line = (y == ymax);					\
 		int x = 0;						\
+		int dirty = 0;						\
 										\
 		for (; x <= xmax; x++, current++, pos++) {			\
 			/*  Workaround for terminals without
@@ -1017,9 +1318,9 @@ add_char_true(struct string *screen, struct screen_driver *driver,
 			if (is_last_line && x == xmax)				\
 				break;						\
 										\
-			if (compare_bg_color(pos->color, current->color)) {	\
+			if (compare_bg_color(pos->c.color, current->c.color)) {	\
 				/* No update for exact match. */		\
-				if (compare_fg_color(pos->color, current->color)\
+				if (compare_fg_color(pos->c.color, current->c.color)\
 				    && pos->data == current->data		\
 				    && pos->attr == current->attr)		\
 					continue;				\
@@ -1030,19 +1331,18 @@ add_char_true(struct string *screen, struct screen_driver *driver,
 				    && pos->attr == current->attr)		\
 					continue;				\
 			}							\
-										\
-			/* Move the cursor when @prev_pos is more than 10 chars
-			 * away. */						\
-			if (prev_y != y || prev_pos + 10 <= pos) {		\
-				add_cursor_move_to_string(image_, y + 1, x + 1);\
-				prev_pos = pos;					\
-				prev_y = y;					\
-			}							\
-				 						\
-			for (; prev_pos <= pos ; prev_pos++)			\
-				ADD_CHAR(image_, driver_, prev_pos, state_);	\
+			dirty = 1;						\
+			break;							\
 		}								\
-	}									\
+										\
+		if (!dirty) {							\
+			continue;						\
+		}								\
+		add_cursor_move_to_string(image_, y + 1, 1);			\
+		for (pos = start_of_line, x = 0; x <= xmax; x++, pos++) {	\
+			ADD_CHAR(image_, driver_, pos, state_);	\
+		}							\
+	}								\
 }
 
 /*! Updating of the terminal screen is done by checking what needs to
@@ -1137,6 +1437,12 @@ erase_screen(struct terminal *term)
 		want_draw();
 	}
 
+#ifdef CONFIG_TERMINFO
+	if (get_cmd_opt_bool("terminfo")) {
+		char *text = terminfo_clear_screen();
+		hard_write(term->fdout, text, strlen(text));
+	} else 
+#endif
 	hard_write(term->fdout, "\033[2J\033[1;1H", 10);
 	if (term->master) done_draw();
 }

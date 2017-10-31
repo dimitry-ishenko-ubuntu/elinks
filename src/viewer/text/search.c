@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #ifdef CONFIG_TRE
-#include <tre/regex.h>
+#include <tre/tre.h>
 #endif
 
 #include "elinks.h"
@@ -55,17 +55,17 @@ static INIT_INPUT_HISTORY(search_history);
 #ifdef CONFIG_UTF8
 #define UCHAR unicode_val_T
 #define PATTERN const wchar_t
-#define Regcomp regwcomp
-#define Regexec regwexec
+#define Regcomp tre_regwcomp
+#define Regexec tre_regwexec
 #else
 #define UCHAR unsigned char
 #define PATTERN const char
-#define Regcomp regcomp
-#define Regexec regexec
+#define Regcomp tre_regcomp
+#define Regexec tre_regexec
 #endif
 
 static UCHAR *memacpy_u(unsigned char *text, int textlen, int utf8);
-
+static enum frame_event_status move_search_do(struct session *ses, struct document_view *doc_view, int direction);
 static inline void
 add_srch_chr(struct document *document, UCHAR c, int x, int y, int nn)
 {
@@ -76,9 +76,6 @@ add_srch_chr(struct document *document, UCHAR c, int x, int y, int nn)
 
 	if (document->search) {
 		int n = document->nsearch;
-
-		if (c == ' ' && document->search[n - 1].c == ' ')
-			return;
 
 		document->search[n].c = c;
 		document->search[n].x = x;
@@ -160,7 +157,7 @@ get_srch(struct document *document)
 
 		for (y = node->box.y; y < height; y++) {
 			int width = int_min(node->box.x + node->box.width,
-					    document->data[y].length);
+			                    document->data[y].length);
 
 			for (x = node->box.x;
 			     x < width && document->data[y].chars[x].data <= ' ';
@@ -178,8 +175,12 @@ get_srch(struct document *document)
 				/* skip double-width char placeholders */
 				if (c == UCS_NO_CHAR)
 					continue;
-#endif
 
+				if (c == 0xA0) {
+					add_srch_chr(document, ' ', x, y, 1);
+					continue;
+				}
+#endif
 				if (c > ' ') {
 					add_srch_chr(document, c, x, y, 1);
 					continue;
@@ -223,7 +224,9 @@ get_search_data(struct document *document)
 
 	get_srch(document);
 	while (document->nsearch
-	       && document->search[--document->nsearch].c == ' ');
+	       && document->search[document->nsearch - 1].c == ' ') {
+		--document->nsearch;
+	}
 	sort_srch(document);
 }
 
@@ -287,6 +290,9 @@ get_search_region_from_search_nodes(struct search *s1, struct search *s2,
 	UCHAR *doc;
 	int i;
 
+	/* We must include @a pattern_len in this expression because get_range
+	 * caps the end of the search region, @a s2, to the length of the
+	 * document minus the length of the search pattern. */
 	*doclen = s2 - s1 + pattern_len;
 	if (!*doclen) return NULL;
 
@@ -297,10 +303,10 @@ get_search_region_from_search_nodes(struct search *s1, struct search *s2,
 	}
 
 	for (i = 0; i < *doclen; i++) {
-		if (i > 0 && s1[i - 1].c == ' ' && s1[i - 1].y != s1[i].y) {
-			doc[i - 1] = '\n';
-		}
-		doc[i] = s1[i].c;
+		if (s1[i].n == 0)
+			doc[i] = '\n';
+		else
+			doc[i] = s1[i].c;
 	}
 
 	doc[*doclen] = 0;
@@ -324,15 +330,15 @@ init_regex(regex_t *regex, UCHAR *pattern)
 	int regex_flags = REG_NEWLINE;
 	int reg_err;
 
-	if (get_opt_int("document.browse.search.regex") == 2)
+	if (get_opt_int("document.browse.search.regex", NULL) == 2)
 		regex_flags |= REG_EXTENDED;
 
-	if (!get_opt_bool("document.browse.search.case"))
+	if (!get_opt_bool("document.browse.search.case", NULL))
 		regex_flags |= REG_ICASE;
 
 	reg_err = Regcomp(regex, (PATTERN *)pattern, regex_flags);
 	if (reg_err) {
-		regfree(regex);
+		tre_regfree(regex);
 		return 0;
 	}
 
@@ -361,7 +367,7 @@ search_for_pattern(struct regex_match_context *common_ctx, void *data,
 		/* Where and how should we display the error dialog ? */
 		unsigned char regerror_string[MAX_STR_LEN];
 
-		regerror(reg_err, &regex, regerror_string, sizeof(regerror_string));
+		tre_regerror(reg_err, &regex, regerror_string, sizeof(regerror_string));
 #endif
 		common_ctx->found = -2;
 		return;
@@ -369,7 +375,7 @@ search_for_pattern(struct regex_match_context *common_ctx, void *data,
 
 	doc = get_search_region_from_search_nodes(common_ctx->s1, common_ctx->s2, common_ctx->textlen, &doclen);
 	if (!doc) {
-		regfree(&regex);
+		tre_regfree(&regex);
 		common_ctx->found = doclen;
 		return;
 	}
@@ -413,7 +419,7 @@ find_next:
 		goto find_next;
 
 free_stuff:
-	regfree(&regex);
+	tre_regfree(&regex);
 	mem_free(doc);
 }
 
@@ -540,7 +546,7 @@ is_in_range_plain(struct document *document, int y, int height,
 	int yy = y + height;
 	UCHAR *txt;
 	int found = 0;
-	int case_sensitive = get_opt_bool("document.browse.search.case");
+	int case_sensitive = get_opt_bool("document.browse.search.case", NULL);
 
 	txt = case_sensitive ? memacpy_u(text, textlen, utf8) : lowered_string(text, textlen, utf8);
 	if (!txt) return -1;
@@ -609,7 +615,7 @@ is_in_range(struct document *document, int y, int height,
 		return 0;
 
 #ifdef CONFIG_TRE
-	if (get_opt_int("document.browse.search.regex"))
+	if (get_opt_int("document.browse.search.regex", NULL))
 		return is_in_range_regex(document, y, height, text, textlen,
 					 min, max, s1, s2, utf8);
 #endif
@@ -629,7 +635,7 @@ get_searched_plain(struct document_view *doc_view, struct point **pt, int *pl,
 	struct box *box;
 	int xoffset, yoffset;
 	int len = 0;
-	int case_sensitive = get_opt_bool("document.browse.search.case");
+	int case_sensitive = get_opt_bool("document.browse.search.case", NULL);
 
 	txt = case_sensitive ? memacpy_u(*doc_view->search_word, l, utf8)
 			     : lowered_string(*doc_view->search_word, l, utf8);
@@ -687,6 +693,52 @@ srch_failed:
 	*pl = len;
 }
 
+static void
+get_searched_plain_all(struct document_view *doc_view, struct point **pt, int *pl,
+		   int l, struct search *s1, struct search *s2, int utf8)
+{
+	UCHAR *txt;
+	struct point *points = NULL;
+	int len = 0;
+	int case_sensitive = get_opt_bool("document.browse.search.case", NULL);
+
+	txt = case_sensitive ? memacpy_u(*doc_view->search_word, l, utf8)
+			     : lowered_string(*doc_view->search_word, l, utf8);
+	if (!txt) return;
+
+#if defined(CONFIG_UTF8) && defined(HAVE_WCTYPE_H)
+#define maybe_tolower(c) (case_sensitive ? (c) : utf8 ? towlower(c) : tolower(c))
+#else
+#define maybe_tolower(c) (case_sensitive ? (c) : tolower(c))
+#endif
+
+	for (; s1 <= s2; s1++) {
+		int i;
+
+		if (maybe_tolower(s1[0].c) != txt[0]) {
+srch_failed:
+			continue;
+		}
+
+		for (i = 1; i < l; i++)
+			if (maybe_tolower(s1[i].c) != txt[i])
+				goto srch_failed;
+
+		if (!realloc_points(&points, len))
+			continue;
+
+		points[len].x = s1[0].x;
+		points[len++].y = s1[0].y;
+	}
+
+#undef maybe_tolower
+
+	mem_free(txt);
+	*pt = points;
+	*pl = len;
+}
+
+
 #ifdef CONFIG_TRE
 struct get_searched_regex_context {
 	int xoffset;
@@ -726,6 +778,18 @@ get_searched_regex_match(struct regex_match_context *common_ctx, void *data)
 }
 
 static void
+get_searched_regex_match_all(struct regex_match_context *common_ctx, void *data)
+{
+	struct get_searched_regex_context *ctx = data;
+
+	if (!realloc_points(&ctx->points, ctx->len))
+		return;
+
+	ctx->points[ctx->len].x = common_ctx->s1[0].x;
+	ctx->points[ctx->len++].y = common_ctx->s1[0].y;
+}
+
+static void
 get_searched_regex(struct document_view *doc_view, struct point **pt, int *pl,
 		   int textlen, struct search *s1, struct search *s2, int utf8)
 {
@@ -755,6 +819,38 @@ get_searched_regex(struct document_view *doc_view, struct point **pt, int *pl,
 	*pt = ctx.points;
 	*pl = ctx.len;
 }
+
+static void
+get_searched_regex_all(struct document_view *doc_view, struct point **pt, int *pl,
+		   int textlen, struct search *s1, struct search *s2, int utf8)
+{
+	struct regex_match_context common_ctx;
+	struct get_searched_regex_context ctx;
+	UCHAR *txt = memacpy_u(*doc_view->search_word, textlen, utf8);
+
+	if (!txt) return;
+
+	ctx.points = NULL;
+	ctx.len = 0;
+	ctx.box = &doc_view->box;
+	ctx.xoffset = 0;
+	ctx.yoffset = 0;
+
+	common_ctx.found = 0;
+	common_ctx.textlen = textlen;
+	common_ctx.y1 = -1;
+	common_ctx.y2 = doc_view->document->height;
+	common_ctx.pattern = txt;
+	common_ctx.s1 = s1;
+	common_ctx.s2 = s2;
+
+	search_for_pattern(&common_ctx, &ctx, get_searched_regex_match_all);
+
+	mem_free(txt);
+	*pt = ctx.points;
+	*pl = ctx.len;
+}
+
 #endif /* CONFIG_TRE */
 
 static void
@@ -780,7 +876,7 @@ get_searched(struct document_view *doc_view, struct point **pt, int *pl, int utf
 	}
 
 #ifdef CONFIG_TRE
-	if (get_opt_int("document.browse.search.regex"))
+	if (get_opt_int("document.browse.search.regex", NULL))
 		get_searched_regex(doc_view, pt, pl, l, s1, s2, utf8);
 	else
 #endif
@@ -849,11 +945,52 @@ static enum find_error find_next_do(struct session *ses,
 static void print_find_error(struct session *ses, enum find_error find_error);
 
 static enum find_error
+get_searched_all(struct session *ses, struct document_view *doc_view, struct point **pt, int *pl, int utf8)
+{
+	struct search *s1, *s2;
+	int l;
+
+	assert(ses && doc_view && doc_view->vs && pt && pl);
+	if_assert_failed return FIND_ERROR_MEMORY;
+
+	if (!ses->search_word) {
+		if (!ses->last_search_word) {
+			return FIND_ERROR_NO_PREVIOUS_SEARCH;
+		}
+		ses->search_word = stracpy(ses->last_search_word);
+		if (!ses->search_word) return FIND_ERROR_MEMORY;
+	}
+
+	get_search_data(doc_view->document);
+	l = strlen_u(*doc_view->search_word, utf8);
+
+	if (get_range(doc_view->document, 0,
+		      doc_view->document->height, l, &s1, &s2)) {
+		*pt = NULL;
+		*pl = 0;
+
+		return FIND_ERROR_NOT_FOUND;
+	}
+
+#ifdef CONFIG_TRE
+	if (get_opt_int("document.browse.search.regex", NULL))
+		get_searched_regex_all(doc_view, pt, pl, l, s1, s2, utf8);
+	else
+#endif
+		get_searched_plain_all(doc_view, pt, pl, l, s1, s2, utf8);
+
+	if (*pt == NULL)
+		return FIND_ERROR_NOT_FOUND;
+
+	return move_search_do(ses, doc_view, 0);
+}
+
+static enum find_error
 search_for_do(struct session *ses, unsigned char *str, int direction,
 	      int report_errors)
 {
 	struct document_view *doc_view;
-	enum find_error error;
+        int utf8 = 0;
 
 	assert(ses && str);
 	if_assert_failed return FIND_ERROR_NOT_FOUND;
@@ -863,8 +1000,15 @@ search_for_do(struct session *ses, unsigned char *str, int direction,
 	assert(doc_view);
 	if_assert_failed return FIND_ERROR_NOT_FOUND;
 
+#ifdef CONFIG_UTF8
+	utf8 = doc_view->document->options.utf8;
+#endif
+
 	mem_free_set(&ses->search_word, NULL);
 	mem_free_set(&ses->last_search_word, NULL);
+	mem_free_set(&doc_view->document->search_points, NULL);
+	doc_view->document->number_of_search_points = 0;
+	doc_view->vs->current_search_number = -1;
 
 	if (!*str) return FIND_ERROR_NOT_FOUND;
 
@@ -873,15 +1017,10 @@ search_for_do(struct session *ses, unsigned char *str, int direction,
 	 * initialized. find_next() will set ses->search_word for us. */
 	ses->last_search_word = stracpy(str);
 	if (!ses->last_search_word) return FIND_ERROR_NOT_FOUND;
-
 	ses->search_direction = direction;
 
-	error = find_next_do(ses, doc_view, 1);
-
-	if (report_errors)
-		print_find_error(ses, error);
-
-	return error;
+	return get_searched_all(ses, doc_view, &doc_view->document->search_points,
+		&doc_view->document->number_of_search_points, utf8);
 }
 
 static void
@@ -911,15 +1050,12 @@ point_intersect(struct point *p1, int l1, struct point *p2, int l2)
 
 	int i;
 	static char hash[HASH_SIZE];
-	static int first_time = 1;
+
+	/* Note that an object of static storage duration is automatically
+	 * initialised to zero in C.  */
 
 	assert(p2);
 	if_assert_failed return 0;
-
-	if (first_time) {
-		memset(hash, 0, HASH_SIZE);
-		first_time = 0;
-	}
 
 	for (i = 0; i < l1; i++) hash[HASH(p1[i])] = 1;
 
@@ -1071,7 +1207,7 @@ static void
 print_find_error_not_found(struct session *ses, unsigned char *title,
 			   unsigned char *message, unsigned char *search_string)
 {
-	switch (get_opt_int("document.browse.search.show_not_found")) {
+	switch (get_opt_int("document.browse.search.show_not_found", NULL)) {
 		case 2:
 			info_box(ses->tab->term, MSGBOX_FREE_TEXT,
 				 title, ALIGN_CENTER,
@@ -1098,7 +1234,7 @@ print_find_error(struct session *ses, enum find_error find_error)
 			hit_top = 1;
 		case FIND_ERROR_HIT_BOTTOM:
 			if (!get_opt_bool("document.browse.search"
-					  ".show_hit_top_bottom"))
+					  ".show_hit_top_bottom", NULL))
 				break;
 
 			message = hit_top
@@ -1134,6 +1270,94 @@ print_find_error(struct session *ses, enum find_error find_error)
 
 	if (!message) return;
 	info_box(ses->tab->term, 0, N_("Search"), ALIGN_CENTER, message);
+}
+
+static enum find_error move_search_number(struct session *ses, struct document_view *doc_view, int number);
+
+static int
+is_y_on_screen(struct document_view *doc_view, int y)
+{
+	return y >= doc_view->vs->y && y < doc_view->vs->y + doc_view->box.height;
+}
+
+static void
+find_first_search_in_view(struct session *ses, struct document_view *doc_view)
+{
+	int i;
+	int current_search_number = doc_view->vs->current_search_number;
+
+	if (current_search_number >= 0 && current_search_number < doc_view->document->number_of_search_points) {
+		struct point *point = doc_view->document->search_points + current_search_number;
+
+		if (is_y_on_screen(doc_view, point[0].y))
+			return;
+	}
+
+	for (i = 0; i < doc_view->document->number_of_search_points; ++i) {
+		int y = doc_view->document->search_points[i].y;
+
+		if (y >= doc_view->vs->y)
+			break;
+	}
+	doc_view->vs->current_search_number = i;
+}
+
+static enum frame_event_status
+move_search_do(struct session *ses, struct document_view *doc_view, int direction)
+{
+	if (!doc_view->document->number_of_search_points)
+		return FRAME_EVENT_OK;
+
+	int number;
+
+	find_first_search_in_view(ses, doc_view);
+	number = doc_view->vs->current_search_number + direction;
+	print_find_error(ses, move_search_number(ses, doc_view, number));
+
+	return FRAME_EVENT_REFRESH;
+}
+
+enum frame_event_status
+move_search_next(struct session *ses, struct document_view *doc_view)
+{
+	return move_search_do(ses, doc_view, 1);
+}
+
+enum frame_event_status
+move_search_prev(struct session *ses, struct document_view *doc_view)
+{
+	return move_search_do(ses, doc_view, -1);
+}
+
+static enum find_error
+move_search_number(struct session *ses, struct document_view *doc_view, int number)
+{
+	struct point *pt;
+	int x, y;
+	enum find_error ret = FIND_ERROR_NONE;
+
+	if (number < 0) {
+		ret = FIND_ERROR_HIT_TOP;
+
+		if (!get_opt_bool("document.browse.search.wraparound", NULL)) return ret;
+		number = doc_view->document->number_of_search_points - 1;
+	}
+	else if (number >= doc_view->document->number_of_search_points) {
+		ret = FIND_ERROR_HIT_BOTTOM;
+
+		if (!get_opt_bool("document.browse.search.wraparound", NULL)) return ret;
+		number = 0;
+	}
+
+	doc_view->vs->current_search_number = number;
+	pt = doc_view->document->search_points;
+	x = pt[number].x;
+	y = pt[number].y;
+
+	horizontal_scroll_extended(ses, doc_view, x - doc_view->vs->x, 0);
+	vertical_scroll(ses, doc_view, y - doc_view->vs->y);
+
+	return ret;
 }
 
 enum frame_event_status
@@ -1191,8 +1415,8 @@ match_link_text(struct link *link, unsigned char *text, int textlen,
 	if (link_is_form(link) || textlen > strlen(match))
 		return -1;
 
-	matchpos = case_sensitive ? strstr(match, text)
-				  : strcasestr(match, text);
+	matchpos = case_sensitive ? strstr((const char *)match, (const char *)text)
+				  : strcasestr((const char *)match, (const char *)text);
 
 	if (matchpos) {
 		return matchpos - match;
@@ -1209,8 +1433,9 @@ search_link_text(struct document *document, int current_link, int i,
 		 unsigned char *text, int direction, int *offset)
 {
 	int upper_link, lower_link;
-	int case_sensitive = get_opt_bool("document.browse.search.case");
-	int wraparound = get_opt_bool("document.browse.search.wraparound");
+	int case_sensitive = get_opt_bool("document.browse.search.case", NULL);
+	int wraparound = get_opt_bool("document.browse.search.wraparound",
+	                              NULL);
 	int textlen = strlen(text);
 
 	assert(textlen && direction && offset);
@@ -1260,17 +1485,13 @@ search_link_text(struct document *document, int current_link, int i,
 	return -1;
 }
 
-/* The typeahead input line takes up one of the viewed lines so we
- * might have to scroll if the link is under the input line. */
 static inline void
 fixup_typeahead_match(struct session *ses, struct document_view *doc_view)
 {
-	int current_link = doc_view->vs->current_link;
-	struct link *link = &doc_view->document->links[current_link];
-
+	/* We adjust the box_size to account for the typeahead input line
+	 * (we don't want the input line to cover the current link). */
 	doc_view->box.height -= 1;
-	set_pos_x(doc_view, link);
-	set_pos_y(doc_view, link);
+	check_vs(doc_view);
 	doc_view->box.height += 1;
 }
 
@@ -1328,34 +1549,14 @@ do_typeahead(struct session *ses, struct document_view *doc_view,
 		case ACT_EDIT_UP:
 			direction = -1;
 			i--;
-			if (i >= 0) break;
-			if (!get_opt_bool("document.browse.search.wraparound")) {
-search_hit_boundary:
-				if (match_link_text(&document->links[current],
-						    text, strlen(text),
-						    get_opt_bool("document"
-								 ".browse"
-								 ".search"
-								 ".case"))
-				     >= 0) {
-					return TYPEAHEAD_ERROR_NO_FURTHER;
-				}
 
-				return TYPEAHEAD_ERROR;
-			}
-
-			i = doc_view->document->nlinks - 1;
 			break;
 
 		case ACT_EDIT_NEXT_ITEM:
 		case ACT_EDIT_DOWN:
 			direction = 1;
 			i++;
-			if (i < doc_view->document->nlinks) break;
-			if (!get_opt_bool("document.browse.search.wraparound"))
-				goto search_hit_boundary;
 
-			i = 0;
 			break;
 
  		case ACT_EDIT_ENTER:
@@ -1364,6 +1565,22 @@ search_hit_boundary:
 
 		default:
 			direction = 1;
+	}
+
+	if (i < 0 || i >= doc_view->document->nlinks) {
+		if (!get_opt_bool("document.browse.search.wraparound", NULL)) {
+			if (match_link_text(&document->links[current],
+			                    text, strlen(text),
+			                    get_opt_bool("document.browse"
+			                                 ".search.case", NULL))
+			     >= 0) {
+				return TYPEAHEAD_ERROR_NO_FURTHER;
+			}
+
+			return TYPEAHEAD_ERROR;
+		}
+
+		i = direction > 0 ? 0 : doc_view->document->nlinks - 1;
 	}
 
 	match = search_link_text(document, current, i, text, direction, offset);
@@ -1390,6 +1607,9 @@ search_hit_boundary:
 /** @name Typeahead
  * @{ */
 
+/** @a action_id can be a value from enum edit_action, in which case the
+ * approriate action is performed; -1, which indicates to search and report any
+ * errors; or -2, which indicates to search without reporting any errors. */
 static enum input_line_code
 text_typeahead_handler(struct input_line *line, int action_id)
 {
@@ -1488,7 +1708,7 @@ link_typeahead_handler(struct input_line *line, int action_id)
 		offset = match_link_text(&doc_view->document->links[current],
 					 buffer, bufferlen,
 					 get_opt_bool("document.browse"
-						      ".search.case"));
+						      ".search.case", NULL));
 
 		if (offset >= 0) {
 			draw_typeahead_match(ses->tab->term, doc_view,
