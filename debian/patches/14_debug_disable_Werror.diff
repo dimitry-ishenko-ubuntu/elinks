@@ -1,0 +1,16 @@
+--enable-debug is recommended for development versions of ELinks but adds
+-Werror, remove that from CFLAGS.
+
+Index: elinks/configure.ac
+===================================================================
+--- elinks.orig/configure.ac	2017-12-01 11:02:18.520420287 +0100
++++ elinks/configure.ac	2017-12-01 11:10:55.834491498 +0100
+@@ -1758,7 +1758,7 @@
+ if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
+   if test "$CONFIG_DEBUG" = "yes"; then
+     # We want to see all warnings and live with none (in debug mode).
+-    CFLAGS="$CFLAGS -Werror"
++    CFLAGS="$CFLAGS"
+   fi
+   GETTEXT_CFLAGS="-Wno-uninitialized"
+ 
