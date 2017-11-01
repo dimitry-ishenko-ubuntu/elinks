@@ -3,9 +3,11 @@ Description: Don't embed the build date
  macros which shown when running "elinks --version".
 Author: Moritz Muehlenhoff <jmm@debian.org>
 
---- elinks-0.12~pre6.orig/src/main/version.c
-+++ elinks-0.12~pre6/src/main/version.c
-@@ -100,8 +100,6 @@ get_dyn_full_version(struct terminal *te
+Index: elinks/src/main/version.c
+===================================================================
+--- elinks.orig/src/main/version.c	2017-12-01 11:07:37.573697705 +0100
++++ elinks/src/main/version.c	2017-12-01 11:07:37.553697625 +0100
+@@ -103,8 +103,6 @@
  	}
  
  	add_char_to_string(&string, '\n');
@@ -14,8 +16,10 @@ Author: Moritz Muehlenhoff <jmm@debian.org>
  
  	if (more) {
  		add_to_string(&string, "\n\n");
---- elinks-0.12~pre6.orig/src/vernum.c
-+++ elinks-0.12~pre6/src/vernum.c
+Index: elinks/src/vernum.c
+===================================================================
+--- elinks.orig/src/vernum.c	2017-12-01 11:07:37.573697705 +0100
++++ elinks/src/vernum.c	2017-12-01 11:07:37.569697689 +0100
 @@ -8,6 +8,4 @@
  
  #include "vernum.h"
