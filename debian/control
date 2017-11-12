@@ -2,14 +2,14 @@ Source: elinks
 Section: web
 Priority: optional
 Maintainer: Moritz Muehlenhoff <jmm@debian.org>
-Build-Depends: debhelper (>= 9), libtre-dev, libgnutls28-dev, libidn11-dev,
+Build-Depends: debhelper (>= 10), libtre-dev, libgnutls28-dev, libidn11-dev,
 	libfsplib-dev, libgpm-dev [linux-any],
 	liblua5.1-dev, libbz2-dev, libexpat1-dev,
 	libperl-dev, libkrb5-dev, gettext,
 	autotools-dev, python, xmlto, docbook-utils, pkg-config,
         dh-autoreconf
 Build-Conflicts: libgc-dev
-Standards-Version: 3.9.8
+Standards-Version: 4.1.1
 Homepage: http://elinks.cz/
 
 Package: elinks
@@ -34,6 +34,7 @@ Description: advanced text-mode WWW browser
 
 Package: elinks-data
 Architecture: all
+Multi-Arch: foreign
 Depends: ${misc:Depends}
 Pre-Depends: ${misc:Pre-Depends}
 Recommends: elinks (= ${source:Version})
@@ -59,6 +60,7 @@ Description: advanced text-mode WWW browser - data files
 Package: elinks-doc
 Section: doc
 Architecture: all
+Multi-Arch: foreign
 Depends: ${misc:Depends}
 Pre-Depends: ${misc:Pre-Depends}
 Suggests: elinks

@@ -1,3 +1,10 @@
+elinks (0.12~pre6-13) unstable; urgency=medium
+
+  * Mark elinks-data and elinks-doc Multi-Arch: foreign, thanks to
+    Helmut Grohne (Closes: #862197)
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Sun, 12 Nov 2017 21:28:57 +0100
+
 elinks (0.12~pre6-12) unstable; urgency=medium
 
   * Fix maint script (Closes: #788160)
