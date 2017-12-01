@@ -188,11 +188,11 @@ do_action(struct session *ses, enum main_action action_id, int verbose)
 			break;
 
 		case ACT_MAIN_FIND_NEXT:
-			status = find_next(ses, doc_view, 1);
+			status = move_search_next(ses, doc_view);
 			break;
 
 		case ACT_MAIN_FIND_NEXT_BACK:
-			status = find_next(ses, doc_view, -1);
+			status = move_search_prev(ses, doc_view);
 			break;
 
 		case ACT_MAIN_FORGET_CREDENTIALS:
@@ -608,6 +608,11 @@ do_action(struct session *ses, enum main_action action_id, int verbose)
 
 		case ACT_MAIN_TOGGLE_DOCUMENT_COLORS:
 			toggle_document_option(ses, "document.colors.use_document_colors");
+			break;
+
+		case ACT_MAIN_TOGGLE_DOCUMENT_WIDTH:
+			toggle_document_option(ses, "document.browse.use_preferred_document_width");
+			redraw_terminal_cls(term);
 			break;
 
 		case ACT_MAIN_TOGGLE_HTML_PLAIN:
