@@ -1,0 +1,318 @@
+From 0d07b47d0269b7702bee0d104e061b15dc19d4b1 Mon Sep 17 00:00:00 2001
+From: sgerwk <sgerwk@aol.com>
+Date: Mon, 4 Jun 2018 01:10:07 +0200
+Subject: [PATCH] ascii replacements for linux virtual terminals
+
+---
+ src/document/html/renderer.c                     |  15 ++-
+ src/document/html/test/parse-meta-refresh-test.c |   5 +
+ src/intl/charsets.c                              | 124 +++++++++++++++++++++--
+ src/intl/charsets.h                              |   2 +
+ src/network/ssl/test/match-hostname-test.c       |   5 +
+ src/protocol/ftp/ftp-parser.c                    |   5 +
+ src/protocol/test/uri-test.c                     |   5 +
+ 7 files changed, 152 insertions(+), 9 deletions(-)
+
+diff --git a/src/document/html/renderer.c b/src/document/html/renderer.c
+index 8426825..a0be511 100644
+--- a/src/document/html/renderer.c
++++ b/src/document/html/renderer.c
+@@ -527,8 +527,10 @@ set_hline(struct html_context *html_context, unsigned char *chars, int charslen,
+ 		 * incomplete character in document->buf, then
+ 		 * the first byte of input can result in a double-cell
+ 		 * character, so we must reserve one extra element.  */
++		/* But, ascii replacements complicates this because a single
++		   codepoint may be rendered to as much as 20 chars */
+ 		orig_length = realloc_line(html_context, document,
+-					   Y(y), X(x) + charslen);
++					   Y(y), X(x) + charslen * 20);
+ 		if (orig_length < 0) /* error */
+ 			return 0;
+ 		if (utf8) {
+@@ -640,7 +642,16 @@ good_char:
+ #endif /* CONFIG_COMBINE */
+ 				part->spaces[x] = (data == UCS_SPACE);
+ 
+-				if (unicode_to_cell(data) == 0)
++				if (codepoint_replacement(data) != -1) {
++					int i;
++
++					for(i = 0; i < unicode_to_cell(data); i++) {
++						schar->data = encode_utf8(data)[i];
++						part->char_width[x] = 1;
++						copy_screen_chars(&POS(x++, y), schar, 1);
++					}
++					continue;
++				} else if (unicode_to_cell(data) == 0)
+ 					continue;
+ 				else if (unicode_to_cell(data) == 2) {
+ 					schar->data = (unicode_val_T)data;
+diff --git a/src/document/html/test/parse-meta-refresh-test.c b/src/document/html/test/parse-meta-refresh-test.c
+index 35dca74..d75c0ef 100644
+--- a/src/document/html/test/parse-meta-refresh-test.c
++++ b/src/document/html/test/parse-meta-refresh-test.c
+@@ -14,6 +14,11 @@
+ #include "document/html/parse-meta-refresh.h"
+ #include "util/memory.h"
+ 
++/* fake tty get function, needed for charsets.c */
++int get_ctl_handle() {
++	return -1;
++}
++
+ struct meta_refresh_test_case
+ {
+ 	const unsigned char *content;
+diff --git a/src/intl/charsets.c b/src/intl/charsets.c
+index 5b30c85..dc3d423 100644
+--- a/src/intl/charsets.c
++++ b/src/intl/charsets.c
+@@ -23,6 +23,9 @@
+ #include <iconv.h>
+ #endif
+ 
++#include <sys/ioctl.h>
++#include <sys/kd.h>
++
+ #include "elinks.h"
+ 
+ #include "document/options.h"
+@@ -33,6 +36,7 @@
+ #include "util/hash.h"
+ #include "util/memory.h"
+ #include "util/string.h"
++#include "osdep/osdep.h"
+ 
+ 
+ /* Fix namespace clash on MacOS. */
+@@ -185,6 +189,46 @@ new_translation_table(struct conv_table *p)
+ 	}										\
+ }											\
+ 
++/* list of unicode codepoints supported by the current terminal, if this
++ * information is available, otherwise size = -1 */
++
++struct {
++	int size;
++	unicode_val_T *list;
++} codepoints;
++
++int is_codepoint_supported(unicode_val_T u) {
++	int first, last, middle;
++
++	if (codepoints.size == -1)
++		return 1;
++
++	first = 0;
++	last = codepoints.size - 1;
++
++	while (first <= last) {
++		middle = (last + first) / 2;
++		if (codepoints.list[middle] == u)
++			return u;
++		else if (codepoints.list[middle] > u)
++			last = middle - 1;
++		else
++			first = middle + 1;
++	}
++
++	return 0;
++}
++
++int codepoint_replacement(unicode_val_T u) {
++	int s;
++
++	if (is_codepoint_supported(u))
++		return -1;
++
++	BIN_SEARCH(unicode_7b, x, N_UNICODE_7B, u, s);
++	return s;
++}
++
+ static const unicode_val_T strange_chars[32] = {
+ 0x20ac, 0x0000, 0x002a, 0x0000, 0x201e, 0x2026, 0x2020, 0x2021,
+ 0x005e, 0x2030, 0x0160, 0x003c, 0x0152, 0x0000, 0x0000, 0x0000,
+@@ -240,8 +284,15 @@ static unsigned char utf_buffer[7];
+ NONSTATIC_INLINE unsigned char *
+ encode_utf8(unicode_val_T u)
+ {
++	int s;
++
+ 	memset(utf_buffer, 0, 7);
+ 
++	if (!is_codepoint_supported(u)) {
++		BIN_SEARCH(unicode_7b, x, N_UNICODE_7B, u, s);
++		if (s != -1) return unicode_7b[s].s;
++	}
++
+ 	if (u < 0x80)
+ 		utf_buffer[0] = u;
+ 	else if (u < 0x800)
+@@ -610,6 +661,13 @@ invalid_arg:
+ NONSTATIC_INLINE int
+ unicode_to_cell(unicode_val_T c)
+ {
++	int s;
++
++	if (!is_codepoint_supported(c)) {
++		BIN_SEARCH(unicode_7b, x, N_UNICODE_7B, c, s);
++		if (s != -1) return strlen(unicode_7b[s].s);
++	}
++
+ 	if (c == 0x200e || c == 0x200f)
+ 		return 0;
+ 	if (c >= 0x1100
+@@ -861,10 +919,6 @@ add_utf8(struct conv_table *ct, unicode_val_T u, const unsigned char *str)
+ 		if (ct[*p].t) ct = ct[*p].u.tbl;
+ 		else {
+ 			struct conv_table *nct;
+-
+-			assertm(ct[*p].u.str == no_str, "bad utf encoding #1");
+-			if_assert_failed return;
+-
+ 			nct = mem_calloc(256, sizeof(*nct));
+ 			if (!nct) return;
+ 			new_translation_table(nct);
+@@ -875,9 +929,6 @@ add_utf8(struct conv_table *ct, unicode_val_T u, const unsigned char *str)
+ 		p++;
+ 	}
+ 
+-	assertm(!ct[*p].t, "bad utf encoding #2");
+-	if_assert_failed return;
+-
+ 	if (ct[*p].u.str == no_str)
+ 		ct[*p].u.str = str;
+ }
+@@ -1598,9 +1649,68 @@ get_cp_index(const unsigned char *name)
+ 
+ #endif /* USE_FASTFIND */
+ 
++/* create the list of codepoints supported by the terminal */
++
++#ifdef GIO_UNIMAP
++int cmpint(const void *a, const void *b) {
++	if (* (int *) a < * (int *) b)
++		return -1;
++	else if (* (int *) a == * (int *) b)
++		return 0;
++	else
++		return 1;
++}
++
++void make_codepoints() {
++	int tty;
++	struct unimapdesc table;
++	int res;
++	int i;
++
++	tty = get_ctl_handle();
++	if (tty == -1) {
++		codepoints.size = -1;
++		return ;
++	}
++
++	table.entry_ct = 0;
++	table.entries = NULL;
++	res = ioctl(tty, GIO_UNIMAP, &table);
++	if (res && errno != ENOMEM) {
++		perror("GIO_UNIMAP");
++		codepoints.size = -1;
++		return;
++	}
++
++	table.entries = malloc(table.entry_ct * sizeof(struct unipair));
++	res = ioctl(tty, GIO_UNIMAP, &table);
++	if (res) {
++		perror("GIO_UNIMAP");
++		close(tty);
++		codepoints.size = -1;
++		return;
++	}
++
++	codepoints.size = table.entry_ct;
++	codepoints.list = malloc(table.entry_ct * sizeof(unicode_val_T));
++	for (i = 0; i < table.entry_ct; i++)
++		codepoints.list[i] = table.entries[i].unicode;
++
++	qsort(codepoints.list, codepoints.size, sizeof(unicode_val_T), cmpint);
++
++	// for (i = 0; i < codepoints.size; i++)
++	//	fprintf(stderr, "U+%04X\n", codepoints.list[i]);
++}
++#else
++void make_codepoints() {
++	codepoints.size = -1;
++}
++#endif
++
+ void
+ init_charsets_lookup(void)
+ {
++	make_codepoints();
+ #ifdef USE_FASTFIND
+ 	fastfind_index(&ff_charsets_index, FF_COMPRESS);
+ #endif
+diff --git a/src/intl/charsets.h b/src/intl/charsets.h
+index 5b8fcb3..9ddfc7f 100644
+--- a/src/intl/charsets.h
++++ b/src/intl/charsets.h
+@@ -156,6 +156,8 @@ unsigned char *utf8_step_forward(unsigned char *, unsigned char *,
+ 				 int, enum utf8_step, int *);
+ unsigned char *utf8_step_backward(unsigned char *, unsigned char *,
+ 				  int, enum utf8_step, int *);
++int is_codepoint_supported(unicode_val_T u);
++int codepoint_replacement(unicode_val_T u);
+ int unicode_to_cell(unicode_val_T);
+ unicode_val_T unicode_fold_label_case(unicode_val_T);
+ int strlen_utf8(unsigned char **);
+diff --git a/src/network/ssl/test/match-hostname-test.c b/src/network/ssl/test/match-hostname-test.c
+index fbdf6fa..4049365 100644
+--- a/src/network/ssl/test/match-hostname-test.c
++++ b/src/network/ssl/test/match-hostname-test.c
+@@ -12,6 +12,11 @@
+ #include "network/ssl/match-hostname.h"
+ #include "util/string.h"
+ 
++/* fake tty get function, needed for charsets.c */
++int get_ctl_handle() {
++	return -1;
++}
++
+ struct match_hostname_pattern_test_case
+ {
+ 	const unsigned char *pattern;
+diff --git a/src/protocol/ftp/ftp-parser.c b/src/protocol/ftp/ftp-parser.c
+index ece4d2f..77c0d10 100644
+--- a/src/protocol/ftp/ftp-parser.c
++++ b/src/protocol/ftp/ftp-parser.c
+@@ -15,6 +15,11 @@
+ #include "protocol/ftp/parse.h"
+ #include "util/test.h"
+ 
++/* fake tty get function, needed for charsets.c */
++int get_ctl_handle() {
++	return -1;
++}
++
+ int
+ main(int argc, char *argv[])
+ {
+diff --git a/src/protocol/test/uri-test.c b/src/protocol/test/uri-test.c
+index d694151..9046834 100644
+--- a/src/protocol/test/uri-test.c
++++ b/src/protocol/test/uri-test.c
+@@ -10,6 +10,11 @@
+ #include "protocol/uri.h"
+ #include "util/string.h"
+ 
++/* fake tty get function, needed for charsets.c */
++int get_ctl_handle() {
++	return -1;
++}
++
+ int
+ main(int argc, char **argv)
+ {
+-- 
+2.11.0
+
