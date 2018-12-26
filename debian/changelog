@@ -1,3 +1,11 @@
+elinks (0.12~pre6-14) unstable; urgency=medium
+
+  * Orphan package
+  * Disable openpgp certificate support, fixes compatability with
+    gnutls 3.6, thanks to Andreas and Dimitri (Closes: #879539)
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Wed, 26 Dec 2018 23:49:50 +0100
+
 elinks (0.12~pre6-13) unstable; urgency=medium
 
   * Mark elinks-data and elinks-doc Multi-Arch: foreign, thanks to

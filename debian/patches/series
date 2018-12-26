@@ -5,3 +5,4 @@
 08-drop-deprecated-gnutls-functions.diff
 09-Switch-to-use-lua-5.1.diff
 10-reproducible-build.diff
+11-fix-compat-with-gnutls36.patch
