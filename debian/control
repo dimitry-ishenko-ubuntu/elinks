@@ -1,7 +1,7 @@
 Source: elinks
 Section: web
 Priority: optional
-Maintainer: Moritz Muehlenhoff <jmm@debian.org>
+Maintainer: أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>
 Build-Depends: debhelper (>= 12), libtre-dev, libgnutls28-dev, libgcrypt20-dev, libidn11-dev,
 	libfsplib-dev, libgpm-dev [linux-any],
 	liblua5.1-dev, libbz2-dev, libexpat1-dev,
