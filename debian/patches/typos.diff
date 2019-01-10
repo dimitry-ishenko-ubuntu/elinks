@@ -1,0 +1,72 @@
+Description: fix spelling mistakes
+Author: أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>
+Index: elinks/doc/man/man5/elinks.conf.5
+===================================================================
+--- elinks.orig/doc/man/man5/elinks.conf.5	2019-01-13 04:57:18.060762953 +0100
++++ elinks/doc/man/man5/elinks.conf.5	2019-01-13 04:58:20.433012606 +0100
+@@ -694,7 +694,7 @@
+ .PP
+ document\&.cache\&.format\&.size \fB<num>\fR (default: 5)
+ .RS 4
+-Number of cached formatted pages\&. Do not get too generous here, \'formatted\' means that all the accompanying structures are kept in memory so that you get the cached document immediatelly, but these structures may take a lot \(en 2x the size of the HTML source is probably not unusual, but it can be even more if the document consists of a lot of short lines (padded right, if possible) and links and not much other markup\&. So if you set this to 256 and then you don\'t like your
++Number of cached formatted pages\&. Do not get too generous here, \'formatted\' means that all the accompanying structures are kept in memory so that you get the cached document immediately, but these structures may take a lot \(en 2x the size of the HTML source is probably not unusual, but it can be even more if the document consists of a lot of short lines (padded right, if possible) and links and not much other markup\&. So if you set this to 256 and then you don\'t like your
+ ELinks
+ eating 90M, don\'t come complaining to us\&. ;\-)
+ .sp
+@@ -1030,7 +1030,7 @@
+ .PP
+ document\&.html\&.wrap_nbsp \fB[0|1]\fR (default: 0)
+ .RS 4
+-If set do not honour non breaking space (the nbsp entity) but allow to wrap the text\&. This can help keeping the width of documents down so no horizontal scrolling is needed\&.
++If set do not honour non breaking space (the nbsp entity) but allows one to wrap the text\&. This can help keeping the width of documents down so no horizontal scrolling is needed\&.
+ .RE
+ .SS "document\&.plain (Plain rendering)"
+ Options concerning the display of plain text pages\&.
+Index: elinks/src/config/options.inc
+===================================================================
+--- elinks.orig/src/config/options.inc	2019-01-13 04:57:18.060762953 +0100
++++ elinks/src/config/options.inc	2019-01-13 04:59:12.505221032 +0100
+@@ -557,7 +557,7 @@
+ 		N_("Number of cached formatted pages. Do not get too "
+ 		"generous here, 'formatted' means that all the accompanying "
+ 		"structures are kept in memory so that you get the cached "
+-		"document immediatelly, but these structures may take a lot "
++		"document immediately, but these structures may take a lot "
+ 		"- 2x the size of the HTML source is probably not unusual, "
+ 		"but it can be even more if the document consists of a lot "
+ 		"of short lines (padded right, if possible) and links and "
+@@ -819,7 +819,7 @@
+ 	INIT_OPT_BOOL("document.html", N_("Wrap non breaking space"),
+ 		"wrap_nbsp", 0, 0,
+ 		N_("If set do not honour non breaking space (the nbsp entity) "
+-		"but allow to wrap the text. This can help keeping the width "
++		"but allows one to wrap the text. This can help keeping the width "
+ 		"of documents down so no horizontal scrolling is needed.")),
+ 
+ 
+Index: elinks/src/document/html/parser/general.c
+===================================================================
+--- elinks.orig/src/document/html/parser/general.c	2019-01-13 04:57:18.060762953 +0100
++++ elinks/src/document/html/parser/general.c	2019-01-13 04:57:18.052762920 +0100
+@@ -845,7 +845,7 @@
+ 		}
+ 		i++;
+ 		assertm(!(n && !roman_tbl[i].n),
+-			"BUG in roman number convertor");
++			"BUG in roman number converter");
+ 		if_assert_failed break;
+ 	}
+ }
+Index: elinks/src/mime/backend/mailcap.c
+===================================================================
+--- elinks.orig/src/mime/backend/mailcap.c	2019-01-13 04:57:18.060762953 +0100
++++ elinks/src/mime/backend/mailcap.c	2019-01-13 04:57:18.060762953 +0100
+@@ -354,7 +354,7 @@
+ 
+ 		if (!parse_optional_fields(entry, linepos)) {
+ 			done_mailcap_entry(entry);
+-			usrerror(gettext("Badly formated mailcap entry "
++			usrerror(gettext("Badly formatted mailcap entry "
+ 			         "for type %s in \"%s\" line %d"),
+ 			         type, filename, lineno);
+ 			continue;
