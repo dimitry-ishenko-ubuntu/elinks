@@ -2,7 +2,7 @@ Source: elinks
 Section: web
 Priority: optional
 Maintainer: أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>
-Build-Depends: debhelper (>= 11), libtre-dev, libgnutls28-dev, libgcrypt20-dev, libidn11-dev,
+Build-Depends: debhelper (>= 12), libtre-dev, libgnutls28-dev, libgcrypt20-dev, libidn11-dev,
 	libfsplib-dev, libgpm-dev [linux-any],
 	liblua5.1-dev, libbz2-dev, libexpat1-dev,
 	libperl-dev, libkrb5-dev, gettext,
@@ -13,6 +13,8 @@ Build-Depends: debhelper (>= 11), libtre-dev, libgnutls28-dev, libgcrypt20-dev, 
 Build-Conflicts: libgc-dev
 Standards-Version: 4.3.0
 Homepage: http://elinks.cz/
+Vcs-Git: https://salsa.debian.org/aelmahmoudy-guest/elinks.git
+Vcs-Browser: https://salsa.debian.org/aelmahmoudy-guest/elinks
 
 Package: elinks
 Architecture: any
