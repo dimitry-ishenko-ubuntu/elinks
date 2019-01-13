@@ -1,136 +1,146 @@
-This package was debianized by Peter Gervai <grin@tolna.net> on
-Mon, 29 Nov 1999 12:16:46 +0100.
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: elinks
+Upstream-Contact: Jonas Fonseca <fonseca@diku.dk>
+Source: http://elinks.cz
 
-It was downloaded from http://elinks.or.cz/
 
-Upstream Authors: 
+Files: *
+Copyright: 2003-2004, The ELinks Project
+           2002-2003, Laurent Monin
+           2001-2004, Petr Baudis
+           2000-2001, Kungliga Tekniska Högskolan
+           1999-2002, Mikulas Patocka
+           1996-2000, Michael R. Elkins
+           1995-2002, Jean-loup Gailly
+           1995-1997, 2000-2001, Free Software Foundation, Inc.
+           1995-1999, Cryptography Research, Inc.
+           1995, Patrick Powell
+           1991-2001, Unicode, Inc.
+           1991-1999, Microsoft, Inc.
+License: GPL-2
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, only version 2 of the License (not version 3.x
+ etc.) is the valid version of the GNU General Public License for ELinks.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the complete text of the GNU GPL3 licenses can be found at
+ `/usr/share/common-licenses/GPL-2'.
 
-    Jonas Fonseca <fonseca@diku.dk>
-    José Luis González González <jlg80@mi.madritel.es>
-    Peter Wang <tjaden@alphalink.com.au>
-    Petr Baudis <pasky@ucw.cz>
-    Mikulas Patocka <mikulas@artax.karlin.mff.cuni.cz>
-    Miciah Dashiel Butler Masters <miciah@myrealbox.com>
-    Witold Filipczyk <witekfl@poczta.onet.pl>
-    Sergei Borushevsky <b_sp@usa.net>
-    Laurent Monin <zas@norz.org>
-    Karsten Schölzel <kuser@gmx.de>
-    Kalle Olavi Niemitalo <kon@iki.fi>
-    Fabio Bonelli <fabiobonelli@libero.it>
-    Cliff Cunnington <cliff@ccnet.xs4all.nl>
-    And may others (See AUTHORS file for complete list)
 
-Copyright: 
+Files: src/osdep/getifaddrs.c
+       src/osdep/getifaddrs.h
+Copyright: 2000-2001, Kungliga Tekniska Högskolan (Royal Institute of
+           Technology, Stockholm, Sweden).
+License: BSD-3-clause
+ Copyright (c) 2000-2001 Kungliga Tekniska Högskolan (Royal Institute of
+ Technology, Stockholm, Sweden).
+ All rights reserved.
+ .
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ .
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+   3. Neither the name of the Institute nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+ .
+   THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
+   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
+   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+   OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+   SUCH DAMAGE.
 
-    Copyright (C) 2003-2004, The ELinks Project
-    Copyright (C) 2002-2003, Laurent Monin
-    Copyright (C) 2001-2004, Petr Baudis
-    Copyright (C) 2000-2001, Kungliga Tekniska Högskolan
-    Copyright (C) 1999-2002, Mikulas Patocka
-    Copyright (C) 1996-2000, Michael R. Elkins
-    Copyright (C) 1995-2002, Jean-loup Gailly
-    Copyright (C) 1995-1997, 2000-2001, Free Software Foundation, Inc.
-    Copyright (C) 1995-1999, Cryptography Research, Inc.
-    Copyright (C) 1995, Patrick Powell
-    Copyright (C) 1991-2001, Unicode, Inc.
-    Copyright (C) 1991-1999, Microsoft, Inc.
+Files: src/util/md5.c
+       contrib/LinksOS2Icon.zip
+       Unicode/entities.txt
+Copyright: 1991-2008 Unicode, Inc.
+License: PD
+ This code is in the public domain; do with it what you wish.
 
-License:
+Files: src/util/sha1.c
+       src/util/sha1.h
+Copyright: 1995-1999, Cryptography Research, Inc.
+License: MPL
+ The contents of this file are subject to the Mozilla Public
+ License Version 1.1 (the "License"); you may not use this file
+ except in compliance with the License. You may obtain a copy of
+ the License at http://www.mozilla.org/MPL/
+ .
+ Software distributed under the License is distributed on an "AS
+ IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ implied. See the License for the specific language governing
+ rights and limitations under the License.
 
-  ELinks is licensed under the GNU GPLv2 (exceptions follow)
+Files: doc/tools/help2xml
+       po/perl/msgaccel-check
+       po/perl/msgaccel-prepare
+Copyright: 2008, Kalle Olavi Niemitalo
+License: ISC
+ Permission to use, copy, modify, and/or distribute this software for any
+ purpose with or without fee is hereby granted, provided that the above
+ copyright notice and this permission notice appear in all copies.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; unless explicitly stated otherwise
-    elsewhere (in the AUTHORS file), only version 2 of the License (not
-    version 3.x etc.) is the valid version of the GNU General Public
-    License for ELinks.
+Files: Unicode/*.cp
+Copyright: 1991-2008 Unicode, Inc.
+License: Unicode
+ This file is provided as-is by Unicode, Inc. (The Unicode Consortium).
+ No claims are made as to fitness for any particular purpose.  No
+ warranties of any kind are expressed or implied.  The recipient
+ agrees to determine applicability of information provided.  If this
+ file has been provided on optical media by Unicode, Inc., the sole
+ remedy for any claim will be exchange of defective media within 90
+ days of receipt.
+ .
+ Unicode, Inc. hereby grants the right to freely use the information
+ supplied in this file in the creation of products supporting the
+ Unicode Standard, and to make copies of this file in any form for
+ internal or external distribution as long as this notice remains
+ attached.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    with the Debian GNU/Linux distribution in the file
-    /usr/share/common-licenses/GPL-2; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
-
-  src/osdep/getifaddrs.c and src/osdep/getifaddrs.h are licensed under 
-  the following license:
-
-/*
- * Copyright (c) 2000 - 2001 Kungliga Tekniska Högskolan
- * (Royal Institute of Technology, Stockholm, Sweden).
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the Institute nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- */
-
-  The following files are under Public domain: src/util/md5.c
-  contrib/LinksOS2Icon.zip Unicode/entities.txt
-
-  src/util/sha1.c and src/util/sha1.h are also available under the
-  Mozilla Public License v1.1
-
-  doc/tools/help2xml po/perl/msgaccel-check and po/perl/msgaccel-prepare
-  are under the ISC licence
-
-    Permission to use, copy, modify, and/or distribute this software for any
-    purpose with or without fee is hereby granted, provided that the above
-    copyright notice and this permission notice appear in all copies.
-
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
-  Unicode/*.cp are licensed under The Unicode Consortium license
-
-    This file is provided as-is by Unicode, Inc. (The Unicode Consortium).
-    No claims are made as to fitness for any particular purpose.  No
-    warranties of any kind are expressed or implied.  The recipient
-    agrees to determine applicability of information provided.  If this
-    file has been provided on optical media by Unicode, Inc., the sole
-    remedy for any claim will be exchange of defective media within 90
-    days of receipt.
-
-    Unicode, Inc. hereby grants the right to freely use the information
-    supplied in this file in the creation of products supporting the
-    Unicode Standard, and to make copies of this file in any form for
-    internal or external distribution as long as this notice remains
-    attached.
-
-The Debian packaging is
-Copyright (C) 1999-2007, Peter Gervai <grin@tolna.net>
-Copyright (C) 2007-2009, Y Giridhar Appaji Nag <giridhar@appaji.net> and
-is licensed under the GNU GPL, either version 2 of the License, or (at
-your option) any later version; see `/usr/share/common-licenses/GPL-2'.
+Files: debian/*
+Copyright: 1999-2007, Peter Gervai <grin@tolna.net>
+           2007-2009, Y Giridhar Appaji Nag <giridhar@appaji.net> and
+           2018 أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>
+License: GPL-2+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the complete text of the GNU GPL2 licenses can be found at
+ `/usr/share/common-licenses/GPL-2'.
