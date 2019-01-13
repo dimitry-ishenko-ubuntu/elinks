@@ -84,5 +84,3 @@ Description: advanced text-mode WWW browser - documentation
   * Compressed and background (non-blocking) downloads, and download resuming
  .
  This package contains the documentation and manuals for ELinks.
-
-
