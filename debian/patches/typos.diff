@@ -1,5 +1,6 @@
 Description: fix spelling mistakes
 Author: أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>
+Forwarded: https://github.com/rkd77/felinks/pull/26
 Index: elinks/doc/man/man5/elinks.conf.5
 ===================================================================
 --- elinks.orig/doc/man/man5/elinks.conf.5	2019-01-13 04:57:18.060762953 +0100
