@@ -1,7 +1,7 @@
-elinks (0.13~20180825-1) experimental; urgency=medium
+elinks (0.13~20190114-1) experimental; urgency=medium
 
   * New upstream release (Closes: #891575, #797931, #797934, #757631,
-    #866015, #797968, #740981, #865852)
+    #866015, #797968, #740981, #856852)
   * Add git-buildpackage conf file
   * Refreshed patches & removed patches that were includes upstream.
     Removed patches:
@@ -39,8 +39,9 @@ elinks (0.13~20180825-1) experimental; urgency=medium
     + Add Vcs-* fields
   * Add upstream metadata
   * Switch to DEP-5 copyright format
+  * Disable pristine-tar, since we are getting the release from upstream git
 
- -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Mon, 14 Jan 2019 05:41:43 +0100
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Fri, 18 Jan 2019 04:43:29 +0100
 
 elinks (0.12~pre6-13) unstable; urgency=medium
 
