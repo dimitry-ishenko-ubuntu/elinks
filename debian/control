@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 12), libtre-dev, libgnutls28-dev, libgcrypt20-dev, 
 	liblua5.1-dev, libbz2-dev, libexpat1-dev,
 	libperl-dev, libkrb5-dev, gettext,
 	python, xmlto, docbook-utils, pkg-config,
-  liblzma-dev, libmozjs185-dev | libmozjs-dev | libmozjs-60-dev,
+  liblzma-dev, libmozjs-60-dev | libmozjs-dev,
   libncurses5-dev
   ,libev-libevent-dev
 Build-Conflicts: libgc-dev
