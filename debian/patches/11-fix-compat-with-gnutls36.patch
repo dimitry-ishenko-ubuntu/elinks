@@ -1,0 +1,17 @@
+Description: Compat with gnutls 3.6.4, just ask for normal priority.
+ otherwise ssl connections all fail.
+Author: Dimitri John Ledkov <xnox@ubuntu.com>
+
+Index: elinks/src/network/ssl/ssl.c
+===================================================================
+--- elinks.orig/src/network/ssl/ssl.c	2019-01-21 15:03:16.760918568 +0100
++++ elinks/src/network/ssl/ssl.c	2019-01-21 15:04:52.781302903 +0100
+@@ -392,7 +392,7 @@
+ 	 * in ELinks.  If you change the priorities here, please check
+ 	 * whether that one needs to be changed as well.  */
+ 	if (gnutls_priority_set_direct(*state,
+-				       "NORMAL:-CTYPE-OPENPGP:-VERS-TLS1.1:-VERS-SSL3.0",
++				       "NORMAL:-VERS-TLS1.1:-VERS-SSL3.0",
+ 				       NULL)) {
+ 		gnutls_deinit(*state);
+ 		mem_free(state);

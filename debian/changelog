@@ -5,7 +5,7 @@ elinks (0.13~20190114-1) experimental; urgency=medium
   * Add git-buildpackage conf file
   * Refreshed patches & removed patches that were includes upstream.
     Removed patches:
-    08-drop-deprecated-gnutls-functions.diff (Closes: #879539)
+    08-drop-deprecated-gnutls-functions.diff
     08_524696_fix_imdb_urls.diff
     09-Switch-to-use-lua-5.1.diff
   * Add libgcrypt20-dev to build deps
@@ -42,6 +42,14 @@ elinks (0.13~20190114-1) experimental; urgency=medium
   * Disable pristine-tar, since we are getting the release from upstream git
 
  -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Fri, 18 Jan 2019 04:43:29 +0100
+
+elinks (0.12~pre6-14) unstable; urgency=medium
+
+  * Orphan package
+  * Disable openpgp certificate support, fixes compatability with
+    gnutls 3.6, thanks to Andreas and Dimitri (Closes: #879539)
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Wed, 26 Dec 2018 23:49:50 +0100
 
 elinks (0.12~pre6-13) unstable; urgency=medium
 
