@@ -41,7 +41,7 @@ elinks (0.13~20190114-1) experimental; urgency=medium
   * Switch to DEP-5 copyright format
   * Disable pristine-tar, since we are getting the release from upstream git
 
- -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Fri, 18 Jan 2019 04:43:29 +0100
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Mon, 21 Jan 2019 04:43:29 +0100
 
 elinks (0.12~pre6-14) unstable; urgency=medium
 
