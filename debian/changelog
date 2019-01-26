@@ -1,4 +1,4 @@
-elinks (0.13~20190114-1) experimental; urgency=medium
+elinks (0.13~20190125-1) experimental; urgency=medium
 
   * New upstream release (Closes: #891575, #797931, #797934, #757631,
     #866015, #797968, #740981, #856852)
@@ -8,6 +8,7 @@ elinks (0.13~20190114-1) experimental; urgency=medium
     08-drop-deprecated-gnutls-functions.diff
     08_524696_fix_imdb_urls.diff
     09-Switch-to-use-lua-5.1.diff
+    11-fix-compat-with-gnutls36.patch
   * Add libgcrypt20-dev to build deps
   * Re-added 14_debug_disable_Werror.diff to enable development versions debug
     support
@@ -41,7 +42,7 @@ elinks (0.13~20190114-1) experimental; urgency=medium
   * Switch to DEP-5 copyright format
   * Disable pristine-tar, since we are getting the release from upstream git
 
- -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Mon, 21 Jan 2019 04:43:29 +0100
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Sat, 26 Jan 2019 02:53:52 +0100
 
 elinks (0.12~pre6-14) unstable; urgency=medium
 
