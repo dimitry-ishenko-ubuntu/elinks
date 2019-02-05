@@ -1,3 +1,13 @@
+elinks (0.13~20190125-2) experimental; urgency=medium
+
+  * Mention felinks fork in description
+  * Disable Spidermonkey (Closes: #920924)
+    mozjs185 has been removed in Debian, and upstream does not support later
+    versions
+  * Add gitlab-ci.yaml
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Tue, 05 Feb 2019 07:38:15 +0100
+
 elinks (0.13~20190125-1) experimental; urgency=medium
 
   * New upstream release (Closes: #891575, #797931, #797934, #757631,
