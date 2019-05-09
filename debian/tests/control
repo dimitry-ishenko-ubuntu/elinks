@@ -1,2 +1,5 @@
 Tests: dump
 Depends: elinks
+
+#Tests: session
+#Depends: elinks, screen
