@@ -3,3 +3,7 @@ Depends: elinks
 
 #Tests: session
 #Depends: elinks, screen
+
+Tests: basic-usage
+Depends: @, nginx
+Restrictions: needs-root

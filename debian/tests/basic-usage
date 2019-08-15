@@ -1,0 +1,36 @@
+#!/bin/bash
+
+##############################
+# Testing basic elinks usage #
+##############################
+
+exec 2>&1
+set -ex
+
+STATICFILE_DIR=/var/www/elinks
+
+mkdir -p $STATICFILE_DIR
+
+cat << EOF > $STATICFILE_DIR/index.html
+<!DOCTYPE html>
+<html>
+  <body>
+    <p>This html page was made to test elinks.</p>
+  </body>
+</html>
+EOF
+
+cat << EOF > /etc/nginx/sites-available/elinks
+server {
+  server_name localhost;
+  listen 80;
+  root $STATICFILE_DIR;
+  index index.html;
+}
+EOF
+
+# Enable the elinks nginx site
+ln -s /etc/nginx/sites-available/elinks /etc/nginx/sites-enabled/elinks
+service nginx restart
+
+elinks -dump 1 http://localhost | grep -q "This html page was made to test elinks"
