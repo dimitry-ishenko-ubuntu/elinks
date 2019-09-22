@@ -11,7 +11,7 @@ Build-Depends: debhelper (>= 12), libtre-dev, libgnutls28-dev, libgcrypt20-dev, 
   libncurses5-dev
   ,libev-libevent-dev
 Build-Conflicts: libgc-dev
-Standards-Version: 4.3.0
+Standards-Version: 4.4.0
 Homepage: http://elinks.cz/
 Vcs-Git: https://salsa.debian.org/aelmahmoudy-guest/elinks.git
 Vcs-Browser: https://salsa.debian.org/aelmahmoudy-guest/elinks
