@@ -1,3 +1,14 @@
+elinks (0.13~20190125-4) unstable; urgency=medium
+
+  * Add autopkgtest
+  * Add a session test using screen.
+    Currently disabled since it doesn't work
+  * Remove python from Build-deps (Closes: #936475)
+  * Fix installation source paths
+  * Update standards version to 4.4.0
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Mon, 23 Sep 2019 18:03:39 +0200
+
 elinks (0.13~20190125-3) unstable; urgency=medium
 
   * Upload to unstable
