@@ -1,3 +1,10 @@
+elinks (0.13~20190125-5) unstable; urgency=medium
+
+  * Drop Recomeends: elinks from elinks-data (Closes: #941887)
+  * Update standards version to 4.4.1
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Thu, 10 Oct 2019 05:04:23 +0200
+
 elinks (0.13~20190125-4) unstable; urgency=medium
 
   * Add autopkgtest
