@@ -16,7 +16,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([config/m4])
 
 PACKAGE=elinks
-VERSION=0.13.GIT
+VERSION=0.13.0
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Package version])
@@ -491,6 +491,9 @@ EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_BZIP2, bzlib, bzlib.h, bz2, BZ2_bzReadOpen,
 EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_BROTLI, brotli, brotli/decode.h, brotlidec, BrotliDecoderDecompressStream,
 	[  --with-brotli           enable experimental brotli support])
 
+EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_ZSTD, zstd, zstd.h, zstd, ZSTD_createDCtx,
+	[  --with-zstd             enable experimental zstd support])
+
 EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_IDN, idn, idna.h, idn, stringprep_check_version,
 	[  --without-idn           disable international domain names support])
 
@@ -608,21 +611,11 @@ case "$with_spidermonkey" in
 		;;
 esac
 
-# The SpiderMonkey 1.8.5 standalone sources install mozjs185.pc,
-# but the Debian libmozjs-dev package installs mozilla-js.pc.
-# Check mozjs185 first, because it has the version number in the name
-# and therefore is less likely to be a newer incompatible version.
-# (This configure script rejects older incompatible versions
-# but can let newer ones through.)
-for package in mozjs185 mozilla-js; do
+for package in mozjs-17.0; do
 	if test -n "$CONFIG_SPIDERMONKEY"; then
 		break
 	else
-		AC_MSG_CHECKING([for SpiderMonkey (1.8.5 or later) in pkg-config $package])
-		# In pkg-config 0.25, pkg-config --exists mozjs185
-		# returns 0 (success) even if mozjs185 depends on
-		# nspr, which has not been installed.  However,
-		# pkg-config --cflags mozjs185 returns 1 then.
+		AC_MSG_CHECKING([for SpiderMonkey (mozjs-17.0) in pkg-config $package])
 		if $PKG_CONFIG --cflags --libs $package > /dev/null 2>&AS_MESSAGE_LOG_FD; then
 			SPIDERMONKEY_LIBS="$($PKG_CONFIG --libs $package)"
 			SPIDERMONKEY_CFLAGS="$($PKG_CONFIG --cflags $package)"
@@ -637,11 +630,7 @@ for package in mozjs185 mozilla-js; do
 					# define XP_UNIX 1
 					#endif
 					#include <jsapi.h>
-					#ifndef JS_VERSION
-					# error <jsapi.h> did not define JS_VERSION
-					#elif JS_VERSION < 185
-					# error too old
-					#endif]], [])],
+					]], [])],
 				[CONFIG_SPIDERMONKEY=yes
 				 AC_MSG_RESULT([yes])],
 				[# Leave CONFIG_SPIDERMONKEY blank, to continue the search.
@@ -835,7 +824,7 @@ AC_ARG_WITH(python, [[  --with-python[=DIR]     enable Python support]],
 EL_SAVE_FLAGS
 cf_result=no
 
-AC_MSG_CHECKING([for Python])
+AC_MSG_CHECKING([for Python3])
 
 if test "$enable_python" = "yes"; then
 	AC_MSG_RESULT(yes);
@@ -846,13 +835,13 @@ if test "$enable_python" = "yes"; then
 		PYTHON_PATH="$PATH"
 	fi
 
-	AC_PATH_PROG(PYTHON, python, no, $PYTHON_PATH)
+	AC_PATH_PROG(PYTHON3, python3, no, $PYTHON_PATH)
 
-	if test "$PYTHON" != no; then
+	if test "$PYTHON3" != no; then
 		cf_result="yes";
 
-		PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; print "-I%s -I%s" % (sysconfig.get_python_inc(), sysconfig.get_python_inc(plat_specific=True))'`"
-		PYTHON_LIBS="`$PYTHON -c 'from distutils import sysconfig; var = sysconfig.get_config_var; print "%s %s %s -L%s -lpython%s" % (var("LINKFORSHARED"), var("LIBS"), var("SYSLIBS"), var("LIBPL"), var("VERSION"))'`"
+		PYTHON_CFLAGS="`$PYTHON3 -c 'from distutils import sysconfig; print("-I%s -I%s" % (sysconfig.get_python_inc(), sysconfig.get_python_inc(plat_specific=True)))'`"
+		PYTHON_LIBS="`$PYTHON3 -c 'from distutils import sysconfig; var = sysconfig.get_config_var; print("%s %s %s -L%s -lpython%s" % (var("LINKFORSHARED"), var("LIBS"), var("SYSLIBS"), var("LIBPL"), var("VERSION")))'`"
 		LIBS="$PYTHON_LIBS $LIBS"
 		CPPFLAGS="$CPPFLAGS $PYTHON_CFLAGS"
 		AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <Python.h>]], [[Py_Initialize();]])],[cf_result=yes],[cf_result=no])
@@ -860,7 +849,7 @@ if test "$enable_python" = "yes"; then
 		if test "$cf_result" != "yes"; then
 			EL_RESTORE_FLAGS
 		else
-			EL_CONFIG(CONFIG_SCRIPTING_PYTHON, [Python])
+			EL_CONFIG(CONFIG_SCRIPTING_PYTHON, [Python3])
 			AC_SUBST(PYTHON_LIBS)
 			AC_SUBST(PYTHON_CFLAGS)
 			CPPFLAGS="$CPPFLAGS_X"
@@ -875,9 +864,9 @@ EOF
 		fi
 	else
 		if test -n "$withval" && test "x$withval" != xno; then
-			AC_MSG_ERROR([Python not found])
+			AC_MSG_ERROR([Python3 not found])
 		else
-			AC_MSG_WARN([Python support disabled])
+			AC_MSG_WARN([Python3 support disabled])
 		fi
 	fi
 else
@@ -1135,6 +1124,9 @@ else
 	else
 		EL_CONFIG(CONFIG_OPENSSL, [OpenSSL])
 		chosen_ssl_library="OpenSSL"
+
+		AC_CHECK_FUNCS(RAND_bytes)
+		AC_CHECK_FUNCS(ASN1_STRING_get0_data)
 
 		CFLAGS="$CFLAGS_X"
 		AC_SUBST(OPENSSL_CFLAGS)
@@ -1777,7 +1769,7 @@ if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
     4.5*)
       CFLAGS="$CFLAGS -fno-strict-aliasing -Wno-pointer-sign -Wno-enum-compare"
       ;;
-    4.*|5.*|6.*|7.*|8.*)
+    4.*|5.*|6.*|7.*|8|8.*|9.*)
       # Do not show warnings related to (char * | unsigned char *) type
       # difference.
       CFLAGS="$CFLAGS -fno-strict-aliasing -Wno-pointer-sign"

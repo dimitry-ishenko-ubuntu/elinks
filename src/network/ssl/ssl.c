@@ -52,7 +52,7 @@ int socket_SSL_ex_data_idx = -1;
  * We cannot copy struct socket and it doesn't have a reference count
  * either.  */
 static int
-socket_SSL_ex_data_dup(CRYPTO_EX_DATA *to, CRYPTO_EX_DATA *from,
+socket_SSL_ex_data_dup(CRYPTO_EX_DATA *to, const CRYPTO_EX_DATA *from,
 		       void *from_d, int idx, long argl, void *argp)
 {
 	/* The documentation of from_d in RSA_get_ex_new_index(3)
@@ -453,13 +453,12 @@ get_ssl_connection_cipher(struct socket *socket)
 		SSL_get_cipher_name(ssl));
 #elif defined(CONFIG_GNUTLS)
 	/* XXX: How to get other relevant parameters? */
-	add_format_to_string(&str, "%s - %s - %s - %s - %s (compr: %s)",
+	add_format_to_string(&str, "%s - %s - %s - %s - %s",
 		gnutls_protocol_get_name(gnutls_protocol_get_version(*ssl)),
 		gnutls_kx_get_name(gnutls_kx_get(*ssl)),
 		gnutls_cipher_get_name(gnutls_cipher_get(*ssl)),
 		gnutls_mac_get_name(gnutls_mac_get(*ssl)),
-		gnutls_certificate_type_get_name(gnutls_certificate_type_get(*ssl)),
-		gnutls_compression_get_name(gnutls_compression_get(*ssl)));
+		gnutls_certificate_type_get_name(gnutls_certificate_type_get(*ssl)));
 #endif
 
 	return str.source;
@@ -471,7 +470,11 @@ void
 random_nonce(unsigned char buf[], size_t size)
 {
 #ifdef USE_OPENSSL
+#ifdef HAVE_RAND_BYTES
+	RAND_bytes(buf, size);
+#else
 	RAND_pseudo_bytes(buf, size);
+#endif
 #elif defined(CONFIG_GNUTLS)
 	gcry_create_nonce(buf, size);
 #else

@@ -302,6 +302,12 @@ init_gopher_connection_info(struct connection *conn)
 		selectorlen++;
 	}
 
+	if (entity_info->type == GOPHER_HTML && selectorlen > 3
+	&& strncmp(selector, "/URL", 4) == 0) {
+		selector++;
+		selectorlen--;
+	}
+
 	state = add_gopher_command(conn, &command, entity, selector, selectorlen);
 	if (!is_in_state(state, S_CONN))
 		return state;
@@ -561,9 +567,13 @@ add_gopher_menu_line(struct string *buffer, unsigned char *line)
 static unsigned char *
 get_gopher_line_end(unsigned char *data, int datalen)
 {
-	for (; datalen > 1; data++, datalen--)
+	for (; datalen >= 1; data++, datalen--) {
 		if (data[0] == ASCII_CR && data[1] == ASCII_LF)
 			return data + 2;
+
+		if (data[0] == ASCII_LF)
+			return data + 1;
+	}
 
 	return NULL;
 }
@@ -572,9 +582,6 @@ static inline unsigned char *
 check_gopher_last_line(unsigned char *line, unsigned char *end)
 {
 	assert(line < end);
-
-	/* Just to be safe NUL terminate the line */
-	end[-2] = 0;
 
 	return line[0] == '.' && !line[1] ? NULL : line;
 }
