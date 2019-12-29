@@ -1,3 +1,16 @@
+elinks (0.13.0-1~2.gbp638f6b) UNRELEASED; urgency=medium
+
+  ** SNAPSHOT build @638f6b813b979387be4eb7a9702e54bfd16cf8d7 **
+
+  * Update watch file
+  * gbp.conf:
+    + Enable pristine-tar
+    + Comment compression setting
+  * New upstream version 0.13.0
+  * Refresh patches
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Sun, 29 Dec 2019 05:18:43 +0100
+
 elinks (0.13~20190125-5) unstable; urgency=medium
 
   * Drop Recomeends: elinks from elinks-data (Closes: #941887)
