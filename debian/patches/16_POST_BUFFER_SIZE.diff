@@ -3,9 +3,9 @@
 
 Index: elinks/src/protocol/http/http.c
 ===================================================================
---- elinks.orig/src/protocol/http/http.c	2017-11-01 02:14:30.575843058 +0100
-+++ elinks/src/protocol/http/http.c	2017-11-01 02:14:30.571843041 +0100
-@@ -618,7 +618,7 @@
+--- elinks.orig/src/protocol/http/http.c	2019-12-29 05:11:15.584383551 +0100
++++ elinks/src/protocol/http/http.c	2019-12-29 05:11:15.584383551 +0100
+@@ -624,7 +624,7 @@
  #endif
  }
  
