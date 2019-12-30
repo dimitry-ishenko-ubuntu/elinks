@@ -1,6 +1,4 @@
-elinks (0.13.0-1~2.gbp638f6b) UNRELEASED; urgency=medium
-
-  ** SNAPSHOT build @638f6b813b979387be4eb7a9702e54bfd16cf8d7 **
+elinks (0.13.0-1) unstable; urgency=medium
 
   * Update watch file
   * gbp.conf:
@@ -8,8 +6,10 @@ elinks (0.13.0-1~2.gbp638f6b) UNRELEASED; urgency=medium
     + Comment compression setting
   * New upstream version 0.13.0
   * Refresh patches
+  * Set debhelper compat level in build deps
+  * Add Rules-Requires-Root=no
 
- -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Sun, 29 Dec 2019 05:18:43 +0100
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Mon, 30 Dec 2019 02:21:21 +0100
 
 elinks (0.13~20190125-5) unstable; urgency=medium
 
