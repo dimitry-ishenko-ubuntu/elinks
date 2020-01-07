@@ -1,3 +1,11 @@
+elinks (0.13.0-3) unstable; urgency=medium
+
+  * d/watch: fix version mangling again
+  * Add python3.patch to switch python scripts to Python3
+  * Add python3 to build deps
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Tue, 07 Jan 2020 03:58:56 +0100
+
 elinks (0.13.0-2) unstable; urgency=medium
 
   * d/watch: change oversionmangle to uversionmangle
