@@ -16,7 +16,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([config/m4])
 
 PACKAGE=elinks
-VERSION=0.13.0
+VERSION=0.13.1
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Package version])
@@ -77,8 +77,8 @@ CONFIG_XMLTO="no"
 CONFIG_JW="no"
 
 if test "x$CONFIG_DOC" != xno; then
-	AC_PATH_PROGS(PYTHON, "python")
-	if test "x$PYTHON" != "x"; then
+	AC_PATH_PROGS(PYTHON3, "python3")
+	if test "x$PYTHON3" != "x"; then
 		EL_CONFIG(CONFIG_ASCIIDOC, [AsciiDoc])
 		EL_CONFIG(MANUAL_ASCIIDOC, [HTML (one file)])
 		EL_CONFIG(MAN_ASCIIDOC, [HTML])
