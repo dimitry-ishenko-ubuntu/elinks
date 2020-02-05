@@ -1,3 +1,14 @@
+elinks (0.13.1-1~1.gbp546a47) UNRELEASED; urgency=medium
+
+  ** SNAPSHOT build @546a47836292203d1ea809ee9b34025bac755328 **
+
+  * d/watch: remove uversionmangle
+  * New upstream version 0.13.1
+  * Drop python3.patch, applied upstream
+  * Update standards version to 4.5.0
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Wed, 05 Feb 2020 03:40:29 +0100
+
 elinks (0.13.0-3) unstable; urgency=medium
 
   * d/watch: fix version mangling again
