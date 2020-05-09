@@ -15,8 +15,8 @@ Build-Conflicts: libgc-dev
 Standards-Version: 4.5.0
 Rules-Requires-Root: no
 Homepage: http://elinks.cz/
-Vcs-Git: https://salsa.debian.org/aelmahmoudy-guest/elinks.git
-Vcs-Browser: https://salsa.debian.org/aelmahmoudy-guest/elinks
+Vcs-Git: https://salsa.debian.org/aelmahmoudy/elinks.git
+Vcs-Browser: https://salsa.debian.org/aelmahmoudy/elinks
 
 Package: elinks
 Architecture: any
