@@ -1,0 +1,74 @@
+Author: Ian Jackson <ijackson@chiark.greenend.org.uk>
+Subject: cookies: Properly handle cookie path= equal to request path
+Bug-Debian: httpd://bugs.debian.org/959490
+Forwarded: https://github.com/rkd77/felinks/pull/44
+
+The code in cookies.c would arrange that c->path would always contain
+a string ending in "/".  This may have been an attempt to make it
+easier to do a proper subpath check in is_path_prefix.
+
+Howver, the overall result is wrong in the case
+   Set-Cookie: ....;path=/some/thing
+and then later
+   http://site.example.com/some/thing
+
+c->path gets set to "/some/thing/" which doesn't pass the test in
+is_path_prefix.
+
+The precise required algorithm is described in RFC6265 5.1.4.  The
+existing code fails to implement the first of the three bulleted
+conditions at the end of 5.1.4.
+
+The trailing "/" is actually not so helpful for this.  It is more
+convenient to change is_path_prefix to do subpath matching directly:
+we change it to insist that the supposed path prefix is a textual
+prefix of the request path, *and* that this happens at a path segment
+boundary: ie at '/' or end of string.[1]
+
+Accordingly, we no longer add "/" to the cookie path.  When we strip
+the final path element we strip the "/" too.  We still insert a "/" if
+the path was empty.
+
+[1] It is not 100% clear to me what "path" (URI_PATH) is but I think
+it does not include any query parameters.  If I am wrong about that
+then '?' should be tolerated too.
+
+---
+ src/cookies/cookies.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/src/cookies/cookies.c b/src/cookies/cookies.c
+index 993437d..ce30159 100644
+--- a/src/cookies/cookies.c
++++ b/src/cookies/cookies.c
+@@ -356,8 +356,7 @@ set_cookie(struct uri *uri, unsigned char *str)
+ 		unsigned char *path_end;
+ 
+ 	case HEADER_PARAM_FOUND:
+-		if (!path[0]
+-		    || path[strlen(path) - 1] != '/')
++		if (!path[0])
+ 			add_to_strn(&path, "/");
+ 
+ 		if (path[0] != '/') {
+@@ -374,7 +373,7 @@ set_cookie(struct uri *uri, unsigned char *str)
+ 
+ 		path_end = strrchr((const char *)path, '/');
+ 		if (path_end)
+-			path_end[1] = '\0';
++			path_end[0] = '\0';
+ 		break;
+ 
+ 	default: /* error */
+@@ -615,7 +614,7 @@ is_path_prefix(unsigned char *d, unsigned char *s)
+ 
+ 	if (dl > strlen(s)) return 0;
+ 
+-	return !memcmp(d, s, dl);
++	return !memcmp(d, s, dl) && (s[dl] == '\0' || s[dl] == '/');
+ }
+ 
+ 
+-- 
+2.11.0
+
