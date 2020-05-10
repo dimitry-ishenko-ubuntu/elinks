@@ -15,4 +15,4 @@ override_dh_auto_build:
 	dh_auto_build --builddir doc -- all-docs
 
 override_dh_installexamples:
-	dh_installexamples -X.gitignore
+	dh_installexamples --exclude=.gitignore
