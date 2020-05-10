@@ -7,7 +7,7 @@ The code in cookies.c would arrange that c->path would always contain
 a string ending in "/".  This may have been an attempt to make it
 easier to do a proper subpath check in is_path_prefix.
 
-Howver, the overall result is wrong in the case
+However, the overall result is wrong in the case
    Set-Cookie: ....;path=/some/thing
 and then later
    http://site.example.com/some/thing
