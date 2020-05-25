@@ -1,6 +1,15 @@
+elinks (0.13.1-4) unstable; urgency=medium
+
+  * Fix parallel FTBFS of docs.
+    Thanks to Adrian Bunk <bunk@debian.org> (Closes: #960226)
+  * Make build reproducible.
+    Thanks to Chris Lamb <lamby@debian.org> (Closes: #960313)
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Mon, 25 May 2020 15:16:58 +0200
+
 elinks (0.13.1-3) unstable; urgency=medium
 
-  * Added cookie-path-fix.patch to properly handle cookie path= equal to 
+  * Added cookie-path-fix.patch to properly handle cookie path= equal to
     request path (Closes: #959490)
   * Bump to compat level 13
   * Add d/not-installed
