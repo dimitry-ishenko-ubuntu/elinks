@@ -6,3 +6,4 @@
 16_POST_BUFFER_SIZE.diff
 cookie-path-fix.patch
 #ascii-replacement-utf8-console.diff
+11-reproducible-build.diff
