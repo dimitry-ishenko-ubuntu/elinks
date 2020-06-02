@@ -4,6 +4,5 @@
 10-reproducible-build.diff
 14_debug_disable_Werror.diff
 16_POST_BUFFER_SIZE.diff
-cookie-path-fix.patch
 #ascii-replacement-utf8-console.diff
 11-reproducible-build.diff
