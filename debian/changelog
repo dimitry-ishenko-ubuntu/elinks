@@ -1,12 +1,10 @@
-elinks (0.13.2-1~2.gbpf80a10) UNRELEASED; urgency=medium
-
-  ** SNAPSHOT build @f80a10594fe6bf8597e15cde413e47708a7669ab **
+elinks (0.13.2-1) unstable; urgency=medium
 
   * New upstream version 0.13.2
     + Added config option ui.tostop (Closes: #958447)
   * Dropped cookie-path-fix.patch, fixed upstream
 
- -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Tue, 02 Jun 2020 13:49:39 +0200
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Sat, 13 Jun 2020 12:32:00 +0200
 
 elinks (0.13.1-4) unstable; urgency=medium
 
