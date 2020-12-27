@@ -38,7 +38,7 @@ Description: advanced text-mode WWW browser
   * Tables and frames rendering, and configurable color support
   * Compressed and background (non-blocking) downloads, and download resuming
  .
- This package is based on felinks fork, since original elinks seems to be no
+ This package is based on elinks fork, since original elinks seems to be no
  longer maintained.
 
 Package: elinks-data
