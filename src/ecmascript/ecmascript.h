@@ -5,6 +5,14 @@
 /* In the future you will get DOM, a complete ECMAScript interface and free
  * plasm displays for everyone. */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#ifdef CONFIG_ECMASCRIPT
+
+#include <jsapi.h>
+
 #include "main/module.h"
 #include "util/time.h"
 
@@ -15,7 +23,6 @@ struct terminal;
 struct uri;
 struct view_state;
 
-#define get_ecmascript_enable()		get_opt_bool("ecmascript.enable", NULL)
 
 struct ecmascript_interpreter {
 	struct view_state *vs;
@@ -32,11 +39,7 @@ struct ecmascript_interpreter {
 	/* The code evaluated by setTimeout() */
 	struct string code;
 
-#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 	struct heartbeat *heartbeat;
-#elif defined(HAVE_JS_SETBRANCHCALLBACK)
-	time_t exec_start;
-#endif
 
 	/* This is a cross-rerenderings accumulator of
 	 * @document.onload_snippets (see its description for juicy details).
@@ -57,6 +60,10 @@ struct ecmascript_interpreter {
 	 * is reloaded in another tab and then you just cause the current tab
 	 * to redraw. */
 	unsigned int onload_snippets_cache_id;
+	void *ac;
+	void *ac2;
+	void *ar;
+	JS::RootedValue fun;
 };
 
 /* Why is the interpreter bound to {struct view_state} instead of {struct
@@ -98,6 +105,12 @@ void ecmascript_set_action(unsigned char **action, unsigned char *string);
 
 void ecmascript_set_timeout(struct ecmascript_interpreter *interpreter, unsigned char *code, int timeout);
 
+void ecmascript_set_timeout2(struct ecmascript_interpreter *interpreter, JS::HandleValue f, int timeout);
+
+int get_ecmascript_enable(struct ecmascript_interpreter *interpreter);
+
 extern struct module ecmascript_module;
+
+#endif
 
 #endif

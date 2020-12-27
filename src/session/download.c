@@ -1028,12 +1028,15 @@ get_temp_name(struct uri *uri)
 
 
 static unsigned char *
-subst_file(unsigned char *prog, unsigned char *file)
+subst_file(unsigned char *prog, unsigned char *file, unsigned char *uri)
 {
 	struct string name;
 	/* When there is no %s in the mailcap entry, the handler program reads
 	 * data from stdin instead of a file. */
 	int input = 1;
+	char *replace, *original = "% ";
+	int truncate;
+	int tlen = 40;
 
 	if (!init_string(&name)) return NULL;
 
@@ -1046,6 +1049,25 @@ subst_file(unsigned char *prog, unsigned char *file)
 		prog += p;
 
 		if (*prog == '%') {
+			prog++;
+			truncate = 0;
+			if (*prog == 'f' || *prog == ' ' || *prog == '\0')
+				replace = file;
+			else if (*prog == 'u') {
+				replace = uri;
+				if (!memcmp(uri, "data:", sizeof("data:") - 1))
+					truncate = 1;
+			}
+			else if (*prog == '%')
+				replace = "%";
+			else {
+				original[1] = *prog;
+				replace = original;
+			}
+
+			if (*prog == ' ' || *prog == '\0')
+				prog--;
+
 			input = 0;
 #if defined(HAVE_CYGWIN_CONV_TO_FULL_WIN32_PATH)
 #ifdef MAX_PATH
@@ -1054,10 +1076,18 @@ subst_file(unsigned char *prog, unsigned char *file)
 			unsigned char new_path[1024];
 #endif
 
-			cygwin_conv_to_full_win32_path(file, new_path);
+			cygwin_conv_to_full_win32_path(replace, new_path);
 			add_to_string(&name, new_path);
 #else
-			add_shell_quoted_to_string(&name, file, strlen(file));
+			if (! truncate || strlen(replace) <= tlen)
+				add_shell_quoted_to_string(&name,
+					replace, strlen(replace));
+			else {
+				add_shell_quoted_to_string(&name,
+					replace, tlen);
+				add_shell_quoted_to_string(&name,
+					"...", sizeof("...") - 1);
+			}
 #endif
 			prog++;
 		}
@@ -1242,7 +1272,8 @@ continue_download_do(struct terminal *term, int fd, void *data,
 
 	if (type_query->external_handler) {
 		file_download->external_handler = subst_file(type_query->external_handler,
-							     codw_hop->file);
+							     codw_hop->file,
+							     type_query->uri->string);
 		file_download->delete_ = 1;
 		file_download->copiousoutput = type_query->copiousoutput;
 		mem_free(codw_hop->file);
@@ -1490,7 +1521,8 @@ tp_open(struct type_query *type_query)
 
 		if (file) {
 			decode_uri(file);
-			handler = subst_file(type_query->external_handler, file);
+			handler = subst_file(type_query->external_handler,
+				file, file);
 			mem_free(file);
 		}
 
@@ -1609,7 +1641,9 @@ do_type_query(struct type_query *type_query, unsigned char *ct, struct mime_hand
 		}
 
 		/* xgettext:no-c-format */
-		add_dlg_field(dlg, _("Program ('%' will be replaced by the filename)", term),
+		add_dlg_field(dlg,
+			_("Program ('%f' will be replaced by the filename, "
+			  "'%u' by the uri)", term),
 			0, 0, NULL, MAX_STR_LEN, field, NULL);
 		type_query->external_handler = field;
 

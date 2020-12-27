@@ -3,6 +3,10 @@
 
 #include "main/object.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct string;
 
 #define POST_CHAR 1
@@ -76,7 +80,7 @@ struct uri {
 	unsigned int passwordlen:16;
 	unsigned int hostlen:16;
 	unsigned int portlen:8;
-	unsigned int datalen:16;
+	unsigned int datalen;
 	unsigned int fragmentlen:16;
 
 	/* Flags */
@@ -352,5 +356,9 @@ int is_ip_address(const unsigned char *address, int addresslen);
  * example.com doesn't match example.co
  */
 int is_in_domain(unsigned char *domain, unsigned char *server, int server_len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

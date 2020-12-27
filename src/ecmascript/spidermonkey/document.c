@@ -10,7 +10,9 @@
 
 #include "elinks.h"
 
+#include "ecmascript/ecmascript.h"
 #include "ecmascript/spidermonkey/util.h"
+#include <jsfriendapi.h>
 
 #include "bfu/dialog.h"
 #include "cache/cache.h"
@@ -47,37 +49,45 @@
 #include "viewer/text/vs.h"
 
 
-static JSBool document_get_property(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, JSMutableHandleValue hvp);
+static bool document_get_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS::MutableHandleValue hvp);
+
+JSClassOps document_ops = {
+	JS_PropertyStub, nullptr,
+	document_get_property, JS_StrictPropertyStub,
+	nullptr, nullptr, nullptr
+};
+
 
 /* Each @document_class object must have a @window_class parent.  */
 JSClass document_class = {
 	"document",
 	JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub,
-	document_get_property, JS_StrictPropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
+	&document_ops
 };
 
 #ifdef CONFIG_COOKIES
-static JSBool
-document_get_property_cookie(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, JSMutableHandleValue hvp)
+static bool
+document_get_property_cookie(JSContext *ctx, unsigned int argc, JS::Value *vp)
 {
-	ELINKS_CAST_PROP_PARAMS
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
 
-	JSObject *parent_win;	/* instance of @window_class */
+	JSCompartment *comp = js::GetContextCompartment(ctx);
+
+	if (!comp) {
+		return false;
+	}
+
+	struct ecmascript_interpreter *interpreter = JS_GetCompartmentPrivate(comp);
+
 	struct view_state *vs;
 	struct string *cookies;
-	JSClass* classPtr = JS_GetClass(obj);
 
-	if (classPtr != &document_class)
-		return JS_FALSE;
+	vs = interpreter->vs;
 
-	parent_win = JS_GetParent(obj);
-	assert(JS_InstanceOf(ctx, parent_win, &window_class, NULL));
-	if_assert_failed return JS_FALSE;
-
-	vs = JS_GetInstancePrivate(ctx, parent_win,
-				   &window_class, NULL);
+	if (!vs) {
+		return false;
+	}
 	cookies = send_cookies_js(vs->uri);
 
 	if (cookies) {
@@ -85,110 +95,110 @@ document_get_property_cookie(JSContext *ctx, JSHandleObject hobj, JSHandleId hid
 
 		strncpy(cookiestr, cookies->source, 1023);
 		done_string(cookies);
-		string_to_jsval(ctx, vp, cookiestr);
+		args.rval().setString(JS_NewStringCopyZ(ctx, cookiestr));
 	} else {
-		string_to_jsval(ctx, vp, "");
+		args.rval().setString(JS_NewStringCopyZ(ctx, ""));
 	}
 
-	return JS_TRUE;
+	return true;
 }
 
-static JSBool
-document_set_property_cookie(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, JSBool strict, JSMutableHandleValue hvp)
+static bool
+document_set_property_cookie(JSContext *ctx, unsigned int argc, JS::Value *vp)
 {
-	ELINKS_CAST_PROP_PARAMS
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
 
-	JSObject *parent_win;	/* instance of @window_class */
+	JSCompartment *comp = js::GetContextCompartment(ctx);
+
+	if (!comp) {
+		return false;
+	}
+
+	struct ecmascript_interpreter *interpreter = JS_GetCompartmentPrivate(comp);
+
 	struct view_state *vs;
+	struct string *cookies;
 
-	/* This can be called if @obj if not itself an instance of the
-	 * appropriate class but has one in its prototype chain.  Fail
-	 * such calls.  */
-	if (!JS_InstanceOf(ctx, obj, &document_class, NULL))
-		return JS_FALSE;
+	vs = interpreter->vs;
+	if (!vs) {
+		return false;
+	}
+	set_cookie(vs->uri, JS_EncodeString(ctx, args[0].toString()));
 
-	parent_win = JS_GetParent(obj);
-	assert(JS_InstanceOf(ctx, parent_win, &window_class, NULL));
-	if_assert_failed return JS_FALSE;
-
-	vs = JS_GetInstancePrivate(ctx, parent_win,
-				   &window_class, NULL);
-	set_cookie(vs->uri, jsval_to_string(ctx, vp));
-
-	return JS_TRUE;
+	return true;
 }
 
 #endif
 
-static JSBool
-document_get_property_location(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, JSMutableHandleValue hvp)
+static bool
+document_get_property_location(JSContext *ctx, unsigned int argc, JS::Value *vp)
 {
-	ELINKS_CAST_PROP_PARAMS
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
+	JS::RootedObject parent_win(ctx, js::GetGlobalForObjectCrossCompartment(hobj));
 
-	JSObject *parent_win;	/* instance of @window_class */
-	JSClass* classPtr = JS_GetClass(obj);
-
-	if (classPtr != &document_class)
-		return JS_FALSE;
-
-	parent_win = JS_GetParent(obj);
 	assert(JS_InstanceOf(ctx, parent_win, &window_class, NULL));
-	if_assert_failed return JS_FALSE;
+	if_assert_failed return false;
 
-	JS_GetProperty(ctx, parent_win, "location", vp);
+	JS_GetProperty(ctx, parent_win, "location", args.rval());
 
-	return JS_TRUE;
+	return true;
 }
 
-static JSBool
-document_set_property_location(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, JSBool strict, JSMutableHandleValue hvp)
+static bool
+document_set_property_location(JSContext *ctx, unsigned int argc, JS::Value *vp)
 {
-	ELINKS_CAST_PROP_PARAMS
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
 
-	JSObject *parent_win;	/* instance of @window_class */
+	JSCompartment *comp = js::GetContextCompartment(ctx);
+
+	if (!comp) {
+		return false;
+	}
+
+	struct ecmascript_interpreter *interpreter = JS_GetCompartmentPrivate(comp);
+
 	struct view_state *vs;
 	struct document_view *doc_view;
 
-	/* This can be called if @obj if not itself an instance of the
-	 * appropriate class but has one in its prototype chain.  Fail
-	 * such calls.  */
-	if (!JS_InstanceOf(ctx, obj, &document_class, NULL))
-		return JS_FALSE;
+	vs = interpreter->vs;
 
-	parent_win = JS_GetParent(obj);
-	assert(JS_InstanceOf(ctx, parent_win, &window_class, NULL));
-	if_assert_failed return JS_FALSE;
-
-	vs = JS_GetInstancePrivate(ctx, parent_win,
-				   &window_class, NULL);
+	if (!vs) {
+		return false;
+	}
 	doc_view = vs->doc_view;
-	location_goto(doc_view, jsval_to_string(ctx, vp));
+	location_goto(doc_view, JS_EncodeString(ctx, args[0].toString()));
 
-	return JS_TRUE;
+	return true;
 }
 
 
-static JSBool
-document_get_property_referrer(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, JSMutableHandleValue hvp)
+static bool
+document_get_property_referrer(JSContext *ctx, unsigned int argc, JS::Value *vp)
 {
-	ELINKS_CAST_PROP_PARAMS
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
 
-	JSObject *parent_win;	/* instance of @window_class */
+	JSCompartment *comp = js::GetContextCompartment(ctx);
+
+	if (!comp) {
+		return false;
+	}
+
+	struct ecmascript_interpreter *interpreter = JS_GetCompartmentPrivate(comp);
+
 	struct view_state *vs;
 	struct document_view *doc_view;
 	struct document *document;
 	struct session *ses;
-	JSClass* classPtr = JS_GetClass(obj);
 
-	if (classPtr != &document_class)
-		return JS_FALSE;
+	vs = interpreter->vs;
 
-	parent_win = JS_GetParent(obj);
-	assert(JS_InstanceOf(ctx, parent_win, &window_class, NULL));
-	if_assert_failed return JS_FALSE;
-
-	vs = JS_GetInstancePrivate(ctx, parent_win,
-				   &window_class, NULL);
+	if (!vs) {
+		return false;
+	}
 	doc_view = vs->doc_view;
 	document = doc_view->document;
 	ses = doc_view->session;
@@ -196,138 +206,166 @@ document_get_property_referrer(JSContext *ctx, JSHandleObject hobj, JSHandleId h
 	switch (get_opt_int("protocol.http.referer.policy", NULL)) {
 	case REFERER_NONE:
 		/* oh well */
-		undef_to_jsval(ctx, vp);
+		args.rval().setUndefined();
 		break;
 
 	case REFERER_FAKE:
-		string_to_jsval(ctx, vp, get_opt_str("protocol.http.referer.fake", NULL));
+		args.rval().setString(JS_NewStringCopyZ(ctx, get_opt_str("protocol.http.referer.fake", NULL)));
 		break;
 
 	case REFERER_TRUE:
 		/* XXX: Encode as in add_url_to_httset_prop_string(&prop, ) ? --pasky */
 		if (ses->referrer) {
-			astring_to_jsval(ctx, vp, get_uri_string(ses->referrer, URI_HTTP_REFERRER));
+			unsigned char *str = get_uri_string(ses->referrer, URI_HTTP_REFERRER);
+
+			if (str) {
+				args.rval().setString(JS_NewStringCopyZ(ctx, str));
+				mem_free(str);
+			} else {
+				args.rval().setUndefined();
+			}
 		}
 		break;
 
 	case REFERER_SAME_URL:
-		astring_to_jsval(ctx, vp, get_uri_string(document->uri, URI_HTTP_REFERRER));
+		unsigned char *str = get_uri_string(document->uri, URI_HTTP_REFERRER);
+
+		if (str) {
+			args.rval().setString(JS_NewStringCopyZ(ctx, str));
+			mem_free(str);
+		} else {
+			args.rval().setUndefined();
+		}
 		break;
 	}
 
-	return JS_TRUE;
+	return true;
 }
 
 
-static JSBool
-document_get_property_title(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, JSMutableHandleValue hvp)
+static bool
+document_get_property_title(JSContext *ctx, unsigned int argc, JS::Value *vp)
 {
-	ELINKS_CAST_PROP_PARAMS
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
 
-	JSObject *parent_win;	/* instance of @window_class */
-	struct view_state *vs;
-	struct document_view *doc_view;
-	struct document *document;
-	JSClass* classPtr = JS_GetClass(obj);
+	JSCompartment *comp = js::GetContextCompartment(ctx);
 
-	if (classPtr != &document_class)
-		return JS_FALSE;
+	if (!comp) {
+		return false;
+	}
 
-	parent_win = JS_GetParent(obj);
-	assert(JS_InstanceOf(ctx, parent_win, &window_class, NULL));
-	if_assert_failed return JS_FALSE;
-
-	vs = JS_GetInstancePrivate(ctx, parent_win,
-				   &window_class, NULL);
-	doc_view = vs->doc_view;
-	document = doc_view->document;
-	string_to_jsval(ctx, vp, document->title);
-
-	return JS_TRUE;
-}
-
-static JSBool
-document_set_property_title(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, JSBool strict, JSMutableHandleValue hvp)
-{
-	ELINKS_CAST_PROP_PARAMS
-
-	JSObject *parent_win;	/* instance of @window_class */
+	struct ecmascript_interpreter *interpreter = JS_GetCompartmentPrivate(comp);
 	struct view_state *vs;
 	struct document_view *doc_view;
 	struct document *document;
 
-	/* This can be called if @obj if not itself an instance of the
-	 * appropriate class but has one in its prototype chain.  Fail
-	 * such calls.  */
-	if (!JS_InstanceOf(ctx, obj, &document_class, NULL))
-		return JS_FALSE;
+	vs = interpreter->vs;
 
-	parent_win = JS_GetParent(obj);
-	assert(JS_InstanceOf(ctx, parent_win, &window_class, NULL));
-	if_assert_failed return JS_FALSE;
-
-	vs = JS_GetInstancePrivate(ctx, parent_win,
-				   &window_class, NULL);
+	if (!vs) {
+		return false;
+	}
 	doc_view = vs->doc_view;
 	document = doc_view->document;
-	mem_free_set(&document->title, stracpy(jsval_to_string(ctx, vp)));
+	args.rval().setString(JS_NewStringCopyZ(ctx, document->title));
+
+	return true;
+}
+
+static bool
+document_set_property_title(JSContext *ctx, int argc, JS::Value *vp)
+{
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
+
+	JSCompartment *comp = js::GetContextCompartment(ctx);
+
+	if (!comp) {
+		return false;
+	}
+
+	struct ecmascript_interpreter *interpreter = JS_GetCompartmentPrivate(comp);
+
+
+	JS::RootedObject parent_win(ctx, js::GetGlobalForObjectCrossCompartment(hobj));
+	struct view_state *vs;
+	struct document_view *doc_view;
+	struct document *document;
+
+	vs = interpreter->vs;
+
+	if (!vs || !vs->doc_view) {
+		return false;
+	}
+	doc_view = vs->doc_view;
+	document = doc_view->document;
+	mem_free_set(&document->title, stracpy(JS_EncodeString(ctx, args[0].toString())));
 	print_screen_status(doc_view->session);
 
-	return JS_TRUE;
+	return true;
 }
 
-static JSBool
-document_get_property_url(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, JSMutableHandleValue hvp)
+static bool
+document_get_property_url(JSContext *ctx, unsigned int argc, JS::Value *vp)
 {
-	ELINKS_CAST_PROP_PARAMS
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
+	JSCompartment *comp = js::GetContextCompartment(ctx);
 
-	JSObject *parent_win;	/* instance of @window_class */
+	if (!comp) {
+		return false;
+	}
+
+	struct ecmascript_interpreter *interpreter = JS_GetCompartmentPrivate(comp);
+
 	struct view_state *vs;
 	struct document_view *doc_view;
 	struct document *document;
-	JSClass* classPtr = JS_GetClass(obj);
 
-	if (classPtr != &document_class)
-		return JS_FALSE;
+	vs = interpreter->vs;
 
-	parent_win = JS_GetParent(obj);
-	assert(JS_InstanceOf(ctx, parent_win, &window_class, NULL));
-	if_assert_failed return JS_FALSE;
-
-	vs = JS_GetInstancePrivate(ctx, parent_win,
-				   &window_class, NULL);
+	if (!vs) {
+		return false;
+	}
 	doc_view = vs->doc_view;
 	document = doc_view->document;
-	astring_to_jsval(ctx, vp, get_uri_string(document->uri, URI_ORIGINAL));
+	unsigned char *str = get_uri_string(document->uri, URI_ORIGINAL);
 
-	return JS_TRUE;
+	if (str) {
+		args.rval().setString(JS_NewStringCopyZ(ctx, str));
+		mem_free(str);
+	} else {
+		args.rval().setUndefined();
+	}
+
+	return true;
 }
 
-static JSBool
-document_set_property_url(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, JSBool strict, JSMutableHandleValue hvp)
+static bool
+document_set_property_url(JSContext *ctx, int argc, JS::Value *vp)
 {
-	ELINKS_CAST_PROP_PARAMS
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
 
-	JSObject *parent_win;	/* instance of @window_class */
+	JSCompartment *comp = js::GetContextCompartment(ctx);
+
+	if (!comp) {
+		return false;
+	}
+
+	struct ecmascript_interpreter *interpreter = JS_GetCompartmentPrivate(comp);
 	struct view_state *vs;
 	struct document_view *doc_view;
+	struct document *document;
 
-	/* This can be called if @obj if not itself an instance of the
-	 * appropriate class but has one in its prototype chain.  Fail
-	 * such calls.  */
-	if (!JS_InstanceOf(ctx, obj, &document_class, NULL))
-		return JS_FALSE;
-
-	parent_win = JS_GetParent(obj);
-	assert(JS_InstanceOf(ctx, parent_win, &window_class, NULL));
-	if_assert_failed return JS_FALSE;
-
-	vs = JS_GetInstancePrivate(ctx, parent_win,
-				   &window_class, NULL);
+	vs = interpreter->vs;
+	if (!vs) {
+		return false;
+	}
 	doc_view = vs->doc_view;
-	location_goto(doc_view, jsval_to_string(ctx, vp));
+	location_goto(doc_view, JS_EncodeString(ctx, args[0].toString()));
 
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -335,58 +373,62 @@ document_set_property_url(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, J
  * cookie-module. XXX: Would it work if "cookie" was defined in this array? */
 JSPropertySpec document_props[] = {
 #ifdef CONFIG_COOKIES
-	{ "cookie",	0,	JSPROP_ENUMERATE | JSPROP_SHARED, JSOP_WRAPPER(document_get_property_cookie), JSOP_WRAPPER(document_set_property_cookie) },
+	JS_PSGS("cookie", document_get_property_cookie, document_set_property_cookie, JSPROP_ENUMERATE),
 #endif
-	{ "location",	0,	JSPROP_ENUMERATE | JSPROP_SHARED, JSOP_WRAPPER(document_get_property_location), JSOP_WRAPPER(document_set_property_location) },
-	{ "referrer",	0,	JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_SHARED, JSOP_WRAPPER(document_get_property_referrer), JSOP_NULLWRAPPER },
-	{ "title",	0,	JSPROP_ENUMERATE | JSPROP_SHARED, JSOP_WRAPPER(document_get_property_title), JSOP_WRAPPER(document_set_property_title) }, /* TODO: Charset? */
-	{ "url",	0,	JSPROP_ENUMERATE | JSPROP_SHARED, JSOP_WRAPPER(document_get_property_url), JSOP_WRAPPER(document_set_property_url) },
-	{ NULL }
+	JS_PSGS("location",	document_get_property_location, document_set_property_location, JSPROP_ENUMERATE),
+	JS_PSG("referrer",	document_get_property_referrer, JSPROP_ENUMERATE),
+	JS_PSGS("title",	document_get_property_title, document_set_property_title, JSPROP_ENUMERATE), /* TODO: Charset? */
+	JS_PSGS("url",	document_get_property_url, document_set_property_url, JSPROP_ENUMERATE),
+	JS_PS_END
 };
 
 
 /* @document_class.getProperty */
-static JSBool
-document_get_property(JSContext *ctx, JSHandleObject hobj, JSHandleId hid, JSMutableHandleValue hvp)
+static bool
+document_get_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS::MutableHandleValue hvp)
 {
-	ELINKS_CAST_PROP_PARAMS
-	jsid id = *(hid._);
-
-	JSObject *parent_win;	/* instance of @window_class */
+	JS::RootedObject parent_win(ctx);	/* instance of @window_class */
 	struct view_state *vs;
 	struct document_view *doc_view;
 	struct document *document;
 	struct form *form;
 	unsigned char *string;
+	JSCompartment *comp = js::GetContextCompartment(ctx);
 
-	JSClass* classPtr = JS_GetClass(obj);
+	if (!comp) {
+		return false;
+	}
+
+	struct ecmascript_interpreter *interpreter = JS_GetCompartmentPrivate(comp);
+
+
+	JSClass* classPtr = JS_GetClass(hobj);
 
 	if (classPtr != &document_class)
-		return JS_FALSE;
+		return false;
 
-	parent_win = JS_GetParent(obj);
-	assert(JS_InstanceOf(ctx, parent_win, &window_class, NULL));
-	if_assert_failed return JS_FALSE;
-
-	vs = JS_GetInstancePrivate(ctx, parent_win,
-				   &window_class, NULL);
+	vs = interpreter->vs;
 	doc_view = vs->doc_view;
 	document = doc_view->document;
-	string = jsid_to_string(ctx, &id);
+
+	if (!JSID_IS_STRING(hid)) {
+		return true;
+	}
+	string = jsid_to_string(ctx, hid);
 
 	foreach (form, document->forms) {
 		if (!form->name || c_strcasecmp(string, form->name))
 			continue;
 
-		object_to_jsval(ctx, vp, get_form_object(ctx, obj, find_form_view(doc_view, form)));
+		hvp.setObject(*get_form_object(ctx, hobj, find_form_view(doc_view, form)));
 		break;
 	}
 
-	return JS_TRUE;
+	return true;
 }
 
-static JSBool document_write(JSContext *ctx, unsigned int argc, jsval *rval);
-static JSBool document_writeln(JSContext *ctx, unsigned int argc, jsval *rval);
+static bool document_write(JSContext *ctx, unsigned int argc, JS::Value *rval);
+static bool document_writeln(JSContext *ctx, unsigned int argc, JS::Value *rval);
 
 const spidermonkeyFunctionSpec document_funcs[] = {
 	{ "write",		document_write,		1 },
@@ -394,19 +436,25 @@ const spidermonkeyFunctionSpec document_funcs[] = {
 	{ NULL }
 };
 
-static JSBool
-document_write_do(JSContext *ctx, unsigned int argc, jsval *rval, int newline)
+static bool
+document_write_do(JSContext *ctx, unsigned int argc, JS::Value *rval, int newline)
 {
-	jsval val;
-	struct ecmascript_interpreter *interpreter = JS_GetContextPrivate(ctx);
+	JSCompartment *comp = js::GetContextCompartment(ctx);
+
+	if (!comp) {
+		return false;
+	}
+
+	struct ecmascript_interpreter *interpreter = JS_GetCompartmentPrivate(comp);
+	JS::Value val;
 	struct string *ret = interpreter->ret;
-	jsval *argv = JS_ARGV(ctx, rval);
+	JS::CallArgs args = JS::CallArgsFromVp(argc, rval);
 
 	if (argc >= 1 && ret) {
 		int i = 0;
 
 		for (; i < argc; ++i) {
-			unsigned char *code = jsval_to_string(ctx, &argv[i]);
+			unsigned char *code = jsval_to_string(ctx, args[i]);
 
 			add_to_string(ret, code);
 		}
@@ -425,23 +473,22 @@ document_write_do(JSContext *ctx, unsigned int argc, jsval *rval, int newline)
 	set_led_value(interpreter->vs->doc_view->session->status.ecmascript_led, 'J');
 #endif
 
-	boolean_to_jsval(ctx, &val, 0);
-	JS_SET_RVAL(ctx, rval, val);
+	args.rval().setBoolean(false);
 
-	return JS_TRUE;
+	return true;
 }
 
 /* @document_funcs{"write"} */
-static JSBool
-document_write(JSContext *ctx, unsigned int argc, jsval *rval)
+static bool
+document_write(JSContext *ctx, unsigned int argc, JS::Value *rval)
 {
 
 	return document_write_do(ctx, argc, rval, 0);
 }
 
 /* @document_funcs{"writeln"} */
-static JSBool
-document_writeln(JSContext *ctx, unsigned int argc, jsval *rval)
+static bool
+document_writeln(JSContext *ctx, unsigned int argc, JS::Value *rval)
 {
 	return document_write_do(ctx, argc, rval, 1);
 }

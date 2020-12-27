@@ -826,7 +826,8 @@ pass_uri_to_command(struct session *ses, struct document_view *doc_view,
 
 	switch (type) {
 	case PASS_URI_FRAME:
-		uri = get_uri_reference(doc_view->document->uri);
+		uri = get_uri_reference((doc_view->vs && doc_view->vs->uri)
+		? doc_view->vs->uri : doc_view->document->uri);
 		break;
 
 	case PASS_URI_LINK:
@@ -841,7 +842,11 @@ pass_uri_to_command(struct session *ses, struct document_view *doc_view,
 	}
 	default:
 	case PASS_URI_TAB:
-		uri = get_uri_reference(ses->doc_view->document->uri);
+		uri = have_location(ses) ? cur_loc(ses)->vs.uri : ses->loading_uri;
+		if (!uri) {
+			return FRAME_EVENT_OK;
+		}
+		uri = get_uri_reference(uri);
 	};
 
 	items = new_menu(FREE_LIST | FREE_TEXT | FREE_DATA | NO_INTL);

@@ -10,6 +10,10 @@
 #include "util/lists.h"
 #include "util/box.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct cache_entry;
 struct document_refresh;
 struct el_form_control;
@@ -42,6 +46,12 @@ enum cp_status {
 	CP_STATUS_IGNORED
 };
 
+/** Clipboard state */
+enum clipboard_status {
+	CLIPBOARD_NONE,
+	CLIPBOARD_FIRST_POINT,
+	CLIPBOARD_SECOND_POINT
+};
 
 struct point {
 	int x, y;
@@ -265,6 +275,9 @@ struct document {
 
 	enum cp_status cp_status;
 	unsigned int links_sorted:1; /**< whether links are already sorted */
+
+	struct el_box clipboard_box;
+	enum clipboard_status clipboard_status;
 };
 
 #define document_has_frames(document_) ((document_) && (document_)->frame_desc)
@@ -309,5 +322,9 @@ extern struct module document_module;
 #define accesskey_string_to_unicode(s) (((s)[0] && !(s)[1] && isprint((s)[0])) ? (s)[0] : 0)
 
 int find_tag(struct document *document, unsigned char *name, int namelen);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -982,7 +982,8 @@ get_searched_all(struct session *ses, struct document_view *doc_view, struct poi
 	if (*pt == NULL)
 		return FIND_ERROR_NOT_FOUND;
 
-	return move_search_do(ses, doc_view, 0);
+	move_search_do(ses, doc_view, 0);
+	return FIND_ERROR_NONE;
 }
 
 static enum find_error
@@ -990,7 +991,8 @@ search_for_do(struct session *ses, unsigned char *str, int direction,
 	      int report_errors)
 {
 	struct document_view *doc_view;
-        int utf8 = 0;
+	int utf8 = 0;
+	enum find_error error;
 
 	assert(ses && str);
 	if_assert_failed return FIND_ERROR_NOT_FOUND;
@@ -1019,8 +1021,13 @@ search_for_do(struct session *ses, unsigned char *str, int direction,
 	if (!ses->last_search_word) return FIND_ERROR_NOT_FOUND;
 	ses->search_direction = direction;
 
-	return get_searched_all(ses, doc_view, &doc_view->document->search_points,
+	error = get_searched_all(ses, doc_view, &doc_view->document->search_points,
 		&doc_view->document->number_of_search_points, utf8);
+
+	if (report_errors && error == FIND_ERROR_NOT_FOUND)
+		print_find_error(ses, error);
+
+	return error;
 }
 
 static void
@@ -1087,6 +1094,10 @@ static int
 find_next_link_in_search(struct document_view *doc_view, int direction)
 {
 	int utf8 = 0;
+	struct point *pt = NULL;
+	struct link *link;
+	int len;
+
 #ifdef CONFIG_UTF8
 	utf8 = doc_view->document->options.utf8;
 #endif
@@ -1108,10 +1119,6 @@ find_next_link_in_search(struct document_view *doc_view, int direction)
 	while (doc_view->vs->current_link != -1
 	       && next_link_in_view(doc_view, doc_view->vs->current_link + direction,
 	                            direction)) {
-		struct point *pt = NULL;
-		struct link *link;
-		int len;
-
 nt:
 		link = &doc_view->document->links[doc_view->vs->current_link];
 		get_searched(doc_view, &pt, &len, utf8);
@@ -1305,8 +1312,20 @@ find_first_search_in_view(struct session *ses, struct document_view *doc_view)
 static enum frame_event_status
 move_search_do(struct session *ses, struct document_view *doc_view, int direction)
 {
-	if (!doc_view->document->number_of_search_points)
-		return FRAME_EVENT_OK;
+	if (!doc_view->document->number_of_search_points) {
+#ifdef CONFIG_UTF8
+		int utf8 = doc_view->document->options.utf8;
+#else
+		int utf8 = 0;
+#endif
+		doc_view->vs->current_search_number = -1;
+		enum find_error error = get_searched_all(ses, doc_view, &doc_view->document->search_points,
+		&doc_view->document->number_of_search_points, utf8);
+
+		if (error == FIND_ERROR_NOT_FOUND) {
+			return FRAME_EVENT_OK;
+		}
+	}
 
 	int number;
 
@@ -1333,7 +1352,7 @@ static enum find_error
 move_search_number(struct session *ses, struct document_view *doc_view, int number)
 {
 	struct point *pt;
-	int x, y;
+	int x, y, step;
 	enum find_error ret = FIND_ERROR_NONE;
 
 	if (number < 0) {
@@ -1354,8 +1373,11 @@ move_search_number(struct session *ses, struct document_view *doc_view, int numb
 	x = pt[number].x;
 	y = pt[number].y;
 
-	horizontal_scroll_extended(ses, doc_view, x - doc_view->vs->x, 0);
-	vertical_scroll(ses, doc_view, y - doc_view->vs->y);
+	if (!col_is_in_box(&doc_view->box, x)) {
+		horizontal_scroll_extended(ses, doc_view, x - doc_view->vs->x, 0);
+	}
+	step = y - doc_view->vs->y - get_opt_int("document.browse.scrolling.vertical_overlap", ses);
+	vertical_scroll(ses, doc_view, step);
 
 	return ret;
 }

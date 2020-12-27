@@ -5,9 +5,11 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "elinks.h"
 
+#include "config/home.h"
 #include "config/options.h"
 #include "document/document.h"
 #include "document/view.h"
@@ -66,6 +68,81 @@ static union option_info ecmascript_options[] = {
 };
 
 static int interpreter_count;
+
+static INIT_LIST_OF(struct string_list_item, allowed_urls);
+
+static int
+is_prefix(unsigned char *prefix, unsigned char *url, int dl)
+{
+	return memcmp(prefix, url, dl);
+}
+
+static void
+read_url_list(void)
+{
+	char line[4096];
+	unsigned char *filename;
+	FILE *f;
+
+	if (!elinks_home) {
+		return;
+	}
+
+	filename = straconcat(elinks_home, STRING_DIR_SEP, ALLOWED_ECMASCRIPT_URL_PREFIXES, NULL);
+
+	if (!filename) {
+		return;
+	}
+
+	f = fopen(filename, "r");
+
+	if (f) {
+		while (fgets(line, 4096, f)) {
+			add_to_string_list(&allowed_urls, line, strlen(line) - 1);
+		}
+		fclose(f);
+	}
+	mem_free(filename);
+}
+
+int
+get_ecmascript_enable(struct ecmascript_interpreter *interpreter)
+{
+	struct string_list_item *item;
+	unsigned char *url;
+
+	if (!get_opt_bool("ecmascript.enable", NULL)
+	|| !interpreter || !interpreter->vs || !interpreter->vs->doc_view
+	|| !interpreter->vs->doc_view->document || !interpreter->vs->doc_view->document->uri) {
+		return 0;
+	}
+
+	if (list_empty(allowed_urls)) {
+		return 1;
+	}
+
+	url = get_uri_string(interpreter->vs->doc_view->document->uri, URI_PUBLIC);
+	if (!url) {
+		return 0;
+	}
+
+	foreach(item, allowed_urls) {
+		struct string *string = &item->string;
+
+		if (string->length <= 0) {
+			continue;
+		}
+		if (!is_prefix(string->source, url, string->length)) {
+			mem_free(url);
+			move_to_top_of_list(allowed_urls, item);
+			return 1;
+		}
+	}
+
+	mem_free(url);
+	return 0;
+}
+
 
 struct ecmascript_interpreter *
 ecmascript_get_interpreter(struct view_state *vs)
@@ -129,7 +206,7 @@ void
 ecmascript_eval(struct ecmascript_interpreter *interpreter,
                 struct string *code, struct string *ret)
 {
-	if (!get_ecmascript_enable())
+	if (!get_ecmascript_enable(interpreter))
 		return;
 	assert(interpreter);
 	interpreter->backend_nesting++;
@@ -137,13 +214,26 @@ ecmascript_eval(struct ecmascript_interpreter *interpreter,
 	interpreter->backend_nesting--;
 }
 
+static void
+ecmascript_call_function(struct ecmascript_interpreter *interpreter,
+                JS::HandleValue fun, struct string *ret)
+{
+	if (!get_ecmascript_enable(interpreter))
+		return;
+	assert(interpreter);
+	interpreter->backend_nesting++;
+	spidermonkey_call_function(interpreter, fun, ret);
+	interpreter->backend_nesting--;
+}
+
+
 unsigned char *
 ecmascript_eval_stringback(struct ecmascript_interpreter *interpreter,
 			   struct string *code)
 {
 	unsigned char *result;
 
-	if (!get_ecmascript_enable())
+	if (!get_ecmascript_enable(interpreter))
 		return NULL;
 	assert(interpreter);
 	interpreter->backend_nesting++;
@@ -158,7 +248,7 @@ ecmascript_eval_boolback(struct ecmascript_interpreter *interpreter,
 {
 	int result;
 
-	if (!get_ecmascript_enable())
+	if (!get_ecmascript_enable(interpreter))
 		return -1;
 	assert(interpreter);
 	interpreter->backend_nesting++;
@@ -312,6 +402,24 @@ ecmascript_timeout_handler(void *i)
 	ecmascript_eval(interpreter, &interpreter->code, NULL);
 }
 
+/* Timer callback for @interpreter->vs->doc_view->document->timeout.
+ * As explained in @install_timer, this function must erase the
+ * expired timer ID from all variables.  */
+static void
+ecmascript_timeout_handler2(void *i)
+{
+	struct ecmascript_interpreter *interpreter = i;
+
+	assertm(interpreter->vs->doc_view != NULL,
+		"setTimeout: vs with no document (e_f %d)",
+		interpreter->vs->ecmascript_fragile);
+	interpreter->vs->doc_view->document->timeout = TIMER_ID_UNDEF;
+	/* The expired timer ID has now been erased.  */
+
+	ecmascript_call_function(interpreter, interpreter->fun, NULL);
+}
+
+
 void
 ecmascript_set_timeout(struct ecmascript_interpreter *interpreter, unsigned char *code, int timeout)
 {
@@ -325,6 +433,30 @@ ecmascript_set_timeout(struct ecmascript_interpreter *interpreter, unsigned char
 	install_timer(&interpreter->vs->doc_view->document->timeout, timeout, ecmascript_timeout_handler, interpreter);
 }
 
+void
+ecmascript_set_timeout2(struct ecmascript_interpreter *interpreter, JS::HandleValue f, int timeout)
+{
+	assert(interpreter && interpreter->vs->doc_view->document);
+	done_string(&interpreter->code);
+	init_string(&interpreter->code);
+	kill_timer(&interpreter->vs->doc_view->document->timeout);
+	JS::RootedValue fun((JSContext *)interpreter->backend_data, f);
+	interpreter->fun = fun;
+	install_timer(&interpreter->vs->doc_view->document->timeout, timeout, ecmascript_timeout_handler2, interpreter);
+}
+
+static void
+init_ecmascript_module(struct module *module)
+{
+	read_url_list();
+}
+
+static void
+done_ecmascript_module(struct module *module)
+{
+	free_string_list(&allowed_urls);
+}
+
 static struct module *ecmascript_modules[] = {
 #ifdef CONFIG_ECMASCRIPT_SMJS
 	&spidermonkey_module,
@@ -333,12 +465,13 @@ static struct module *ecmascript_modules[] = {
 };
 
 
+
 struct module ecmascript_module = struct_module(
 	/* name: */		N_("ECMAScript"),
 	/* options: */		ecmascript_options,
 	/* events: */		NULL,
 	/* submodules: */	ecmascript_modules,
 	/* data: */		NULL,
-	/* init: */		NULL,
-	/* done: */		NULL
+	/* init: */		init_ecmascript_module,
+	/* done: */		done_ecmascript_module
 );

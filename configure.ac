@@ -16,7 +16,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([config/m4])
 
 PACKAGE=elinks
-VERSION=0.13.2
+VERSION=0.14.0rc2
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Package version])
@@ -60,6 +60,7 @@ echo "Feature summary:" > features.log
 # ===================================================================
 
 AC_PROG_CC
+AC_PROG_CXX
 AC_CHECK_TOOL([LD], [ld])
 AC_PROG_AWK
 AC_PATH_PROGS(AWK, "$AWK")
@@ -74,7 +75,7 @@ PKG_PROG_PKG_CONFIG
 CONFIG_ASCIIDOC="no"
 CONFIG_POD2HTML="no"
 CONFIG_XMLTO="no"
-CONFIG_JW="no"
+CONFIG_DBLATEX="no"
 
 if test "x$CONFIG_DOC" != xno; then
 	AC_PATH_PROGS(PYTHON3, "python3")
@@ -91,10 +92,10 @@ if test "x$CONFIG_DOC" != xno; then
 		EL_CONFIG(MAN_XMLTO, [man (groff)])
 	fi
 
-	AC_PATH_PROGS(JW, "jw")
-      	if test "x$JW" != "x"; then
-		EL_CONFIG(CONFIG_JW, [JadeWrapper])
-		EL_CONFIG(MANUAL_JW, [PDF])
+	AC_PATH_PROGS(DBLATEX, "dblatex")
+	if test "x$DBLATEX" != "x"; then
+		EL_CONFIG(CONFIG_DBLATEX, [dblatex])
+		EL_CONFIG(MANUAL_DBLATEX, [PDF])
 	fi
 
 	AC_PATH_PROGS(POD2HTML, "pod2html")
@@ -114,10 +115,10 @@ AC_SUBST(CONFIG_ASCIIDOC)
 AC_SUBST(CONFIG_DOXYGEN)
 AC_SUBST(CONFIG_POD2HTML)
 AC_SUBST(CONFIG_XMLTO)
-AC_SUBST(CONFIG_JW)
+AC_SUBST(CONFIG_DBLATEX)
 
-EL_CONFIG_DEPENDS(CONFIG_DOC, [CONFIG_ASCIIDOC CONFIG_XMLTO CONFIG_JW CONFIG_POD2HTML], [Documentation Tools])
-EL_CONFIG_DEPENDS(CONFIG_MANUAL, [MANUAL_ASCIIDOC MANUAL_XMLTO MANUAL_JW], [Manual Formats])
+EL_CONFIG_DEPENDS(CONFIG_DOC, [CONFIG_ASCIIDOC CONFIG_XMLTO CONFIG_DBLATEX CONFIG_POD2HTML], [Documentation Tools])
+EL_CONFIG_DEPENDS(CONFIG_MANUAL, [MANUAL_ASCIIDOC MANUAL_XMLTO MANUAL_DBLATEX], [Manual Formats])
 EL_CONFIG_DEPENDS(CONFIG_MANPAGE, [MAN_ASCIIDOC MAN_XMLTO], [Man Page Formats])
 EL_CONFIG_DEPENDS(CONFIG_APIDOCS, [CONFIG_DOXYGEN], [API Documentation])
 
@@ -127,6 +128,21 @@ if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
   # We can't set up -Werror here as there may be some warnings in test
   # suite of configure, and we don't want to fail them.
   CFLAGS="$CFLAGS -Wall"
+fi
+
+# ===================================================================
+# static binary
+# ===================================================================
+
+enable_static=no
+pkg_config_static=
+
+AC_ARG_WITH(static, [  --with-static           enable build of static binary],
+            [ if test "x$withval" != xno; then enable_static=yes; fi ])
+
+if test "$enable_static" = yes; then
+	CFLAGS="$CFLAGS -static"
+	pkg_config_static="--static"
 fi
 
 # ===================================================================
@@ -488,19 +504,48 @@ EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_GZIP, zlib, zlib.h, z, gzclearerr,
 EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_BZIP2, bzlib, bzlib.h, bz2, BZ2_bzReadOpen,
 	[  --without-bzlib         disable bzlib support])
 
-EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_BROTLI, brotli, brotli/decode.h, brotlidec, BrotliDecoderDecompressStream,
-	[  --with-brotli           enable experimental brotli support])
-
 EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_ZSTD, zstd, zstd.h, zstd, ZSTD_createDCtx,
 	[  --with-zstd             enable experimental zstd support])
 
-EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_IDN, idn, idna.h, idn, stringprep_check_version,
-	[  --without-idn           disable international domain names support])
+# ===================================================================
+# brotli
+# ===================================================================
+
+BROTLI_CFLAGS=
+BROTLI_LIBS=
+CONFIG_BROTLI=no
+enable_brotli=no
+
+AC_ARG_WITH(brotli, [  --with-brotli           enable brotli],
+            [ if test "x$withval" != xno; then enable_brotli=yes; fi ])
+
+if test "$enable_brotli" = no; then
+	AC_MSG_CHECKING([[for brotli]])
+	AC_MSG_RESULT([[disabled]])
+else
+	AC_MSG_CHECKING([[for brotli in pkg-config]])
+	if $PKG_CONFIG $pkg_config_static libbrotlidec; then
+		BROTLI_CFLAGS=`$PKG_CONFIG $pkg_config_static --cflags libbrotlidec`
+		BROTLI_LIBS=`$PKG_CONFIG $pkg_config_static --libs libbrotlidec`
+		LIBS="$BROTLI_LIBS $LIBS"
+		CONFIG_BROTLI=yes
+		AC_DEFINE([CONFIG_BROTLI], [1], [Define as 1 to use the libbrotli library.])
+		AC_MSG_RESULT([[yes]])
+	else
+		enable_brotli=no
+	fi
+fi
+AC_SUBST(BROTLI_CFLAGS)
+AC_SUBST(BROTLI_LIBS)
+EL_LOG_CONFIG([CONFIG_BROTLI], [[brotli]], [[$enable_brotli]])
 
 # LZMA disabled by default, because of little usability and compilation problems
 # with new xz
 EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_LZMA, lzma, lzma.h, lzma, lzma_code,
 	[  --with-lzma             enable lzma encoding support])
+
+EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_IDN, idn, idna.h, idn, stringprep_check_version,
+	[  --without-idn           disable international domain names support])
 
 # ===================================================================
 # Check for GSSAPI, optional even if installed.
@@ -611,17 +656,18 @@ case "$with_spidermonkey" in
 		;;
 esac
 
-for package in mozjs-17.0; do
+for package in mozjs-52; do
 	if test -n "$CONFIG_SPIDERMONKEY"; then
 		break
 	else
-		AC_MSG_CHECKING([for SpiderMonkey (mozjs-17.0) in pkg-config $package])
-		if $PKG_CONFIG --cflags --libs $package > /dev/null 2>&AS_MESSAGE_LOG_FD; then
-			SPIDERMONKEY_LIBS="$($PKG_CONFIG --libs $package)"
-			SPIDERMONKEY_CFLAGS="$($PKG_CONFIG --cflags $package)"
+		AC_MSG_CHECKING([for SpiderMonkey (mozjs-52) in pkg-config $package])
+		if $PKG_CONFIG $pkg_config_static --cflags --libs $package > /dev/null 2>&AS_MESSAGE_LOG_FD; then
+			SPIDERMONKEY_LIBS="$($PKG_CONFIG $pkg_config_static --libs $package)"
+			SPIDERMONKEY_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags $package)"
 			LIBS="$SPIDERMONKEY_LIBS $LIBS_X"
 			CFLAGS="$CFLAGS_X $SPIDERMONKEY_CFLAGS"
 			CPPFLAGS="$CPPFLAGS_X $SPIDERMONKEY_CFLAGS"
+			AC_LANG_PUSH([C++])
 			AC_LINK_IFELSE(
 				[AC_LANG_PROGRAM([[
 					/* mozilla-js.pc may have -DXP_UNIX or similar in Cflags.
@@ -635,6 +681,7 @@ for package in mozjs-17.0; do
 				 AC_MSG_RESULT([yes])],
 				[# Leave CONFIG_SPIDERMONKEY blank, to continue the search.
 				 AC_MSG_RESULT([found but unusable])])
+			AC_LANG_POP([C++])
 		else
 			AC_MSG_RESULT([no])
 		fi
@@ -646,14 +693,6 @@ if test -z "$CONFIG_SPIDERMONKEY"; then
 	CONFIG_SPIDERMONKEY=no
 fi
 
-if test "$CONFIG_SPIDERMONKEY" = "yes"; then
-	# LIBS, CFLAGS, and CPPFLAGS still include the SpiderMonkey options.
-	AC_CHECK_FUNCS([JS_ReportAllocationOverflow])
-	AC_CHECK_FUNCS([JS_SetBranchCallback])
-	AC_CHECK_FUNCS([JS_TriggerOperationCallback], [HAVE_JS_TRIGGEROPERATIONCALLBACK=yes])
-elif test -n "$with_spidermonkey" && test "x$with_spidermonkey" != "xno"; then
-	AC_MSG_WARN([SpiderMonkey was not found even though you specified --with-spidermonkey.])
-fi
 EL_RESTORE_FLAGS
 
 if test "x$CONFIG_SPIDERMONKEY" = xyes; then
@@ -697,6 +736,7 @@ if test "x$CONFIG_ECMASCRIPT_SMJS" = xyes ||
 	AC_SUBST(SPIDERMONKEY_LIBS)
 	AC_SUBST(SPIDERMONKEY_CFLAGS)
 	AC_SUBST(CONFIG_SPIDERMONKEY)
+	CFLAGS="$CFLAGS -fpermissive $SPIDERMONKEY_CFLAGS"
 fi
 
 # ===================================================================
@@ -878,42 +918,29 @@ fi
 # Check for Lua, optional even if installed.
 # ===================================================================
 
-# Do this the long way, as FreeBSD reportedly needs -L<dir> for
-# anything other than /usr/lib, and Lua is very often in /usr/local/lib.
-
-AC_ARG_WITH(lua, [  --without-lua           disable Lua support],
-            [if test "$withval" = no; then disable_lua=yes; fi])
+luapkg=
+AC_ARG_WITH(luapkg, [  --with-luapkg=name      choose Lua version],
+            [luapkg="$withval"])
 AC_MSG_CHECKING([for Lua])
 
 EL_SAVE_FLAGS
 cf_result=no
 
-if test -z "$disable_lua"; then
-	if test ! -d "$withval"; then
-		withval="";
-	fi
-	for luadir in "$withval" "" /usr /usr/local; do
-		for suffix in "" 5.1 51 5.3 53 5.2 52; do
-			if test "$cf_result" = no && ( test -f "$luadir/include/lua.h" || \
-			   test -f "$luadir/include/lua$suffix/lua.h" ) ; then
-				LUA_LIBS="-L$luadir/lib -llua$suffix -lm"
-				LUA_CFLAGS="-I$luadir/include -I$luadir/include/lua$suffix"
+if test -n "$luapkg" && $PKG_CONFIG $pkg_config_static "$luapkg"; then
+	LUA_CFLAGS=`$PKG_CONFIG $pkg_config_static --cflags "$luapkg"`
+	LUA_LIBS=`$PKG_CONFIG $pkg_config_static --libs "$luapkg"`
+	CFLAGS="$CFLAGS_X $LUA_CFLAGS"
+	CPPFLAGS="$CPPFLAGS_X $LUA_CFLAGS"
+	LIBS="$LUA_LIBS $LIBS_X"
 
-				LIBS="$LUA_LIBS $LIBS_X"
-				CFLAGS="$CFLAGS_X $LUA_CFLAGS"
-				CPPFLAGS="$CPPFLAGS_X $LUA_CFLAGS"
-
-				# Check that it is a compatible Lua version
-				AC_LINK_IFELSE([AC_LANG_PROGRAM([[	#include <lauxlib.h>]
-						#include <lua.h>
-						#include <lualib.h>
-						], [[	lua_State *L = luaL_newstate();
-						luaL_openlibs(L);
-						lua_pushboolean(L, 1);
-						lua_close(L);]])],[cf_result=yes],[cf_result=no])
-			fi
-		done
-	done
+	# Check that it is a compatible Lua version
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[	#include <lauxlib.h>]
+		#include <lua.h>
+		#include <lualib.h>
+	], [[lua_State *L = luaL_newstate();
+		luaL_openlibs(L);
+		lua_pushboolean(L, 1);
+		lua_close(L);]])],[cf_result=yes],[cf_result=no])
 fi
 
 AC_MSG_RESULT($cf_result)
@@ -952,9 +979,9 @@ if test "$with_tre" = no; then
 	tre_log="no (explicitly disabled)"
 else
 	AC_MSG_CHECKING([[for TRE in pkg-config]])
-	if $PKG_CONFIG tre; then
-		TRE_CFLAGS=`$PKG_CONFIG --cflags tre`
-		TRE_LIBS=`$PKG_CONFIG --libs tre`
+	if $PKG_CONFIG $pkg_config_static tre; then
+		TRE_CFLAGS=`$PKG_CONFIG $pkg_config_static --cflags tre`
+		TRE_LIBS=`$PKG_CONFIG $pkg_config_static --libs tre`
 		AC_MSG_RESULT([[yes]])
 	else
 		# <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=513055>
@@ -1020,7 +1047,7 @@ AC_ARG_WITH(gnutls, [[  --with-gnutls           enable GNUTLS SSL support]],
 		"yes")	chosen_ssl_library="GNUTLS" ;;
 		*)	chosen_ssl_library="GNUTLS"
 			AC_MSG_WARN([[Support for --with-gnutls=DIR has been removed.
-You may have to set the PKG_CONFIG_PATH environment variable instead.]]) ;;
+You may have to set the PKG_CONFIG $pkg_config_static_PATH environment variable instead.]]) ;;
 	     esac])
 
 AC_ARG_WITH(openssl, [[  --without-openssl       disable OpenSSL support]])
@@ -1054,9 +1081,9 @@ elif test -z "${with_nss_compat_ossl+set}"; then
 else
 	EL_SAVE_FLAGS
 	if test "$with_nss_compat_ossl" = yes; then
-		if $PKG_CONFIG nss; then
-			CFLAGS="$CFLAGS_X `$PKG_CONFIG --cflags nss`"
-			LIBS="$LIBS_X `$PKG_CONFIG --libs nss`"
+		if $PKG_CONFIG $pkg_config_static nss; then
+			CFLAGS="$CFLAGS_X `$PKG_CONFIG $pkg_config_static --cflags nss`"
+			LIBS="$LIBS_X `$PKG_CONFIG $pkg_config_static --libs nss`"
 		else
 			with_nss_compat_ossl=no
 		fi
@@ -1153,9 +1180,9 @@ elif test -n "$chosen_ssl_library" && test "$chosen_ssl_library" != "GNUTLS"; th
 else
 	cf_result=no
 	AC_MSG_CHECKING([[for GNUTLS (1.2 or later) in pkg-config]])
-	if $PKG_CONFIG --atleast-version=1.2 gnutls; then
-		GNUTLS_CFLAGS=`$PKG_CONFIG --cflags gnutls`
-		GNUTLS_LIBS=`$PKG_CONFIG --libs gnutls`
+	if $PKG_CONFIG $pkg_config_static --atleast-version=1.2 gnutls; then
+		GNUTLS_CFLAGS=`$PKG_CONFIG $pkg_config_static --cflags gnutls`
+		GNUTLS_LIBS=`$PKG_CONFIG $pkg_config_static --libs gnutls`
 		AC_MSG_RESULT([[yes: $GNUTLS_CFLAGS $GNUTLS_LIBS]])
 
 		EL_SAVE_FLAGS
@@ -1618,9 +1645,9 @@ if test "$enable_libdom" = no; then
 	AC_MSG_RESULT([[disabled]])
 else
 	AC_MSG_CHECKING([[for libdom in pkg-config]])
-	if $PKG_CONFIG libdom; then
-		LIBDOM_CFLAGS=`$PKG_CONFIG --cflags libdom`
-		LIBDOM_LIBS=`$PKG_CONFIG --libs libdom`
+	if $PKG_CONFIG $pkg_config_static libdom; then
+		LIBDOM_CFLAGS=`$PKG_CONFIG $pkg_config_static --cflags libdom`
+		LIBDOM_LIBS=`$PKG_CONFIG $pkg_config_static --libs libdom`
 		LIBS="$LIBDOM_LIBS $LIBS"
 		CONFIG_LIBDOM=yes
 		AC_DEFINE([CONFIG_LIBDOM], [1], [Define as 1 to use the libdom library.])
@@ -1632,6 +1659,7 @@ fi
 AC_SUBST(LIBDOM_CFLAGS)
 AC_SUBST(LIBDOM_LIBS)
 EL_LOG_CONFIG([CONFIG_LIBDOM], [[libdom]], [[$enable_libdom]])
+
 
 # ===================================================================
 # Further LDFLAGS tweaks
@@ -1675,11 +1703,14 @@ test "$CONFIG_OS_OS2" = yes && LDFLAGS=`echo "$LDFLAGS" | sed "s/-Zbin-files//g"
 # linker from finding the libraries listed in -l operands.  So this
 # -rdynamic check needs to happen after the libraries have already
 # been added to $LDFLAGS.
+have_rdynamic=no
 AC_MSG_CHECKING([for -rdynamic])
-LDFLAGS_X="$LDFLAGS"
-LDFLAGS="-rdynamic $LDFLAGS"
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[have_rdynamic=yes],[have_rdynamic=no])
-test "$have_rdynamic" = no && LDFLAGS="$LDFLAGS_X"
+if test "$enable_static" = no; then
+	LDFLAGS_X="$LDFLAGS"
+	LDFLAGS="-rdynamic $LDFLAGS"
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[have_rdynamic=yes],[have_rdynamic=no])
+	test "$have_rdynamic" = no && LDFLAGS="$LDFLAGS_X"
+fi
 AC_MSG_RESULT($have_rdynamic)
 
 # ===================================================================
@@ -1881,7 +1912,6 @@ AC_CONFIG_FILES([ \
  Makefile.config \
  contrib/elinks.spec \
  contrib/lua/hooks.lua \
- contrib/conv/w3m2links.awk \
  doc/Doxyfile \
  doc/man/man1/elinks.1 \
  src/intl/gettext/ref-add.sed \
