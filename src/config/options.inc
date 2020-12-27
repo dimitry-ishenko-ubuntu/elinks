@@ -439,6 +439,12 @@ static union option_info config_options_info[] = {
 		"2 for extended regular expression searches")),
 #endif
 
+	INIT_OPT_BOOL("document.browse.search", N_("Reset searching on new pages"),
+		"reset", 0, 1,
+		N_("Whether to clear search, when visiting new pages, or going back "
+		"in history. If you set it to 0, you can search once and "
+		"see results on every page.")),
+
 	INIT_OPT_BOOL("document.browse.search", N_("Show search hit top or bottom dialogs"),
 		"show_hit_top_bottom", 0, 1,
 		N_("Whether to show a dialog when the search hits the top or "
@@ -1284,6 +1290,9 @@ static union option_info config_options_info[] = {
 		"separator", "brown", "white", "gray", "white",
 		N_("Tab separator colors.")),
 
+	INIT_OPT_COLORS("", N_("Clipboard"),
+		"clipboard", "lime", "green", "white", "green",
+		N_("Clipboard highlight colors.")),
 
 	INIT_OPT_COLORS("", N_("Searched strings"),
 		"searched", "black", "lime", "black", "white",
@@ -1458,6 +1467,12 @@ static union option_info config_options_info[] = {
 		"keep_session_active", 0, 0,
 		N_("Keep the session active even if the last terminal "
 		"exits.")),
+
+	INIT_OPT_STRING("ui", N_("Clipboard filename"),
+		"clipboard_file", 0, "",
+		N_("The filename of the clipboard. The 'copy-clipboard' action will append to it. "
+		"This file can be also a named pipe. See contrib/clipboard/clip.sh for sample "
+		"implementation. Note this file must exists before copying to the clipboard.")),
 
 #ifdef HAVE_STRFTIME
 	INIT_OPT_STRING("ui", N_("Date format"),

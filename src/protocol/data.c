@@ -116,8 +116,10 @@ data_protocol_handler(struct connection *conn)
 {
 	struct uri *uri = conn->uri;
 	struct cache_entry *cached = get_cache_entry(uri);
-	unsigned char *data_start, *data;
+	unsigned char *data_start, *data = NULL;
 	int base64 = 0;
+	int decodedlen = 0;
+	int datalen;
 
 	if (!cached) {
 		abort_connection(conn, connection_state(S_OUT_OF_MEM));
@@ -132,16 +134,9 @@ data_protocol_handler(struct connection *conn)
 		return;
 	}
 
-	/* Allocate the data string because URI decoding will possibly modify
-	 * it. */
-	data = memacpy(data_start, uri->datalen - (data_start - uri->data));
-	if (!data) {
-		abort_connection(conn, connection_state(S_OUT_OF_MEM));
-		return;
-	}
-
+	datalen = uri->datalen - (data_start - uri->data);
 	if (base64) {
-		unsigned char *decoded = base64_encode(data);
+		unsigned char *decoded = base64_decode_bin(data_start, datalen, &decodedlen);
 
 		if (!decoded) {
 			abort_connection(conn, connection_state(S_OUT_OF_MEM));
@@ -150,17 +145,21 @@ data_protocol_handler(struct connection *conn)
 
 		mem_free_set(&data, decoded);
 	} else {
+		/* Allocate the data string because URI decoding will possibly modify
+		 * it. */
+		data = memacpy(data_start, datalen);
+
+		if (!data) {
+			abort_connection(conn, connection_state(S_OUT_OF_MEM));
+			return;
+		}
 		decode_uri(data);
-	}
-
-	{
 		/* Use strlen() to get the correct decoded length */
-		int datalen = strlen(data);
-
-		add_fragment(cached, conn->from, data, datalen);
-		conn->from += datalen;
+		decodedlen = strlen(data);
 	}
 
+	add_fragment(cached, conn->from, data, decodedlen);
+	conn->from += decodedlen;
 	mem_free(data);
 
 	abort_connection(conn, connection_state(S_OK));

@@ -11,6 +11,7 @@
 #include "elinks.h"
 
 #include "ecmascript/spidermonkey/util.h"
+#include <jsprf.h>
 
 #include "bfu/dialog.h"
 #include "cache/cache.h"
@@ -50,8 +51,6 @@
 #include "viewer/text/link.h"
 #include "viewer/text/vs.h"
 
-
-
 /*** Global methods */
 
 
@@ -59,14 +58,102 @@
 
 static int js_module_init_ok;
 
-static void
-error_reporter(JSContext *ctx, const char *message, JSErrorReport *report)
+bool
+PrintError(JSContext* cx, FILE* file, JS::ConstUTF8CharsZ toStringResult,
+               JSErrorReport* report, bool reportWarnings)
 {
-	struct ecmascript_interpreter *interpreter = JS_GetContextPrivate(ctx);
+    MOZ_ASSERT(report);
+
+    /* Conditionally ignore reported warnings. */
+    if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
+        return false;
+
+    char* prefix = nullptr;
+    if (report->filename)
+        prefix = JS_smprintf("%s:", report->filename);
+    if (report->lineno) {
+        char* tmp = prefix;
+        prefix = JS_smprintf("%s%u:%u ", tmp ? tmp : "", report->lineno, report->column);
+        JS_free(cx, tmp);
+    }
+    if (JSREPORT_IS_WARNING(report->flags)) {
+        char* tmp = prefix;
+        prefix = JS_smprintf("%s%swarning: ",
+                             tmp ? tmp : "",
+                             JSREPORT_IS_STRICT(report->flags) ? "strict " : "");
+        JS_free(cx, tmp);
+    }
+
+    const char* message = toStringResult ? toStringResult.c_str() : report->message().c_str();
+
+    /* embedded newlines -- argh! */
+    const char* ctmp;
+    while ((ctmp = strchr(message, '\n')) != 0) {
+        ctmp++;
+        if (prefix)
+            fputs(prefix, file);
+        fwrite(message, 1, ctmp - message, file);
+        message = ctmp;
+    }
+
+    /* If there were no filename or lineno, the prefix might be empty */
+    if (prefix)
+        fputs(prefix, file);
+    fputs(message, file);
+
+    if (const char16_t* linebuf = report->linebuf()) {
+        size_t n = report->linebufLength();
+
+        fputs(":\n", file);
+        if (prefix)
+            fputs(prefix, file);
+
+        for (size_t i = 0; i < n; i++)
+            fputc(static_cast<char>(linebuf[i]), file);
+
+        // linebuf usually ends with a newline. If not, add one here.
+        if (n == 0 || linebuf[n-1] != '\n')
+            fputc('\n', file);
+
+        if (prefix)
+            fputs(prefix, file);
+
+        n = report->tokenOffset();
+        for (size_t i = 0, j = 0; i < n; i++) {
+            if (linebuf[i] == '\t') {
+                for (size_t k = (j + 8) & ~7; j < k; j++)
+                    fputc('.', file);
+                continue;
+            }
+            fputc('.', file);
+            j++;
+        }
+        fputc('^', file);
+    }
+    fputc('\n', file);
+    fflush(file);
+    JS_free(cx, prefix);
+    return true;
+}
+
+
+
+static void
+error_reporter(JSContext *ctx, JSErrorReport *report)
+{
+	JSCompartment *comp = js::GetContextCompartment(ctx);
+
+	if (!comp) {
+		return;
+	}
+
+	struct ecmascript_interpreter *interpreter = JS_GetCompartmentPrivate(comp);
 	struct session *ses = interpreter->vs->doc_view->session;
 	struct terminal *term;
 	unsigned char *strict, *exception, *warning, *error;
 	struct string msg;
+
+	char *prefix = nullptr;
 
 	assert(interpreter && interpreter->vs && interpreter->vs->doc_view
 	       && ses && ses->tab);
@@ -92,16 +179,7 @@ error_reporter(JSContext *ctx, const char *message, JSErrorReport *report)
 			strict, exception, warning, error);
 
 	add_to_string(&msg, ":\n\n");
-	add_to_string(&msg, message);
-
-	if (report->linebuf && report->tokenptr) {
-		int pos = report->tokenptr - report->linebuf;
-
-		add_format_to_string(&msg, "\n\n%s\n.%*s^%*s.",
-			       report->linebuf,
-			       pos - 2, " ",
-			       strlen(report->linebuf) - pos - 1, " ");
-	}
+	add_to_string(&msg, report->message().c_str());
 
 	info_box(term, MSGBOX_FREE_TEXT, N_("JavaScript Error"), ALIGN_CENTER,
 		 msg.source);
@@ -110,34 +188,6 @@ reported:
 	/* Im clu'les. --pasky */
 	JS_ClearPendingException(ctx);
 }
-
-#if !defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT) && defined(HAVE_JS_SETBRANCHCALLBACK)
-static JSBool
-safeguard(JSContext *ctx, JSScript *script)
-{
-	struct ecmascript_interpreter *interpreter = JS_GetContextPrivate(ctx);
-	struct session *ses = interpreter->vs->doc_view->session;
-	int max_exec_time = get_opt_int("ecmascript.max_exec_time", ses);
-
-	if (time(NULL) - interpreter->exec_start > max_exec_time) {
-		struct terminal *term = ses->tab->term;
-
-		/* A killer script! Alert! */
-		ecmascript_timeout_dialog(term, max_exec_time);
-		return JS_FALSE;
-	}
-	return JS_TRUE;
-}
-
-static void
-setup_safeguard(struct ecmascript_interpreter *interpreter,
-                JSContext *ctx)
-{
-	interpreter->exec_start = time(NULL);
-	JS_SetBranchCallback(ctx, safeguard);
-}
-#endif
-
 
 static void
 spidermonkey_init(struct module *xxx)
@@ -157,28 +207,39 @@ void *
 spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 {
 	JSContext *ctx;
-	JSObject *window_obj, *document_obj, *forms_obj, *history_obj, *location_obj,
+	JSObject *document_obj, *forms_obj, *history_obj, *location_obj,
 	         *statusbar_obj, *menubar_obj, *navigator_obj;
+
+	static int initialized = 0;
 
 	assert(interpreter);
 	if (!js_module_init_ok) return NULL;
 
-	ctx = JS_NewContext(spidermonkey_runtime,
-			    8192 /* Stack allocation chunk size */);
-	if (!ctx)
-		return NULL;
+	ctx = main_ctx;
+
+	if (!ctx) {
+		return nullptr;
+	}
+
 	interpreter->backend_data = ctx;
-	JS_SetContextPrivate(ctx, interpreter);
-	JS_SetOptions(ctx, JSOPTION_VAROBJFIX | JSOPTION_METHODJIT);
-	JS_SetVersion(ctx, JSVERSION_LATEST);
-	JS_SetErrorReporter(ctx, error_reporter);
-#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
-	JS_SetOperationCallback(ctx, heartbeat_callback);
-#endif
+	interpreter->ar = new JSAutoRequest(ctx);
+	//JSAutoRequest ar(ctx);
 
-	window_obj = JS_NewGlobalObject(ctx, &window_class, NULL);
+//	JS_SetContextPrivate(ctx, interpreter);
 
-	if (!window_obj) goto release_and_fail;
+	//JS_SetOptions(main_ctx, JSOPTION_VAROBJFIX | JS_METHODJIT);
+	JS::SetWarningReporter(ctx, error_reporter);
+	JS_AddInterruptCallback(ctx, heartbeat_callback);
+	JS::CompartmentOptions options;
+
+	JS::RootedObject window_obj(ctx, JS_NewGlobalObject(ctx, &window_class, NULL, JS::FireOnNewGlobalHook, options));
+
+	if (window_obj) {
+		interpreter->ac = window_obj;
+		interpreter->ac2 = new JSAutoCompartment(ctx, window_obj);
+	} else {
+		goto release_and_fail;
+	}
 
 	if (!JS_InitStandardClasses(ctx, window_obj)) {
 		goto release_and_fail;
@@ -191,7 +252,7 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 	if (!spidermonkey_DefineFunctions(ctx, window_obj, window_funcs)) {
 		goto release_and_fail;
 	}
-	JS_SetPrivate(window_obj, interpreter->vs); /* to @window_class */
+	//JS_SetPrivate(window_obj, interpreter); /* to @window_class */
 
 	document_obj = spidermonkey_InitClass(ctx, window_obj, NULL,
 					      &document_class, NULL, 0,
@@ -229,7 +290,7 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 		goto release_and_fail;
 	}
 
-	menubar_obj = JS_InitClass(ctx, window_obj, NULL,
+	menubar_obj = JS_InitClass(ctx, window_obj, nullptr,
 				   &menubar_class, NULL, 0,
 				   unibar_props, NULL,
 				   NULL, NULL);
@@ -238,7 +299,7 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 	}
 	JS_SetPrivate(menubar_obj, "t"); /* to @menubar_class */
 
-	statusbar_obj = JS_InitClass(ctx, window_obj, NULL,
+	statusbar_obj = JS_InitClass(ctx, window_obj, nullptr,
 				     &statusbar_class, NULL, 0,
 				     unibar_props, NULL,
 				     NULL, NULL);
@@ -247,13 +308,14 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 	}
 	JS_SetPrivate(statusbar_obj, "s"); /* to @statusbar_class */
 
-	navigator_obj = JS_InitClass(ctx, window_obj, NULL,
+	navigator_obj = JS_InitClass(ctx, window_obj, nullptr,
 				     &navigator_class, NULL, 0,
 				     navigator_props, NULL,
 				     NULL, NULL);
 	if (!navigator_obj) {
 		goto release_and_fail;
 	}
+	JS_SetCompartmentPrivate(js::GetContextCompartment(ctx), interpreter);
 
 	return ctx;
 
@@ -269,9 +331,19 @@ spidermonkey_put_interpreter(struct ecmascript_interpreter *interpreter)
 
 	assert(interpreter);
 	if (!js_module_init_ok) return;
+
 	ctx = interpreter->backend_data;
-	JS_DestroyContext(ctx);
+	if (interpreter->ac2) {
+		delete (JSAutoCompartment *)interpreter->ac2;
+	}
+	if (interpreter->ar) {
+		delete (JSAutoRequest *)interpreter->ar;
+	}
+//	JS_DestroyContext(ctx);
 	interpreter->backend_data = NULL;
+	interpreter->ac = nullptr;
+	interpreter->ac2 = nullptr;
+	interpreter->ar = nullptr;
 }
 
 
@@ -280,26 +352,53 @@ spidermonkey_eval(struct ecmascript_interpreter *interpreter,
                   struct string *code, struct string *ret)
 {
 	JSContext *ctx;
-	jsval rval;
+	JS::Value rval;
 
 	assert(interpreter);
 	if (!js_module_init_ok) {
 		return;
 	}
 	ctx = interpreter->backend_data;
+	JS_BeginRequest(ctx);
+	JSCompartment *comp = JS_EnterCompartment(ctx, interpreter->ac);
 
-#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 	interpreter->heartbeat = add_heartbeat(interpreter);
-#elif defined(HAVE_JS_SETBRANCHCALLBACK)
-	setup_safeguard(interpreter, ctx);
-#endif
 	interpreter->ret = ret;
 
-	JS_EvaluateScript(ctx, JS_GetGlobalObject(ctx),
-	                  code->source, code->length, "", 0, &rval);
-#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
+	JS::RootedObject cg(ctx, JS::CurrentGlobalOrNull(ctx));
+	JS::RootedValue r_val(ctx, rval);
+	JS::CompileOptions options(ctx);
+
+	JS::Evaluate(ctx, options, code->source, code->length, &r_val);
 	done_heartbeat(interpreter->heartbeat);
-#endif
+	JS_LeaveCompartment(ctx, comp);
+	JS_EndRequest(ctx);
+}
+
+void
+spidermonkey_call_function(struct ecmascript_interpreter *interpreter,
+                  JS::HandleValue fun, struct string *ret)
+{
+	JSContext *ctx;
+	JS::Value rval;
+
+	assert(interpreter);
+	if (!js_module_init_ok) {
+		return;
+	}
+	ctx = interpreter->backend_data;
+	JS_BeginRequest(ctx);
+	JSCompartment *comp = JS_EnterCompartment(ctx, interpreter->ac);
+
+	interpreter->heartbeat = add_heartbeat(interpreter);
+	interpreter->ret = ret;
+
+	JS::RootedValue r_val(ctx, rval);
+	JS::RootedObject cg(ctx, JS::CurrentGlobalOrNull(ctx));
+	JS_CallFunctionValue(ctx, cg, fun, JS::HandleValueArray::empty(), &r_val);
+	done_heartbeat(interpreter->heartbeat);
+	JS_LeaveCompartment(ctx, comp);
+	JS_EndRequest(ctx);
 }
 
 
@@ -307,34 +406,44 @@ unsigned char *
 spidermonkey_eval_stringback(struct ecmascript_interpreter *interpreter,
 			     struct string *code)
 {
-	JSBool ret;
+	bool ret;
 	JSContext *ctx;
-	jsval rval;
+	JS::Value rval;
+	unsigned char *result = NULL;
 
 	assert(interpreter);
 	if (!js_module_init_ok) return NULL;
 	ctx = interpreter->backend_data;
 	interpreter->ret = NULL;
-#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 	interpreter->heartbeat = add_heartbeat(interpreter);
-#elif defined(HAVE_JS_SETBRANCHCALLBACK)
-	setup_safeguard(interpreter, ctx);
-#endif
 
-	ret = JS_EvaluateScript(ctx, JS_GetGlobalObject(ctx),
-	                        code->source, code->length, "", 0, &rval);
-#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
+	JS_BeginRequest(ctx);
+	JSCompartment *comp = JS_EnterCompartment(ctx, interpreter->ac);
+
+	JS::RootedObject cg(ctx, JS::CurrentGlobalOrNull(ctx));
+	JS::RootedValue r_rval(ctx, rval);
+	JS::CompileOptions options(ctx);
+
+//	options.setIntroductionType("js shell load")
+//	.setUTF8(true)
+//	.setCompileAndGo(true)
+//	.setNoScriptRval(true);
+
+	ret = JS::Evaluate(ctx, options, code->source, code->length, &r_rval);
 	done_heartbeat(interpreter->heartbeat);
-#endif
-	if (ret == JS_FALSE) {
-		return NULL;
-	}
-	if (JSVAL_IS_VOID(rval) || JSVAL_IS_NULL(rval)) {
-		/* Undefined value. */
-		return NULL;
-	}
 
-	return stracpy(jsval_to_string(ctx, &rval));
+	if (ret == false) {
+		result = NULL;
+	}
+	else if (r_rval.isNullOrUndefined()) {
+		/* Undefined value. */
+		result = NULL;
+	} else {
+		result = stracpy(JS_EncodeString(ctx, r_rval.toString()));
+	}
+	JS_LeaveCompartment(ctx, comp);
+	JS_EndRequest(ctx);
+	return result;
 }
 
 
@@ -343,42 +452,50 @@ spidermonkey_eval_boolback(struct ecmascript_interpreter *interpreter,
 			   struct string *code)
 {
 	JSContext *ctx;
-	JSFunction *fun;
-	jsval rval;
+	JS::Value rval;
 	int ret;
+	int result = 0;
 
 	assert(interpreter);
 	if (!js_module_init_ok) return 0;
 	ctx = interpreter->backend_data;
 	interpreter->ret = NULL;
 
-	fun = JS_CompileFunction(ctx, JS_GetGlobalObject(ctx), "", 0, NULL, code->source,
-				 code->length, "", 0);
-	if (!fun)
-		return -1;
+	JSCompartment *comp = JS_EnterCompartment(ctx, interpreter->ac);
+	JS_BeginRequest(ctx);
 
-#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
+	JS::RootedFunction fun(ctx);
+
+	JS::CompileOptions options(ctx);
+	JS::AutoObjectVector ag(ctx);
+	if (!JS::CompileFunction(ctx, ag, options, "aaa", 0, nullptr, code->source,
+				 code->length, &fun)) {
+		return -1;
+	};
+
 	interpreter->heartbeat = add_heartbeat(interpreter);
-#elif defined(HAVE_JS_SETBRANCHCALLBACK)
-	setup_safeguard(interpreter, ctx);
-#endif
-	ret = JS_CallFunction(ctx, JS_GetGlobalObject(ctx), fun, 0, NULL, &rval);
-
-#if defined(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
+	JS::RootedValue r_val(ctx, rval);
+	JS::RootedObject cg(ctx, JS::CurrentGlobalOrNull(ctx));
+	ret = JS_CallFunction(ctx, cg, fun, JS::HandleValueArray::empty(), &r_val);
 	done_heartbeat(interpreter->heartbeat);
-#endif
+
 	if (ret == 2) { /* onClick="history.back()" */
-		return 0;
+		result = 0;
 	}
-	if (ret == JS_FALSE) {
-		return -1;
+	else if (ret == false) {
+		result = -1;
 	}
-	if (JSVAL_IS_VOID(rval)) {
+	else if (r_val.isUndefined()) {
 		/* Undefined value. */
-		return -1;
+		result = -1;
+	} else {
+		result = r_val.toBoolean();
 	}
 
-	return jsval_to_boolean(ctx, &rval);
+	JS_LeaveCompartment(ctx, comp);
+	JS_EndRequest(ctx);
+
+	return result;
 }
 
 struct module spidermonkey_module = struct_module(

@@ -611,6 +611,18 @@ add_uri_to_string(struct string *string, const struct uri *uri,
 
 		if (!uri->datalen) return string;
 
+		if (uri->protocol == PROTOCOL_DATA) {
+			char *e;
+			add_to_string(string, "data");
+			e = get_extension_from_uri((struct uri *) uri);
+
+			if (e) {
+				add_to_string(string, e);
+				mem_free(e);
+			}
+			return string;
+		}
+
 		for (pos = filename; *pos && !end_of_dir(*pos); pos++)
 			if (wants(URI_FILENAME) && is_uri_dir_sep(uri, *pos))
 				filename = pos + 1;
@@ -1242,6 +1254,11 @@ parse_uri:
 				break;
 
 			case PROTOCOL_HTTP:
+#ifdef CONFIG_SSL
+				if (get_opt_bool("connection.ssl.https_by_default", NULL))
+					add_to_string(&str, "https://");
+				else
+#endif
 				add_to_string(&str, "http://");
 				add_to_string(&str, newurl);
 				break;
@@ -1311,6 +1328,10 @@ get_translated_uri(unsigned char *uristring, unsigned char *cwd)
 	return uri;
 }
 
+#define ADD_EXTENSION_FROM_TYPE(string, type, ext)			\
+	if (!memcmp(uri->data, type ";", sizeof(type ";") - 1)	||	\
+	    !memcmp(uri->data, type ",", sizeof(type ",") - 1))		\
+		return stracpy("." ext);
 
 unsigned char *
 get_extension_from_uri(struct uri *uri)
@@ -1320,6 +1341,15 @@ get_extension_from_uri(struct uri *uri)
 	unsigned char *pos = uri->data;
 
 	assert(pos);
+
+	if (uri->protocol == PROTOCOL_DATA) {
+		ADD_EXTENSION_FROM_TYPE(uri->data, "image/gif",  "gif")
+		ADD_EXTENSION_FROM_TYPE(uri->data, "image/jpeg", "jpg")
+		ADD_EXTENSION_FROM_TYPE(uri->data, "image/png",  "png")
+		ADD_EXTENSION_FROM_TYPE(uri->data, "text/plain", "txt")
+		ADD_EXTENSION_FROM_TYPE(uri->data, "text/html",  "html")
+		return stracpy("");
+	}
 
 	for (; *pos && !end_of_dir(*pos); pos++) {
 		if (!afterslash && !extension && *pos == '.') {

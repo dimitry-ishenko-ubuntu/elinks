@@ -63,10 +63,6 @@ base64_encode_bin(register unsigned char *in, int inlen, int *outlen)
 	return outstr;
 }
 
-/* Base64 decoding is used only with the CONFIG_FORMHIST or CONFIG_GSSAPI
-   feature, so i'll #ifdef it */
-#if  defined(CONFIG_FORMHIST) || defined(CONFIG_GSSAPI)
-
 unsigned char *
 base64_decode(register unsigned char *in)
 {
@@ -159,5 +155,3 @@ decode_error:
 	mem_free(outstr);
 	return NULL;
 }
-
-#endif /* CONFIG_FORMHIST */
