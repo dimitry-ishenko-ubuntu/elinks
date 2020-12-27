@@ -11,6 +11,7 @@ Build-Depends: debhelper-compat (= 13), libtre-dev, libgnutls28-dev, libgcrypt20
   libncurses5-dev
   ,libev-libevent-dev
   ,python3
+  ,dblatex
 Build-Conflicts: libgc-dev
 Standards-Version: 4.5.0
 Rules-Requires-Root: no
