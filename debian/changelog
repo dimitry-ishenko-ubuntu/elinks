@@ -1,3 +1,14 @@
+elinks (0.14.0~rc2-1~1.gbpac4359) UNRELEASED; urgency=medium
+
+  ** SNAPSHOT build @ac43599e24b0dada1603a2128846d48f9af5ff3a **
+
+  * Updated upstream links
+  * d/watch: addd uversionmangle for pre & RC releases
+  * New upstream version 0.14.0~rc2
+  * Add dblatex to build deps
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Sun, 27 Dec 2020 04:26:27 +0100
+
 elinks (0.13.2-1) unstable; urgency=medium
 
   * New upstream version 0.13.2
