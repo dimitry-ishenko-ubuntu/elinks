@@ -36,10 +36,10 @@
 
 
 void
-html_form(struct html_context *html_context, unsigned char *a,
-          unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
+html_form(struct html_context *html_context, char *a,
+          char *xxx3, char *xxx4, char **xxx5)
 {
-	unsigned char *al;
+	char *al;
 	struct form *form;
 
 	html_context->was_br = 1;
@@ -53,7 +53,7 @@ html_form(struct html_context *html_context, unsigned char *a,
 	al = get_attr_val(a, "method", html_context->doc_cp);
 	if (al) {
 		if (!c_strcasecmp(al, "post")) {
-			unsigned char *enctype;
+			char *enctype;
 
 			enctype  = get_attr_val(a, "enctype",
 						html_context->doc_cp);
@@ -84,7 +84,7 @@ html_form(struct html_context *html_context, unsigned char *a,
 		mem_free(al);
 
 	} else {
-		enum uri_component components = URI_ORIGINAL;
+		uri_component_T components = URI_ORIGINAL;
 
 		mem_free_if(al);
 
@@ -96,12 +96,12 @@ html_form(struct html_context *html_context, unsigned char *a,
 		form->action = get_uri_string(html_context->base_href, components);
 
 		/* No action URI should contain post data */
-		assert(!form->action || !strchr((const char *)form->action, POST_CHAR));
+		assert(!form->action || !strchr(form->action, POST_CHAR));
 
 		/* GET method URIs should not have '?'. */
 		assert(!form->action
 			|| form->method != FORM_METHOD_GET
-			|| !strchr((const char *)form->action, '?'));
+			|| !strchr(form->action, '?'));
 	}
 
 	al = get_target(html_context->options, a);
@@ -112,7 +112,7 @@ html_form(struct html_context *html_context, unsigned char *a,
 
 
 static int
-get_form_mode(struct html_context *html_context, unsigned char *attr)
+get_form_mode(struct html_context *html_context, char *attr)
 {
 	if (has_attr(attr, "disabled", html_context->doc_cp))
 		return FORM_MODE_DISABLED;
@@ -124,12 +124,12 @@ get_form_mode(struct html_context *html_context, unsigned char *attr)
 }
 
 static struct el_form_control *
-init_form_control(enum form_type type, unsigned char *attr,
+init_form_control(enum form_type type, char *attr,
                   struct html_context *html_context)
 {
 	struct el_form_control *fc;
 
-	fc = mem_calloc(1, sizeof(*fc));
+	fc = (struct el_form_control *)mem_calloc(1, sizeof(*fc));
 	if (!fc) return NULL;
 
 	fc->type = type;
@@ -140,14 +140,15 @@ init_form_control(enum form_type type, unsigned char *attr,
 }
 
 void
-html_button(struct html_context *html_context, unsigned char *a,
-            unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
+html_button(struct html_context *html_context, char *a,
+            char *html, char *xxx4, char **xxx5)
 {
-	unsigned char *al;
+	char *al;
 	struct el_form_control *fc;
 	enum form_type type = FC_SUBMIT;
 	int cp = html_context->doc_cp;
 
+	elformat.top_name = html_top->name;
 	html_focusable(html_context, a);
 
 	al = get_attr_val(a, "type", cp);
@@ -183,20 +184,22 @@ no_type_attr:
 		fc->default_value = stracpy("");
 
 	html_context->special_f(html_context, SP_CONTROL, fc);
-	format.form = fc;
-	format.style.attr |= AT_BOLD;
+	elformat.form = fc;
+	elformat.style.attr |= AT_BOLD;
 }
 
 static void
-html_input_format(struct html_context *html_context, unsigned char *a,
+html_input_format(struct html_context *html_context, char *a,
 	   	  struct el_form_control *fc)
 {
 	put_chrs(html_context, " ", 1);
+	char *top_name = html_top->name;
 	html_stack_dup(html_context, ELEMENT_KILLABLE);
 	html_focusable(html_context, a);
-	format.form = fc;
-	mem_free_if(format.title);
-	format.title = get_attr_val(a, "title", html_context->doc_cp);
+	elformat.form = fc;
+	elformat.top_name = top_name;
+	mem_free_if(elformat.title);
+	elformat.title = get_attr_val(a, "title", html_context->doc_cp);
 	switch (fc->type) {
 		case FC_TEXT:
 		case FC_PASSWORD:
@@ -204,42 +207,42 @@ html_input_format(struct html_context *html_context, unsigned char *a,
 		{
 			int i;
 
-			format.style.attr |= AT_BOLD;
+			elformat.style.attr |= AT_BOLD;
 			for (i = 0; i < fc->size; i++)
 				put_chrs(html_context, "_", 1);
 			break;
 		}
 		case FC_CHECKBOX:
-			format.style.attr |= AT_BOLD;
+			elformat.style.attr |= AT_BOLD;
 			put_chrs(html_context, "[&nbsp;]", 8);
 			break;
 		case FC_RADIO:
-			format.style.attr |= AT_BOLD;
+			elformat.style.attr |= AT_BOLD;
 			put_chrs(html_context, "(&nbsp;)", 8);
 			break;
 		case FC_IMAGE:
 		{
-			unsigned char *al;
+			char *al;
 
-			mem_free_set(&format.image, NULL);
+			mem_free_set(&elformat.image, NULL);
 			al = get_url_val(a, "src", html_context->doc_cp);
 			if (!al)
 				al = get_url_val(a, "dynsrc",
 				                 html_context->doc_cp);
 			if (al) {
-				format.image = join_urls(html_context->base_href, al);
+				elformat.image = join_urls(html_context->base_href, al);
 				mem_free(al);
 			}
-			format.style.attr |= AT_BOLD;
+			elformat.style.attr |= AT_BOLD;
 			put_chrs(html_context, "[&nbsp;", 7);
-			format.style.attr |= AT_NO_ENTITIES;
+			elformat.style.attr |= AT_NO_ENTITIES;
 			if (fc->alt)
 				put_chrs(html_context, fc->alt, strlen(fc->alt));
 			else if (fc->name)
 				put_chrs(html_context, fc->name, strlen(fc->name));
 			else
 				put_chrs(html_context, "Submit", 6);
-			format.style.attr &= ~AT_NO_ENTITIES;
+			elformat.style.attr &= ~AT_NO_ENTITIES;
 
 			put_chrs(html_context, "&nbsp;]", 7);
 			break;
@@ -247,18 +250,19 @@ html_input_format(struct html_context *html_context, unsigned char *a,
 		case FC_SUBMIT:
 		case FC_RESET:
 		case FC_BUTTON:
-			format.style.attr |= AT_BOLD;
+			elformat.style.attr |= AT_BOLD;
 			put_chrs(html_context, "[&nbsp;", 7);
 			if (fc->default_value) {
-				format.style.attr |= AT_NO_ENTITIES;
+				elformat.style.attr |= AT_NO_ENTITIES;
 				put_chrs(html_context, fc->default_value, strlen(fc->default_value));
-				format.style.attr &= ~AT_NO_ENTITIES;
+				elformat.style.attr &= ~AT_NO_ENTITIES;
 			}
 			put_chrs(html_context, "&nbsp;]", 7);
 			break;
 		case FC_TEXTAREA:
 		case FC_SELECT:
 		case FC_HIDDEN:
+		default:
 			INTERNAL("bad control type");
 	}
 	pop_html_element(html_context);
@@ -266,10 +270,10 @@ html_input_format(struct html_context *html_context, unsigned char *a,
 }
 
 void
-html_input(struct html_context *html_context, unsigned char *a,
-           unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
+html_input(struct html_context *html_context, char *a,
+           char *xxx3, char *xxx4, char **xxx5)
 {
-	unsigned char *al;
+	char *al;
 	struct el_form_control *fc;
 	int cp = html_context->doc_cp;
 
@@ -332,19 +336,19 @@ html_input(struct html_context *html_context, unsigned char *a,
 	html_context->special_f(html_context, SP_CONTROL, fc);
 }
 
-static struct list_menu lnk_menu;
+struct list_menu lnk_menu;
 
 static void
-do_html_select(unsigned char *attr, unsigned char *html,
-	       unsigned char *eof, unsigned char **end,
+do_html_select(char *attr, char *html,
+	       char *eof, char **end,
 	       struct html_context *html_context)
 {
-	struct conv_table *ct = html_context->special_f(html_context, SP_TABLE, NULL);
+	struct conv_table *ct = (struct conv_table *)html_context->special_f(html_context, SP_TABLE, NULL);
 	struct el_form_control *fc;
 	struct string lbl = NULL_STRING, orig_lbl = NULL_STRING;
-	unsigned char **values = NULL;
-	unsigned char **labels;
-	unsigned char *name, *t_attr, *en;
+	char **values = NULL;
+	char **labels;
+	char *name, *t_attr, *en;
 	int namelen;
 	int nnmi = 0;
 	int order = 0;
@@ -353,6 +357,7 @@ do_html_select(unsigned char *attr, unsigned char *html,
 	int i, max_width;
 	int closing_tag;
 
+	elformat.top_name = html_top->name;
 	html_focusable(html_context, attr);
 	init_menu(&lnk_menu);
 
@@ -382,11 +387,11 @@ abort:
 	}
 
 	if (lbl.source) {
-		unsigned char *q, *s = en;
+		char *q, *s = en;
 		int l = html - en;
 
-		while (l && isspace(s[0])) s++, l--;
-		while (l && isspace(s[l-1])) l--;
+		while (l && isspace((unsigned char)s[0])) s++, l--;
+		while (l && isspace((unsigned char)s[l-1])) l--;
 		q = convert_string(ct, s, l,
 		                   html_context->options->cp,
 		                   CSM_DEFAULT, NULL, NULL, NULL);
@@ -424,7 +429,7 @@ abort:
 		add_select_item(&lnk_menu, &lbl, &orig_lbl, values, order, nnmi);
 
 		if (!closing_tag) {
-			unsigned char *value, *label;
+			char *value, *label;
 
 			if (has_attr(t_attr, "disabled", html_context->doc_cp))
 				goto see;
@@ -440,8 +445,8 @@ abort:
 			label = get_attr_val(t_attr, "label", html_context->doc_cp);
 			if (label) new_menu_item(&lnk_menu, label, order - 1, 0);
 			if (!value || !label) {
-				init_string(&lbl);
-				init_string(&orig_lbl);
+				(void)init_string(&lbl);
+				(void)init_string(&orig_lbl);
 				nnmi = !!label;
 			}
 		}
@@ -455,7 +460,7 @@ abort:
 		if (group) new_menu_item(&lnk_menu, NULL, -1, 0), group = 0;
 
 		if (!closing_tag) {
-			unsigned char *label;
+			char *label;
 
 			label = get_attr_val(t_attr, "label", html_context->doc_cp);
 
@@ -475,7 +480,7 @@ end_parse:
 	*end = en;
 	if (!order) goto abort;
 
-	labels = mem_calloc(order, sizeof(unsigned char *));
+	labels = (char **)mem_calloc(order, sizeof(char *));
 	if (!labels) goto abort;
 
 	fc = init_form_control(FC_SELECT, attr, html_context);
@@ -495,8 +500,8 @@ end_parse:
 
 	menu_labels(fc->menu, "", labels);
 	html_stack_dup(html_context, ELEMENT_KILLABLE);
-	format.form = fc;
-	format.style.attr |= AT_BOLD;
+	elformat.form = fc;
+	elformat.style.attr |= AT_BOLD;
 	put_chrs(html_context, "[&nbsp;", 7);
 
 	max_width = 0;
@@ -521,24 +526,25 @@ end_parse:
 
 
 static void
-do_html_select_multiple(struct html_context *html_context, unsigned char *a,
-                        unsigned char *html, unsigned char *eof,
-                        unsigned char **end)
+do_html_select_multiple(struct html_context *html_context, char *a,
+                        char *html, char *eof,
+                        char **end)
 {
-	unsigned char *al = get_attr_val(a, "name", html_context->doc_cp);
+	char *al = get_attr_val(a, "name", html_context->doc_cp);
 
 	if (!al) return;
+	elformat.top_name = html_top->name;
 	html_focusable(html_context, a);
 	html_top->type = ELEMENT_DONT_KILL;
-	mem_free_set(&format.select, al);
-	format.select_disabled = has_attr(a, "disabled", html_context->doc_cp)
+	mem_free_set(&elformat.select, al);
+	elformat.select_disabled = has_attr(a, "disabled", html_context->doc_cp)
 	                         ? FORM_MODE_DISABLED
 	                         : FORM_MODE_NORMAL;
 }
 
 void
-html_select(struct html_context *html_context, unsigned char *a,
-            unsigned char *html, unsigned char *eof, unsigned char **end)
+html_select(struct html_context *html_context, char *a,
+            char *html, char *eof, char **end)
 {
 	if (has_attr(a, "multiple", html_context->doc_cp))
 		do_html_select_multiple(html_context, a, html, eof, end);
@@ -548,19 +554,19 @@ html_select(struct html_context *html_context, unsigned char *a,
 }
 
 void
-html_option(struct html_context *html_context, unsigned char *a,
-            unsigned char *xxx3, unsigned char *xxx4, unsigned char **xxx5)
+html_option(struct html_context *html_context, char *a,
+            char *xxx3, char *xxx4, char **xxx5)
 {
 	struct el_form_control *fc;
-	unsigned char *val;
+	char *val;
 
-	if (!format.select) return;
+	if (!elformat.select) return;
 
 	val = get_attr_val(a, "value", html_context->doc_cp);
 	if (!val) {
 		struct string str;
-		unsigned char *p, *r;
-		unsigned char *name;
+		char *p, *r;
+		char *name;
 		int namelen;
 
 		for (p = a - 1; *p != '<'; p--);
@@ -573,8 +579,8 @@ html_option(struct html_context *html_context, unsigned char *a,
 		}
 
 se:
-		while (p < html_context->eoff && isspace(*p)) p++;
-		while (p < html_context->eoff && !isspace(*p) && *p != '<') {
+		while (p < html_context->eoff && isspace((unsigned char)*p)) p++;
+		while (p < html_context->eoff && !isspace((unsigned char)*p) && *p != '<') {
 
 sp:
 			add_char_to_string(&str, *p ? *p : ' '), p++;
@@ -583,7 +589,7 @@ sp:
 		r = p;
 		val = str.source; /* Has to be before the possible 'goto end_parse' */
 
-		while (r < html_context->eoff && isspace(*r)) r++;
+		while (r < html_context->eoff && isspace((unsigned char)*r)) r++;
 		if (r >= html_context->eoff) goto end_parse;
 		if (r - 2 <= html_context->eoff && (r[1] == '!' || r[1] == '?')) {
 			p = skip_comment(r, html_context->eoff);
@@ -608,17 +614,17 @@ end_parse:
 	}
 
 	fc->id = get_attr_val(a, "id", html_context->doc_cp);
-	fc->name = null_or_stracpy(format.select);
+	fc->name = null_or_stracpy(elformat.select);
 	fc->default_value = val;
 	fc->default_state = has_attr(a, "selected", html_context->doc_cp);
 	fc->mode = has_attr(a, "disabled", html_context->doc_cp)
 	           ? FORM_MODE_DISABLED
-	           : format.select_disabled;
+	           : elformat.select_disabled;
 
 	put_chrs(html_context, " ", 1);
 	html_stack_dup(html_context, ELEMENT_KILLABLE);
-	format.form = fc;
-	format.style.attr |= AT_BOLD;
+	elformat.form = fc;
+	elformat.style.attr |= AT_BOLD;
 	put_chrs(html_context, "[ ]", 3);
 	pop_html_element(html_context);
 	put_chrs(html_context, " ", 1);
@@ -626,15 +632,16 @@ end_parse:
 }
 
 void
-html_textarea(struct html_context *html_context, unsigned char *attr,
-              unsigned char *html, unsigned char *eof, unsigned char **end)
+html_textarea(struct html_context *html_context, char *attr,
+              char *html, char *eof, char **end)
 {
 	struct el_form_control *fc;
-	unsigned char *p, *t_name, *wrap_attr;
+	char *p, *t_name, *wrap_attr;
 	int t_namelen;
 	int cols, rows;
 	int i;
 
+	elformat.top_name = html_top->name;
 	html_focusable(html_context, attr);
 	while (html < eof && (*html == '\n' || *html == '\r')) html++;
 	p = html;
@@ -717,8 +724,8 @@ pp:
 	else put_chrs(html_context, " ", 1);
 
 	html_stack_dup(html_context, ELEMENT_KILLABLE);
-	format.form = fc;
-	format.style.attr |= AT_BOLD;
+	elformat.form = fc;
+	elformat.style.attr |= AT_BOLD;
 
 	for (i = 0; i < rows; i++) {
 		int j;

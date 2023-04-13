@@ -19,6 +19,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_WS2TCPIP_H
+#include <ws2tcpip.h> /* socklen_t for MinGW */
+#endif
 
 /* Go and say 'thanks' to BSD. */
 #ifdef HAVE_NETINET_IN_H
@@ -39,6 +42,10 @@
 #include "util/memory.h"
 #include "util/time.h"
 
+#ifdef WIN32
+#define NO_ASYNC_LOOKUP
+#endif
+
 
 struct dnsentry {
 	LIST_HEAD(struct dnsentry);
@@ -46,7 +53,7 @@ struct dnsentry {
 	struct sockaddr_storage *addr;	/* Pointer to array of addresses. */
 	int addrno;			/* Adress array length. */
 	timeval_T creation_time;	/* Creation time; let us do timeouts. */
-	unsigned char name[1];		/* Associated host; XXX: Must be last. */
+	char name[1];		/* Associated host; XXX: Must be last. */
 };
 
 struct dnsquery {
@@ -68,7 +75,7 @@ struct dnsquery {
 #ifndef NO_ASYNC_LOOKUP
 	int h;				/* One end of the async thread pipe. */
 #endif
-	unsigned char name[1];		/* Associated host; XXX: Must be last. */
+	char name[1];		/* Associated host; XXX: Must be last. */
 };
 
 
@@ -84,7 +91,7 @@ static void done_dns_lookup(struct dnsquery *query, enum dns_result res);
 /* DNS cache management: */
 
 static struct dnsentry *
-find_in_dns_cache(unsigned char *name)
+find_in_dns_cache(char *name)
 {
 	struct dnsentry *dnsentry;
 
@@ -98,7 +105,7 @@ find_in_dns_cache(unsigned char *name)
 }
 
 static void
-add_to_dns_cache(unsigned char *name, struct sockaddr_storage *addr, int addrno)
+add_to_dns_cache(char *name, struct sockaddr_storage *addr, int addrno)
 {
 	int namelen = strlen(name);
 	struct dnsentry *dnsentry;
@@ -106,11 +113,11 @@ add_to_dns_cache(unsigned char *name, struct sockaddr_storage *addr, int addrno)
 
 	assert(addrno > 0);
 
-	dnsentry = mem_calloc(1, sizeof(*dnsentry) + namelen);
+	dnsentry = (struct dnsentry *)mem_calloc(1, sizeof(*dnsentry) + namelen);
 	if (!dnsentry) return;
 
 	size = addrno * sizeof(*dnsentry->addr);
-	dnsentry->addr = mem_alloc(size);
+	dnsentry->addr = (struct sockaddr_storage *)mem_alloc(size);
 	if (!dnsentry->addr) {
 		mem_free(dnsentry);
 		return;
@@ -138,7 +145,7 @@ del_dns_cache_entry(struct dnsentry *dnsentry)
 /* Synchronous DNS lookup management: */
 
 enum dns_result
-do_real_lookup(unsigned char *name, struct sockaddr_storage **addrs, int *addrno,
+do_real_lookup(char *name, struct sockaddr_storage **addrs, int *addrno,
 	       int in_thread)
 {
 #ifdef CONFIG_IPV6
@@ -169,9 +176,15 @@ do_real_lookup(unsigned char *name, struct sockaddr_storage **addrs, int *addrno
 	{
 		struct in_addr inp;
 
+#if defined(HAVE_INET_PTON)
+		if (is_ip_address(name, strlen(name)) && inet_pton(AF_INET, name, &inp))
+			hostent = gethostbyaddr(&inp, sizeof(inp), AF_INET);
+#elif defined(HAVE_INET_ATON)
 		if (is_ip_address(name, strlen(name)) && inet_aton(name, &inp))
 			hostent = gethostbyaddr(&inp, sizeof(inp), AF_INET);
+#endif
 	}
+
 	if (!hostent)
 #endif
 	{
@@ -189,8 +202,8 @@ do_real_lookup(unsigned char *name, struct sockaddr_storage **addrs, int *addrno
 	/* We cannot use mem_*() in thread ("It will chew memory on OS/2 and
 	 * BeOS because there are no locks around the memory debugging code."
 	 * -- Mikulas).  So we don't if in_thread != 0. */
-	*addrs = in_thread ? calloc(i, sizeof(**addrs))
-			   : mem_calloc(i, sizeof(**addrs));
+	*addrs = (struct sockaddr_storage *)(in_thread ? calloc(i, sizeof(**addrs))
+			   : mem_calloc(i, sizeof(**addrs)));
 	if (!*addrs) return DNS_ERROR;
 	*addrno = i;
 
@@ -247,7 +260,7 @@ write_dns_data(int h, void *data, size_t datalen)
 	size_t done = 0;
 
 	do {
-		int w = safe_write(h, data + done, datalen - done);
+		int w = safe_write(h, ((char *)data) + done, datalen - done);
 
 		if (w < 0) return DNS_ERROR;
 		done += w;
@@ -261,7 +274,7 @@ write_dns_data(int h, void *data, size_t datalen)
 static void
 async_dns_writer(void *data, int h)
 {
-	unsigned char *name = (unsigned char *) data;
+	char *name = (char *) data;
 	struct sockaddr_storage *addrs;
 	int addrno, i;
 
@@ -294,7 +307,7 @@ read_dns_data(int h, void *data, size_t datalen)
 	size_t done = 0;
 
 	do {
-		ssize_t r = safe_read(h, data + done, datalen - done);
+		ssize_t r = safe_read(h, ((char *)data) + done, datalen - done);
 
 		if (r <= 0) return DNS_ERROR;
 		done += r;
@@ -320,7 +333,7 @@ async_dns_reader(struct dnsquery *query)
 	if (read_dns_data(query->h, &query->addrno, sizeof(query->addrno)) == DNS_ERROR)
 		goto done;
 
-	query->addr = mem_calloc(query->addrno, sizeof(*query->addr));
+	query->addr = (struct sockaddr_storage *)mem_calloc(query->addrno, sizeof(*query->addr));
 	if (!query->addr) goto done;
 
 	for (i = 0; i < query->addrno; i++) {
@@ -467,13 +480,13 @@ done:
 }
 
 static enum dns_result
-init_dns_lookup(unsigned char *name, void **queryref,
+init_dns_lookup(char *name, void **queryref,
 		dns_callback_T done, void *data)
 {
 	struct dnsquery *query;
 	int namelen = strlen(name);
 
-	query = mem_calloc(1, sizeof(*query) + namelen);
+	query = (struct dnsquery *)mem_calloc(1, sizeof(*query) + namelen);
 	if (!query) {
 		done(data, NULL, 0);
 		return DNS_ERROR;
@@ -493,7 +506,7 @@ init_dns_lookup(unsigned char *name, void **queryref,
 
 
 enum dns_result
-find_host(unsigned char *name, void **queryref,
+find_host(char *name, void **queryref,
 	  dns_callback_T done, void *data, int no_cache)
 {
 	struct dnsentry *dnsentry;
@@ -529,7 +542,7 @@ find_host(unsigned char *name, void **queryref,
 void
 kill_dns_request(void **queryref)
 {
-	struct dnsquery *query = *queryref;
+	struct dnsquery *query = (struct dnsquery *)*queryref;
 
 	assert(query);
 

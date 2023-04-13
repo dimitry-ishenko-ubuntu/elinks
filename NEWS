@@ -5,15 +5,135 @@ You can see the complete list of recent changes, bugfixes and new features
 in the https://github.com/rkd77/felinks.git[gitweb interface]. See the ChangeLog
 file for details.
 
+ELinks 0.16.0
+-------------
+
+Released on 2022-12-25
+
+* detect xterm on my computer
+
+ELinks 0.16.0rc1
+----------------
+
+Released on 2022-12-03
+
+* alternative mujs engine for js
+* bump mozjs to 102
+* experimental XHR implementation
+* macros in exmode #196
+* removed infinite loop, which occurred under BSD #197
+* optional terminal hyperlinks in dumps #198
+
+ELinks 0.15.1
+-------------
+
+Released on 2022-07-31
+
+* about:config
+* option --always-load-config #137
+* compilation fixes on Windows #140
+* added ui.background_char #142
+* sample build scripts and docker files
+* experimental DGI support
+* DOS port based on links code
+* configurable Accept-Header #143
+* minor compilation fixes
+
+
+ELinks 0.15.0
+-------------
+
+Released on 2021-12-24
+
+* Serbian translation update
+
+
+ELinks 0.15.0rc2
+----------------
+
+Released on 2021-12-19
+
+* Serbian translation update
+* HOME_ETC
+
+
+ELinks 0.15.0rc1
+----------------
+
+Released on 2021-12-04
+
+* removed -Wno-pointer-sign from CFLAGS
+* close stdin before calling a background program (sgerwk)
+  and options related to it #108, #109, #110, #113
+* gemini protocol and text/gemini mime type
+* changed rendering of blockquote element
+* avoid tmpfile in lua (sgerwk) #115, #118
+* console.log in js (mtatton) #93
+* localstorage (mtatton) #98
+* options document.browse.search.beginning_only
+  document.browse.search.ignore_history
+  ui.double_esc
+* ui.temperature.* to show temperature of CPU
+* document.plain.fixup_tables
+* enhanced ecmascript code. Added QuickJS
+* Notes on ECMAScript:
+  requires C++ compiler, sqlite3, libxml++5 >= 5.0.1.GIT
+  and either mozjs78-dev or QuickJS-2021-03-27
+  Most sites don't work, some crash. Some workarounds were implemented:
+  a) ECMAScript is disabled by default
+  b) ~/.elinks/allow.txt and ~/.elinks/disallow.txt with url prefixes
+  c) Added toggle-ecmascript action. You can bind it to some key
+* other small fixes
+
+
+ELinks 0.14.3
+-------------
+
+Released on 2021-09-26
+
+* Fix issue with negative value of cells #126
+
+
+ELinks 0.14.2
+-------------
+
+Released on 2021-08-29
+
+* crash in nttp #114
+* XSS in gopher #125
+
+
+ELinks 0.14.1
+-------------
+
+Released on 2021-05-30
+
+* Disable spidermonkey by default #85
+* Show error message about libgcrypt-config. #86
+* off by two. #88
+* Check NULL. #99
+* fix error message when no previous search was performed #100
+* alert when moving to the next match of a failed search #101
+* include unistd.h and errno.h to define safe_read() #107
+
+
+ELinks 0.14.0
+-------------
+
+Released on 2020-12-27
+
+No changes since 0.14.0rc2.
+
+
 ELinks 0.14.0rc2
---------------------
+----------------
 
 Released on 2020-12-13
 
 * ~/.elinks/allow.txt - list of allowed url prefixes for js
 
 ELinks 0.14.0rc1
---------------------
+----------------
 
 Released on 2020-12-06
 
@@ -37,7 +157,7 @@ As you might notice, I renamed repo to elinks.
 Thanks to all involved in this release.
 
 ELinks 0.13.5
---------------------
+-------------
 
 Released on 2020-08-30
 
@@ -48,7 +168,7 @@ Released on 2020-08-30
 This is likely the last release of 0.13.x series.
 
 ELinks 0.13.4:
---------------------
+--------------
 
 Released on 2020-07-31.
 
@@ -60,7 +180,7 @@ Released on 2020-07-31.
 * added the ui.clipboard_file config option
 
 ELinks 0.13.3:
---------------------
+--------------
 
 Released on 2020-06-29.
 
@@ -73,7 +193,7 @@ Released on 2020-06-29.
 * show an alert when the search string is not found (sgerwk)
 
 ELinks 0.13.2:
---------------------
+--------------
 
 Released on 2020-05-31.
 
@@ -86,7 +206,7 @@ Released on 2020-05-31.
 * modified cookies code (not well tested)
 
 ELinks 0.13.1:
---------------------
+--------------
 
 Released on 2020-01-31.
 
@@ -94,7 +214,7 @@ Released on 2020-01-31.
 * Python scripts in contrib converted to python3.
 
 ELinks 0.13.0:
---------------------
+--------------
 
 Released on 2019-12-27.
 

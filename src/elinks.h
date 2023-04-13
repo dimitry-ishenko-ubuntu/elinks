@@ -36,5 +36,14 @@
 /* util/math.h is supposed to be around all the time. */
 #include "util/math.h"
 
+#define C_(str) (char *)((str))
+
+#ifdef CONFIG_OS_DOS
+#define loop_select(a, b, c, d, e) dos_select(a, b, c, d, e, 1)
+#define select2(a, b, c, d, e) dos_select(a, b, c, d, e, 0)
+#else
+#define loop_select select
+#define select2 select
+#endif
 
 #endif

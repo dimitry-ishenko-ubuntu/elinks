@@ -13,16 +13,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_TIME_H
 #include <time.h>
-#endif
 
 #include "bfu/dialog.h"
 #include "config/home.h"
 #include "config/options.h"
 #include "globhist/dialogs.h"
 #include "globhist/globhist.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "main/object.h"
 #include "main/select.h"
@@ -43,8 +41,8 @@ INIT_LIST_OF(struct global_history_item, global_history_reap_list);
 
 
 /* GUI stuff. Declared here because done_global_history() frees it. */
-unsigned char *gh_last_searched_title = NULL;
-unsigned char *gh_last_searched_url = NULL;
+char *gh_last_searched_title = NULL;
+char *gh_last_searched_url = NULL;
 
 enum global_history_options {
 	GLOBHIST_TREE,
@@ -58,26 +56,26 @@ enum global_history_options {
 
 static union option_info global_history_options[] = {
 	INIT_OPT_TREE("document.history", N_("Global history"),
-		"global", 0,
+		"global", OPT_ZERO,
 		N_("Global history options.")),
 
 	INIT_OPT_BOOL("document.history.global", N_("Enable"),
-		"enable", 0, 1,
+		"enable", OPT_ZERO, 1,
 		N_("Enable global history (\"history of all pages "
 		"visited\").")),
 
 	INIT_OPT_INT("document.history.global", N_("Maximum number of entries"),
-		"max_items", 0, 1, INT_MAX, 1024,
+		"max_items", OPT_ZERO, 1, INT_MAX, 1024,
 		N_("Maximum number of entries in the global history.")),
 
 	INIT_OPT_INT("document.history.global", N_("Display style"),
-		"display_type", 0, 0, 1, 0,
+		"display_type", OPT_ZERO, 0, 1, 0,
 		N_("What to display in global history dialog:\n"
 		"0 is URLs\n"
 		"1 is page titles")),
 
 	/* Compatibility alias: added by jonas at 2004-07-16, 0.9.CVS. */
-	INIT_OPT_ALIAS("document.history.global", "write_interval", 0,
+	INIT_OPT_ALIAS("document.history.global", "write_interval", OPT_ZERO,
 		"infofiles.save_interval"),
 
 	NULL_OPTION_INFO,
@@ -143,7 +141,7 @@ delete_global_history_item(struct global_history_item *history_item)
 
 /* Search global history for item matching url. */
 struct global_history_item *
-get_global_history_item(unsigned char *url)
+get_global_history_item(char *url)
 {
 	struct hash_item *item;
 
@@ -160,7 +158,7 @@ get_global_history_item(unsigned char *url)
 /* Search global history for certain item. There must be full match with the
  * parameter or the parameter must be NULL/zero. */
 struct global_history_item *
-multiget_global_history_item(unsigned char *url, unsigned char *title, time_t time)
+multiget_global_history_item(char *url, char *title, time_t time)
 {
 	struct global_history_item *history_item;
 
@@ -183,11 +181,11 @@ multiget_global_history_item(unsigned char *url, unsigned char *title, time_t ti
 #endif
 
 static struct global_history_item *
-init_global_history_item(unsigned char *url, unsigned char *title, time_t vtime)
+init_global_history_item(char *url, char *title, time_t vtime)
 {
 	struct global_history_item *history_item;
 
-	history_item = mem_calloc(1, sizeof(*history_item));
+	history_item = (struct global_history_item *)mem_calloc(1, sizeof(*history_item));
 	if (!history_item)
 		return NULL;
 
@@ -227,7 +225,7 @@ cap_global_history(int max_globhist_items)
 	while (global_history.size >= max_globhist_items) {
 		struct global_history_item *history_item;
 
-		history_item = global_history.entries.prev;
+		history_item = (struct global_history_item *)global_history.entries.prev;
 
 		if ((void *) history_item == &global_history.entries) {
 			INTERNAL("global history is empty");
@@ -264,7 +262,7 @@ add_item_to_global_history(struct global_history_item *history_item,
 /* Add a new entry in history list, take care of duplicate, respect history
  * size limit, and update any open history dialogs. */
 void
-add_global_history_item(unsigned char *url, unsigned char *title, time_t vtime)
+add_global_history_item(char *url, char *title, time_t vtime)
 {
 	struct global_history_item *history_item;
 	int max_globhist_items;
@@ -288,7 +286,7 @@ add_global_history_item(unsigned char *url, unsigned char *title, time_t vtime)
 
 
 int
-globhist_simple_search(unsigned char *search_url, unsigned char *search_title)
+globhist_simple_search(char *search_url, char *search_title)
 {
 	struct global_history_item *history_item;
 
@@ -329,9 +327,8 @@ globhist_simple_search(unsigned char *search_url, unsigned char *search_title)
 static void
 read_global_history(void)
 {
-	unsigned char in_buffer[MAX_STR_LEN * 3];
-	unsigned char *file_name = GLOBAL_HISTORY_FILENAME;
-	unsigned char *title;
+	char in_buffer[MAX_STR_LEN * 3];
+	char *title;
 	FILE *f;
 
 	if (!get_globhist_enable()
@@ -339,29 +336,32 @@ read_global_history(void)
 		return;
 
 	if (elinks_home) {
-		file_name = straconcat(elinks_home, file_name,
-				       (unsigned char *) NULL);
+		char *file_name = straconcat(elinks_home, GLOBAL_HISTORY_FILENAME,
+				       (char *) NULL);
 		if (!file_name) return;
+
+		f = fopen(file_name, "rb");
+		mem_free(file_name);
+	} else {
+		f = fopen(GLOBAL_HISTORY_FILENAME, "rb");
 	}
-	f = fopen(file_name, "rb");
-	if (elinks_home) mem_free(file_name);
 	if (!f) return;
 
 	title = in_buffer;
 	global_history.nosave = 1;
 
 	while (fgets(in_buffer, sizeof(in_buffer), f)) {
-		unsigned char *url, *last_visit, *eol;
+		char *url, *last_visit, *eol;
 
-		url = strchr((const char *)title, '\t');
+		url = strchr(title, '\t');
 		if (!url) continue;
 		*url++ = '\0'; /* Now url points to the character after \t. */
 
-		last_visit = strchr((const char *)url, '\t');
+		last_visit = strchr(url, '\t');
 		if (!last_visit) continue;
 		*last_visit++ = '\0';
 
-		eol = strchr((const char *)last_visit, '\n');
+		eol = strchr(last_visit, '\n');
 		if (!eol) continue;
 		*eol = '\0'; /* Drop ending '\n'. */
 
@@ -376,7 +376,7 @@ static void
 write_global_history(void)
 {
 	struct global_history_item *history_item;
-	unsigned char *file_name;
+	char *file_name;
 	struct secure_save_info *ssi;
 
 	if (!global_history.dirty || !elinks_home
@@ -385,7 +385,7 @@ write_global_history(void)
 		return;
 
 	file_name = straconcat(elinks_home, GLOBAL_HISTORY_FILENAME,
-			       (unsigned char *) NULL);
+			       (char *) NULL);
 	if (!file_name) return;
 
 	ssi = secure_open(file_name);
@@ -393,7 +393,7 @@ write_global_history(void)
 	if (!ssi) return;
 
 	foreachback (history_item, global_history.entries) {
-		if (secure_fprintf(ssi, "%s\t%s\t%"TIME_PRINT_FORMAT"\n",
+		if (secure_fprintf(ssi, "%s\t%s\t%" TIME_PRINT_FORMAT "\n",
 				   history_item->title,
 				   history_item->url,
 				   (time_print_T) history_item->last_visit) < 0)
@@ -412,7 +412,7 @@ free_global_history(void)
 	}
 
 	while (!list_empty(global_history.entries))
-		delete_global_history_item(global_history.entries.next);
+		delete_global_history_item((struct global_history_item *)global_history.entries.next);
 
 	reap_deleted_globhist_items();
 }
@@ -425,7 +425,7 @@ global_history_write_hook(va_list ap, void *data)
 }
 
 struct event_hook_info global_history_hooks[] = {
-	{ "periodic-saving", 0, global_history_write_hook, NULL },
+	{ "periodic-saving", 0, global_history_write_hook, {NULL} },
 
 	NULL_EVENT_HOOK_INFO,
 };

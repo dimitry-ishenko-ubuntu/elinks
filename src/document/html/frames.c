@@ -28,10 +28,11 @@
 void
 add_frameset_entry(struct frameset_desc *frameset_desc,
 		   struct frameset_desc *subframe,
-		   unsigned char *name, unsigned char *url)
+		   char *name, char *url)
 {
 	struct frame_desc *frame_desc;
 	int offset;
+	static char about_blank[] = "about:blank";
 
 	assert(frameset_desc);
 	if_assert_failed return;
@@ -49,9 +50,9 @@ add_frameset_entry(struct frameset_desc *frameset_desc,
 	frame_desc = &frameset_desc->frame_desc[offset];
 	frame_desc->subframe = subframe;
 	frame_desc->name = null_or_stracpy(name);
-	frame_desc->uri = (url && *url) ? get_uri(url, 0) : NULL;
+	frame_desc->uri = (url && *url) ? get_uri(url, URI_NONE) : NULL;
 	if (!frame_desc->uri)
-		frame_desc->uri = get_uri("about:blank", 0);
+		frame_desc->uri = get_uri(about_blank, URI_NONE);
 
 	frameset_desc->box.x++;
 	if (frameset_desc->box.x >= frameset_desc->box.width) {
@@ -80,7 +81,7 @@ create_frameset(struct frameset_param *fp)
 	size = fp->x * fp->y;
 	/* size - 1 since one struct frame_desc is already reserved
 	 * in struct frameset_desc. */
-	fd = mem_calloc(1, sizeof(*fd)
+	fd = (struct frameset_desc *)mem_calloc(1, sizeof(*fd)
 			   + (size - 1) * sizeof(fd->frame_desc[0]));
 	if (!fd) return NULL;
 
@@ -127,7 +128,7 @@ add_frame_to_list(struct session *ses, struct document_view *doc_view)
 }
 
 static struct document_view *
-find_fd(struct session *ses, unsigned char *name,
+find_fd(struct session *ses, char *name,
 	int depth, int x, int y)
 {
 	struct document_view *doc_view;
@@ -144,7 +145,7 @@ find_fd(struct session *ses, unsigned char *name,
 		return doc_view;
 	}
 
-	doc_view = mem_calloc(1, sizeof(*doc_view));
+	doc_view = (struct document_view *)mem_calloc(1, sizeof(*doc_view));
 	if (!doc_view) return NULL;
 
 	doc_view->used = 1;
@@ -349,7 +350,7 @@ distribute_rows_or_cols_that_left(int *val_, int max_value, int *values, int val
 	int divisor = 0;
 	int tmp_val;
 
-	tmp_values = fmem_alloc(values_count * sizeof(*tmp_values));
+	tmp_values = (int *)fmem_alloc(values_count * sizeof(*tmp_values));
 	if (!tmp_values) return 0;
 	memcpy(tmp_values, values, values_count * sizeof(*tmp_values));
 
@@ -389,15 +390,15 @@ distribute_rows_or_cols_that_left(int *val_, int max_value, int *values, int val
 
 /* Returns 0 on error. */
 static int
-extract_rows_or_cols_values(unsigned char *str, int max_value, int pixels_per_char,
+extract_rows_or_cols_values(char *str, int max_value, int pixels_per_char,
 			    int **new_values, int *new_values_count)
 {
-	unsigned char *tmp_str;
+	char *tmp_str;
 	int *values = NULL;
 	int values_count = 0;
 
 	while (1) {
-		unsigned char *end = str;
+		char *end = str;
 		int *tmp_values;
 		unsigned long number;
 		int val = -1;	/* Wildcard */
@@ -427,14 +428,14 @@ extract_rows_or_cols_values(unsigned char *str, int max_value, int pixels_per_ch
 		}
 
 		/* Save value. */
-		tmp_values = mem_realloc(values, (values_count + 1) * sizeof(*tmp_values));
+		tmp_values = (int *)mem_realloc(values, (values_count + 1) * sizeof(*tmp_values));
 		if (!tmp_values) return 0;
 
 		values = tmp_values;
 		values[values_count++] = val;
 
 		/* Check for next field if any. */
-		tmp_str = strchr((const char *)str, ',');
+		tmp_str = strchr(str, ',');
 		if (!tmp_str) break;	/* It was the last field. */
 
 		str = tmp_str + 1;
@@ -454,7 +455,7 @@ extract_rows_or_cols_values(unsigned char *str, int max_value, int pixels_per_ch
  * <frameset cols="33%,33%,33%" rows="33%,33%,33%"> 	values in percentage
  * */
 void
-parse_frame_widths(unsigned char *str, int max_value, int pixels_per_char,
+parse_frame_widths(char *str, int max_value, int pixels_per_char,
 		   int **new_values, int *new_values_count)
 {
 	int val, ret;

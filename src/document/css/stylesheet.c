@@ -27,9 +27,9 @@
 
 struct css_selector *
 find_css_selector(struct css_selector_set *sels,
-                  enum css_selector_type type,
+                  css_selector_type_T type,
                   enum css_selector_relation rel,
-                  const unsigned char *name, int namelen)
+                  const char *name, int namelen)
 {
 	struct css_selector *selector;
 
@@ -48,13 +48,13 @@ find_css_selector(struct css_selector_set *sels,
 
 struct css_selector *
 init_css_selector(struct css_selector_set *sels,
-                  enum css_selector_type type,
+                  css_selector_type_T type,
                   enum css_selector_relation relation,
-                  const unsigned char *name, int namelen)
+                  const char *name, int namelen)
 {
 	struct css_selector *selector;
 
-	selector = mem_calloc(1, sizeof(*selector));
+	selector = (struct css_selector *)mem_calloc(1, sizeof(*selector));
 	if (!selector) return NULL;
 
 	selector->relation = relation;
@@ -95,9 +95,9 @@ set_css_selector_relation(struct css_selector *selector,
 
 struct css_selector *
 get_css_selector(struct css_selector_set *sels,
-                 enum css_selector_type type,
+                 css_selector_type_T type,
                  enum css_selector_relation rel,
-                 const unsigned char *name, int namelen)
+                 const char *name, int namelen)
 {
 	struct css_selector *selector = NULL;
 
@@ -129,7 +129,7 @@ copy_css_selector(struct css_stylesheet *css, struct css_selector *orig)
 static void
 add_selector_property(struct css_selector *selector, struct css_property *prop)
 {
-	struct css_property *newprop = mem_alloc(sizeof(*newprop));
+	struct css_property *newprop = (struct css_property *)mem_alloc(sizeof(*newprop));
 
 	if (newprop) {
 		copy_struct(newprop, prop);
@@ -263,7 +263,7 @@ init_css_stylesheet(css_stylesheet_importer_T importer, void *import_data)
 {
 	struct css_stylesheet *css;
 
-	css = mem_calloc(1, sizeof(*css));
+	css = (struct css_stylesheet *)mem_calloc(1, sizeof(*css));
 	if (!css)
 		return NULL;
 	css->import = importer;

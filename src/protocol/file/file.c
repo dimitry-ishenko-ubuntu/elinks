@@ -9,6 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h> /* OS/2 needs this after sys/types.h */
+#endif
 #include <sys/stat.h> /* OS/2 needs this after sys/types.h */
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h> /* OS/2 needs this after sys/types.h */
@@ -22,13 +25,14 @@
 #include "cache/cache.h"
 #include "config/options.h"
 #include "encoding/encoding.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "network/connection.h"
 #include "network/socket.h"
 #include "osdep/osdep.h"
 #include "protocol/common.h"
 #include "protocol/file/cgi.h"
+#include "protocol/file/dgi.h"
 #include "protocol/file/file.h"
 #include "protocol/http/http.h"
 #include "protocol/uri.h"
@@ -40,22 +44,22 @@
 
 static union option_info file_options[] = {
 	INIT_OPT_TREE("protocol", N_("Local files"),
-		"file", 0,
+		"file", OPT_ZERO,
 		N_("Options specific to local browsing.")),
 
 	INIT_OPT_BOOL("protocol.file", N_("Allow reading special files"),
-		"allow_special_files", 0, 0,
+		"allow_special_files", OPT_ZERO, 0,
 		N_("Whether to allow reading from non-regular files. "
 		"Note this can be dangerous; reading /dev/urandom or "
 		"/dev/zero can ruin your day!")),
 
 	INIT_OPT_BOOL("protocol.file", N_("Show hidden files in directory listing"),
-		"show_hidden_files", 0, 1,
+		"show_hidden_files", OPT_ZERO, 1,
 		N_("When set to false, files with name starting with a dot "
 		"will be hidden in local directory listings.")),
 
 	INIT_OPT_BOOL("protocol.file", N_("Try encoding extensions"),
-		"try_encoding_extensions", 0, 1,
+		"try_encoding_extensions", OPT_ZERO, 1,
 		N_("When set, if we can't open a file named 'filename', "
 		"we'll try to open 'filename' with some encoding extension "
 		"appended (ie. 'filename.gz'); it depends on the supported "
@@ -81,9 +85,9 @@ struct module file_protocol_module = struct_module(
  * fragment.  All the strings are in the system charset.  */
 static inline void
 add_dir_entry(struct directory_entry *entry, struct string *page,
-	      int pathlen, unsigned char *dircolor)
+	      int pathlen, char *dircolor)
 {
-	unsigned char *lnk = NULL;
+	char *lnk = NULL;
 	struct string html_encoded_name;
 	struct string uri_encoded_name;
 
@@ -108,12 +112,12 @@ add_dir_entry(struct directory_entry *entry, struct string *page,
 #ifdef FS_UNIX_SOFTLINKS
 	} else if (entry->attrib[0] == 'l') {
 		struct stat st;
-		unsigned char buf[MAX_STR_LEN];
+		char buf[MAX_STR_LEN];
 		int readlen = readlink(entry->name, buf, MAX_STR_LEN);
 
 		if (readlen > 0 && readlen != MAX_STR_LEN) {
 			buf[readlen] = '\0';
-			lnk = straconcat(" -> ", buf, (unsigned char *) NULL);
+			lnk = straconcat(" -> ", buf, (char *) NULL);
 		}
 
 		if (!stat(entry->name, &st) && S_ISDIR(st.st_mode))
@@ -126,7 +130,7 @@ add_dir_entry(struct directory_entry *entry, struct string *page,
 	if (entry->attrib[0] == 'd' && *dircolor) {
 		/* The <b> is for the case when use_document_colors is off. */
 		string_concat(page, "<font color=\"", dircolor, "\"><b>",
-			      (unsigned char *) NULL);
+			      (char *) NULL);
 	}
 
 	add_string_to_string(page, &html_encoded_name);
@@ -149,17 +153,17 @@ add_dir_entry(struct directory_entry *entry, struct string *page,
 /* First information such as permissions is gathered for each directory entry.
  * Finally the sorted entries are added to the @data->fragment one by one. */
 static inline void
-add_dir_entries(struct directory_entry *entries, unsigned char *dirpath,
+add_dir_entries(struct directory_entry *entries, char *dirpath,
 		struct string *page)
 {
-	unsigned char dircolor[8];
+	char dircolor[8];
 	int dirpathlen = strlen(dirpath);
 	int i;
 
 	/* Setup @dircolor so it's easy to check if we should color dirs. */
 	if (get_opt_bool("document.browse.links.color_dirs", NULL)) {
 		color_to_string(get_opt_color("document.colors.dirs", NULL),
-				(unsigned char *) &dircolor);
+				(char *) &dircolor);
 	} else {
 		dircolor[0] = 0;
 	}
@@ -178,7 +182,7 @@ add_dir_entries(struct directory_entry *entries, unsigned char *dirpath,
  * @dirpath. */
 /* Returns a connection state. S_OK if all is well. */
 static inline struct connection_state
-list_directory(struct connection *conn, unsigned char *dirpath,
+list_directory(struct connection *conn, char *dirpath,
 	       struct string *page)
 {
 	int show_hidden_files = get_opt_bool("protocol.file.show_hidden_files",
@@ -211,7 +215,7 @@ static void
 check_if_closed(struct socket *socket, struct read_buffer *rb)
 {
 	if (socket->state == SOCKET_CLOSED) {
-		abort_connection(socket->conn, connection_state(S_OK));
+		abort_connection((struct connection *)socket->conn, connection_state(S_OK));
 		return;
 	}
 	http_got_header(socket, rb);
@@ -244,7 +248,7 @@ read_from_stdin(struct connection *conn)
 void
 file_protocol_handler(struct connection *connection)
 {
-	unsigned char *redirect_location = NULL;
+	const char *redirect_location = NULL;
 	struct string page, name;
 	struct connection_state state;
 	int set_dir_content_type = 0;
@@ -261,6 +265,10 @@ file_protocol_handler(struct connection *connection)
 #ifdef CONFIG_CGI
 	if (!execute_cgi(connection)) return;
 #endif /* CONFIG_CGI */
+
+#ifdef CONFIG_DGI
+	if (!execute_dgi(connection)) return;
+#endif
 
 	/* Treat /dev/stdin in special way */
 	if (!strcmp(connection->uri->string, "file:///dev/stdin")) {
@@ -340,7 +348,7 @@ file_protocol_handler(struct connection *connection)
 			connection->from += page.length;
 
 			if (!cached->head && set_dir_content_type) {
-				unsigned char *head;
+				char *head;
 
 				/* If the system charset somehow
 				 * changes after the directory listing
@@ -348,7 +356,7 @@ file_protocol_handler(struct connection *connection)
 				 * parsed with the original charset.  */
 				head = straconcat("\r\nContent-Type: text/html; charset=",
 						  get_cp_mime_name(get_cp_index("System")),
-						  "\r\n", (unsigned char *) NULL);
+						  "\r\n", (char *) NULL);
 
 				/* Not so gracefully handle failed memory
 				 * allocation. */

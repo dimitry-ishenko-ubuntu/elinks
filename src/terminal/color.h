@@ -45,6 +45,8 @@ enum color_flags {
 	COLOR_ENSURE_INVERTED_CONTRAST = 16,
 };
 
+typedef unsigned char color_flags_T;
+
 /** How many colors the terminal supports.
  * These numbers are used in the terminal._template_.colors and
  * document.dump.color_mode options.  They should be kept stable so
@@ -68,7 +70,9 @@ enum color_mode {
 	COLOR_MODES = 5, /* XXX: Keep last */
 };
 
-void set_term_color16(struct screen_char *schar, enum color_flags flags,
+typedef int color_mode_T;
+
+void set_term_color16(struct screen_char *schar, color_flags_T flags,
 		      unsigned char fg, unsigned char bg);
 
 /** Mixes the color pair and attributes to a terminal text color.
@@ -87,9 +91,9 @@ color_T get_term_color256(unsigned int index);
 #endif
 
 void get_screen_char_color(struct screen_char *schar, struct color_pair *pair,
-		      enum color_flags flags, enum color_mode color_mode);
+		      color_flags_T flags, color_mode_T color_mode);
 void set_term_color(struct screen_char *schar, struct color_pair *pair,
-		    enum color_flags flags, enum color_mode mode);
+		    color_flags_T flags, color_mode_T mode);
 
 #ifdef __cplusplus
 }

@@ -4,7 +4,9 @@
 #include "config.h"
 #endif
 
+#undef _GNU_SOURCE
 #include <ruby.h>
+#include <ruby/version.h>
 
 #undef _
 
@@ -12,7 +14,7 @@
 
 #include "bfu/dialog.h"
 #include "config/home.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "osdep/osdep.h"
 #include "scripting/scripting.h"
@@ -33,7 +35,7 @@ VALUE erb_module;
 /* Error reporting. */
 
 void
-alert_ruby_error(struct session *ses, unsigned char *msg)
+alert_ruby_error(struct session *ses, const char *msg)
 {
 	report_scripting_error(&ruby_scripting_module, ses, msg);
 }
@@ -44,8 +46,8 @@ erb_report_error(struct session *ses, int error)
 {
 	VALUE eclass;
 	VALUE einfo;
-	unsigned char buff[MAX_STR_LEN];
-	unsigned char *msg;
+	char buff[MAX_STR_LEN];
+	const char *msg;
 
 	/* XXX: Ew. These are from the Ruby internals. */
 #define TAG_RETURN	0x1
@@ -84,13 +86,13 @@ erb_report_error(struct session *ses, int error)
 
 		} else {
 			VALUE epath;
-			unsigned char *p;
+			char *p;
 
 			epath = rb_class_path(eclass);
 			snprintf(buff, MAX_STR_LEN, "%s: %s",
 				RSTRING_PTR(epath), RSTRING_PTR(einfo));
 
-			p = strchr((const char *)buff, '\n');
+			p = strchr(buff, '\n');
 			if (p) *p = '\0';
 			msg = buff;
 		}
@@ -112,14 +114,14 @@ erb_report_error(struct session *ses, int error)
 static VALUE
 erb_module_message(VALUE self, VALUE str)
 {
-	unsigned char *message, *line_end;
+	char *message, *line_end;
 	struct terminal *term;
 
 	str = rb_obj_as_string(str);
 	message = memacpy(RSTRING_PTR(str), RSTRING_LEN(str));
 	if (!message) return Qnil;
 
-	line_end = strchr((const char *)message, '\n');
+	line_end = strchr(message, '\n');
 	if (line_end) *line_end = '\0';
 
 	term = get_default_terminal();
@@ -153,7 +155,7 @@ erb_stdout_p(int argc, VALUE *argv, VALUE self)
 
 	for (i = 0; i < argc; i++) {
 		VALUE substr;
-		unsigned char *ptr;
+		char *ptr;
 		int len;
 
 		if (i > 0)
@@ -196,7 +198,7 @@ erb_stdout_p(int argc, VALUE *argv, VALUE self)
 /* FIXME: It might be useful for user to actually display them to debug scripts,
  * so maybe it should be optional. --jonas */
 static VALUE
-erb_module_method_missing(VALUE self, VALUE arg)
+erb_module_method_missing(int argc, VALUE *argv, VALUE self)
 {
 	return Qnil;
 }
@@ -204,24 +206,26 @@ erb_module_method_missing(VALUE self, VALUE arg)
 static void
 init_erb_module(void)
 {
-	unsigned char *home;
+	char *home;
 
 	erb_module = rb_define_module("ELinks");
 	rb_define_const(erb_module, "VERSION", rb_str_new2(VERSION_STRING));
 
-	home = elinks_home ? elinks_home : (unsigned char *) CONFDIR;
+	home = elinks_home ? elinks_home : (char *) CONFDIR;
 	rb_define_const(erb_module, "HOME", rb_str_new2(home));
 
-	rb_define_module_function(erb_module, "message", erb_module_message, 1);
-	rb_define_module_function(erb_module, "method_missing", erb_module_method_missing, -1);
-	rb_define_module_function(erb_module, "p", erb_stdout_p, -1);
+	rb_define_module_function(erb_module, "message", (VALUE (*)(ANYARGS))erb_module_message, 1);
+	rb_define_module_function(erb_module, "method_missing", (VALUE (*)(ANYARGS))erb_module_method_missing, -1);
+	rb_define_module_function(erb_module, "p", (VALUE (*)(ANYARGS))erb_stdout_p, -1);
 }
 
+
+static char elrubyversion[32];
 
 void
 init_ruby(struct module *module)
 {
-	unsigned char *path;
+	char *path;
 
 	/* Set up and initialize the interpreter. This function should be called
 	 * before any other Ruby-related functions. */
@@ -230,15 +234,18 @@ init_ruby(struct module *module)
 	ruby_init_loadpath();
 
 	/* ``Trap'' debug prints from scripts. */
-	rb_define_singleton_method(rb_stdout, "write", erb_module_message, 1);
-	rb_define_global_function("p", erb_stdout_p, -1);
+	rb_define_singleton_method(rb_stdout, "write", (VALUE (*)(ANYARGS))erb_module_message, 1);
+	rb_define_global_function("p", (VALUE (*)(ANYARGS))erb_stdout_p, -1);
 
 	/* Set up the ELinks module interface. */
 	init_erb_module();
 
+	snprintf(elrubyversion, 31, "Ruby %s", ruby_version);
+	module->name = elrubyversion;
+
 	if (elinks_home) {
 		path = straconcat(elinks_home, RUBY_HOOKS_FILENAME,
-				  (unsigned char *) NULL);
+				  (char *) NULL);
 
 	} else {
 		path = stracpy(CONFDIR STRING_DIR_SEP RUBY_HOOKS_FILENAME);
@@ -247,7 +254,7 @@ init_ruby(struct module *module)
 	if (!path) return;
 
 	if (file_can_read(path)) {
-		int error;
+		int error = 0;
 
 		/* Load ~/.elinks/hooks.rb into the interpreter. */
 		//rb_load_file(path);

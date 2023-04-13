@@ -15,7 +15,7 @@ extern "C" {
 #ifdef USE_FASTFIND
 
 struct fastfind_key_value {
-	unsigned char *key;
+	const char *key;
 	void *data;
 };
 
@@ -27,9 +27,11 @@ enum fastfind_flags {
 				 *   locale independent or not */
 };
 
+typedef unsigned char fastfind_flags_T;
+
 struct fastfind_index {
 	/** Description useful for debugging mode. */
-	unsigned char *comment;
+	const char *comment;
 	/** Start over. */
 	void (*reset)(void);
 	/** Get next struct fastfind_key_value in line. */
@@ -49,14 +51,14 @@ struct fastfind_index {
  * This function must be called once and only once per list.
  * Failure is not an option, so call it at startup.
  * @relates fastfind_index */
-struct fastfind_index *fastfind_index(struct fastfind_index *index, enum fastfind_flags flags);
+struct fastfind_index *fastfind_index(struct fastfind_index *index, fastfind_flags_T flags);
 
 /* The main reason of all that stuff is here. */
 /** Search the index for @a key with length @a key_len using the
  * @a index' handle created with fastfind_index().
  * @relates fastfind_index */
 void *fastfind_search(struct fastfind_index *index,
-		      const unsigned char *key, int key_len);
+		      const char *key, int key_len);
 
 /** Fastfind cleanup. It frees the given @a index.
  * Must be called once per list.

@@ -16,7 +16,7 @@
 #include "cache/cache.h"
 #include "cache/dialogs.h"
 #include "dialogs/edit.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/object.h"
 #include "protocol/uri.h"
 #include "session/session.h"
@@ -45,18 +45,18 @@ is_cache_entry_used(struct listbox_item *item)
 	return is_object_used((struct cache_entry *) item->udata);
 }
 
-static unsigned char *
+static char *
 get_cache_entry_text(struct listbox_item *item, struct terminal *term)
 {
-	struct cache_entry *cached = item->udata;
+	struct cache_entry *cached = (struct cache_entry *)item->udata;
 
 	return get_uri_string(cached->uri, URI_PUBLIC);
 }
 
-static unsigned char *
+static char *
 get_cache_entry_info(struct listbox_item *item, struct terminal *term)
 {
-	struct cache_entry *cached = item->udata;
+	struct cache_entry *cached = (struct cache_entry *)item->udata;
 	struct string msg;
 
 	if (item->type == BI_FOLDER) return NULL;
@@ -139,7 +139,7 @@ get_cache_entry_info(struct listbox_item *item, struct terminal *term)
 	case CACHE_MODE_NORMAL:
 	case CACHE_MODE_CHECK_IF_MODIFIED:
 	case CACHE_MODE_FORCE_RELOAD:
-		/* Cache entries only use two values of enum cache_mode. */
+		/* Cache entries only use two values of cache_mode_T. */
 		INTERNAL("cached->cache_mode = %d", cached->cache_mode);
 		break;
 	}
@@ -160,7 +160,7 @@ get_cache_entry_info(struct listbox_item *item, struct terminal *term)
 static struct uri *
 get_cache_entry_uri(struct listbox_item *item)
 {
-	struct cache_entry *cached = item->udata;
+	struct cache_entry *cached = (struct cache_entry *)item->udata;
 
 	return get_uri_reference(cached->uri);
 }
@@ -180,7 +180,7 @@ can_delete_cache_entry(struct listbox_item *item)
 static void
 delete_cache_entry_item(struct listbox_item *item, int last)
 {
-	struct cache_entry *cached = item->udata;
+	struct cache_entry *cached = (struct cache_entry *)item->udata;
 
 	assert(!is_object_used(cached));
 
@@ -189,9 +189,9 @@ delete_cache_entry_item(struct listbox_item *item, int last)
 
 static enum listbox_match
 match_cache_entry(struct listbox_item *item, struct terminal *term,
-		  unsigned char *text)
+		  char *text)
 {
-	struct cache_entry *cached = item->udata;
+	struct cache_entry *cached = (struct cache_entry *)item->udata;
 
 	if (c_strcasestr((const char *)struri(cached->uri), (const char *)text)
 	    || (cached->head && c_strcasestr((const char *)cached->head, (const char *)text)))
@@ -202,9 +202,9 @@ match_cache_entry(struct listbox_item *item, struct terminal *term,
 
 static enum listbox_match
 match_cache_entry_contents(struct listbox_item *item, struct terminal *term,
-		  unsigned char *text)
+		  char *text)
 {
-	struct cache_entry *cached = item->udata;
+	struct cache_entry *cached = (struct cache_entry *)item->udata;
 	struct fragment *fragment = get_cache_fragment(cached);
 
 	if (fragment && strlcasestr(fragment->data, fragment->length, text, -1))
@@ -297,7 +297,7 @@ push_invalidate_button(struct dialog_data *dlg_data, struct widget_data *button)
 {
 	struct terminal *term = dlg_data->win->term;
 	struct listbox_data *box = get_dlg_listbox_data(dlg_data);
-	struct cache_entry *cached = box->sel->udata;
+	struct cache_entry *cached = (struct cache_entry *)box->sel->udata;
 
 	if (!box->sel || !box->sel->udata) return EVENT_PROCESSED;
 

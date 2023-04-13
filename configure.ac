@@ -16,7 +16,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([config/m4])
 
 PACKAGE=elinks
-VERSION=0.14.0rc2
+VERSION=0.16.0
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Package version])
@@ -170,6 +170,9 @@ kill me!
 EL_CHECK_COMPILER_MACROS(CONFIG_OS_BEOS, [BEOS], [__BEOS__])
 AC_SUBST(CONFIG_OS_BEOS)
 
+EL_CHECK_COMPILER_MACROS(CONFIG_OS_DOS, [DOS], [__DJGPP])
+AC_SUBST(CONFIG_OS_DOS)
+
 EL_CHECK_COMPILER_MACROS(CONFIG_OS_RISCOS, [RISCOS], [__riscos__])
 AC_SUBST(CONFIG_OS_RISCOS)
 
@@ -183,6 +186,7 @@ test "$CONFIG_OS_OS2" = yes && LDFLAGS=`echo "$LDFLAGS" | sed "s/-Zexe//g"`
 AC_MSG_CHECKING([for UNIX])
 dnl FIXME: some depend kind of mechanism
 if test "$CONFIG_OS_BEOS" = no && \
+   test "$CONFIG_OS_DOS" = no && \
    test "$CONFIG_OS_RISCOS" = no && \
    test "$CONFIG_OS_WIN32" = no && \
    test "$CONFIG_OS_OS2" = no; then
@@ -204,6 +208,7 @@ AC_HEADER_TIME
 
 AC_CHECK_HEADERS(wchar.h wctype.h)
 AC_CHECK_HEADERS(fcntl.h limits.h time.h unistd.h)
+AC_CHECK_HEADERS(libgen.h)
 AC_CHECK_HEADERS(sigaction.h)
 AC_CHECK_HEADERS(arpa/inet.h)
 AC_CHECK_HEADERS(netinet/in_systm.h netinet/in_system.h netinet/ip.h)
@@ -212,6 +217,7 @@ AC_CHECK_HEADERS(ifaddrs.h)
 AC_CHECK_HEADERS(sys/cygwin.h io.h)
 AC_CHECK_HEADERS(sys/fmutex.h)
 AC_CHECK_HEADERS(sys/ioctl.h sys/sockio.h)
+AC_CHECK_HEADERS(sys/kd.h)
 AC_CHECK_HEADERS(sys/resource.h)
 AC_CHECK_HEADERS(sys/select.h)
 AC_CHECK_HEADERS(sys/socket.h)
@@ -226,11 +232,16 @@ AC_CHECK_HEADERS(stdint.h inttypes.h)
 AC_CHECK_HEADERS(locale.h pwd.h)
 AC_CHECK_HEADERS(termios.h)
 AC_CHECK_HEADERS(poll.h)
+AC_CHECK_HEADERS(stdalign.h)
 
-AC_CHECK_HEADERS(sys/un.h,
-	[CONFIG_INTERLINK=yes
-	 EL_CONFIG([CONFIG_INTERLINK], [interlinking])],
-	[CONFIG_INTERLINK=no])
+if test "$CONFIG_OS_DOS" = no; then
+	AC_CHECK_HEADERS(sys/un.h,
+		[CONFIG_INTERLINK=yes
+		 EL_CONFIG([CONFIG_INTERLINK], [interlinking])],
+		[CONFIG_INTERLINK=no])
+else
+	CONFIG_INTERLINK=no
+fi
 AC_SUBST(CONFIG_INTERLINK)
 
 # ===================================================================
@@ -305,7 +316,7 @@ AC_CHECK_FUNCS(popen uname access chmod alarm timegm mremap)
 AC_CHECK_FUNCS(strcasecmp strncasecmp strcasestr strstr strchr strrchr)
 AC_CHECK_FUNCS(memmove bcopy stpcpy strdup index isdigit mempcpy memrchr)
 AC_CHECK_FUNCS(snprintf vsnprintf asprintf vasprintf)
-AC_CHECK_FUNCS(getifaddrs getpwnam inet_pton inet_ntop)
+AC_CHECK_FUNCS(getifaddrs getpwnam inet_aton inet_pton inet_ntop)
 AC_CHECK_FUNCS(fflush fsync fseeko ftello sigaction)
 AC_CHECK_FUNCS(gettimeofday clock_gettime)
 AC_CHECK_FUNCS(setitimer, HAVE_SETITIMER=yes)
@@ -320,6 +331,7 @@ AC_CHECK_FUNCS(geteuid, HAVE_GETEUID=yes)
 AC_CHECK_FUNCS(wcwidth, HAVE_WCWIDTH=yes)
 
 AC_CHECK_FUNCS(fork)
+AC_CHECK_FUNCS(mkstemps)
 
 # These aren't probably needed now, as they are commented in links.h.
 # I've no idea about their historical background, but I keep them here
@@ -458,7 +470,7 @@ AC_DEFUN([EL_CHECK_OPTIONAL_LIBRARY],
 
 		if test "[$]$1" = yes; then
 			EL_CONFIG([$1], [$2])
-			LIBS="$LIBS -l$4"
+			LIBS="-l$4 $LIBS"
 		else
 			if test -n "[$]WITHVAL_$1" &&
 			   test "x[$]WITHVAL_$1" != xno; then
@@ -627,81 +639,190 @@ if test "$CONFIG_OS_WIN32" = yes; then
 fi
 
 # ===================================================================
+# Check for MuJS
+# ===================================================================
+
+AC_ARG_WITH([mujs],
+	[AS_HELP_STRING([--with-mujs],
+		[enable MuJS engine])])
+
+CONFIG_MUJS=
+
+case "$with_mujs" in
+	"" | no)
+		# The user specified --without-mujs.
+		AC_MSG_CHECKING([for MuJS])
+		AC_MSG_RESULT([disabled])
+		CONFIG_MUJS="no"
+		;;
+	yes)
+		;;
+	*)
+		;;
+esac
+
+if test "x$CONFIG_MUJS" = x; then
+	AC_MSG_CHECKING([for MuJS in pkg-config])
+	if $PKG_CONFIG $pkg_config_static --cflags --libs mujs > /dev/null 2>&AS_MESSAGE_LOG_FD; then
+		DB_LOCALSTORAGE_LIBS="$($PKG_CONFIG $pkg_config_static --libs sqlite3)"
+		XMLPLUSPLUS_LIBS="$($PKG_CONFIG $pkg_config_static --libs libxml++-5.0)"
+		MUJS_LIBS="$($PKG_CONFIG $pkg_config_static --libs mujs) $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS"
+		DB_LOCALSTORAGE_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags sqlite3)"
+		XMLPLUSPLUS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libxml++-5.0)"
+		MUJS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags mujs) $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS"
+
+		LIBS="$LIBS $MUJS_LIBS $LIBS_X"
+		CPPFLAGS="$CPPFLAGS_X $MUJS_CFLAGS"
+		CFLAGS="$CFLAGS $MUJS_CFLAGS"
+		CONFIG_MUJS=yes
+		AC_MSG_RESULT([yes])
+	else
+		AC_MSG_RESULT([no])
+	fi
+fi
+
+
+# ===================================================================
+# Check for QuickJS
+# ===================================================================
+
+AC_ARG_WITH([quickjs],
+	[AS_HELP_STRING([--with-quickjs],
+		[enable Quickjs engine])])
+
+CONFIG_QUICKJS=
+
+case "$with_quickjs" in
+	"" | no)
+		# The user specified --without-quickjs.
+		AC_MSG_CHECKING([for QuickJS])
+		AC_MSG_RESULT([disabled])
+		CONFIG_QUICKJS="no"
+		;;
+	yes)
+		;;
+	*)
+		;;
+esac
+
+if test "x$CONFIG_QUICKJS" = x; then
+	AC_MSG_CHECKING([for QuickJS])
+	AC_LINK_IFELSE(
+		[AC_LANG_PROGRAM([[
+			#include <quickjs/quickjs.h>
+		]], [])],
+		[CONFIG_QUICKJS=yes
+		 AC_MSG_RESULT([yes])],
+		[AC_MSG_RESULT([not found])]
+	)
+
+	if test "x$CONFIG_QUICKJS" = xyes; then
+		DB_LOCALSTORAGE_LIBS="$($PKG_CONFIG $pkg_config_static --libs sqlite3)"
+		XMLPLUSPLUS_LIBS="$($PKG_CONFIG $pkg_config_static --libs libxml++-5.0)"
+		DB_LOCALSTORAGE_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags sqlite3)"
+		XMLPLUSPLUS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libxml++-5.0)"
+
+		CFLAGS="$CFLAGS $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS"
+		QUICKJS_LIB="/usr/local/lib/quickjs/libquickjs.a"
+
+		TMPIFS="$IFS"
+		IFS=:
+		for p in "$LIBRARY_PATH"; do
+			if test -f "$p/quickjs/libquickjs.a"; then
+				QUICKJS_LIB="$p/quickjs/libquickjs.a"
+				break
+			fi
+		done
+		IFS="$TMPIFS"
+
+		LIBS="$LIBS $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS $QUICKJS_LIB"
+	else
+		AC_MSG_RESULT([no])
+	fi
+fi
+
+
+# ===================================================================
 # Check for SpiderMonkey, optional even if installed.
 # ===================================================================
 
 # This option sets the $with_spidermonkey variable.
 AC_ARG_WITH([spidermonkey],
-	[AS_HELP_STRING([--without-spidermonkey],
-		[disable SpiderMonkey Mozilla JavaScript engine support])])
+	[AS_HELP_STRING([--with-spidermonkey],
+		[enable SpiderMonkey Mozilla Javascript engine])])
 
 # CONFIG_SPIDERMONKEY is initially blank.  We change it to "yes" or "no"
 # when we know for sure whether we're going to use SpiderMonkey or not.
 # (features.conf is not supposed to define it.)
 CONFIG_SPIDERMONKEY=
+CONFIG_XML=
+CONFIG_SCRIPTING_SPIDERMONKEY=
 EL_SAVE_FLAGS
 
+# ===================================================================
+# Optional Spidermonkey-based ECMAScript browser scripting
+# ===================================================================
+
+AC_ARG_ENABLE(sm-scripting,
+	      [  --enable-sm-scripting   enable ECMAScript browser scripting],
+	      [if test "$enableval" != no; then enableval="yes"; fi
+	       CONFIG_SCRIPTING_SPIDERMONKEY="$enableval";])
+
 case "$with_spidermonkey" in
-	no)
+	"" | no)
 		# The user specified --without-spidermonkey.
 		# That overrides the other SpiderMonkey options.
 		AC_MSG_CHECKING([for SpiderMonkey])
 		AC_MSG_RESULT([disabled])
 		CONFIG_SPIDERMONKEY="no"
 		;;
-	"" | yes)
+	yes)
+		CONFIG_SPIDERMONKEY="yes"
 		;;
 	*)
 		AC_MSG_WARN([This version of ELinks does not support --with-spidermonkey=DIRECTORY.])
 		;;
 esac
 
-for package in mozjs-52; do
-	if test -n "$CONFIG_SPIDERMONKEY"; then
-		break
-	else
-		AC_MSG_CHECKING([for SpiderMonkey (mozjs-52) in pkg-config $package])
-		if $PKG_CONFIG $pkg_config_static --cflags --libs $package > /dev/null 2>&AS_MESSAGE_LOG_FD; then
-			SPIDERMONKEY_LIBS="$($PKG_CONFIG $pkg_config_static --libs $package)"
-			SPIDERMONKEY_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags $package)"
-			LIBS="$SPIDERMONKEY_LIBS $LIBS_X"
-			CFLAGS="$CFLAGS_X $SPIDERMONKEY_CFLAGS"
-			CPPFLAGS="$CPPFLAGS_X $SPIDERMONKEY_CFLAGS"
-			AC_LANG_PUSH([C++])
-			AC_LINK_IFELSE(
-				[AC_LANG_PROGRAM([[
-					/* mozilla-js.pc may have -DXP_UNIX or similar in Cflags.
-					 * Avoid warnings about conflicting definitions.  */
-					#if !defined(XP_BEOS) && !defined(XP_OS2) && !defined(XP_UNIX) && !defined(XP_WIN)
-					# define XP_UNIX 1
-					#endif
-					#include <jsapi.h>
-					]], [])],
-				[CONFIG_SPIDERMONKEY=yes
-				 AC_MSG_RESULT([yes])],
-				[# Leave CONFIG_SPIDERMONKEY blank, to continue the search.
-				 AC_MSG_RESULT([found but unusable])])
-			AC_LANG_POP([C++])
-		else
-			AC_MSG_RESULT([no])
-		fi
-	fi
-done
+SPIDERMONKEY_FOUND=
 
-if test -z "$CONFIG_SPIDERMONKEY"; then
+if test "x$CONFIG_SPIDERMONKEY" = xyes ||
+   test "x$CONFIG_SCRIPTING_SPIDERMONKEY" = xyes; then
+	package=mozjs-102
+	AC_MSG_CHECKING([for SpiderMonkey (mozjs-102) in pkg-config $package])
+	if $PKG_CONFIG $pkg_config_static --cflags --libs $package > /dev/null 2>&AS_MESSAGE_LOG_FD; then
+		DB_LOCALSTORAGE_LIBS="$($PKG_CONFIG $pkg_config_static --libs sqlite3)"
+		XMLPLUSPLUS_LIBS="$($PKG_CONFIG $pkg_config_static --libs libxml++-5.0)"
+		SPIDERMONKEY_LIBS="$($PKG_CONFIG $pkg_config_static --libs $package) $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS"
+		DB_LOCALSTORAGE_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags sqlite3)"
+		XMLPLUSPLUS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libxml++-5.0)"
+		SPIDERMONKEY_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags $package) $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS"
+
+		LIBS="$SPIDERMONKEY_LIBS $LIBS_X"
+		CPPFLAGS="$CPPFLAGS_X $SPIDERMONKEY_CFLAGS"
+		SPIDERMONKEY_FOUND=yes
+		AC_MSG_RESULT([yes])
+	else
+		AC_MSG_RESULT([no])
+	fi
+fi
+
+if test -z "$SPIDERMONKEY_FOUND"; then
 	# Didn't find SpiderMonkey anywhere.
 	CONFIG_SPIDERMONKEY=no
+	CONFIG_SCRIPTING_SPIDERMONKEY=no
 fi
 
 EL_RESTORE_FLAGS
 
 if test "x$CONFIG_SPIDERMONKEY" = xyes; then
+	CONFIG_XML=yes
 	EL_CONFIG(CONFIG_ECMASCRIPT_SMJS, [SpiderMonkey document scripting])
 else
 	CONFIG_ECMASCRIPT_SMJS=no
 fi
 
-EL_CONFIG_DEPENDS(CONFIG_ECMASCRIPT, [CONFIG_ECMASCRIPT_SMJS], [ECMAScript (JavaScript)])
+EL_CONFIG_DEPENDS(CONFIG_ECMASCRIPT, [CONFIG_ECMASCRIPT_SMJS CONFIG_MUJS CONFIG_QUICKJS CONFIG_SCRIPTING_SPIDERMONKEY], [ECMAScript (JavaScript)])
 AC_SUBST(CONFIG_ECMASCRIPT_SMJS)
 
 if test "x$CONFIG_ECMASCRIPT_SMJS" = xyes &&
@@ -713,22 +834,13 @@ else
 fi
 AC_SUBST(CONFIG_ECMASCRIPT_SMJS_HEARTBEAT)
 
-
-# ===================================================================
-# Optional Spidermonkey-based ECMAScript browser scripting
-# ===================================================================
-
-AC_ARG_ENABLE(sm-scripting,
-	      [  --disable-sm-scripting  ECMAScript browser scripting (requires Spidermonkey)],
-	      [if test "$enableval" != no; then enableval="yes"; fi
-	       CONFIG_SCRIPTING_SPIDERMONKEY="$enableval";])
-
-if test "x$CONFIG_SPIDERMONKEY" = xyes &&
-   test "x$CONFIG_SCRIPTING_SPIDERMONKEY" = xyes; then
+if test "x$CONFIG_SCRIPTING_SPIDERMONKEY" = xyes; then
 	EL_CONFIG(CONFIG_SCRIPTING_SPIDERMONKEY, [SpiderMonkey])
 else
 	CONFIG_SCRIPTING_SPIDERMONKEY=no
 fi
+
+CXXFLAGS="$CXXFLAGS -fpermissive -Wno-sign-compare -std=gnu++17"
 
 if test "x$CONFIG_ECMASCRIPT_SMJS" = xyes ||
    test "x$CONFIG_SCRIPTING_SPIDERMONKEY" = xyes; then
@@ -736,9 +848,25 @@ if test "x$CONFIG_ECMASCRIPT_SMJS" = xyes ||
 	AC_SUBST(SPIDERMONKEY_LIBS)
 	AC_SUBST(SPIDERMONKEY_CFLAGS)
 	AC_SUBST(CONFIG_SPIDERMONKEY)
-	CFLAGS="$CFLAGS -fpermissive $SPIDERMONKEY_CFLAGS"
+	AC_SUBST(CONFIG_XML)
+	CXXFLAGS="$CXXFLAGS $SPIDERMONKEY_CFLAGS"
 fi
 
+if test "x$CONFIG_MUJS" = xyes; then
+	EL_CONFIG(CONFIG_XML, [libxml++5.0])
+	EL_CONFIG(CONFIG_MUJS, [mujs])
+	AC_SUBST(MUJS_LIBS)
+	AC_SUBST(MUJS_CFLAGS)
+	AC_SUBST(CONFIG_MUJS)
+	AC_SUBST(CONFIG_XML)
+fi
+
+if test "x$CONFIG_QUICKJS" = xyes; then
+	EL_CONFIG(CONFIG_XML, [libxml++5.0])
+	EL_CONFIG(CONFIG_QUICKJS, [quickjs])
+	AC_SUBST(CONFIG_QUICKJS)
+	AC_SUBST(CONFIG_XML)
+fi
 # ===================================================================
 # Check for Guile, optional even if installed.
 # ===================================================================
@@ -934,10 +1062,17 @@ if test -n "$luapkg" && $PKG_CONFIG $pkg_config_static "$luapkg"; then
 	LIBS="$LUA_LIBS $LIBS_X"
 
 	# Check that it is a compatible Lua version
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[	#include <lauxlib.h>]
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#ifdef __cplusplus
+extern "C" {
+#endif
+		#include <lauxlib.h>
 		#include <lua.h>
 		#include <lualib.h>
-	], [[lua_State *L = luaL_newstate();
+#ifdef __cplusplus
+}
+#endif
+	]], [[lua_State *L = luaL_newstate();
 		luaL_openlibs(L);
 		lua_pushboolean(L, 1);
 		lua_close(L);]])],[cf_result=yes],[cf_result=no])
@@ -1152,7 +1287,7 @@ else
 		EL_CONFIG(CONFIG_OPENSSL, [OpenSSL])
 		chosen_ssl_library="OpenSSL"
 
-		AC_CHECK_FUNCS(RAND_bytes)
+		AC_CHECK_FUNCS(RAND_bytes RAND_add)
 		AC_CHECK_FUNCS(ASN1_STRING_get0_data)
 
 		CFLAGS="$CFLAGS_X"
@@ -1219,6 +1354,11 @@ else
 	if test "$cf_result" = yes; then
 		EL_CONFIG(CONFIG_GNUTLS, [GNUTLS])
 		chosen_ssl_library="GNUTLS"
+
+		AC_PATH_PROG(LIBGCRYPT_CONFIG, libgcrypt-config, no, $PATH)
+		if test "$LIBGCRYPT_CONFIG" = no; then
+			AC_MSG_ERROR([[libgcrypt-config not found.]])
+		fi
 
 		# gcry_create_nounce is part of libgcrypt
 		LIBGCRYPT_CFLAGS=`libgcrypt-config --cflags`
@@ -1363,6 +1503,8 @@ dnl AC_MSG_RESULT($cf_result)
 # ===================================================================
 # Compile-time features control
 # ===================================================================
+EL_ARG_ENABLE(CONFIG_GETTEXT, gettext, [System gettext],
+	      [  --enable-gettext        use System gettext for Native Language Support])
 
 EL_ARG_ENABLE(CONFIG_COOKIES, cookies, [Cookies],
 	      [  --disable-cookies       disable cookie support])
@@ -1398,6 +1540,9 @@ EL_ARG_ENABLE(CONFIG_URI_REWRITE, uri-rewrite, [URI rewriting],
 EL_ARG_DEPEND(CONFIG_CGI, cgi, [HAVE_SETENV_OR_PUTENV:yes], [Local CGI],
 	      [  --enable-cgi            enable local CGI support])
 
+EL_ARG_ENABLE(CONFIG_DGI, dgi, [DOS Gateway Interface],
+	      [  --enable-dgi            enable DGI support])
+
 EL_ARG_ENABLE(CONFIG_FINGER, finger, [Finger protocol],
 	      [  --enable-finger         enable finger protocol support])
 
@@ -1431,6 +1576,9 @@ fi
 
 EL_ARG_ENABLE(CONFIG_FTP, ftp, [FTP protocol],
 	      [  --disable-ftp           disable ftp protocol support])
+
+EL_ARG_ENABLE(CONFIG_GEMINI, gemini, [Gemini protocol],
+	      [  --enable-gemini         enable gemini protocol support])
 
 EL_ARG_ENABLE(CONFIG_GOPHER, gopher, [Gopher protocol],
 	      [  --enable-gopher         enable gopher protocol support])
@@ -1526,12 +1674,24 @@ EL_ARG_ENABLE(CONFIG_UTF8, utf-8, [UTF-8],
 EL_ARG_DEPEND(CONFIG_COMBINE, combining, [CONFIG_UTF8:yes HAVE_WCWIDTH:yes], [Combining characters],
 	      [  --enable-combining      support Unicode combining characters (experimental)])
 
+EL_ARG_ENABLE(CONFIG_REPRODUCIBLE, reproducible, [Reproducible builds],
+	      [  --enable-reproducible   enable reproducible build])
+
+EL_ARG_ENABLE(CONFIG_CODEPOINT, codepoint, [Check codepoints],
+	     [  --disable-codepoint      disable codepoint lookup])
 
 AC_ARG_ENABLE(weehoofooboomookerchoo,
               [
     Also check out the features.conf file for more information about features!
 	      ],
 	      [AC_MSG_ERROR(Are you strange, or what?)])
+
+SOURCE_DATE_EPOCH=
+AC_ARG_WITH(source-date-epoch,    [  --with-source-date-epoch=[TIME]
+                          set source date epoch for reproducible builds],
+            [SOURCE_DATE_EPOCH="$withval"])
+
+AC_SUBST(SOURCE_DATE_EPOCH)
 
 
 # ===================================================================
@@ -1627,38 +1787,6 @@ fi
 AC_SUBST(TRE_CFLAGS)
 AC_SUBST(TRE_LIBS)
 EL_LOG_CONFIG([CONFIG_TRE], [[Regexp searching]], [[$tre_log]])
-
-# ===================================================================
-# libdom
-# ===================================================================
-
-LIBDOM_CFLAGS=
-LIBDOM_LIBS=
-CONFIG_LIBDOM=no
-enable_libdom=no
-
-AC_ARG_WITH(libdom, [  --with-libdom           enable libdom],
-            [ if test "x$withval" != xno; then enable_libdom=yes; fi ])
-
-if test "$enable_libdom" = no; then
-	AC_MSG_CHECKING([[for libdom]])
-	AC_MSG_RESULT([[disabled]])
-else
-	AC_MSG_CHECKING([[for libdom in pkg-config]])
-	if $PKG_CONFIG $pkg_config_static libdom; then
-		LIBDOM_CFLAGS=`$PKG_CONFIG $pkg_config_static --cflags libdom`
-		LIBDOM_LIBS=`$PKG_CONFIG $pkg_config_static --libs libdom`
-		LIBS="$LIBDOM_LIBS $LIBS"
-		CONFIG_LIBDOM=yes
-		AC_DEFINE([CONFIG_LIBDOM], [1], [Define as 1 to use the libdom library.])
-		AC_MSG_RESULT([[yes]])
-	else
-		enable_libdom=no
-	fi
-fi
-AC_SUBST(LIBDOM_CFLAGS)
-AC_SUBST(LIBDOM_LIBS)
-EL_LOG_CONFIG([CONFIG_LIBDOM], [[libdom]], [[$enable_libdom]])
 
 
 # ===================================================================
@@ -1798,16 +1926,16 @@ if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
       CFLAGS="$CFLAGS -fno-strict-aliasing"
       ;;
     4.5*)
-      CFLAGS="$CFLAGS -fno-strict-aliasing -Wno-pointer-sign -Wno-enum-compare"
+      CFLAGS="$CFLAGS -fno-strict-aliasing -Wno-enum-compare"
       ;;
     4.*|5.*|6.*|7.*|8|8.*|9|9.*)
       # Do not show warnings related to (char * | unsigned char *) type
       # difference.
-      CFLAGS="$CFLAGS -fno-strict-aliasing -Wno-pointer-sign"
+      CFLAGS="$CFLAGS -fno-strict-aliasing"
       ;;
-    10|10.*)
+    10|10.*|11|11.*|12|12.*)
       # gettext
-      CFLAGS="$CFLAGS -fno-strict-aliasing -Wno-pointer-sign -Wno-builtin-declaration-mismatch"
+      CFLAGS="$CFLAGS -fno-strict-aliasing -Wno-builtin-declaration-mismatch -Wno-array-bounds"
       ;;
     *)
       # These should be ok using -Werror
@@ -1892,6 +2020,7 @@ fi
 AC_SUBST(GETTEXT_CFLAGS)
 EL_LOG_CONFIG(CFLAGS, [Compiler flags (CFLAGS)], [])
 EL_LOG_CONFIG(CPPFLAGS, [Preprocessor flags (CPPFLAGS)], [])
+EL_LOG_CONFIG(CXXFLAGS, [C++ compiler flags (CXXFLAGS)], [])
 EL_LOG_CONFIG(LDFLAGS, [Linker flags (LDFLAGS)], [])
 EL_LOG_CONFIG(LIBS, [Library flags (LIBS)], [])
 

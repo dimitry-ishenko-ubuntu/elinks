@@ -28,7 +28,7 @@ has_progress(struct progress *progress)
 struct progress *
 init_progress(off_t start)
 {
-	struct progress *progress = mem_calloc(1, sizeof(*progress));
+	struct progress *progress = (struct progress *)mem_calloc(1, sizeof(*progress));
 
 	if (progress) {
 		progress->start = start;
@@ -50,7 +50,7 @@ done_progress(struct progress *progress)
 static void
 progress_timeout(void *progress_voidptr)
 {
-	struct progress *const progress = progress_voidptr;
+	struct progress *const progress = (struct progress *const)progress_voidptr;
 
 	progress->timer = TIMER_ID_UNDEF;
 	/* The expired timer ID has now been erased.  */

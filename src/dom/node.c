@@ -38,7 +38,7 @@ realloc_dom_node_list(struct dom_node_list **oldlist)
 
 	if (newsize <= oldsize) return list;
 
-	list = mem_realloc(list, DOM_NODE_LIST_SIZE(newsize));
+	list = (struct dom_node_list *)mem_realloc(list, DOM_NODE_LIST_SIZE(newsize));
 	if (!list) return NULL;
 
 	/* If this is the first reallocation clear the size */
@@ -125,11 +125,11 @@ done_dom_node_list(struct dom_node_list *list)
 
 struct dom_node_search {
 	struct dom_node *key;
-	unsigned int from, pos, to;
+	int from, pos, to;
 };
 
 #define INIT_DOM_NODE_SEARCH(key, list) \
-	{ (key), -1, 0, (list)->size, }
+	{ (key), -1, 0, (int)(list)->size, }
 
 int
 dom_node_casecmp(struct dom_node *node1, struct dom_node *node2)
@@ -200,7 +200,7 @@ get_dom_node_map_index(struct dom_node_list *list, struct dom_node *node)
 }
 
 struct dom_node *
-get_dom_node_map_entry(struct dom_node_list *list, enum dom_node_type type,
+get_dom_node_map_entry(struct dom_node_list *list, /*enum dom_node_type*/ uint16_t type,
 		       uint16_t subtype, struct dom_string *name)
 {
 	struct dom_node node = { type, 0, INIT_DOM_STRING(name->string, name->length) };
@@ -306,7 +306,7 @@ get_dom_node_next(struct dom_node *node)
 }
 
 struct dom_node *
-get_dom_node_child(struct dom_node *parent, enum dom_node_type type,
+get_dom_node_child(struct dom_node *parent, /*enum dom_node_type*/ uint16_t type,
 		   int16_t subtype)
 {
 	struct dom_node_list **list;
@@ -353,15 +353,15 @@ get_dom_node_child(struct dom_node *parent, enum dom_node_type type,
 struct dom_node *
 init_dom_node_at(
 #ifdef DEBUG_MEMLEAK
-		unsigned char *file, int line,
+		char *file, int line,
 #endif
-		struct dom_node *parent, enum dom_node_type type,
+		struct dom_node *parent, /*enum dom_node_type*/ uint16_t type,
 		struct dom_string *string, int allocated)
 {
 #ifdef DEBUG_MEMLEAK
-	struct dom_node *node = debug_mem_calloc(file, line, 1, sizeof(*node));
+	struct dom_node *node = (struct dom_node *)debug_mem_calloc(file, line, 1, sizeof(*node));
 #else
-	struct dom_node *node = mem_calloc(1, sizeof(*node));
+	struct dom_node *node = (struct dom_node *)mem_calloc(1, sizeof(*node));
 #endif
 
 	if (!node) return NULL;
@@ -566,7 +566,7 @@ get_dom_node_value(struct dom_node *node)
 }
 
 struct dom_string *
-get_dom_node_type_name(enum dom_node_type type)
+get_dom_node_type_name(/*enum dom_node_type*/ uint16_t type)
 {
 	static struct dom_string dom_node_type_names[DOM_NODES] = {
 		INIT_DOM_STRING(NULL, 0),

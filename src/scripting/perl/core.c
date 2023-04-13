@@ -10,6 +10,7 @@
 #include "elinks.h"
 
 #include "config/home.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "osdep/osdep.h"
 #include "scripting/perl/core.h"
@@ -82,6 +83,8 @@ xs_init(pTHX)
 	newXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, __FILE__);
 }
 
+static char elperlversion[32];
+
 void
 init_perl(struct module *module)
 {
@@ -92,13 +95,16 @@ init_perl(struct module *module)
 	 * Is passing @environ strictly needed ? --Zas */
 
 	/* PERL_SYS_INIT3 may not be defined, it depends on the system. */
+
+	static char c_empty[] = "";
+
 #ifdef PERL_SYS_INIT3
 	char *my_argvec[] = { NULL, NULL };
 	char **my_argv = my_argvec;
 	int my_argc = 0;
 
 	/* A hack to prevent unused variables warnings. */
-	my_argv[my_argc++] = "";
+	my_argv[my_argc++] = c_empty;
 
 	PERL_SYS_INIT3(&my_argc, &my_argv, &environ);
 #endif
@@ -107,8 +113,8 @@ init_perl(struct module *module)
 	if (my_perl) {
 		char *hook_global = get_global_hook_file();
 		char *hook_local = get_local_hook_file();
-		char *global_argv[] = { "", hook_global};
-		char *local_argv[] = { "", hook_local};
+		char *global_argv[] = { c_empty, hook_global};
+		char *local_argv[] = { c_empty, hook_local};
 		int err = 1;
 
 		perl_construct(my_perl);
@@ -119,6 +125,10 @@ init_perl(struct module *module)
 #ifdef PERL_EXIT_DESTRUCT_END
 		PL_exit_flags |= PERL_EXIT_DESTRUCT_END;
 #endif
+
+		snprintf(elperlversion, 31, "Perl %s", PERL_VERSION_STRING);
+		module->name = elperlversion;
+
 		if (!err) err = perl_run(my_perl);
 		if (err) precleanup_perl(module);
 	}

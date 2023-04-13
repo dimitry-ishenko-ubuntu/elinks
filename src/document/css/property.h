@@ -74,9 +74,9 @@ union css_property_value {
 	color_T color;
 	enum css_display display;
 	struct {
-		enum text_style_format add, rem;
+		text_style_format_T add, rem;
 	} font_attribute;
-	enum format_align text_align;
+	format_align_T text_align;
 	enum css_list_style list_style;
 	/* TODO:
 	 * Generic numbers
@@ -114,7 +114,7 @@ typedef int (*css_property_value_parser_T)(struct css_property_info *propinfo,
 /** The struct css_property_info describes what values the properties can
  * have and what internal type they have. */
 struct css_property_info {
-	unsigned char *name;
+	const char *name;
 	enum css_property_type type;
 
 	/** This is the storage type, basically describing what to save to

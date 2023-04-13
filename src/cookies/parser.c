@@ -17,7 +17,7 @@
 
 #if 0
 static inline void
-debug_cookie_parser(struct cookie_str *cstr, unsigned char *pos, int ws, int eq)
+debug_cookie_parser(struct cookie_str *cstr, char *pos, int ws, int eq)
 {
 	int namelen = int_max(cstr->nam_end - cstr->str, 0);
 	int valuelen = int_max(cstr->val_end - cstr->val_start, 0);
@@ -39,13 +39,13 @@ debug_cookie_parser(struct cookie_str *cstr, unsigned char *pos, int ws, int eq)
 /* Defined in RFC 2965. */
 /* Return cstr on success, NULL on failure. */
 struct cookie_str *
-parse_cookie_str(struct cookie_str *cstr, unsigned char *str)
+parse_cookie_str(struct cookie_str *cstr, char *str)
 {
 	memset(cstr, 0, sizeof(*cstr));
 	cstr->str = str;
 
 	/* Parse name token */
-	while (*str != ';' && *str != '=' && !isspace(*str) && *str)
+	while (*str != ';' && *str != '=' && !isspace((unsigned char)*str) && *str)
 		str++;
 
 	/* Bail out if name token is empty */
@@ -83,7 +83,7 @@ parse_cookie_str(struct cookie_str *cstr, unsigned char *str)
 
 	for (; *str != ';' && *str; str++) {
 		/* Allow spaces in the value but leave out ending spaces */
-		if (!isspace(*str))
+		if (!isspace((unsigned char)*str))
 			cstr->val_end = str + 1;
 	}
 

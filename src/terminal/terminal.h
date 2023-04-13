@@ -25,6 +25,7 @@ enum term_mode_type {
 	TERM_FBTERM,
 };
 
+typedef int term_mode_type_T;
 /** This is a bitmask describing the environment we are living in,
  * terminal-wise. We can then conditionally use various features available
  * in such an environment. */
@@ -47,6 +48,8 @@ enum term_env_type {
 	/** Match all terminal environments */
 	ENV_ANY = ~0,
 };
+
+typedef int term_env_type_T;
 
 enum term_redrawing_state {
 	TREDRAW_READY = 0,	/**< Can redraw */
@@ -108,7 +111,7 @@ struct terminal {
 
 	/** This is the terminal's current title, as perhaps displayed
 	 * somewhere in the X window frame or so. */
-	unsigned char *title;
+	char *title;
 
 	/** This is the screen. See terminal/screen.h */
 	struct terminal_screen *screen;
@@ -157,10 +160,10 @@ struct terminal {
 #endif
 
 	/** The type of environment this terminal lives in. */
-	enum term_env_type environment;
+	term_env_type_T environment;
 
 	/** The current working directory for this terminal / ELinks instance. */
-	unsigned char cwd[MAX_CWD_LEN];
+	char cwd[MAX_CWD_LEN];
 
 	/** For communication between instances */
 	struct terminal_interlink *interlink;
@@ -193,7 +196,7 @@ int get_terminal_codepage(const struct terminal *);
 
 void redraw_all_terminals(void);
 void destroy_all_terminals(void);
-void exec_thread(unsigned char *, int);
+void exec_thread(char *, int);
 void close_handle(void *);
 
 #ifdef CONFIG_FASTMEM
@@ -227,11 +230,13 @@ enum term_exec {
 	TERM_EXEC_NEWWIN = 2
 };
 
-void exec_on_terminal(struct terminal *, unsigned char *, unsigned char *, enum term_exec);
+typedef int term_exec_T;
+
+void exec_on_terminal(struct terminal *, const char *, const char *, term_exec_T);
 void exec_shell(struct terminal *term);
 
-int set_terminal_title(struct terminal *, unsigned char *);
-void do_terminal_function(struct terminal *, unsigned char, unsigned char *);
+int set_terminal_title(struct terminal *, char *);
+void do_terminal_function(struct terminal *, unsigned char, const char *);
 
 int check_terminal_pipes(void);
 void close_terminal_pipes(void);

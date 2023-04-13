@@ -9,9 +9,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h> /* OS/2 needs this after sys/types.h */
-#ifdef HAVE_TIME_H
 #include <time.h>
-#endif
 
 #include "elinks.h"
 
@@ -27,7 +25,7 @@
 #include "config/home.h"
 #include "config/kbdbind.h"
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "main/object.h"
 #include "main/select.h"
@@ -57,7 +55,7 @@ static INIT_LIST_OF(struct cookie, cookies);
 struct c_domain {
 	LIST_HEAD(struct c_domain);
 
-	unsigned char domain[1]; /* Must be at end of struct. */
+	char domain[1]; /* Must be at end of struct. */
 };
 
 /* List of domains for which there may be cookies.  This supposedly
@@ -87,11 +85,11 @@ enum cookies_option {
 
 static union option_info cookies_options[] = {
 	INIT_OPT_TREE("", N_("Cookies"),
-		"cookies", 0,
+		"cookies", OPT_ZERO,
 		N_("Cookies options.")),
 
 	INIT_OPT_INT("cookies", N_("Accept policy"),
-		"accept_policy", 0,
+		"accept_policy", OPT_ZERO,
 		COOKIES_ACCEPT_NONE, COOKIES_ACCEPT_ALL, COOKIES_ACCEPT_ALL,
 		N_("Cookies accepting policy:\n"
 		"0 is accept no cookies\n"
@@ -99,7 +97,7 @@ static union option_info cookies_options[] = {
 		"2 is accept all cookies")),
 
 	INIT_OPT_INT("cookies", N_("Maximum age"),
-		"max_age", 0, -1, 10000, -1,
+		"max_age", OPT_ZERO, -1, 10000, -1,
 		N_("Cookie maximum age (in days):\n"
 		"-1 is use cookie's expiration date if any\n"
 		"0  is force expiration at the end of session, ignoring\n"
@@ -108,7 +106,7 @@ static union option_info cookies_options[] = {
 		"   given number of days")),
 
 	INIT_OPT_BOOL("cookies", N_("Paranoid security"),
-		"paranoid_security", 0, 0,
+		"paranoid_security", OPT_ZERO, 0,
 		N_("When enabled, we'll require three dots in cookies domain "
 		"for all non-international domains (instead of just two "
 		"dots). Some countries have generic second level domains "
@@ -117,12 +115,12 @@ static union option_info cookies_options[] = {
 		"Note, it is off by default as it breaks a lot of sites.")),
 
 	INIT_OPT_BOOL("cookies", N_("Saving"),
-		"save", 0, 1,
+		"save", OPT_ZERO, 1,
 		N_("Whether cookies should be loaded from and saved to "
 		"disk.")),
 
 	INIT_OPT_BOOL("cookies", N_("Resaving"),
-		"resave", 0, 1,
+		"resave", OPT_ZERO, 1,
 		N_("Save cookies after each change in cookies list? "
 		"No effect when cookie saving (cookies.save) is off.")),
 
@@ -137,7 +135,7 @@ static union option_info cookies_options[] = {
 #define get_cookies_resave()		get_opt_cookies(COOKIES_RESAVE).number
 
 struct cookie_server *
-get_cookie_server(unsigned char *host, int hostlen)
+get_cookie_server(char *host, int hostlen)
 {
 	struct cookie_server *sort_spot = NULL;
 	struct cookie_server *cs;
@@ -161,7 +159,7 @@ get_cookie_server(unsigned char *host, int hostlen)
 		return cs;
 	}
 
-	cs = mem_calloc(1, sizeof(*cs) + hostlen);
+	cs = (struct cookie_server *)mem_calloc(1, sizeof(*cs) + hostlen);
 	if (!cs) return NULL;
 
 	memcpy(cs->host, host, hostlen);
@@ -226,7 +224,7 @@ delete_cookie(struct cookie *c)
 /* Check whether cookie's domain matches server.
  * It returns 1 if ok, 0 else. */
 static int
-is_domain_security_ok(unsigned char *domain, unsigned char *server, int server_len)
+is_domain_security_ok(char *domain, char *server, int server_len)
 {
 	int i;
 	int domain_len;
@@ -301,7 +299,7 @@ is_domain_security_ok(unsigned char *domain, unsigned char *server, int server_l
  * although you may also want to set the remaining members and check
  * @get_cookies_accept_policy and @is_domain_security_ok.
  *
- * The unsigned char * arguments must be allocated with @mem_alloc or
+ * The char * arguments must be allocated with @mem_alloc or
  * equivalent, because @done_cookie will @mem_free them.  Likewise,
  * the caller must already have locked @server.  If @init_cookie
  * fails, then it frees the strings itself, and unlocks @server.
@@ -310,11 +308,11 @@ is_domain_security_ok(unsigned char *domain, unsigned char *server, int server_l
  * consider that a bug.  This means callers can use e.g. @stracpy
  * and let @init_cookie check whether the call ran out of memory.  */
 struct cookie *
-init_cookie(unsigned char *name, unsigned char *value,
-	    unsigned char *path, unsigned char *domain,
+init_cookie(char *name, char *value,
+	    char *path, char *domain,
 	    struct cookie_server *server)
 {
-	struct cookie *cookie = mem_calloc(1, sizeof(*cookie));
+	struct cookie *cookie = (struct cookie *)mem_calloc(1, sizeof(*cookie));
 
 	if (!cookie || !name || !value || !path || !domain || !server) {
 		mem_free_if(cookie);
@@ -337,9 +335,9 @@ init_cookie(unsigned char *name, unsigned char *value,
 }
 
 void
-set_cookie(struct uri *uri, unsigned char *str)
+set_cookie(struct uri *uri, char *str)
 {
-	unsigned char *path, *domain;
+	char *path, *domain;
 	struct cookie *cookie;
 	struct cookie_str cstr;
 	int max_age;
@@ -354,7 +352,7 @@ set_cookie(struct uri *uri, unsigned char *str)
 	if (!parse_cookie_str(&cstr, str)) return;
 
 	switch (parse_header_param(str, "path", &path, 0)) {
-		unsigned char *path_end;
+		char *path_end;
 
 	case HEADER_PARAM_FOUND:
 		if (!path[0])
@@ -372,7 +370,7 @@ set_cookie(struct uri *uri, unsigned char *str)
 		if (!path)
 			return;
 
-		path_end = strrchr((const char *)path, '/');
+		path_end = strrchr(path, '/');
 		if (path_end)
 			path_end[0] = '\0';
 		break;
@@ -421,7 +419,7 @@ set_cookie(struct uri *uri, unsigned char *str)
 
 	max_age = get_cookies_max_age();
 	if (max_age) {
-		unsigned char *date;
+		char *date;
 		time_t expires;
 
 		switch (parse_header_param(str, "expires", &date, 0)) {
@@ -521,7 +519,7 @@ accept_cookie(struct cookie *cookie)
 
 	domain_len = strlen(cookie->domain);
 	/* One byte is reserved for domain in struct c_domain. */
-	cd = mem_alloc(sizeof(*cd) + domain_len);
+	cd = (struct c_domain *)mem_alloc(sizeof(*cd) + domain_len);
 	if (!cd) return;
 
 	memcpy(cd->domain, cookie->domain, domain_len + 1);
@@ -611,7 +609,7 @@ send_cookies_common(struct uri *uri, unsigned int httponly)
 {
 	struct c_domain *cd;
 	struct cookie *c, *next;
-	unsigned char *path = NULL;
+	char *path = NULL;
 	static struct string header;
 	time_t now;
 
@@ -626,7 +624,10 @@ send_cookies_common(struct uri *uri, unsigned int httponly)
 
 	if (!path) return NULL;
 
-	init_string(&header);
+	if (!init_string(&header)) {
+		mem_free(path);
+		return NULL;
+	}
 
 	now = time(NULL);
 	foreachsafe (c, next, cookies) {
@@ -693,14 +694,15 @@ load_cookies(void) {
 	/* Buffer size is set to be enough to read long lines that
 	 * save_cookies may write. 6 is choosen after the fprintf(..) call
 	 * in save_cookies(). --Zas */
-	unsigned char in_buffer[6 * MAX_STR_LEN];
-	unsigned char *cookfile = COOKIES_FILENAME;
+	char in_buffer[6 * MAX_STR_LEN];
+	const char *cookfile_orig = COOKIES_FILENAME;
+	char *cookfile = NULL;
 	FILE *fp;
 	time_t now;
 
 	if (elinks_home) {
-		cookfile = straconcat(elinks_home, cookfile,
-				      (unsigned char *) NULL);
+		cookfile = straconcat(elinks_home, cookfile_orig,
+				      (char *) NULL);
 		if (!cookfile) return;
 	}
 
@@ -710,8 +712,12 @@ load_cookies(void) {
 	done_cookies(&cookies_module);
 	cookies_nosave = 0;
 
-	fp = fopen(cookfile, "rb");
-	if (elinks_home) mem_free(cookfile);
+	if (elinks_home) {
+		fp = fopen(cookfile, "rb");
+		mem_free(cookfile);
+	} else {
+		fp = fopen(cookfile_orig, "rb");
+	}
 	if (!fp) return;
 
 	/* XXX: We don't want to overwrite the cookies file
@@ -721,21 +727,21 @@ load_cookies(void) {
 	now = time(NULL);
 	while (fgets(in_buffer, 6 * MAX_STR_LEN, fp)) {
 		struct cookie *cookie;
-		unsigned char *p, *q = in_buffer;
+		char *p, *q = in_buffer;
 		enum { NAME = 0, VALUE, SERVER, PATH, DOMAIN, EXPIRES, SECURE, HTTPONLY, MEMBERS };
 		int member;
 		struct {
-			unsigned char *pos;
+			char *pos;
 			int len;
 		} members[MEMBERS];
 		time_t expires;
 
 		/* First find all members. */
 		for (member = NAME; member < MEMBERS; member++, q = ++p) {
-			p = strchr((const char *)q, '\t');
+			p = strchr(q, '\t');
 			if (!p) {
 				if (member + 1 != MEMBERS) break; /* last field ? */
-				p = strchr((const char *)q, '\n');
+				p = strchr(q, '\n');
 				if (!p) break;
 			}
 
@@ -753,7 +759,7 @@ load_cookies(void) {
 		}
 
 		/* Prepare cookie if all members and fields was read. */
-		cookie = mem_calloc(1, sizeof(*cookie));
+		cookie = (struct cookie *)mem_calloc(1, sizeof(*cookie));
 		if (!cookie) continue;
 
 		cookie->server  = get_cookie_server(members[SERVER].pos, members[SERVER].len);
@@ -812,7 +818,7 @@ set_cookies_dirty(void)
 void
 save_cookies(struct terminal *term) {
 	struct cookie *c;
-	unsigned char *cookfile;
+	char *cookfile;
 	struct secure_save_info *ssi;
 	time_t now;
 
@@ -844,7 +850,7 @@ save_cookies(struct terminal *term) {
 	}
 
 	cookfile = straconcat(elinks_home, COOKIES_FILENAME,
-			      (unsigned char *) NULL);
+			      (char *) NULL);
 	if (!cookfile) {
 		CANNOT_SAVE_COOKIES(0, N_("Out of memory"));
 		return;
@@ -861,7 +867,7 @@ save_cookies(struct terminal *term) {
 	now = time(NULL);
 	foreach (c, cookies) {
 		if (!c->expires || c->expires <= now) continue;
-		if (secure_fprintf(ssi, "%s\t%s\t%s\t%s\t%s\t%"TIME_PRINT_FORMAT"\t%d\t%d\n",
+		if (secure_fprintf(ssi, "%s\t%s\t%s\t%s\t%s\t%" TIME_PRINT_FORMAT "\t%d\t%d\n",
 				   c->name, c->value,
 				   c->server->host,
 				   empty_string_or_(c->path),
@@ -892,7 +898,7 @@ static void
 free_cookies_list(LIST_OF(struct cookie) *list)
 {
 	while (!list_empty(*list)) {
-		struct cookie *cookie = list->next;
+		struct cookie *cookie = (struct cookie *)list->next;
 
 		delete_cookie(cookie);
 	}

@@ -17,13 +17,14 @@
 #include "cache/cache.h"
 #include "document/document.h"
 #include "document/html/frames.h"
+#include "document/html/iframes.h"
 #include "document/options.h"
 #include "document/refresh.h"
 #include "document/renderer.h"
 #include "document/view.h"
 #include "dialogs/status.h"		/* print_screen_status() */
 #include "intl/charsets.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "protocol/uri.h"
 #include "session/location.h"
 #include "session/session.h"
@@ -166,6 +167,46 @@ draw_frame_lines(struct terminal *term, struct frameset_desc *frameset_desc,
 }
 
 static void
+draw_iframe_lines(struct terminal *term, struct iframeset_desc *iframe_desc,
+		 int xp, int yp, struct color_pair *colors)
+{
+	int j;
+
+	assert(term && iframe_desc && iframe_desc->iframe_desc);
+	if_assert_failed return;
+
+	for (j = 0; j < iframe_desc->n; j++) {
+		struct el_box box;
+
+		int y = iframe_desc->iframe_desc[j].y - 1;
+		int x = iframe_desc->iframe_desc[j].x - 1;
+
+		int height = iframe_desc->iframe_desc[j].height + 1;
+		int width = iframe_desc->iframe_desc[j].width + 1;
+
+		set_box(&box, x, y + 1, 1, height - 1);
+		draw_box(term, &box, BORDER_SVLINE, SCREEN_ATTR_FRAME, colors);
+
+		set_box(&box, x + width, y + 1, 1, height - 1);
+		draw_box(term, &box, BORDER_SVLINE, SCREEN_ATTR_FRAME, colors);
+
+		set_box(&box, x + 1, y, width -1 , 1);
+		draw_box(term, &box, BORDER_SHLINE, SCREEN_ATTR_FRAME, colors);
+
+		set_box(&box, x + 1, y + height, width - 1, 1);
+		draw_box(term, &box, BORDER_SHLINE, SCREEN_ATTR_FRAME, colors);
+
+		draw_border_char(term, x, y, BORDER_SULCORNER, colors);
+		draw_border_char(term, x, y + height, BORDER_SDLCORNER, colors);
+
+		draw_border_char(term, x + width, y, BORDER_SURCORNER, colors);
+		draw_border_char(term, x + width, y + height, BORDER_SDRCORNER, colors);
+		draw_border_cross(term, x, y, BORDER_X_DOWN, colors);
+	}
+}
+
+
+static void
 draw_clipboard(struct terminal *term, struct document_view *doc_view)
 {
 	struct document *document = doc_view->document;
@@ -252,6 +293,8 @@ draw_doc(struct session *ses, struct document_view *doc_view, int active)
 	struct view_state *vs;
 	struct terminal *term;
 	struct el_box *box;
+	struct screen_char *last = NULL;
+
 	int vx, vy;
 	int y;
 
@@ -283,17 +326,28 @@ draw_doc(struct session *ses, struct document_view *doc_view, int active)
 
 	vs = doc_view->vs;
 	if (!vs) {
-		draw_box(term, box, ' ', 0, &color);
+		int bgchar = get_opt_int("ui.background_char", ses);
+#ifdef CONFIG_UTF8
+		draw_box(term, box, bgchar, 0, get_bfu_color(term, "desktop"));
+#else
+		draw_box(term, box, (unsigned char)bgchar, 0, get_bfu_color(term, "desktop"));
+#endif
 		return;
 	}
 
 	if (document_has_frames(doc_view->document)) {
-	 	draw_box(term, box, ' ', 0, &color);
+		int bgchar = get_opt_int("ui.background_char", ses);
+#ifdef CONFIG_UTF8
+		draw_box(term, box, bgchar, 0, get_bfu_color(term, "desktop"));
+#else
+		draw_box(term, box, (unsigned char)bgchar, 0, get_bfu_color(term, "desktop"));
+#endif
 		draw_frame_lines(term, doc_view->document->frame_desc, box->x, box->y, &color);
 		if (vs->current_link == -1)
 			vs->current_link = 0;
 		return;
 	}
+
 
 	if (ses->navigate_mode == NAVIGATE_LINKWISE) {
 		check_vs(doc_view);
@@ -338,7 +392,13 @@ draw_doc(struct session *ses, struct document_view *doc_view, int active)
 	}
 	doc_view->last_x = vx;
 	doc_view->last_y = vy;
-	draw_box(term, box, ' ', 0, &color);
+
+	int bgchar = get_opt_int("ui.background_char", ses);
+#ifdef CONFIG_UTF8
+	draw_box(term, box, bgchar, 0, get_bfu_color(term, "desktop"));
+#else
+	draw_box(term, box, (unsigned char)bgchar, 0, get_bfu_color(term, "desktop"));
+#endif
 	if (!doc_view->document->height) return;
 
 	while (vs->y >= doc_view->document->height) vs->y -= box->height;
@@ -351,17 +411,53 @@ draw_doc(struct session *ses, struct document_view *doc_view, int active)
 	for (y = int_max(vy, 0);
 	     y < int_min(doc_view->document->height, box->height + vy);
 	     y++) {
+		struct screen_char *first = NULL;
+		int i, j;
+		int last_index = 0;
 		int st = int_max(vx, 0);
 		int en = int_min(doc_view->document->data[y].length,
 				 box->width + vx);
+		int max = int_min(en, st + 200);
 
-		if (en - st <= 0) continue;
-		draw_line(term, box->x + st - vx, box->y + y - vy, en - st,
-			  &doc_view->document->data[y].chars[st]);
+		if (en - st > 0) {
+			draw_line(term, box->x + st - vx, box->y + y - vy,
+				  en - st,
+				  &doc_view->document->data[y].chars[st]);
+
+			for (i = en - 1; i >= 0; --i) {
+				if (doc_view->document->data[y].chars[i].data != ' ') {
+					last = &doc_view->document->data[y].chars[i];
+					last_index = i + 1;
+					break;
+				}
+			}
+		}
+		for (i = st; i < max; i++) {
+			if (doc_view->document->data[y].chars[i].data != ' ') {
+				first = &doc_view->document->data[y].chars[i];
+				break;
+			}
+		}
+
+		for (j = st; j < i; j++) {
+			draw_space(term, box->x + j - vx, box->y + y - vy,
+				   first);
+		}
+
+		for (i = last_index; i < box->width + vx; i++) {
+			draw_space(term, box->x + i - vx, box->y + y - vy,
+				   last);
+		}
 	}
 	draw_view_status(ses, doc_view, active);
 	if (has_search_word(doc_view))
 		doc_view->last_x = doc_view->last_y = -1;
+
+	if (document_has_iframes(doc_view->document)) {
+		draw_iframe_lines(term, doc_view->document->iframe_desc, box->x, box->y, &color);
+		if (vs->current_link == -1)
+			vs->current_link = 0;
+	}
 }
 
 static void
@@ -374,13 +470,19 @@ draw_frames(struct session *ses)
 	assert(ses && ses->doc_view && ses->doc_view->document);
 	if_assert_failed return;
 
-	if (!document_has_frames(ses->doc_view->document)) return;
+	if (!document_has_frames(ses->doc_view->document)
+	&& !document_has_iframes(ses->doc_view->document)) return;
 
 	n = 0;
 	foreach (doc_view, ses->scrn_frames) {
 	       doc_view->last_x = doc_view->last_y = -1;
 	       n++;
 	}
+	foreach (doc_view, ses->scrn_iframes) {
+	       doc_view->last_x = doc_view->last_y = -1;
+	       n++;
+	}
+
 	l = &cur_loc(ses)->vs.current_link;
 	*l = int_max(*l, 0) % int_max(n, 1);
 
@@ -394,6 +496,9 @@ draw_frames(struct session *ses)
 				draw_doc(ses, doc_view, doc_view == current_doc_view);
 			else if (doc_view->depth > d)
 				more = 1;
+		}
+		if (d == 0) foreach (doc_view, ses->scrn_iframes) {
+			draw_doc(ses, doc_view, doc_view == current_doc_view);
 		}
 
 		if (!more) break;
@@ -424,11 +529,16 @@ draw_formatted(struct session *ses, int rerender)
 	if (!ses->doc_view || !ses->doc_view->document) {
 		/*INTERNAL("document not formatted");*/
 		struct el_box box;
+		int bgchar = get_opt_int("ui.background_char", ses);
 
 		set_box(&box, 0, 1,
 			ses->tab->term->width,
 			ses->tab->term->height - 2);
-		draw_box(ses->tab->term, &box, ' ', 0, NULL);
+#ifdef CONFIG_UTF8
+		draw_box(ses->tab->term, &box, bgchar, 0, get_bfu_color(ses->tab->term, "desktop"));
+#else
+		draw_box(ses->tab->term, &box, (unsigned char)bgchar, 0, get_bfu_color(ses->tab->term, "desktop"));
+#endif
 		return;
 	}
 

@@ -8,7 +8,7 @@
 
 #include "bfu/dialog.h"
 #include "config/urlhist.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/event.h"
 #include "main/module.h"
 #include "util/lists.h"
@@ -39,7 +39,7 @@ goto_url_history_write_hook(va_list ap, void *data)
 }
 
 static struct event_hook_info goto_url_history_hooks[] = {
-	{ "periodic-saving", 0, goto_url_history_write_hook, NULL },
+	{ "periodic-saving", 0, goto_url_history_write_hook, {NULL} },
 
 	NULL_EVENT_HOOK_INFO,
 };

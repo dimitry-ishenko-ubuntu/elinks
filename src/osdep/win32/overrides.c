@@ -22,7 +22,7 @@
 #include "elinks.h"
 
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "osdep/osdep.h"
 #include "osdep/win32/overrides.h"
 #include "osdep/win32/vt100.h"
@@ -371,8 +371,10 @@ win32_ioctl(int fd, long option, int *flag)
 int
 win32_socket(int pf, int type, int protocol)
 {
-	SOCKET s = socket(pf, type, protocol);
+	int     s;
 	int    rc;
+
+	s = socket(pf, type, protocol);
 
 	if (s == INVALID_SOCKET) {
 		rc = -1;
@@ -549,12 +551,18 @@ select_read(int fd, struct fd_set *rd)
 	int rc = 0;
 	HANDLE hnd = (HANDLE) fd;
 
-	if (hnd == GetStdHandle(STD_INPUT_HANDLE)) {
+	if (GetFileType(hnd) == FILE_TYPE_PIPE) {
+		DWORD read = 0;
+		if (PeekNamedPipe(hnd, NULL, 0, NULL, &read, NULL)
+		    && read > 0) {
+			FD_SET (fd, rd);
+			rc++;
+		}
+	} else 	if (hnd == GetStdHandle(STD_INPUT_HANDLE)) {
 		if (console_peek(hnd)) {
 			FD_SET(fd, rd);
 			rc++;
 		}
-
 	} else {
 		hnd = (HANDLE) _get_osfhandle(fd);
 		if (WaitForSingleObject(hnd, 0) == WAIT_OBJECT_0) {
@@ -574,21 +582,10 @@ select_one_loop(int num_fds, struct fd_set *rd, struct fd_set *wr,
 	int    rc, fd;
 
 	for (rc = fd = 0; fd < num_fds; fd++) {
-		HANDLE hnd = (HANDLE)fd;
-
-		if (GetFileType(hnd) == FILE_TYPE_PIPE) {
-			DWORD read = 0;
-			if (PeekNamedPipe(hnd, NULL, 0, NULL, &read, NULL)
-			    && read > 0) {
-				FD_SET (fd, rd);
-				rc++;
-			}
-
-		} else if (fd < SOCK_SHIFT) {
+		if (fd < SOCK_SHIFT) {
 			rc += select_read(fd, rd);
 			if (wr && FD_ISSET(fd,wr))
 				rc++;   /* assume always writable */
-
 		} else {
 			/* A Winsock socket */
 			fd_set sock_rd, sock_wr, sock_ex;
@@ -602,7 +599,7 @@ select_one_loop(int num_fds, struct fd_set *rd, struct fd_set *wr,
 			FD_SET(fd - SOCK_SHIFT, &sock_wr);
 			FD_SET(fd - SOCK_SHIFT, &sock_ex);
 
-			sel_rc = select(fd + 1, &sock_rd, NULL, NULL, &tv);
+			sel_rc = select(fd - SOCK_SHIFT + 1, &sock_rd, NULL, NULL, &tv);
 			if (sel_rc > 0) {
 				FD_SET(fd, rd);
 				rc++;
@@ -611,7 +608,7 @@ select_one_loop(int num_fds, struct fd_set *rd, struct fd_set *wr,
 			}
 
 			if (wr) {
-				sel_rc = select(fd + 1, NULL, &sock_wr, NULL, &tv);
+				sel_rc = select(fd - SOCK_SHIFT + 1, NULL, &sock_wr, NULL, &tv);
 				if (sel_rc > 0) {
 					FD_SET (fd, wr);
 					rc++;
@@ -620,13 +617,15 @@ select_one_loop(int num_fds, struct fd_set *rd, struct fd_set *wr,
 				}
 			}
 
-			sel_rc = select(fd + 1, NULL, NULL, &sock_ex, &tv);
+			sel_rc = select(fd - SOCK_SHIFT + 1, NULL, NULL, &sock_ex, &tv);
 			if (sel_rc > 0) {
 				FD_SET (fd, ex);
 				rc++;
 			} else if (sel_rc < 0) {
 				errno = WSAGetLastError();
 			}
+			/* Lower CPU Usage WIN64 */
+			Sleep (0);
 		}
 	}
 
@@ -664,7 +663,7 @@ int win32_select (int num_fds, struct fd_set *rd, struct fd_set *wr,
 		}
 	}
 
-	errno = 0;
+	int errnol = 0;
 
 	for (rc = 0; !expired; ) {
 		rc += select_one_loop (num_fds, &tmp_rd, wr, &tmp_ex);
@@ -679,7 +678,12 @@ int win32_select (int num_fds, struct fd_set *rd, struct fd_set *wr,
 				expired = TRUE;
 		}
 
-		if (rc) break;
+		/* Lower CPU Usage WIN64 */
+		if (rc) {
+			break;
+		} else {
+			Sleep (1);
+		}
 	}
 
 	rc = 0;
@@ -694,7 +698,7 @@ int win32_select (int num_fds, struct fd_set *rd, struct fd_set *wr,
 		else rc++;
 	}
 
-	TRACE("-> rc %d, err %d", rc, rc < 0 ? errno : 0);
+	TRACE("-> rc %d, err %d", rc, rc < 0 ? errnol : 0);
 
 	if (get_cmd_opt_int("verbose") == 2)
 		select_dump(num_fds, rd, wr, ex);
@@ -906,9 +910,9 @@ win32_strerror(int err)
 	}
 
 	/* strip trailing '\r\n' or '\n'. */
-	if ((p = strrchr((const char *)buf,'\n')) != NULL && (p - buf) >= 2)
+	if ((p = strrchr(buf,'\n')) != NULL && (p - buf) >= 2)
 		*p = '\0';
-	if ((p = strrchr((const char *)buf,'\r')) != NULL && (p - buf) >= 1)
+	if ((p = strrchr(buf,'\r')) != NULL && (p - buf) >= 1)
 		*p = '\0';
 
 	return buf;

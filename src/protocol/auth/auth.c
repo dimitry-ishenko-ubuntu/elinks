@@ -9,7 +9,7 @@
 #include "elinks.h"
 
 #include "bfu/hierbox.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "protocol/auth/auth.h"
 #include "protocol/auth/dialogs.h"
@@ -33,7 +33,7 @@ static INIT_LIST_OF(struct auth_entry, auth_entry_list);
  * NULL, it returns the first record found. If realm isn't NULL, it returns
  * the first record that matches exactly (url and realm) if any. */
 static struct auth_entry *
-find_auth_entry(struct uri *uri, unsigned char *realm)
+find_auth_entry(struct uri *uri, const char *realm)
 {
 	struct auth_entry *match = NULL, *entry;
 
@@ -92,7 +92,7 @@ set_auth_password(struct auth_entry *entry, struct uri *uri)
 static void done_auth_entry(struct auth_entry *entry);
 
 static struct auth_entry *
-init_auth_entry(struct uri *uri, unsigned char *realm)
+init_auth_entry(struct uri *uri, const char *realm)
 {
 	struct auth_entry *entry;
 
@@ -100,7 +100,7 @@ init_auth_entry(struct uri *uri, unsigned char *realm)
 	DBG("init_auth_entry: auth_url=%s realm=%s uri=%p", auth_url, realm, uri);
 #endif
 
-	entry = mem_calloc(1, sizeof(*entry));
+	entry = (struct auth_entry *)mem_calloc(1, sizeof(*entry));
 	if (!entry) return NULL;
 
 	entry->uri = get_uri_reference(uri);
@@ -132,8 +132,8 @@ init_auth_entry(struct uri *uri, unsigned char *realm)
 /* Returns the new entry or updates an existing one. Sets the @valid member if
  * updating is required so it can be tested if the user should be queried. */
 struct auth_entry *
-add_auth_entry(struct uri *uri, unsigned char *realm, unsigned char *nonce,
-	unsigned char *opaque, unsigned int digest)
+add_auth_entry(struct uri *uri, const char *realm, char *nonce,
+	char *opaque, unsigned int digest)
 {
 	struct auth_entry *entry;
 
@@ -301,7 +301,7 @@ free_auth(void)
 #endif
 
 	while (!list_empty(auth_entry_list))
-		del_auth_entry(auth_entry_list.next);
+		del_auth_entry((struct auth_entry *)auth_entry_list.next);
 
 	free_list(questions_queue);
 }

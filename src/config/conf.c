@@ -25,11 +25,12 @@
 #include "config/kbdbind.h"
 #include "config/options.h"
 #include "config/opttypes.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "osdep/osdep.h"
 #include "terminal/terminal.h"
 #include "util/error.h"
 #include "util/memory.h"
+#include "util/qs_parse/qs_parse.h"
 #include "util/secsave.h"
 #include "util/string.h"
 
@@ -60,7 +61,7 @@
 struct conf_parsing_pos {
 	/** Points to the next character to be parsed from the
 	 * configuration file.  */
-	unsigned char *look;
+	char *look;
 
 	/** The line number corresponding to #look.  This is
 	 * shown in error messages.  */
@@ -78,11 +79,12 @@ struct conf_parsing_state {
 	 * to the mirror string.  Otherwise, @c mirrored is not used.
 	 *
 	 * @invariant @c mirrored @<= @c pos.look */
-	unsigned char *mirrored;
+	char *mirrored;
 
 	/** File name for error messages.  If NULL then do not display
 	 * error messages.  */
-	const unsigned char *filename;
+	const char *filename;
+	int exmode;
 };
 
 /** Tell the user about an error in the configuration file.
@@ -90,7 +92,7 @@ struct conf_parsing_state {
 static enum parse_error
 show_parse_error(const struct conf_parsing_state *state, enum parse_error err)
 {
-	static const unsigned char error_msg[][40] = {
+	static const  char error_msg[][40] = {
 		"no error",        /* ERROR_NONE */
 		"unknown command", /* ERROR_COMMAND */
 		"parse error",     /* ERROR_PARSE */
@@ -110,10 +112,10 @@ show_parse_error(const struct conf_parsing_state *state, enum parse_error err)
 static void
 skip_white(struct conf_parsing_pos *pos)
 {
-	unsigned char *start = pos->look;
+	char *start = pos->look;
 
 	while (*start) {
-		while (isspace(*start)) {
+		while (isspace((unsigned char)*start)) {
 			if (*start == '\n') {
 				pos->line++;
 			}
@@ -202,12 +204,12 @@ static enum parse_error
 parse_set_common(struct option *opt_tree, struct conf_parsing_state *state,
 		 struct string *mirror, int is_system_conf, int want_domain)
 {
-	const unsigned char *domain_orig = NULL;
+	const char *domain_orig = NULL;
 	size_t domain_len = 0;
-	unsigned char *domain_copy = NULL;
-	const unsigned char *optname_orig;
+	char *domain_copy = NULL;
+	const char *optname_orig;
 	size_t optname_len;
-	unsigned char *optname_copy;
+	char *optname_copy;
 
 	skip_white(&state->pos);
 	if (!*state->pos.look) return show_parse_error(state, ERROR_PARSE);
@@ -252,7 +254,7 @@ parse_set_common(struct option *opt_tree, struct conf_parsing_state *state,
 	/* Option value */
 	{
 		struct option *opt;
-		unsigned char *val;
+		char *val;
 		const struct conf_parsing_pos pos_before_value = state->pos;
 
 		if (want_domain && *domain_copy) {
@@ -318,13 +320,13 @@ parse_set_common(struct option *opt_tree, struct conf_parsing_state *state,
 			 *   as long as OPT_TOUCHED is set.  */
 		}
 
-		if (!option_types[opt->type].read) {
+		if (!option_types[opt->type].read2) {
 			show_parse_error(state, ERROR_VALUE);
 			skip_option_value(&state->pos);
 			return ERROR_VALUE;
 		}
 
-		val = option_types[opt->type].read(opt, &state->pos.look,
+		val = option_types[opt->type].read2(opt, &state->pos.look,
 						   &state->pos.line);
 		if (!val) {
 			/* The reader function failed.  Jump back to
@@ -345,6 +347,9 @@ parse_set_common(struct option *opt_tree, struct conf_parsing_state *state,
 			    || !option_types[opt->type].set(opt, val)) {
 				mem_free(val);
 				return show_parse_error(state, ERROR_VALUE);
+			}
+			if (state->exmode) {
+				option_changed(NULL, opt);
 			}
 		} else if (is_system_conf) {
 			/* scanning a file that will not be rewritten */
@@ -367,11 +372,11 @@ parse_set_common(struct option *opt_tree, struct conf_parsing_state *state,
 				add_bytes_to_string(mirror, optname_orig,
 						    optname_len);
 				state->mirrored = state->pos.look;
-			} else if (option_types[opt->type].write) {
+			} else if (option_types[opt->type].write2) {
 				add_bytes_to_string(mirror, state->mirrored,
 						    pos_before_value.look
 						    - state->mirrored);
-				option_types[opt->type].write(opt, mirror);
+				option_types[opt->type].write2(opt, mirror);
 				state->mirrored = state->pos.look;
 			}
 			/* Remember that the option need not be
@@ -403,9 +408,9 @@ static enum parse_error
 parse_unset(struct option *opt_tree, struct conf_parsing_state *state,
 	    struct string *mirror, int is_system_conf)
 {
-	const unsigned char *optname_orig;
+	const char *optname_orig;
 	size_t optname_len;
-	unsigned char *optname_copy;
+	char *optname_copy;
 
 	skip_white(&state->pos);
 	if (!*state->pos.look) return show_parse_error(state, ERROR_PARSE);
@@ -457,14 +462,14 @@ parse_unset(struct option *opt_tree, struct conf_parsing_state *state,
 				/* The "unset" command is already in the file,
 				 * and unlike with "set", there is no value
 				 * to be updated.  */
-			} else if (option_types[opt->type].write) {
+			} else if (option_types[opt->type].write2) {
 				/* Replace the "unset" command with a
 				 * "set" command.  */
 				add_to_string(mirror, "set ");
 				add_bytes_to_string(mirror, optname_orig,
 						    optname_len);
 				add_to_string(mirror, " = ");
-				option_types[opt->type].write(opt, mirror);
+				option_types[opt->type].write2(opt, mirror);
 				state->mirrored = state->pos.look;
 			}
 			/* Remember that the option need not be
@@ -480,7 +485,7 @@ static enum parse_error
 parse_bind(struct option *opt_tree, struct conf_parsing_state *state,
 	   struct string *mirror, int is_system_conf)
 {
-	unsigned char *keymap, *keystroke, *action;
+	char *keymap, *keystroke, *action;
 	enum parse_error err = ERROR_NONE;
 	struct conf_parsing_pos before_error;
 
@@ -489,7 +494,7 @@ parse_bind(struct option *opt_tree, struct conf_parsing_state *state,
 
 	/* Keymap */
 	before_error = state->pos;
-	keymap = option_types[OPT_STRING].read(NULL, &state->pos.look,
+	keymap = option_types[OPT_STRING].read2(NULL, &state->pos.look,
 					       &state->pos.line);
 	skip_white(&state->pos);
 	if (!keymap || !*state->pos.look) {
@@ -499,7 +504,7 @@ parse_bind(struct option *opt_tree, struct conf_parsing_state *state,
 
 	/* Keystroke */
 	before_error = state->pos;
-	keystroke = option_types[OPT_STRING].read(NULL, &state->pos.look,
+	keystroke = option_types[OPT_STRING].read2(NULL, &state->pos.look,
 						  &state->pos.line);
 	skip_white(&state->pos);
 	if (!keystroke || !*state->pos.look) {
@@ -524,7 +529,7 @@ parse_bind(struct option *opt_tree, struct conf_parsing_state *state,
 
 	/* Action */
 	before_error = state->pos;
-	action = option_types[OPT_STRING].read(NULL, &state->pos.look,
+	action = option_types[OPT_STRING].read2(NULL, &state->pos.look,
 					       &state->pos.line);
 	if (!action) {
 		mem_free(keymap); mem_free(keystroke);
@@ -550,7 +555,7 @@ parse_bind(struct option *opt_tree, struct conf_parsing_state *state,
 		/* Mirror what we already have.  If the keystroke has
 		 * been unbound, then act_str is simply "none" and
 		 * this does not require special handling.  */
-		unsigned char *act_str = bind_act(keymap, keystroke);
+		char *act_str = bind_act(keymap, keystroke);
 
 		if (act_str) {
 			add_bytes_to_string(mirror, state->mirrored,
@@ -566,14 +571,14 @@ parse_bind(struct option *opt_tree, struct conf_parsing_state *state,
 	return err;
 }
 
-static int load_config_file(unsigned char *, unsigned char *, struct option *,
+static int load_config_file(const char *, const char *, struct option *,
 			    struct string *, int);
 
 static enum parse_error
 parse_include(struct option *opt_tree, struct conf_parsing_state *state,
 	      struct string *mirror, int is_system_conf)
 {
-	unsigned char *fname;
+	char *fname;
 	struct string dumbstring;
 	struct conf_parsing_pos before_error;
 
@@ -588,7 +593,7 @@ parse_include(struct option *opt_tree, struct conf_parsing_state *state,
 
 	/* File name */
 	before_error = state->pos;
-	fname = option_types[OPT_STRING].read(NULL, &state->pos.look,
+	fname = option_types[OPT_STRING].read2(NULL, &state->pos.look,
 					      &state->pos.line);
 	if (!fname) {
 		done_string(&dumbstring);
@@ -603,7 +608,7 @@ parse_include(struct option *opt_tree, struct conf_parsing_state *state,
 	 * rarely-used option ;). */
 	/* XXX: We should try CONFDIR/<file> when proceeding
 	 * CONFDIR/<otherfile> ;). --pasky */
-	if (load_config_file(fname[0] == '/' ? (unsigned char *) ""
+	if (load_config_file(fname[0] == '/' ? (char *) ""
 					     : elinks_home,
 			     fname, opt_tree, 
 			     mirror ? &dumbstring : NULL, 1)) {
@@ -619,7 +624,7 @@ parse_include(struct option *opt_tree, struct conf_parsing_state *state,
 
 
 struct parse_handler {
-	const unsigned char *command;
+	const char *command;
 	enum parse_error (*handler)(struct option *opt_tree,
 				    struct conf_parsing_state *state,
 				    struct string *mirror, int is_system_conf);
@@ -651,7 +656,7 @@ parse_config_command(struct option *options, struct conf_parsing_state *state,
 		int cmdlen = strlen(handler->command);
 
 		if (!strncmp(state->pos.look, handler->command, cmdlen)
-		    && isspace(state->pos.look[cmdlen])) {
+		    && isspace((unsigned char)state->pos.look[cmdlen])) {
 			enum parse_error err;
 
 			state->pos.look += cmdlen;
@@ -671,9 +676,8 @@ parse_config_command(struct option *options, struct conf_parsing_state *state,
 	return show_parse_error(state, ERROR_COMMAND);
 }
 
-#ifdef CONFIG_EXMODE
 enum parse_error
-parse_config_exmode_command(unsigned char *cmd)
+parse_config_exmode_command(char *cmd)
 {
 	struct conf_parsing_state state = {{ 0 }};
 
@@ -681,14 +685,14 @@ parse_config_exmode_command(unsigned char *cmd)
 	state.pos.line = 0;
 	state.mirrored = NULL; /* not read because mirror is NULL too */
 	state.filename = NULL; /* prevent error messages */
+	state.exmode = 1;
 
 	return parse_config_command(config_options, &state, NULL, 0);
 }
-#endif /* CONFIG_EXMODE */
 
 void
-parse_config_file(struct option *options, unsigned char *name,
-		  unsigned char *file, struct string *mirror,
+parse_config_file(struct option *options, const char *name,
+		  char *file, struct string *mirror,
 		  int is_system_conf)
 {
 	struct conf_parsing_state state = {{ 0 }};
@@ -761,11 +765,11 @@ parse_config_file(struct option *options, unsigned char *name,
 
 
 
-static unsigned char *
-read_config_file(unsigned char *name)
+static char *
+read_config_file(char *name)
 {
 #define FILE_BUF	1024
-	unsigned char cfg_buffer[FILE_BUF];
+	char cfg_buffer[FILE_BUF];
 	struct string string;
 	int fd;
 	ssize_t r;
@@ -796,21 +800,21 @@ read_config_file(unsigned char *name)
 
 /* Return 0 on success. */
 static int
-load_config_file(unsigned char *prefix, unsigned char *name,
+load_config_file(const char *prefix, const char *name,
 		 struct option *options, struct string *mirror,
 		 int is_system_conf)
 {
-	unsigned char *config_str, *config_file;
+	char *config_str, *config_file;
 
 	config_file = straconcat(prefix, STRING_DIR_SEP, name,
-				 (unsigned char *) NULL);
+				 (char *) NULL);
 	if (!config_file) return 1;
 
 	config_str = read_config_file(config_file);
 	if (!config_str) {
 		mem_free(config_file);
 		config_file = straconcat(prefix, STRING_DIR_SEP, ".", name,
-					 (unsigned char *) NULL);
+					 (char *) NULL);
 		if (!config_file) return 2;
 
 		config_str = read_config_file(config_file);
@@ -830,7 +834,7 @@ load_config_file(unsigned char *prefix, unsigned char *name,
 }
 
 static void
-load_config_from(unsigned char *file, struct option *tree)
+load_config_from(char *file, struct option *tree)
 {
 	load_config_file(CONFDIR, file, tree, NULL, 1);
 	load_config_file(empty_string_or_(elinks_home), file, tree, NULL, 0);
@@ -848,8 +852,8 @@ static int indentation = 2;
 /* 0 -> none, 1 -> only option full name+type, 2 -> only desc, 3 -> both */
 static int comments = 3;
 
-static inline unsigned char *
-conf_i18n(unsigned char *s, int i18n)
+static inline const char *
+conf_i18n(const char *s, int i18n)
 {
 	if (i18n) return gettext(s);
 	return s;
@@ -864,11 +868,11 @@ add_indent_to_string(struct string *string, int depth)
 }
 
 struct string *
-wrap_option_desc(struct string *out, const unsigned char *src,
+wrap_option_desc(struct string *out, const char *src,
 		 const struct string *indent, int maxwidth)
 {
-	const unsigned char *last_space = NULL;
-	const unsigned char *uncopied = src;
+	const char *last_space = NULL;
+	const char *uncopied = src;
 	int width = 0;
 
 	/* TODO: multibyte or fullwidth characters */
@@ -909,7 +913,7 @@ static void
 output_option_desc_as_comment(struct string *out, const struct option *option,
 			      int i18n, int depth)
 {
-	unsigned char *desc_i18n = conf_i18n(option->desc, i18n);
+	const char *desc_i18n = conf_i18n(option->desc, i18n);
 	struct string indent;
 
 	if (!init_string(&indent)) return;
@@ -923,11 +927,11 @@ out_of_memory:
 	done_string(&indent);
 }
 
-static unsigned char *smart_config_output_fn_domain;
+static char *smart_config_output_fn_domain;
 
 static void
 smart_config_output_fn(struct string *string, struct option *option,
-		       unsigned char *path, int depth, int do_print_comment,
+		       char *path, int depth, int do_print_comment,
 		       int action, int i18n)
 {
 	if (option->type == OPT_ALIAS)
@@ -983,8 +987,8 @@ smart_config_output_fn(struct string *string, struct option *option,
 				/* OPT_ALIAS won't ever. OPT_TREE won't reach action 2.
 				 * OPT_SPECIAL makes no sense in the configuration
 				 * context. */
-				assert(option_types[option->type].write);
-				option_types[option->type].write(option, string);
+				assert(option_types[option->type].write2);
+				option_types[option->type].write2(option, string);
 			}
 			add_char_to_string(string, '\n');
 			if (do_print_comment) add_char_to_string(string, '\n');
@@ -997,9 +1001,80 @@ smart_config_output_fn(struct string *string, struct option *option,
 	}
 }
 
+static void
+smart_config_output_fn_html(struct string *string, struct option *option,
+		       char *path, int depth, int do_print_comment,
+		       int action, int i18n)
+{
+	static unsigned int counter;
+	int is_str = 0;
+
+	if (option->type == OPT_ALIAS) {
+		return;
+	}
+
+	if (option->flags & OPT_DELETED) {
+		return;
+	}
+
+	if (smart_config_output_fn_domain) {
+		return;
+	}
+
+	switch (action) {
+		case 0:
+		case 1:
+			break;
+
+		case 2:
+			counter++;
+			add_to_string(string, "<tr><td>");
+
+			if (path) {
+				add_to_string(string, path);
+				add_char_to_string(string, '.');
+			}
+			add_to_string(string, option->name);
+			add_to_string(string, "</td><td>");
+
+			add_format_to_string(string, "<form name=\"el%d\" action=\"about:config\" method=\"GET\">", counter);
+			add_to_string(string, "<input type=\"hidden\" name=\"option\" value=\"");
+
+			if (path) {
+				add_to_string(string, path);
+				add_char_to_string(string, '.');
+			}
+			add_to_string(string, option->name);
+			add_to_string(string, "\"/><input type=\"text\" name=\"val\" value=\"");
+
+			assert(option_types[option->type].write2);
+			{
+				struct string tmp;
+
+				if (init_string(&tmp)) {
+					option_types[option->type].write2(option, &tmp);
+
+					if (tmp.length >= 2 && tmp.source[0] == '"' && tmp.source[tmp.length - 1] == '"') {
+						add_bytes_to_string(string, tmp.source + 1, tmp.length - 2);
+						is_str = 1;
+					} else {
+						add_string_to_string(string, &tmp);
+					}
+					done_string(&tmp);
+				}
+			}
+			add_to_string(string, "\"/><input type=\"submit\" name=\"set\" value=\"Set\"/>");
+
+			if (is_str) {
+				add_to_string(string, "<input type=\"hidden\" name=\"str\" value=\"1\"/>");
+			}
+			add_to_string(string, "<input type=\"submit\" name=\"save\" value=\"Save\"/></form></td></tr>\n");
+			break;
+	}
+}
 
 static void
-add_cfg_header_to_string(struct string *string, unsigned char *text)
+add_cfg_header_to_string(struct string *string, const char *text)
 {
 	int n = strlen(text) + 2;
 
@@ -1012,8 +1087,63 @@ add_cfg_header_to_string(struct string *string, unsigned char *text)
 	add_to_string(string, "#\n\n");
 }
 
-unsigned char *
-create_config_string(unsigned char *prefix, unsigned char *name)
+char *
+create_about_config_string(void)
+{
+	struct option *options = config_options;
+	struct string config;
+	/* Don't write headers if nothing will be added anyway. */
+	struct string tmpstring;
+	int origlen;
+
+	if (!init_string(&config)) return NULL;
+
+	{
+		int set_all = 1;
+		struct domain_tree *domain;
+
+		prepare_mustsave_flags(options->value.tree, set_all);
+		foreach (domain, domain_trees) {
+			prepare_mustsave_flags(domain->tree->value.tree,
+					       set_all);
+		}
+	}
+
+	/* Scaring. */
+	if (!init_string(&tmpstring)) goto get_me_out;
+
+	add_to_string(&tmpstring, "<html><body><table border=\"1\"><tr><th>Option name</th><th>Value</th></tr>\n");
+
+	origlen = tmpstring.length;
+	smart_config_string(&tmpstring, 2, 0, options->value.tree, NULL, 0,
+			    smart_config_output_fn_html);
+
+	{
+		struct domain_tree *domain;
+
+		foreach (domain, domain_trees) {
+			smart_config_output_fn_domain = domain->name;
+			smart_config_string(&tmpstring, 2, 0,
+					    domain->tree->value.tree,
+					    NULL, 0,
+					    smart_config_output_fn_html);
+		}
+
+		smart_config_output_fn_domain = NULL;
+	}
+
+	add_to_string(&tmpstring, "</table></body></html>");
+
+	if (tmpstring.length > origlen)
+		add_string_to_string(&config, &tmpstring);
+	done_string(&tmpstring);
+
+get_me_out:
+	return config.source;
+}
+
+char *
+create_config_string(const char *prefix, const char *name)
 {
 	struct option *options = config_options;
 	struct string config;
@@ -1130,23 +1260,23 @@ get_me_out:
 }
 
 static int
-write_config_file(unsigned char *prefix, unsigned char *name,
+write_config_file(char *prefix, char *name,
                   struct terminal *term)
 {
 	int ret = -1;
 	struct secure_save_info *ssi;
-	unsigned char *config_file = NULL;
-	unsigned char *cfg_str = create_config_string(prefix, name);
+	char *config_file = NULL;
+	char *cfg_str = create_config_string(prefix, name);
 	int prefixlen = strlen(prefix);
 	int prefix_has_slash = (prefixlen && dir_sep(prefix[prefixlen - 1]));
 	int name_has_slash = dir_sep(name[0]);
-	unsigned char *slash = name_has_slash || prefix_has_slash ? "" : STRING_DIR_SEP;
+	const char *slash = name_has_slash || prefix_has_slash ? "" : STRING_DIR_SEP;
 
 	if (!cfg_str) return -1;
 
 	if (name_has_slash && prefix_has_slash) name++;
 
-	config_file = straconcat(prefix, slash, name, (unsigned char *) NULL);
+	config_file = straconcat(prefix, slash, name, (char *) NULL);
 	if (!config_file) goto free_cfg_str;
 
 	ssi = secure_open(config_file);
@@ -1162,7 +1292,9 @@ write_config_file(unsigned char *prefix, unsigned char *name,
 		}
 	}
 
-	write_config_dialog(term, config_file, secsave_errno, ret);
+	if (term) {
+		write_config_dialog(term, config_file, secsave_errno, ret);
+	}
 	mem_free(config_file);
 
 free_cfg_str:
@@ -1174,14 +1306,84 @@ free_cfg_str:
 int
 write_config(struct terminal *term)
 {
-	assert(term);
-
 	if (!elinks_home) {
-		write_config_dialog(term, get_cmd_opt_str("config-file"),
+		if (term) {
+			write_config_dialog(term, get_cmd_opt_str("config-file"),
 				    SS_ERR_DISABLED, 0);
+		}
 		return -1;
 	}
 
 	return write_config_file(elinks_home, get_cmd_opt_str("config-file"),
 	                         term);
+}
+
+void
+set_option_or_save(const char *str)
+{
+#define NUMKVPAIRS 16
+	int i;
+	char *kvpairs[NUMKVPAIRS];
+	char *option_name;
+	char *option_value;
+	char *set;
+	char *save;
+
+	struct string tmp;
+
+	if (!init_string(&tmp)) {
+		return;
+	}
+	add_to_string(&tmp, str);
+	i = qs_parse(tmp.source, kvpairs, 16);
+
+	option_name = qs_k2v("option", kvpairs, i);
+	option_value = qs_k2v("val", kvpairs, i);
+	set = qs_k2v("set", kvpairs, i);
+	save = qs_k2v("save", kvpairs, i);
+
+	if (set || save) {
+		struct option *opt = get_opt_rec(config_options, option_name);
+
+		if (opt) {
+			/* Set option */
+			switch (opt->type) {
+			case OPT_BOOL:
+			{
+				/* option_types[OPT_BOOL].set expects a long even though it
+				 * saves the value to opt->value.number, which is an int.  */
+				long value = !!atol(option_value);
+
+				option_types[opt->type].set(opt, (char *) (&value));
+				break;
+			}
+			case OPT_INT:
+			case OPT_LONG:
+			{
+				/* option_types[OPT_INT].set expects a long even though it
+				 * saves the value to opt->value.number, which is an int.
+				 * option_types[OPT_LONG].set of course wants a long too.  */
+				long value = atol(option_value);
+
+				option_types[opt->type].set(opt, (char *) (&value));
+				break;
+			}
+			case OPT_STRING:
+			case OPT_CODEPAGE:
+			case OPT_LANGUAGE:
+			case OPT_COLOR:
+				option_types[opt->type].set(opt, option_value);
+				break;
+			default:
+				break;
+			}
+			option_changed((struct session *)sessions.next, opt);
+
+			if (save) {
+				write_config(NULL);
+			}
+		}
+	}
+	done_string(&tmp);
+#undef NUMKVPAIRS
 }

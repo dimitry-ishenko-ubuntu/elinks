@@ -18,6 +18,10 @@
 #error "Huh?! You have SSL enabled, but not OPENSSL nor GNUTLS!! And then you want exactly *what* from me?"
 #endif
 
+#ifdef HAVE_WS2TCPIP_H
+#include <ws2tcpip.h> /* MinGW */
+#endif
+
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
@@ -56,9 +60,9 @@
 
 #ifdef USE_OPENSSL
 
-#define ssl_do_connect(socket)		SSL_get_error(socket->ssl, SSL_connect(socket->ssl))
-#define ssl_do_write(socket, data, len)	SSL_write(socket->ssl, data, len)
-#define ssl_do_read(socket, data, len)	SSL_read(socket->ssl, data, len)
+#define ssl_do_connect(socket)		SSL_get_error((SSL *)socket->ssl, SSL_connect((SSL *)socket->ssl))
+#define ssl_do_write(socket, data, len)	SSL_write((SSL *)socket->ssl, data, len)
+#define ssl_do_read(socket, data, len)	SSL_read((SSL *)socket->ssl, data, len)
 #define ssl_do_close(socket)		/* Hmh? No idea.. */
 
 #elif defined(CONFIG_GNUTLS)
@@ -70,6 +74,15 @@
 
 #endif
 
+#ifdef WIN32
+#define SOCK_SHIFT 1024
+#endif
+
+/* Definition of X509_NAME causes compilation error on WIN32
+ * due to X509_NAME redefinition in wincrypt.h */
+#ifdef WIN32
+#undef X509_NAME
+#endif
 
 /* Refuse to negotiate TLS 1.0 and later protocols on @socket->ssl.
  * Without this, connecting to <https://www-s.uiuc.edu/> with GnuTLS
@@ -106,9 +119,9 @@ verify_certificates(struct socket *socket)
 {
 	gnutls_x509_crt_t cert;
 	gnutls_session_t session = *(ssl_t *)socket->ssl;
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 	const gnutls_datum_t *cert_list;
-	unsigned char *hostname;
+	char *hostname;
 	int ret;
 	unsigned int cert_list_size, status;
 
@@ -157,7 +170,7 @@ verify_certificates(struct socket *socket)
 	 * only contain ASCII characters.  Internationalized domain
 	 * names must thus be in Punycode form.  Because GnuTLS 2.8.6
 	 * does not itself support IDN, ELinks must convert.  */
-	hostname = get_uri_string(conn->proxied_uri, URI_HOST | URI_IDN);
+	hostname = get_uri_string(conn->proxied_uri, URI_DNS_HOST);
 	if (!hostname) return -6;
 
 	ret = !gnutls_x509_crt_check_hostname(cert, hostname);
@@ -191,7 +204,7 @@ verify_certificates(struct socket *socket)
  * SubjectAltName, rather than in commonName.  For comparing those,
  * match_uri_host_ip() must be used instead of this function.  */
 static int
-match_uri_host_name(const unsigned char *uri_host,
+match_uri_host_name(const char *uri_host,
 		    ASN1_STRING *cert_host_asn1)
 {
 	const size_t uri_host_len = strlen(uri_host);
@@ -211,7 +224,7 @@ match_uri_host_name(const unsigned char *uri_host,
 		goto mismatch;
 
 	matched = match_hostname_pattern(uri_host, uri_host_len,
-					 cert_host, cert_host_len);
+					 (char *)cert_host, cert_host_len);
 
 mismatch:
 	if (cert_host)
@@ -244,7 +257,7 @@ mismatch:
  * in the name constraints extension of a CA certificate (RFC 5280
  * section 4.2.1.10).  */
 static int
-match_uri_host_ip(const unsigned char *uri_host,
+match_uri_host_ip(const char *uri_host,
 		  ASN1_OCTET_STRING *cert_host_asn1)
 {
 #ifdef HAVE_ASN1_STRING_GET0_DATA
@@ -279,13 +292,20 @@ match_uri_host_ip(const unsigned char *uri_host,
 	 * network byte order.  */
 	switch (ASN1_STRING_length(cert_host_asn1)) {
 	case 4:
+#if defined(HAVE_INET_PTON)
+		return inet_pton(AF_INET, uri_host, &uri_host_in) != 0
+		    && memcmp(cert_host_addr, &uri_host_in.s_addr, 4) == 0;
+#elif defined(HAVE_INET_ATON)
 		return inet_aton(uri_host, &uri_host_in) != 0
 		    && memcmp(cert_host_addr, &uri_host_in.s_addr, 4) == 0;
+#endif
 
 #ifdef CONFIG_IPV6
 	case 16:
+#ifdef HAVE_INET_PTON
 		return inet_pton(AF_INET6, uri_host, &uri_host_in6) == 1
 		    && memcmp(cert_host_addr, &uri_host_in6.s6_addr, 16) == 0;
+#endif
 #endif
 
 	default:
@@ -298,11 +318,12 @@ match_uri_host_ip(const unsigned char *uri_host,
 static int
 verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
+
 	X509 *cert;
 	SSL *ssl;
 	struct socket *socket;
 	struct connection *conn;
-	unsigned char *host_in_uri;
+	char *host_in_uri;
 	GENERAL_NAMES *alts;
 	int saw_dns_name = 0;
 	int matched = 0;
@@ -316,17 +337,17 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 		return preverify_ok;
 
 	cert = X509_STORE_CTX_get_current_cert(ctx);
-	ssl = X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
-	socket = SSL_get_ex_data(ssl, socket_SSL_ex_data_idx);
-	conn = socket->conn;
-	host_in_uri = get_uri_string(conn->proxied_uri, URI_HOST | URI_IDN);
+	ssl = (SSL *)X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
+	socket = (struct socket *)SSL_get_ex_data(ssl, socket_SSL_ex_data_idx);
+	conn = (struct connection *)socket->conn;
+	host_in_uri = get_uri_string(conn->proxied_uri, URI_DNS_HOST);
 	if (!host_in_uri)
 		return 0;
 
 	/* RFC 5280 section 4.2.1.6 describes the subjectAltName extension.
 	 * RFC 2818 section 3.1 says Common Name must not be used
 	 * if dNSName is present.  */
-	alts = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+	alts = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
 	if (alts != NULL) {
 		int alt_count;
 		int alt_pos;
@@ -348,7 +369,6 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 		/* Free the GENERAL_NAMES list and each element.  */
 		sk_GENERAL_NAME_pop_free(alts, GENERAL_NAME_free);
 	}
-
 	if (!matched && !saw_dns_name) {
 		X509_NAME *name;
 		int cn_index;
@@ -420,8 +440,13 @@ int
 ssl_connect(struct socket *socket)
 {
 	int ret;
-	unsigned char *server_name;
-	struct connection *conn = socket->conn;
+	char *server_name;
+	struct connection *conn = (struct connection *)socket->conn;
+#ifdef WIN32
+	int ssl_sock_fd = socket->fd - SOCK_SHIFT;
+#endif
+
+
 
 	/* TODO: Recode server_name to UTF-8.  */
 	server_name = get_uri_string(conn->proxied_uri, URI_HOST);
@@ -447,15 +472,33 @@ ssl_connect(struct socket *socket)
 		ssl_set_no_tls(socket);
 
 #ifdef USE_OPENSSL
-	SSL_set_fd(socket->ssl, socket->fd);
 
-	if (socket->verify && get_opt_bool("connection.ssl.cert_verify", NULL))
-		SSL_set_verify(socket->ssl, SSL_VERIFY_PEER
+#ifndef WIN32
+	SSL_set_fd((SSL *)socket->ssl, socket->fd);
+#else
+	SSL_set_fd((SSL *)socket->ssl, ssl_sock_fd);
+#endif
+
+	if (socket->verify) {
+		if (conn->proxied_uri->protocol == PROTOCOL_HTTPS) {
+			if (get_opt_bool("connection.ssl.cert_verify", NULL)) {
+				SSL_set_verify((SSL *)socket->ssl, SSL_VERIFY_PEER
 					  | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-			       verify_callback);
-
+					  verify_callback);
+			}
+		}
+#ifdef CONFIG_GEMINI
+		else if (conn->proxied_uri->protocol == PROTOCOL_GEMINI) {
+			if (get_opt_bool("connection.ssl.gemini_cert_verify", NULL)) {
+				SSL_set_verify((SSL *)socket->ssl, SSL_VERIFY_PEER
+					  | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+					  verify_callback);
+			}
+		}
+#endif
+	}
 	if (get_opt_bool("connection.ssl.client_cert.enable", NULL)) {
-		unsigned char *client_cert;
+		char *client_cert;
 
 #ifdef CONFIG_NSS_COMPAT_OSSL
 		client_cert = get_opt_str(
@@ -532,13 +575,13 @@ ssl_connect(struct socket *socket)
 
 /* Return enum socket_error on error, bytes written on success. */
 ssize_t
-ssl_write(struct socket *socket, unsigned char *data, int len)
+ssl_write(struct socket *socket, char *data, int len)
 {
 	ssize_t wr = ssl_do_write(socket, data, len);
 
 	if (wr <= 0) {
 #ifdef USE_OPENSSL
-		int err = SSL_get_error(socket->ssl, wr);
+		int err = SSL_get_error((SSL *)socket->ssl, wr);
 #elif defined(CONFIG_GNUTLS)
 		int err = wr;
 #endif
@@ -561,13 +604,13 @@ ssl_write(struct socket *socket, unsigned char *data, int len)
 
 /* Return enum socket_error on error, bytes read on success. */
 ssize_t
-ssl_read(struct socket *socket, unsigned char *data, int len)
+ssl_read(struct socket *socket, char *data, int len)
 {
 	ssize_t rd = ssl_do_read(socket, data, len);
 
 	if (rd <= 0) {
 #ifdef USE_OPENSSL
-		int err = SSL_get_error(socket->ssl, rd);
+		int err = SSL_get_error((SSL *)socket->ssl, rd);
 #elif defined(CONFIG_GNUTLS)
 		int err = rd;
 #endif

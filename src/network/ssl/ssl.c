@@ -19,17 +19,21 @@
 #error "Huh?! You have SSL enabled, but not OPENSSL nor GNUTLS!! And then you want exactly *what* from me?"
 #endif
 
-#ifdef HAVE_LIMITS_H
 #include <limits.h>
+#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h> /* OS/2 needs this after sys/types.h */
 #endif
 
 #include "elinks.h"
 
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
+#include "main/main.h"
 #include "main/module.h"
 #include "network/connection.h"
 #include "network/socket.h"
 #include "network/ssl/ssl.h"
+#include "osdep/osdep.h"
 #include "util/conv.h"
 #include "util/error.h"
 #include "util/string.h"
@@ -45,6 +49,12 @@
 #define	PATH_MAX	256 /* according to my /usr/include/bits/posix1_lim.h */
 #endif
 
+#if OPENSSL_VERSION_MAJOR >= 3
+#define WSK void **
+#else
+#define WSK void *
+#endif
+
 static SSL_CTX *context = NULL;
 int socket_SSL_ex_data_idx = -1;
 
@@ -53,7 +63,7 @@ int socket_SSL_ex_data_idx = -1;
  * either.  */
 static int
 socket_SSL_ex_data_dup(CRYPTO_EX_DATA *to, const CRYPTO_EX_DATA *from,
-		       void *from_d, int idx, long argl, void *argp)
+		       WSK from_d, int idx, long argl, void *argp)
 {
 	/* The documentation of from_d in RSA_get_ex_new_index(3)
 	 * is a bit unclear.  The caller does something like:
@@ -64,7 +74,7 @@ socket_SSL_ex_data_dup(CRYPTO_EX_DATA *to, const CRYPTO_EX_DATA *from,
 	 *
 	 * i.e., from_d always points to a pointer, even though
 	 * it is just a void * in the prototype.  */
-	struct socket *socket = *(void **) from_d;
+	struct socket *socket = (struct socket *)*(void **)from_d;
 
 	assert(idx == socket_SSL_ex_data_idx);
 	if_assert_failed return 0;
@@ -75,10 +85,45 @@ socket_SSL_ex_data_dup(CRYPTO_EX_DATA *to, const CRYPTO_EX_DATA *from,
 		return 1;	/* allow SSL_dup() */
 }
 
+static char opensslversion[64];
+
+#ifdef CONFIG_OS_DOS
+
+#define LINKS_CRT_FILE "links.crt"
+
+static int
+ssl_set_private_paths(SSL_CTX *ctx)
+{
+	char *path, *c;
+	int r;
+	path = stracpy(program.path);
+
+	if (!path) {
+		return -1;
+	}
+
+	for (c = path + strlen((const char *)path); c > path; c--) {
+		if (dir_sep(c[-1])) {
+			break;
+		}
+	}
+	c[0] = 0;
+
+	add_to_strn(&path, LINKS_CRT_FILE);
+	r = SSL_CTX_load_verify_locations(ctx, (char *)path, NULL);
+	mem_free(path);
+
+	if (r != 1) {
+		return -1;
+	}
+	return 0;
+}
+#endif
+
 static void
 init_openssl(struct module *module)
 {
-	unsigned char f_randfile[PATH_MAX];
+	char f_randfile[PATH_MAX];
 
 	/* In a nutshell, on OS's without a /dev/urandom, the OpenSSL library
 	 * cannot initialize the PRNG and so every attempt to use SSL fails.
@@ -95,14 +140,29 @@ init_openssl(struct module *module)
 	}
 #endif
 
+#if defined(HAVE_RAND_ADD) && defined(CONFIG_OS_DOS)
+	{
+		unsigned char *os_pool;
+		int os_pool_size;
+		os_seed_random(&os_pool, &os_pool_size);
+		if (os_pool_size) RAND_add(os_pool, os_pool_size, os_pool_size);
+			mem_free(os_pool);
+	}
+#endif
 	SSLeay_add_ssl_algorithms();
 	context = SSL_CTX_new(SSLv23_client_method());
 	SSL_CTX_set_options(context, SSL_OP_ALL);
+
+#ifdef CONFIG_OS_DOS
+	ssl_set_private_paths(context);
+#endif
 	SSL_CTX_set_default_verify_paths(context);
 	socket_SSL_ex_data_idx = SSL_get_ex_new_index(0, NULL,
 						      NULL,
 						      socket_SSL_ex_data_dup,
 						      NULL);
+	strncpy(opensslversion, SSLeay_version(OPENSSL_VERSION), 63);
+	module->name = opensslversion;
 }
 
 static void
@@ -114,26 +174,31 @@ done_openssl(struct module *module)
 
 static union option_info openssl_options[] = {
 	INIT_OPT_BOOL("connection.ssl", N_("Verify certificates"),
-		"cert_verify", 0, 1,
+		"cert_verify", OPT_ZERO, 1,
 		N_("Verify the peer's SSL certificate. Note that this "
 		"needs extensive configuration of OpenSSL by the user.")),
-
+#ifdef CONFIG_GEMINI
+	INIT_OPT_BOOL("connection.ssl", N_("Verify certificates for gemini protocol"),
+		"gemini_cert_verify", OPT_ZERO, 1,
+		N_("Verify the peer's SSL certificate for gemini protocol. Note that this "
+		"needs extensive configuration of OpenSSL by the user.")),
+#endif
 	INIT_OPT_BOOL("connection.ssl", N_("Use HTTPS by default"),
-		"https_by_default", 0, 0,
+		"https_by_default", OPT_ZERO, 0,
 		N_("Use HTTPS when a URL scheme is not provided.")),
 
 	INIT_OPT_TREE("connection.ssl", N_("Client Certificates"),
-        	"client_cert", OPT_SORT,
-        	N_("X509 client certificate options.")),
+		"client_cert", OPT_SORT,
+		N_("X509 client certificate options.")),
 
 	INIT_OPT_BOOL("connection.ssl.client_cert", N_("Enable"),
-		"enable", 0, 0,
+		"enable", OPT_ZERO, 0,
 		N_("Enable or not the sending of X509 client certificates "
 		"to servers which request them.")),
 
 #ifdef CONFIG_NSS_COMPAT_OSSL
 	INIT_OPT_STRING("connection.ssl.client_cert", N_("Certificate nickname"),
-		"nickname", 0, "",
+		"nickname", OPT_ZERO, "",
 		N_("The nickname of the client certificate stored in NSS "
 		"database. If this value is unset, the nickname from "
 		"the X509_CLIENT_CERT variable is used instead. If you "
@@ -147,7 +212,7 @@ static union option_info openssl_options[] = {
 		"with Mozilla browsers.")),
 #else
 	INIT_OPT_STRING("connection.ssl.client_cert", N_("Certificate File"),
-		"file", 0, "",
+		"file", OPT_ZERO, "",
 		N_("The location of a file containing the client certificate "
 		"and unencrypted private key in PEM format. If unset, the "
 		"file pointed to by the X509_CLIENT_CERT variable is used "
@@ -185,11 +250,13 @@ const static int cipher_priority[16] = {
 const static int cert_type_priority[16] = { GNUTLS_CRT_X509, GNUTLS_CRT_OPENPGP, 0 };
 #endif
 
+static char gnutlsversion[64];
+
 static void
 init_gnutls(struct module *module)
 {
 	int ret = gnutls_global_init();
-	unsigned char *ca_file = get_opt_str("connection.ssl.trusted_ca_file",
+	char *ca_file = get_opt_str("connection.ssl.trusted_ca_file",
 					     NULL);
 
 	if (ret < 0)
@@ -218,7 +285,7 @@ init_gnutls(struct module *module)
 		GNUTLS_VERIFY_ALLOW_X509_V1_CA_CRT);
 
 	if (get_opt_bool("connection.ssl.client_cert.enable", NULL)) {
-		unsigned char *client_cert;
+		char *client_cert;
 
 		client_cert = get_opt_str("connection.ssl.client_cert.file", NULL);
 		if (!*client_cert) {
@@ -232,6 +299,9 @@ init_gnutls(struct module *module)
 				client_cert, client_cert, GNUTLS_X509_FMT_PEM);
 		}
 	}
+
+	snprintf(gnutlsversion, 63, "GnuTLS %s", gnutls_check_version(NULL));
+	module->name = gnutlsversion;
 }
 
 static void
@@ -244,12 +314,17 @@ done_gnutls(struct module *module)
 
 static union option_info gnutls_options[] = {
 	INIT_OPT_BOOL("connection.ssl", N_("Verify certificates"),
-		"cert_verify", 0, 0,
+		"cert_verify", OPT_ZERO, 0,
 		N_("Verify the peer's SSL certificate.  If you enable "
 		"this, set also \"Trusted CA file\".")),
-
+#ifdef CONFIG_GEMINI
+	INIT_OPT_BOOL("connection.ssl", N_("Verify certificates for gemini protocol"),
+		"gemini_cert_verify", OPT_ZERO, 1,
+		N_("Verify the peer's SSL certificate for gemini protocol.  If you enable "
+		"this, set also \"Trusted CA file\".")),
+#endif
 	INIT_OPT_BOOL("connection.ssl", N_("Use HTTPS by default"),
-		"https_by_default", 0, 0,
+		"https_by_default", OPT_ZERO, 0,
 		N_("Use HTTPS when a URL scheme is not provided.")),
 
 	/* The default value of the following option points to a file
@@ -261,7 +336,7 @@ static union option_info gnutls_options[] = {
 	 * suit their systems.
 	 * TODO: If the file name is relative, look in elinks_home?  */
 	INIT_OPT_STRING("connection.ssl", N_("Trusted CA file"),
-		"trusted_ca_file", 0,
+		"trusted_ca_file", OPT_ZERO,
 #ifdef HAVE_GNUTLS_CERTIFICATE_SET_X509_SYSTEM_TRUST
 		"",
 #else
@@ -280,12 +355,12 @@ static union option_info gnutls_options[] = {
 		N_("X509 client certificate options.")),
 
 	INIT_OPT_BOOL("connection.ssl.client_cert", N_("Enable"),
-		"enable", 0, 0,
+		"enable", OPT_ZERO, 0,
 		N_("Enable or not the sending of X509 client certificates "
 		"to servers which request them.")),
 
 	INIT_OPT_STRING("connection.ssl.client_cert", N_("Certificate File"),
-		"file", 0, "",
+		"file", OPT_ZERO, "",
 		N_("The location of a file containing the client certificate "
 		"and unencrypted private key in PEM format. If unset, the "
 		"file pointed to by the X509_CLIENT_CERT variable is used "
@@ -335,14 +410,14 @@ struct module ssl_module = struct_module(
 
 int
 init_ssl_connection(struct socket *socket,
-		    const unsigned char *server_name)
+		    const char *server_name)
 {
 #ifdef USE_OPENSSL
 	socket->ssl = SSL_new(context);
 	if (!socket->ssl) return S_SSL_ERROR;
 
-	if (!SSL_set_ex_data(socket->ssl, socket_SSL_ex_data_idx, socket)) {
-		SSL_free(socket->ssl);
+	if (!SSL_set_ex_data((ssl_t *)socket->ssl, socket_SSL_ex_data_idx, socket)) {
+		SSL_free((ssl_t *)socket->ssl);
 		socket->ssl = NULL;
 		return S_SSL_ERROR;
 	}
@@ -353,14 +428,14 @@ init_ssl_connection(struct socket *socket,
 	 * documented.  The source shows that it returns 1 if
 	 * successful; on error, it calls SSLerr and returns 0.  */
 	if (server_name
-	    && !SSL_set_tlsext_host_name(socket->ssl, server_name)) {
-		SSL_free(socket->ssl);
+	    && !SSL_set_tlsext_host_name((ssl_t *)socket->ssl, server_name)) {
+		SSL_free((ssl_t *)socket->ssl);
 		socket->ssl = NULL;
 		return S_SSL_ERROR;
 	}
 
 #elif defined(CONFIG_GNUTLS)
-	ssl_t *state = mem_alloc(sizeof(ssl_t));
+	ssl_t *state = (ssl_t *)mem_alloc(sizeof(ssl_t));
 
 	if (!state) return S_SSL_ERROR;
 
@@ -434,7 +509,7 @@ init_ssl_connection(struct socket *socket,
 void
 done_ssl_connection(struct socket *socket)
 {
-	ssl_t *ssl = socket->ssl;
+	ssl_t *ssl = (ssl_t *)socket->ssl;
 
 	if (!ssl) return;
 #ifdef USE_OPENSSL
@@ -446,10 +521,10 @@ done_ssl_connection(struct socket *socket)
 	socket->ssl = NULL;
 }
 
-unsigned char *
+char *
 get_ssl_connection_cipher(struct socket *socket)
 {
-	ssl_t *ssl = socket->ssl;
+	ssl_t *ssl = (ssl_t *)socket->ssl;
 	struct string str;
 
 	if (!init_string(&str)) return NULL;

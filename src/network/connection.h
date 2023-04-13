@@ -38,14 +38,14 @@ struct connection {
 	struct uri *referrer;
 
 	/* Cache information. */
-	enum cache_mode cache_mode;
+	cache_mode_T cache_mode;
 	struct cache_entry *cached;
 
 	off_t from;		/* Position for new data in the cache entry. */
 	off_t received;		/* The number of received bytes. */
 	off_t est_length;	/* Estimated number of bytes to transfer. */
 
-	enum stream_encoding content_encoding;
+	stream_encoding_T content_encoding;
 	struct stream_encoded *stream;
 
 	/* Called if non NULL when shutting down a connection. */
@@ -65,6 +65,7 @@ struct connection {
 
 	int tries;
 	timer_id_T timer;
+	milliseconds_T xhr_timeout;
 
 	unsigned int running:1;
 	unsigned int unrestartable:1;
@@ -104,13 +105,14 @@ void retry_connection(struct connection *, struct connection_state);
 
 void cancel_download(struct download *download, int interrupt);
 void move_download(struct download *old, struct download *new_,
-		     enum connection_priority newpri);
+		     connection_priority_T newpri);
 
 void detach_connection(struct download *, off_t);
 void abort_all_connections(void);
 void abort_background_connections(void);
 
 void set_connection_timeout(struct connection *);
+void set_connection_timeout_xhr(struct connection *conn, milliseconds_T timeout);
 
 void shutdown_connection_stream(struct connection *conn);
 
@@ -119,7 +121,7 @@ void shutdown_connection_stream(struct connection *conn);
  * that should be probably something else than data, but... ;-) */
 /* Returns 0 on success and -1 on failure. */
 int load_uri(struct uri *uri, struct uri *referrer, struct download *download,
-	     enum connection_priority pri, enum cache_mode cache_mode, off_t start);
+	     connection_priority_T pri, cache_mode_T cache_mode, off_t start);
 
 int is_entry_used(struct cache_entry *cached);
 

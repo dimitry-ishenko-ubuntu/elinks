@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+struct cache_entry;
+struct document;
 struct document_view;
 struct link;
 struct location;
@@ -28,7 +30,13 @@ struct window;
 struct delayed_open {
 	struct session *ses;
 	struct uri *uri;
-	unsigned char *target;
+	char *target;
+};
+
+struct delayed_rel {
+	struct cache_entry *cached;
+	struct document *document;
+	struct session *ses;
 };
 
 enum remote_session_flags {
@@ -43,15 +51,27 @@ enum remote_session_flags {
 	SES_REMOTE_SEARCH = 256,
 };
 
+typedef unsigned int remote_session_flags_T;
+
 /** This is generic frame descriptor, meaningful mainly for ses_*_frame*(). */
 struct frame {
 	LIST_HEAD(struct frame);
 
-	unsigned char *name;
+	char *name;
 	int redirect_cnt;
 
 	struct view_state vs;
 };
+
+struct iframe {
+	LIST_HEAD(struct frame);
+
+	char *name;
+	int redirect_cnt;
+
+	struct view_state vs;
+};
+
 
 enum kp_mark { KP_MARK_NOTHING, KP_MARK_SET, KP_MARK_GOTO };
 
@@ -85,7 +105,8 @@ struct session_task {
 	enum task_type type;
 	/* TODO: union --pasky */
 	struct {
-		unsigned char *frame;
+		char *frame;
+		char *iframe;
 		struct location *location;
 	} target;
 };
@@ -99,10 +120,8 @@ struct session_status {
 	int force_show_title_bar:2;
 
 	unsigned int set_window_title:1;
-	unsigned char *last_title;
-#ifdef CONFIG_ECMASCRIPT
-	unsigned char *window_status;
-#endif
+	char *last_title;
+	char *window_status;
 
 #ifdef CONFIG_LEDS
 	unsigned int show_leds:1;
@@ -178,6 +197,7 @@ struct session {
 
 	struct document_view *doc_view;
 	LIST_OF(struct document_view) scrn_frames;
+	LIST_OF(struct document_view) scrn_iframes;
 
 	/** The URI from which the next start_download() or resume_download()
 	 * call should download, or NULL if no such call is pending.
@@ -224,8 +244,8 @@ struct session {
 
 	enum navigate_mode navigate_mode;
 
-	unsigned char *search_word;
-	unsigned char *last_search_word;
+	char *search_word;
+	char *last_search_word;
 
 
 	/** The possibly running type queries (what-to-do-with-that-file?) */
@@ -238,7 +258,7 @@ struct session {
 };
 
 extern LIST_OF(struct session) sessions;
-extern enum remote_session_flags remote_session_flags;
+extern remote_session_flags_T remote_session_flags;
 
 /** This returns a pointer to the current location inside of the given session.
  * That's nice for encapsulation and already paid out once ;-). */
@@ -258,7 +278,7 @@ void set_session_referrer(struct session *ses, struct uri *referrer);
 
 void
 print_error_dialog(struct session *ses, struct connection_state state,
-		   struct uri *uri, enum connection_priority priority);
+		   struct uri *uri, connection_priority_T priority);
 
 void process_file_requests(struct session *);
 
@@ -272,7 +292,7 @@ int decode_session_info(struct terminal *term, struct terminal_info *info);
 /** Registers a base session and returns its id. Value <= 0 means error. */
 int
 add_session_info(struct session *ses, struct uri *uri, struct uri *referrer,
-		 enum cache_mode cache_mode, enum task_type task);
+		 cache_mode_T cache_mode, enum task_type task);
 
 void done_saved_session_info(void);
 
@@ -282,11 +302,12 @@ struct session *init_session(struct session *ses, struct terminal *term,
 void doc_loading_callback(struct download *, struct session *);
 
 void abort_loading(struct session *, int);
-void reload_frame(struct session *, unsigned char *, enum cache_mode);
-void reload(struct session *, enum cache_mode);
+void reload_frame(struct session *, char *, cache_mode_T);
+void reload(struct session *, cache_mode_T);
 void load_frames(struct session *, struct document_view *);
 
-struct frame *ses_find_frame(struct session *, unsigned char *);
+struct frame *ses_find_frame(struct session *, const char *);
+struct frame *ses_find_iframe(struct session *, char *);
 
 void free_files(struct session *);
 void display_timer(struct session *ses);
@@ -298,19 +319,19 @@ int session_is_loading(struct session *ses);
 struct download *get_current_download(struct session *ses);
 
 /** Information about the current document */
-unsigned char *get_current_url(struct session *, unsigned char *, size_t);
-unsigned char *get_current_title(struct session *, unsigned char *, size_t);
+char *get_current_url(struct session *, char *, size_t);
+char *get_current_title(struct session *, char *, size_t);
 
 struct link *get_current_session_link(struct session *ses);
 struct link *get_current_link_in_view(struct document_view *doc_view);
-unsigned char *get_current_link_url(struct session *, unsigned char *, size_t);
-unsigned char *get_current_link_name(struct session *, unsigned char *, size_t);
+char *get_current_link_url(struct session *, char *, size_t);
+char *get_current_link_name(struct session *, char *, size_t);
 
 extern LIST_OF(struct questions_entry) questions_queue;
 void add_questions_entry(void (*callback)(struct session *, void *), void *data);
 void check_questions_queue(struct session *ses);
 
-unsigned char *get_homepage_url(void);
+char *get_homepage_url(void);
 
 /** Returns current keyboard repeat count and reset it. */
 int eat_kbd_repeat_count(struct session *ses);
@@ -318,6 +339,16 @@ int eat_kbd_repeat_count(struct session *ses);
 /** Set current keyboard repeat count to given value and update link
  * highlighting and status bar. */
 int set_kbd_repeat_count(struct session *ses, int new_count);
+
+char *get_ui_clipboard_file(void);
+
+#ifdef CONFIG_SCRIPTING
+void maybe_pre_format_html(struct cache_entry *cached, struct session *ses);
+#endif
+
+#ifdef CONFIG_ECMASCRIPT
+void doc_rerender_after_document_update(struct session *ses);
+#endif
 
 #ifdef __cplusplus
 }

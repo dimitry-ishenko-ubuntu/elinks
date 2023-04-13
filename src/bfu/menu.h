@@ -30,6 +30,8 @@ enum menu_item_flags {
 	RIGHT_INTL = 256,	/* Force translation of the right text */
 };
 
+typedef int menu_item_flags_T;
+
 #define FREE_ANY (FREE_LIST|FREE_TEXT|FREE_RTEXT|FREE_DATA)
 
 /*
@@ -68,8 +70,10 @@ enum menu_item_flags {
  */
 #define mi_is_end_of_menu(mi) (!(mi)->text)
 
+struct menu_item;
+
 #define foreach_menu_item(iterator, items) \
-	for (iterator = (items); !mi_is_end_of_menu(iterator); (iterator)++)
+	for (iterator = (struct menu_item *)(items); !mi_is_end_of_menu(iterator); (iterator)++)
 
 enum hotkey_state {
 	HKS_SHOW = 0,
@@ -80,7 +84,7 @@ enum hotkey_state {
 /* XXX: keep order of fields, there's some hard initializations for it. --Zas
  */
 struct menu_item {
-	unsigned char *text;		/* The item label */
+	char *text;		/* The item label */
 
 	/* The following three members are tightly coupled:
 	 *
@@ -91,12 +95,12 @@ struct menu_item {
 	 * - A few places however there is no associated keybinding and no
 	 *   ``default'' handler defined in which case @rtext (if non NULL)
 	 *   will be drawn and @func will be called when selecting the item. */
-	unsigned char *rtext;		/* Right aligned guiding text */
-	enum main_action action_id;	/* Default item handlers */
+	char *rtext;		/* Right aligned guiding text */
+	main_action_T action_id;	/* Default item handlers */
 	menu_func_T func;		/* Called when selecting the item */
 
 	void *data;			/* Private data passed to handler */
-	enum menu_item_flags flags;	/* What to free() and display */
+	menu_item_flags_T flags;	/* What to free() and display */
 
 	/* If true, don't try to translate text/rtext inside of the menu
 	 * routines. */
@@ -106,8 +110,8 @@ struct menu_item {
 
 #define INIT_MENU_ITEM(text, rtext, action_id, func, data, flags)	\
 {									\
-	(unsigned char *) (text),					\
-	(unsigned char *) (rtext),					\
+	(char *) (text),					\
+	(char *) (rtext),					\
 	(action_id),							\
 	(func),								\
 	(void *) (data),						\
@@ -128,8 +132,8 @@ struct menu_item {
 #define SET_MENU_ITEM(e_, text_, rtext_, action_id_, func_, data_,	\
 		      flags_, hotkey_state_, hotkey_pos_)		\
 do {									\
-	(e_)->text = (unsigned char *) (text_);				\
-	(e_)->rtext = (unsigned char *) (rtext_);			\
+	(e_)->text = (char *) (text_);				\
+	(e_)->rtext = (char *) (rtext_);			\
 	(e_)->action_id = (action_id_);					\
 	(e_)->func = (func_);						\
 	(e_)->data = (void *) (data_);					\
@@ -162,12 +166,12 @@ struct menu {
 };
 
 
-struct menu_item *new_menu(enum menu_item_flags);
+struct menu_item *new_menu(menu_item_flags_T);
 
 void
-add_to_menu(struct menu_item **mi, unsigned char *text, unsigned char *rtext,
-	    enum main_action action_id, menu_func_T func, void *data,
-	    enum menu_item_flags flags);
+add_to_menu(struct menu_item **mi, const char *text, const char *rtext,
+	    main_action_T action_id, menu_func_T func, void *data,
+	    menu_item_flags_T flags);
 
 #define add_menu_separator(menu) \
 	add_to_menu(menu, "", NULL, ACT_MAIN_NONE, NULL, NULL, NO_SELECT)

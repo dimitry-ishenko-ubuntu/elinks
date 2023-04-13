@@ -10,12 +10,29 @@
 
 #include "cookies/parser.h"
 
+/* fake tty get function, needed for charsets.c */
+int get_ctl_handle()
+{
+	return -1;
+}
+
+char *
+gettext(const char *text)
+{
+	return (char *)text;
+}
+
+int
+os_default_charset(void)
+{
+	return -1;
+}
 
 int
 main(int argc, char *argv[])
 {
 	struct cookie_str cstr;
-	unsigned char name[1024], value[1024], string[1024];
+	char name[1024], value[1024], string[1024];
 
 	printf("This thing is for testing of cookies name-value pair parser.\n"
 	       "You probably do not want to mess with it :).\n");

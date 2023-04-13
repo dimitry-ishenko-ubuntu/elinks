@@ -46,7 +46,7 @@ init_bitfield(size_t bits)
 	size_t size = get_bitfield_byte_size(bits);
 	struct bitfield *bitfield;
 
-	bitfield = mem_calloc(1, offsetof(struct bitfield, bits) + size);
+	bitfield = (struct bitfield *)mem_calloc(1, offsetof(struct bitfield, bits) + size);
 	if (bitfield) bitfield->bitsize = bits;
 
 	return bitfield;
@@ -57,7 +57,7 @@ init_bitfield(size_t bits)
  * @relates bitfield */
 static inline void
 copy_bitfield(struct bitfield *bitfield,
-	      const unsigned char *bits, unsigned int bytesize)
+	      const char *bits, unsigned int bytesize)
 {
 	/* Only for exact size? */
 	if (bytesize <= get_bitfield_byte_size(bitfield->bitsize))

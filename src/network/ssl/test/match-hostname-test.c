@@ -12,10 +12,29 @@
 #include "network/ssl/match-hostname.h"
 #include "util/string.h"
 
+/* fake tty get function, needed for charsets.c */
+int
+get_ctl_handle()
+{
+	return -1;
+}
+
+char *
+gettext(const char *text)
+{
+	return (char *)text;
+}
+
+int
+os_default_charset(void)
+{
+	return -1;
+}
+
 struct match_hostname_pattern_test_case
 {
-	const unsigned char *pattern;
-	const unsigned char *hostname;
+	const char *pattern;
+	const char *hostname;
 	int match;
 };
 

@@ -28,13 +28,13 @@ struct bfu_color_entry {
 static struct hash *bfu_colors = NULL;
 
 struct color_pair *
-get_bfu_color(struct terminal *term, unsigned char *stylename)
+get_bfu_color(struct terminal *term, const char *stylename)
 {
-	static enum color_mode last_color_mode;
+	static color_mode_T last_color_mode;
 	struct bfu_color_entry *entry;
 	int stylenamelen;
 	struct hash_item *item;
-	enum color_mode color_mode;
+	color_mode_T color_mode;
 
 	if (!term) return NULL;
 
@@ -63,7 +63,7 @@ get_bfu_color(struct terminal *term, unsigned char *stylename)
 
 	stylenamelen = strlen(stylename);
 	item = get_hash_item(bfu_colors, stylename, stylenamelen);
-	entry = item ? item->value : NULL;
+	entry = (struct bfu_color_entry *)(item ? item->value : NULL);
 
 	if (!entry) {
 		struct option *opt;
@@ -77,7 +77,7 @@ get_bfu_color(struct terminal *term, unsigned char *stylename)
 		opt = get_opt_rec_real(opt, stylename);
 		if (!opt) return NULL;
 
-		entry = mem_calloc(1, sizeof(*entry));
+		entry = (struct bfu_color_entry *)mem_calloc(1, sizeof(*entry));
 		if (!entry) return NULL;
 
 		item = add_hash_item(bfu_colors, stylename, stylenamelen, entry);

@@ -33,7 +33,7 @@
 
 #include "cache/cache.h"
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/select.h"
 #include "main/module.h"
 #include "network/connection.h"
@@ -54,30 +54,30 @@
 
 union option_info ftp_options[] = {
 	INIT_OPT_TREE("protocol", N_("FTP"),
-		"ftp", 0,
+		"ftp", OPT_ZERO,
 		N_("FTP specific options.")),
 
 	INIT_OPT_TREE("protocol.ftp", N_("Proxy configuration"),
-		"proxy", 0,
+		"proxy", OPT_ZERO,
 		N_("FTP proxy configuration.")),
 
 	INIT_OPT_STRING("protocol.ftp.proxy", N_("Host and port-number"),
-		"host", 0, "",
+		"host", OPT_ZERO, "",
 		N_("Host and port-number (host:port) of the FTP proxy, "
 		"or blank. If it's blank, FTP_PROXY environment variable "
 		"is checked as well.")),
 
 	INIT_OPT_STRING("protocol.ftp", N_("Anonymous password"),
-		"anon_passwd", 0, "some@host.domain",
+		"anon_passwd", OPT_ZERO, "some@host.domain",
 		N_("FTP anonymous password to be sent.")),
 
 	INIT_OPT_BOOL("protocol.ftp", N_("Use passive mode (IPv4)"),
-		"use_pasv", 0, 1,
+		"use_pasv", OPT_ZERO, 1,
 		N_("Use PASV instead of PORT (passive vs active mode, "
 		"IPv4 only).")),
 #ifdef CONFIG_IPV6
 	INIT_OPT_BOOL("protocol.ftp", N_("Use passive mode (IPv6)"),
-		"use_epsv", 0, 0,
+		"use_epsv", OPT_ZERO, 0,
 		N_("Use EPSV instead of EPRT (passive vs active mode, "
 		"IPv6 only).")),
 #endif /* CONFIG_IPV6 */
@@ -115,8 +115,8 @@ struct ftp_connection_info {
 #ifdef CONFIG_IPV6
 	unsigned int use_epsv:1;     /* Use EPSV */
 #endif
-	unsigned char ftp_buffer[FTP_BUF_SIZE];
-	unsigned char cmd_buffer[1]; /* Must be last field !! */
+	char ftp_buffer[FTP_BUF_SIZE];
+	char cmd_buffer[1]; /* Must be last field !! */
 };
 
 
@@ -150,14 +150,14 @@ static void ftp_data_accept(struct connection *conn);
  * We don't take care about separators.
 */
 static int
-parse_psv_resp(unsigned char *data, int *n, int max_value)
+parse_psv_resp(char *data, int *n, int max_value)
 {
-	unsigned char *p = data;
+	char *p = data;
 	int i = 5;
 
 	memset(n, 0, 6 * sizeof(*n));
 
-	if (*p < ' ') return 0;
+	if ((unsigned char)*p < ' ') return 0;
 
 	/* Find the end. */
 	while (*p >= ' ') p++;
@@ -192,13 +192,13 @@ static int
 get_ftp_response(struct connection *conn, struct read_buffer *rb, int part,
 		 struct sockaddr_storage *sa, off_t *est_length)
 {
-	unsigned char *eol;
-	unsigned char *num_end;
+	char *eol;
+	char *num_end;
 	int response;
 	int pos;
 
 again:
-	eol = memchr(rb->data, ASCII_LF, rb->length);
+	eol = (char *)memchr(rb->data, ASCII_LF, rb->length);
 	if (!eol) return 0;
 
 	pos = eol - rb->data;
@@ -226,7 +226,7 @@ again:
 	if (sa && response == 229) { /* EPSV response parsing. */
 		/* See RFC 2428 */
 		struct sockaddr_in6 *s = (struct sockaddr_in6 *) sa;
-		int sal = sizeof(*s);
+		socklen_t sal = sizeof(*s);
 		int n[6];
 
 		if (parse_psv_resp(num_end, (int *) &n, 65535) != 1) {
@@ -297,7 +297,7 @@ send_cmd(struct connection *conn, struct string *cmd, void *callback,
 	 struct connection_state state)
 {
 	request_from_socket(conn->socket, cmd->source, cmd->length, state,
-			    SOCKET_RETRY_ONCLOSE, callback);
+			    SOCKET_RETRY_ONCLOSE, (socket_read_T)callback);
 
 	done_string(cmd);
 }
@@ -340,7 +340,7 @@ prompt_username_pw(struct connection *conn)
 static void
 ftp_login(struct socket *socket)
 {
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 	struct string cmd;
 	struct auth_entry* auth;
 
@@ -372,7 +372,7 @@ ftp_login(struct socket *socket)
 static void
 ftp_got_info(struct socket *socket, struct read_buffer *rb)
 {
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 	int response = get_ftp_response(conn, rb, 0, NULL, NULL);
 
 	if (response == -1) {
@@ -404,7 +404,7 @@ ftp_got_info(struct socket *socket, struct read_buffer *rb)
 static void
 ftp_got_user_info(struct socket *socket, struct read_buffer *rb)
 {
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 	int response = get_ftp_response(conn, rb, 0, NULL, NULL);
 
 	if (response == -1) {
@@ -490,7 +490,7 @@ ftp_pass(struct connection *conn)
 static void
 ftp_pass_info(struct socket *socket, struct read_buffer *rb)
 {
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 	int response = get_ftp_response(conn, rb, 0, NULL, NULL);
 
 	if (response == -1) {
@@ -531,7 +531,7 @@ ftp_pass_info(struct socket *socket, struct read_buffer *rb)
 
 /* Construct PORT command. */
 static void
-add_portcmd_to_string(struct string *string, unsigned char *pc)
+add_portcmd_to_string(struct string *string, char *pc)
 {
 	/* From RFC 959: DATA PORT (PORT)
 	 *
@@ -569,7 +569,7 @@ add_portcmd_to_string(struct string *string, unsigned char *pc)
 static void
 add_eprtcmd_to_string(struct string *string, struct sockaddr_in6 *addr)
 {
-	unsigned char addr_str[INET6_ADDRSTRLEN];
+	char addr_str[INET6_ADDRSTRLEN];
 
 	inet_ntop(AF_INET6, &addr->sin6_addr, addr_str, INET6_ADDRSTRLEN);
 
@@ -600,7 +600,7 @@ add_eprtcmd_to_string(struct string *string, struct sockaddr_in6 *addr)
 static int
 get_ftp_data_socket(struct connection *conn, struct string *command)
 {
-	struct ftp_connection_info *ftp = conn->info;
+	struct ftp_connection_info *ftp = (struct ftp_connection_info *)conn->info;
 
 	ftp->use_pasv = get_opt_bool("protocol.ftp.use_pasv", NULL);
 
@@ -632,7 +632,7 @@ get_ftp_data_socket(struct connection *conn, struct string *command)
 
 		} else {
 			struct sockaddr_in sa;
-			unsigned char pc[6];
+			char pc[6];
 			int data_sock;
 
 			memset(pc, 0, sizeof(pc));
@@ -703,7 +703,7 @@ add_file_cmd_to_str(struct connection *conn)
 	 * simplified a little by allocating this initial structure on
 	 * the stack, but it's several kilobytes long so that might be
 	 * risky.  */
-	ftp = mem_calloc(1, sizeof(*ftp));
+	ftp = (struct ftp_connection_info *)mem_calloc(1, sizeof(*ftp));
 	if (!ftp) {
 		abort_connection(conn, connection_state(S_OUT_OF_MEM));
 		goto ret;
@@ -808,7 +808,7 @@ add_file_cmd_to_str(struct connection *conn)
 	ftp->opc = ftp->pending_commands;
 
 	/* 1 byte is already reserved for cmd_buffer in struct ftp_connection_info. */
-	ftp = mem_realloc(ftp, sizeof(*ftp) + command.length);
+	ftp = (struct ftp_connection_info *)mem_realloc(ftp, sizeof(*ftp) + command.length);
 	if (!ftp) {
 		abort_connection(conn, connection_state(S_OUT_OF_MEM));
 		goto ret;
@@ -830,8 +830,8 @@ ret:
 static void
 send_it_line_by_line(struct connection *conn, struct string *cmd)
 {
-	struct ftp_connection_info *ftp = conn->info;
-	unsigned char *nl = strchr((const char *)ftp->cmd_buffer, '\n');
+	struct ftp_connection_info *ftp = (struct ftp_connection_info *)conn->info;
+	char *nl = strchr(ftp->cmd_buffer, '\n');
 
 	if (!nl) {
 		add_to_string(cmd, ftp->cmd_buffer);
@@ -869,7 +869,7 @@ ftp_send_retr_req(struct connection *conn, struct connection_state state)
 
 /* Parse RETR response and return file size or -1 on error. */
 static off_t
-get_filesize_from_RETR(unsigned char *data, int data_len, int *resume)
+get_filesize_from_RETR(char *data, int data_len, int *resume)
 {
 	off_t file_len;
 	int pos;
@@ -887,12 +887,12 @@ get_filesize_from_RETR(unsigned char *data, int data_len, int *resume)
 	/* Getting file size from ftp.task.gda.pl */
 	/* 150 5676.4 kbytes to download */
 		unsigned char tmp = data[data_len - 1];
-		unsigned char *kbytes;
+		char *kbytes;
 		char *endptr;
 		double size;
 
 		data[data_len - 1] = '\0';
-		kbytes = strstr((const char *)data, "kbytes");
+		kbytes = strstr(data, "kbytes");
 		data[data_len - 1] = tmp;
 		if (!kbytes) return -1;
 
@@ -966,8 +966,8 @@ ftp_data_connect(struct connection *conn, int pf, struct sockaddr_storage *sa,
 static void
 ftp_retr_file(struct socket *socket, struct read_buffer *rb)
 {
-	struct connection *conn = socket->conn;
-	struct ftp_connection_info *ftp = conn->info;
+	struct connection *conn = (struct connection *)socket->conn;
+	struct ftp_connection_info *ftp = (struct ftp_connection_info *)conn->info;
 	int response;
 	off_t size = -1;
 
@@ -1107,8 +1107,8 @@ ftp_retr_file(struct socket *socket, struct read_buffer *rb)
 static void
 ftp_got_final_response(struct socket *socket, struct read_buffer *rb)
 {
-	struct connection *conn = socket->conn;
-	struct ftp_connection_info *ftp = conn->info;
+	struct connection *conn = (struct connection *)socket->conn;
+	struct ftp_connection_info *ftp = (struct ftp_connection_info *)conn->info;
 	int response = get_ftp_response(conn, rb, 0, NULL, NULL);
 
 	if (response == -1) {
@@ -1175,7 +1175,7 @@ struct ftp_dir_html_format {
 
 	/** The color of directories, in "#rrggbb" format.  This is
 	 * initialized and used only if colorize_dir is nonzero.  */
-	unsigned char dircolor[8];
+	char dircolor[8];
 };
 
 /* Display directory entry formatted in HTML. */
@@ -1185,7 +1185,7 @@ display_dir_entry(struct cache_entry *cached, off_t *pos, int *tries,
 		  struct ftp_file_info *ftp_info)
 {
 	struct string string;
-	unsigned char permissions[10] = "---------";
+	char permissions[10] = "---------";
 
 	if (!init_string(&string)) return -1;
 
@@ -1233,11 +1233,11 @@ display_dir_entry(struct cache_entry *cached, off_t *pos, int *tries,
 		time_t current_time = time(NULL);
 		time_t when = ftp_info->mtime;
 		struct tm *when_tm;
-	       	unsigned char *fmt;
+	       	char *fmt;
 		/* LC_TIME=fi_FI.UTF_8 can generate "elo___ 31 23:59"
 		 * where each _ denotes U+00A0 encoded as 0xC2 0xA0,
 		 * thus needing a 19-byte buffer.  */
-		unsigned char date[80];
+		char date[MAX_STR_LEN];
 		int wr;
 
 		if (ftp_info->local_time_zone)
@@ -1247,16 +1247,16 @@ display_dir_entry(struct cache_entry *cached, off_t *pos, int *tries,
 
 		if (current_time > when + 6L * 30L * 24L * 60L * 60L
 		    || current_time < when - 60L * 60L)
-			fmt = "%b %e  %Y";
+			fmt = gettext("%b %e  %Y");
 		else
-			fmt = "%b %e %H:%M";
+			fmt = gettext("%b %e %H:%M");
 
 		wr = strftime(date, sizeof(date), fmt, when_tm);
 		add_cp_html_to_string(&string, format->libc_codepage,
 				      date, wr);
 	} else
 #endif
-	add_to_string(&string, "            ");
+	add_to_string(&string, gettext("             "));
 	/* TODO: Above, the number of spaces might not match the width
 	 * of the string generated by strftime.  It depends on the
 	 * locale.  So if ELinks knows the timestamps of some FTP
@@ -1269,8 +1269,6 @@ display_dir_entry(struct cache_entry *cached, off_t *pos, int *tries,
 	 *   Con: Bloats the HTML source.
 	 * Any solution chosen here should also be applied to the
 	 * file: protocol handler.  */
-
-	add_char_to_string(&string, ' ');
 
 	if (ftp_info->type == FTP_FILE_DIRECTORY && format->colorize_dir) {
 		add_to_string(&string, "<font color=\"");
@@ -1309,14 +1307,14 @@ display_dir_entry(struct cache_entry *cached, off_t *pos, int *tries,
  * Return the number of newline characters at the end of the line or -1
  * if we must wait for more input. */
 static int
-ftp_get_line(struct cache_entry *cached, unsigned char *buf, int bufl,
+ftp_get_line(struct cache_entry *cached, char *buf, int bufl,
              int last, int *len)
 {
-	unsigned char *newline;
+	char *newline;
 
 	if (!bufl) return -1;
 
-	newline = memchr(buf, ASCII_LF, bufl);
+	newline = (char *)memchr(buf, ASCII_LF, bufl);
 
 	if (newline) {
 		*len = newline - buf;
@@ -1344,7 +1342,7 @@ ftp_get_line(struct cache_entry *cached, unsigned char *buf, int bufl,
  * @return -1 if out of memory, or 0 if successful.  */
 static int
 ftp_add_unparsed_line(struct cache_entry *cached, off_t *pos, int *tries, 
-		      const unsigned char *line, int line_length)
+		      const char *line, int line_length)
 {
 	int our_ret;
 	struct string string;
@@ -1373,14 +1371,14 @@ out:
  * or -1 if out of memory.  */
 static int
 ftp_process_dirlist(struct cache_entry *cached, off_t *pos,
-		    unsigned char *buffer, int buflen, int last,
+		    char *buffer, int buflen, int last,
 		    int *tries, const struct ftp_dir_html_format *format)
 {
 	int ret = 0;
 
 	while (1) {
 		struct ftp_file_info ftp_info = INIT_FTP_FILE_INFO;
-		unsigned char *buf = buffer + ret;
+		char *buf = buffer + ret;
 		int bufl = buflen - ret;
 		int line_length, eol;
 
@@ -1428,7 +1426,7 @@ ftp_process_dirlist(struct cache_entry *cached, off_t *pos,
 static void
 ftp_data_accept(struct connection *conn)
 {
-	struct ftp_connection_info *ftp = conn->info;
+	struct ftp_connection_info *ftp = (struct ftp_connection_info *)conn->info;
 	int newsock;
 
 	/* Because this function is called only as a read handler of
@@ -1468,7 +1466,7 @@ ftp_data_accept(struct connection *conn)
 static void
 got_something_from_data_connection(struct connection *conn)
 {
-	struct ftp_connection_info *ftp = conn->info;
+	struct ftp_connection_info *ftp = (struct ftp_connection_info *)conn->info;
 	struct ftp_dir_html_format format;
 	ssize_t len;
 

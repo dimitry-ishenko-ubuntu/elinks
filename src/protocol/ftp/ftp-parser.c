@@ -15,11 +15,30 @@
 #include "protocol/ftp/parse.h"
 #include "util/test.h"
 
+/* fake tty get function, needed for charsets.c */
+int
+get_ctl_handle()
+{
+	return -1;
+}
+
+char *
+gettext(const char *text)
+{
+	return (char *)text;
+}
+
+int
+os_default_charset(void)
+{
+	return -1;
+}
+
 int
 main(int argc, char *argv[])
 {
 	struct ftp_file_info ftp_info = INIT_FTP_FILE_INFO;
-	unsigned char *response = "";
+	char *response = "";
 	int i;
 
 	for (i = 1; i < argc; i++) {
@@ -42,9 +61,9 @@ main(int argc, char *argv[])
 		die("Usage: %s --response \"string\"", argv[0]);
 
 	while (*response) {
-		unsigned char *start = response;
+		char *start = response;
 
-		response = strchr((const char *)response, '\n');
+		response = strchr(response, '\n');
 		if (!response) {
 			response = start + strlen(start);
 		} else {

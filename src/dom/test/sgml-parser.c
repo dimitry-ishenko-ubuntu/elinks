@@ -21,6 +21,13 @@
 
 unsigned int number_of_lines = 0;
 
+/* fake tty get function, needed for charsets.c */
+int
+get_ctl_handle()
+{
+	return -1;
+}
+
 static int
 update_number_of_lines(struct dom_stack *stack)
 {
@@ -316,9 +323,9 @@ main(int argc, char *argv[])
 		add_dom_stack_context(&parser->stack, NULL, &sgml_parser_test_context_info);
 
 	if (read_stdin > 0) {
-		unsigned char *buffer;
+		char *buffer;
 
-		buffer = mem_alloc(read_stdin);
+		buffer = (char *)mem_alloc(read_stdin);
 		if (!buffer)
 			die("Cannot allocate buffer");
 

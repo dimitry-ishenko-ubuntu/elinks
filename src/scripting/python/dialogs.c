@@ -4,14 +4,13 @@
 #include "config.h"
 #endif
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "scripting/python/pythoninc.h"
 
 #include "elinks.h"
 
 #include "bfu/inpfield.h"
 #include "bfu/msgbox.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "scripting/python/core.h"
 #include "scripting/python/dialogs.h"
 #include "session/session.h"
@@ -42,10 +41,14 @@ PyObject *
 python_info_box(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 	/* [gettext_accelerator_context(python_info_box)] */
-	unsigned char *title = N_("Info");
+	char *title = N_("Info");
 	PyObject *object, *string_object;
-	unsigned char *text;
-	static char *kwlist[] = {"text", "title", NULL};
+	char *text;
+
+	static char s_text[] = "text";
+	static char s_title[] = "title";
+
+	static char *kwlist[] = {s_text, s_title, NULL};
 
 	if (!python_ses) {
 		PyErr_SetString(python_elinks_err, "No session");
@@ -68,7 +71,7 @@ python_info_box(PyObject *self, PyObject *args, PyObject *kwargs)
 	 */
 	string_object = PyObject_Str(object);
 	if (!string_object) return NULL;
-	text = (unsigned char *) PyUnicode_AsUTF8(string_object);
+	text = (char *) PyUnicode_AsUTF8(string_object);
 	if (!text) {
 		Py_DECREF(string_object);
 		return NULL;
@@ -110,9 +113,9 @@ struct python_input_callback_hop {
  */
 
 static void
-invoke_input_ok_callback(void *data, unsigned char *text)
+invoke_input_ok_callback(void *data, char *text)
 {
-	struct python_input_callback_hop *hop = data;
+	struct python_input_callback_hop *hop = (struct python_input_callback_hop *)data;
 	struct session *saved_python_ses = python_ses;
 	PyObject *result;
 
@@ -168,12 +171,18 @@ initial -- A string containing an initial value for the text entry\n\
 PyObject *
 python_input_box(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	unsigned char *prompt;
+	char *prompt;
 	PyObject *callback;
-	unsigned char *title = N_("User dialog");
-	unsigned char *initial = NULL;
+	char *title = N_("User dialog");
+	char *initial = NULL;
 	struct python_input_callback_hop *hop;
-	static char *kwlist[] = {"prompt", "callback", "title", "initial", NULL};
+
+	static char s_prompt[] = "prompt";
+	static char s_callback[] = "callback";
+	static char s_title[] = "title";
+	static char s_initial[] = "initial";
+
+	static char *kwlist[] = {s_prompt, s_callback, s_title, s_initial, NULL};
 
 	if (!python_ses) {
 		PyErr_SetString(python_elinks_err, "No session");
@@ -202,7 +211,7 @@ python_input_box(PyObject *self, PyObject *args, PyObject *kwargs)
 		if (!initial) goto free_title;
 	}
 
-	hop = mem_alloc(sizeof(*hop));
+	hop = (struct python_input_callback_hop *)mem_alloc(sizeof(*hop));
 	if (!hop) goto free_initial;
 	hop->ses = python_ses;
 	hop->callback = callback;

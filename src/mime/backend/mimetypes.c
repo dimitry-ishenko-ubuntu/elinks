@@ -15,7 +15,7 @@
 #include "elinks.h"
 
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "mime/backend/common.h"
 #include "mime/backend/mimetypes.h"
@@ -28,8 +28,8 @@
 #define BACKEND_NAME	"mimetypes"
 
 struct mimetypes_entry {
-	unsigned char *content_type;
-	unsigned char extension[1];
+	char *content_type;
+	char extension[1];
 };
 
 enum mimetypes_option {
@@ -44,17 +44,17 @@ enum mimetypes_option {
 /* Keep options in alphabetical order. */
 static union option_info mimetypes_options[] = {
 	INIT_OPT_TREE("mime", N_("Mimetypes files"),
-		"mimetypes", 0,
+		"mimetypes", OPT_ZERO,
 		N_("Options for the support of mime.types files. These files "
 		"can be used to find the content type of a URL by looking at "
 		"the extension of the file name.")),
 
 	INIT_OPT_BOOL("mime.mimetypes", N_("Enable"),
-		"enable", 0, 1,
+		"enable", OPT_ZERO, 1,
 		N_("Enable mime.types support.")),
 
 	INIT_OPT_STRING("mime.mimetypes", N_("Path"),
-		"path", 0, DEFAULT_MIMETYPES_PATH,
+		"path", OPT_ZERO, DEFAULT_MIMETYPES_PATH,
 		N_("The search path for mime.types files. "
 		"Colon-separated list of files.")),
 
@@ -85,14 +85,14 @@ done_mimetypes_entry(struct mimetypes_entry *entry)
  * Comments starts with '#'. */
 
 static inline void
-parse_mimetypes_extensions(unsigned char *token, unsigned char *ctype)
+parse_mimetypes_extensions(char *token, char *ctype)
 {
 	int ctypelen = strlen(ctype);
 
 	/* Cycle through the file extensions */
 	while (*token) {
 		struct mimetypes_entry *entry;
-		unsigned char *extension;
+		char *extension;
 		struct hash_item *item;
 		int extlen;
 
@@ -110,7 +110,7 @@ parse_mimetypes_extensions(unsigned char *token, unsigned char *ctype)
 		item = get_hash_item(mimetypes_map, extension, extlen);
 		if (item) continue;
 
-		entry = mem_calloc(1, sizeof(*entry) + extlen);
+		entry = (struct mimetypes_entry *)mem_calloc(1, sizeof(*entry) + extlen);
 		if (!entry) continue;
 
 		entry->content_type = memacpy(ctype, ctypelen);
@@ -129,19 +129,19 @@ parse_mimetypes_extensions(unsigned char *token, unsigned char *ctype)
 }
 
 static void
-parse_mimetypes_file(unsigned char *filename)
+parse_mimetypes_file(char *filename)
 {
 	FILE *file = fopen(filename, "rb");
-	unsigned char line[MAX_STR_LEN];
+	char line[MAX_STR_LEN];
 
 	if (!file) return;
 
 	while (fgets(line, MAX_STR_LEN - 1, file)) {
-		unsigned char *ctype = line;
-		unsigned char *token;
+		char *ctype = line;
+		char *token;
 
 		/* Weed out any comments */
-		token = strchr((const char *)line, '#');
+		token = strchr(line, '#');
 		if (token)
 			*token = '\0';
 
@@ -155,7 +155,7 @@ parse_mimetypes_file(unsigned char *filename)
 		*token++ = '\0';
 
 		/* Check if malformed content type */
-		if (!strchr((const char *)ctype, '/')) continue;
+		if (!strchr(ctype, '/')) continue;
 
 		parse_mimetypes_extensions(token, ctype);
 	}
@@ -166,7 +166,7 @@ parse_mimetypes_file(unsigned char *filename)
 static struct hash *
 init_mimetypes_map(void)
 {
-	unsigned char *path;
+	char *path;
 
 	mimetypes_map = init_hash8();
 	if (!mimetypes_map)
@@ -174,10 +174,10 @@ init_mimetypes_map(void)
 
 	/* Determine the path  */
 	path = get_mimetypes_path();
-	if (!path || !*path) path = DEFAULT_MIMETYPES_PATH;
+	if (!path || !*path) path = (char *)DEFAULT_MIMETYPES_PATH;
 
 	while (*path) {
-		unsigned char *filename = get_next_path_filename(&path, ':');
+		char *filename = get_next_path_filename(&path, ':');
 
 		if (!filename) continue;
 		parse_mimetypes_file(filename);
@@ -198,7 +198,7 @@ done_mimetypes(struct module *module)
 
 	foreach_hash_item (item, *mimetypes_map, i) {
 		if (item->value) {
-			struct mimetypes_entry *entry = item->value;
+			struct mimetypes_entry *entry = (struct mimetypes_entry *)item->value;
 
 			done_mimetypes_entry(entry);
 		}
@@ -234,8 +234,8 @@ init_mimetypes(struct module *module)
 }
 
 
-static unsigned char *
-get_content_type_mimetypes(unsigned char *extension)
+static char *
+get_content_type_mimetypes(char *extension)
 {
 	struct hash_item *item;
 	int extensionlen;
@@ -247,20 +247,20 @@ get_content_type_mimetypes(unsigned char *extension)
 	extension++; /* Skip the leading '.' */
 	extensionlen = strlen(extension);
 	while (extensionlen) {
-		unsigned char *trimmed;
+		char *trimmed;
 
 		/* First the given type is looked up. */
 		item = get_hash_item(mimetypes_map, extension, extensionlen);
 
 		/* Check list of entries */
 		if (item && item->value) {
-			struct mimetypes_entry *entry = item->value;
+			struct mimetypes_entry *entry = (struct mimetypes_entry *)item->value;
 
 			return stracpy(entry->content_type);
 		}
 
 		/* Try to trim the extension from the left. */
-		trimmed = strchr((const char *)extension, '.');
+		trimmed = strchr(extension, '.');
 		if (!trimmed)
 			break;
 

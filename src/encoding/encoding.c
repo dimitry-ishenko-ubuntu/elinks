@@ -46,15 +46,15 @@ dummy_open(struct stream_encoded *stream, int fd)
 }
 
 static int
-dummy_read(struct stream_encoded *stream, unsigned char *data, int len)
+dummy_read(struct stream_encoded *stream, char *data, int len)
 {
 	return safe_read(((struct dummy_enc_data *) stream->data)->fd, data, len);
 }
 
-static unsigned char *
-dummy_decode_buffer(struct stream_encoded *stream, unsigned char *data, int len, int *new_len)
+static char *
+dummy_decode_buffer(struct stream_encoded *stream, char *data, int len, int *new_len)
 {
-	unsigned char *buffer = memacpy(data, len);
+	char *buffer = memacpy(data, len);
 
 	if (!buffer) return NULL;
 
@@ -69,7 +69,7 @@ dummy_close(struct stream_encoded *stream)
 	mem_free(stream->data);
 }
 
-static const unsigned char *const dummy_extensions[] = { NULL };
+static const char *const dummy_extensions[] = { NULL };
 
 static const struct decoding_backend dummy_decoding_backend = {
 	"none",
@@ -85,7 +85,7 @@ static const struct decoding_backend dummy_decoding_backend = {
 
 #include "encoding/brotli.h"
 #include "encoding/bzip2.h"
-#include "encoding/deflate.h"
+#include "encoding/gzip.h"
 #include "encoding/lzma.h"
 #include "encoding/zstd.h"
 
@@ -94,7 +94,6 @@ static const struct decoding_backend *const decoding_backends[] = {
 	&gzip_decoding_backend,
 	&bzip2_decoding_backend,
 	&lzma_decoding_backend,
-	&deflate_decoding_backend,
 	&brotli_decoding_backend,
 	&zstd_decoding_backend
 };
@@ -107,15 +106,15 @@ static const struct decoding_backend *const decoding_backends[] = {
 
 /* Associates encoded stream with a fd. */
 struct stream_encoded *
-open_encoded(int fd, enum stream_encoding encoding)
+open_encoded(int fd, stream_encoding_T encoding)
 {
 	struct stream_encoded *stream;
 
-	stream = mem_alloc(sizeof(*stream));
+	stream = (struct stream_encoded *)mem_alloc(sizeof(*stream));
 	if (!stream) return NULL;
 
 	stream->encoding = encoding;
-	if (decoding_backends[stream->encoding]->open(stream, fd) >= 0)
+	if (decoding_backends[stream->encoding]->eopen(stream, fd) >= 0)
 		return stream;
 
 	mem_free(stream);
@@ -126,16 +125,16 @@ open_encoded(int fd, enum stream_encoding encoding)
  * their size during decoding, 'len' indicates desired size of _returned_ data,
  * not desired size of data read from stream. */
 int
-read_encoded(struct stream_encoded *stream, unsigned char *data, int len)
+read_encoded(struct stream_encoded *stream, char *data, int len)
 {
-	return decoding_backends[stream->encoding]->read(stream, data, len);
+	return decoding_backends[stream->encoding]->eread(stream, data, len);
 }
 
 /* Decode an entire file from a buffer. This function is not suitable
  * for parts of files. @data contains the original data, @len bytes
  * long. The resulting decoded data chunk is *@new_len bytes long. */
-unsigned char *
-decode_encoded_buffer(struct stream_encoded *stream, enum stream_encoding encoding, unsigned char *data, int len,
+char *
+decode_encoded_buffer(struct stream_encoded *stream, stream_encoding_T encoding, char *data, int len,
 		      int *new_len)
 {
 	return decoding_backends[encoding]->decode_buffer(stream, data, len, new_len);
@@ -146,26 +145,26 @@ decode_encoded_buffer(struct stream_encoded *stream, enum stream_encoding encodi
 void
 close_encoded(struct stream_encoded *stream)
 {
-	decoding_backends[stream->encoding]->close(stream);
+	decoding_backends[stream->encoding]->eclose(stream);
 	mem_free(stream);
 }
 
 
 /* Return a list of extensions associated with that encoding. */
-const unsigned char *const *listext_encoded(enum stream_encoding encoding)
+const char *const *listext_encoded(stream_encoding_T encoding)
 {
 	return decoding_backends[encoding]->extensions;
 }
 
-enum stream_encoding
-guess_encoding(unsigned char *filename)
+stream_encoding_T
+guess_encoding(char *filename)
 {
 	int fname_len = strlen(filename);
-	unsigned char *fname_end = filename + fname_len;
+	char *fname_end = filename + fname_len;
 	int enc;
 
 	for (enc = 1; enc < ENCODINGS_KNOWN; enc++) {
-		const unsigned char *const *ext = decoding_backends[enc]->extensions;
+		const char *const *ext = decoding_backends[enc]->extensions;
 
 		while (ext && *ext) {
 			int len = strlen(*ext);
@@ -180,8 +179,8 @@ guess_encoding(unsigned char *filename)
 	return ENCODING_NONE;
 }
 
-const unsigned char *
-get_encoding_name(enum stream_encoding encoding)
+const char *
+get_encoding_name(stream_encoding_T encoding)
 {
 	return decoding_backends[encoding]->name;
 }
@@ -191,7 +190,7 @@ get_encoding_name(enum stream_encoding encoding)
 
 /* Tries to open @prefixname with each of the supported encoding extensions
  * appended. */
-static inline enum stream_encoding
+static inline stream_encoding_T
 try_encoding_extensions(struct string *filename, int *fd)
 {
 	int length = filename->length;
@@ -199,7 +198,7 @@ try_encoding_extensions(struct string *filename, int *fd)
 
 	/* No file of that name was found, try some others names. */
 	for (encoding = 1; encoding < ENCODINGS_KNOWN; encoding++) {
-		const unsigned char *const *ext = listext_encoded(encoding);
+		const char *const *ext = listext_encoded(encoding);
 
 		for (; ext && *ext; ext++) {
 			add_to_string(filename, *ext);
@@ -242,7 +241,7 @@ read_file(struct stream_encoded *stream, int readsize, struct string *page)
 	if (!readsize) readsize = 4096;
 
 	while (realloc_string(page, page->length + readsize)) {
-		unsigned char *string_pos = page->source + page->length;
+		char *string_pos = page->source + page->length;
 		int readlen = read_encoded(stream, string_pos, readsize);
 
 		if (readlen < 0) {
@@ -300,7 +299,7 @@ read_encoded_file(struct string *filename, struct string *page)
 {
 	struct stream_encoded *stream;
 	struct stat stt;
-	enum stream_encoding encoding = ENCODING_NONE;
+	stream_encoding_T encoding = ENCODING_NONE;
 	int fd = open(filename->source, O_RDONLY | O_NOCTTY);
 	struct connection_state state = connection_state_for_errno(errno);
 

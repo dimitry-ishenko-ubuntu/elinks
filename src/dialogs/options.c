@@ -4,6 +4,10 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +20,7 @@
 #include "config/options.h"
 #include "dialogs/options.h"
 #include "intl/charsets.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "osdep/osdep.h"
 #include "session/session.h"
 #include "terminal/color.h"
@@ -29,7 +33,7 @@
 static void
 display_codepage(struct terminal *term, void *name_, void *xxx)
 {
-	unsigned char *name = name_;
+	char *name = (char *)name_;
 	struct option *opt = get_opt_rec(term->spec, "charset");
 	int index = get_cp_index(name);
 
@@ -46,17 +50,17 @@ display_codepage(struct terminal *term, void *name_, void *xxx)
 void
 charset_list(struct terminal *term, void *xxx, void *ses_)
 {
-	struct session *ses = ses_;
+	struct session *ses = (struct session *)ses_;
 	int i, items;
 	int sel = 0;
-	const unsigned char *const sel_mime = get_cp_mime_name(
+	const char *const sel_mime = get_cp_mime_name(
 		get_terminal_codepage(term));
 	struct menu_item *mi = new_menu(FREE_LIST);
 
 	if (!mi) return;
 
 	for (i = 0, items = 0; ; i++) {
-		unsigned char *name = get_cp_name(i);
+		const char *name = get_cp_name(i);
 
 		if (!name) break;
 
@@ -71,7 +75,7 @@ charset_list(struct terminal *term, void *xxx, void *ses_)
 			sel = items;
 		items++;
 		add_to_menu(&mi, name, NULL, ACT_MAIN_NONE,
-			    display_codepage, get_cp_config_name(i), 0);
+			    display_codepage, (void *)get_cp_config_name(i), 0);
 	}
 
 	do_menu_selected(term, mi, ses, sel, 0);
@@ -118,7 +122,7 @@ static widget_handler_status_T
 push_ok_button(struct dialog_data *dlg_data, struct widget_data *button)
 {
 	struct terminal *term = dlg_data->win->term;
-	union option_value *values = dlg_data->dlg->udata;
+	union option_value *values = (union option_value *)dlg_data->dlg->udata;
 
 	update_dialog_data(dlg_data);
 
@@ -168,7 +172,7 @@ terminal_options(struct terminal *term, void *xxx, struct session *ses)
 	struct dialog *dlg;
 	union option_value *values;
 	int anonymous = get_cmd_opt_bool("anonymous");
-	unsigned char help_text[MAX_STR_LEN], *text;
+	char help_text[MAX_STR_LEN], *text;
 	size_t help_textlen = 0;
 	size_t add_size = TERM_OPTION_VALUE_SIZE;
 
@@ -203,7 +207,7 @@ terminal_options(struct terminal *term, void *xxx, struct session *ses)
 	dlg->layout.padding_top = 1;
 	dlg->udata = values;
 
-	text = ((unsigned char *) values) + TERM_OPTION_VALUE_SIZE;
+	text = ((char *) values) + TERM_OPTION_VALUE_SIZE;
 	memcpy(text, help_text, help_textlen);
 	add_dlg_text(dlg, text, ALIGN_LEFT, 1);
 
@@ -252,7 +256,7 @@ terminal_options(struct terminal *term, void *xxx, struct session *ses)
 static void
 menu_set_language(struct terminal *term, void *pcp_, void *xxx)
 {
-	int pcp = (long) pcp_;
+	int pcp = (intptr_t) pcp_;
 
 	set_language(pcp);
 	cls_redraw_all_terminals();
@@ -269,7 +273,7 @@ menu_language_list(struct terminal *term, void *xxx, void *ses)
 	if (!mi) return;
 	for (i = 0; languages[i].name; i++) {
 		add_to_menu(&mi, languages[i].name, language_to_iso639(i), ACT_MAIN_NONE,
-			    menu_set_language, (void *) (long) i, 0);
+			    menu_set_language, (void *) (intptr_t) i, 0);
 	}
 
 	do_menu_selected(term, mi, ses, current_language, 0);
@@ -279,14 +283,14 @@ menu_language_list(struct terminal *term, void *xxx, void *ses)
 
 /* FIXME: This doesn't in fact belong here at all. --pasky */
 
-static unsigned char width_str[4];
-static unsigned char height_str[4];
+static char width_str[4];
+static char height_str[4];
 
 static void
 push_resize_button(void *data)
 {
-	struct terminal *term = data;
-	unsigned char str[MAX_STR_LEN];
+	struct terminal *term = (struct terminal *)data;
+	char str[MAX_STR_LEN];
 
 	snprintf(str, sizeof(str), "%s,%s,%d,%d",
 		 width_str, height_str, term->width, term->height);

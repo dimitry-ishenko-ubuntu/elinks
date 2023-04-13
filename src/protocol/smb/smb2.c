@@ -5,9 +5,7 @@
 #endif
 
 #include <errno.h>
-#ifdef HAVE_LIBSMBCLIENT_H
 #include <libsmbclient.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,7 +20,7 @@
 
 #include "cache/cache.h"
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "main/select.h"
 #include "network/connection.h"
@@ -38,13 +36,22 @@
 #include "util/memory.h"
 #include "util/string.h"
 
+static char elsmbversion[32];
+
+static void
+init_smb(struct module *module)
+{
+	snprintf(elsmbversion, 31, "SMB(%s)", smbc_version());
+	module->name = elsmbversion;
+}
+
 struct module smb_protocol_module = struct_module(
 	/* name: */		N_("SMB"),
 	/* options: */		NULL,
 	/* hooks: */		NULL,
 	/* submodules: */	NULL,
 	/* data: */		NULL,
-	/* init: */		NULL,
+	/* init: */		init_smb,
 	/* done: */		NULL
 );
 
@@ -86,7 +93,7 @@ get_smb_directory_entries(int dir, struct string *prefix)
 		if (!strcmp(entry->name, "."))
 			continue;
 
-		new_entries = mem_realloc(entries, (size + 2) * sizeof(*new_entries));
+		new_entries = (struct directory_entry *)mem_realloc(entries, (size + 2) * sizeof(*new_entries));
 		if (!new_entries) continue;
 		entries = new_entries;
 
@@ -131,9 +138,9 @@ get_smb_directory_entries(int dir, struct string *prefix)
 
 static void
 add_smb_dir_entry(struct directory_entry *entry, struct string *page,
-	      int pathlen, unsigned char *dircolor)
+	      int pathlen, char *dircolor)
 {
-	unsigned char *lnk = NULL;
+	char *lnk = NULL;
 	struct string html_encoded_name;
 	struct string uri_encoded_name;
 
@@ -158,12 +165,12 @@ add_smb_dir_entry(struct directory_entry *entry, struct string *page,
 #ifdef FS_UNIX_SOFTLINKS
 	} else if (entry->attrib[0] == 'l') {
 		struct stat st;
-		unsigned char buf[MAX_STR_LEN];
+		char buf[MAX_STR_LEN];
 		int readlen = readlink(entry->name, buf, MAX_STR_LEN);
 
 		if (readlen > 0 && readlen != MAX_STR_LEN) {
 			buf[readlen] = '\0';
-			lnk = straconcat(" -> ", buf, (unsigned char *) NULL);
+			lnk = straconcat(" -> ", buf, (char *) NULL);
 		}
 
 		if (!stat(entry->name, &st) && S_ISDIR(st.st_mode))
@@ -176,7 +183,7 @@ add_smb_dir_entry(struct directory_entry *entry, struct string *page,
 	if (entry->attrib[0] == 'd' && *dircolor) {
 		/* The <b> is for the case when use_document_colors is off. */
 		string_concat(page, "<font color=\"", dircolor, "\"><b>",
-			      (unsigned char *) NULL);
+			      (char *) NULL);
 	}
 
 	add_string_to_string(page, &html_encoded_name);
@@ -199,16 +206,16 @@ add_smb_dir_entry(struct directory_entry *entry, struct string *page,
 /* First information such as permissions is gathered for each directory entry.
  * Finally the sorted entries are added to the @data->fragment one by one. */
 static void
-add_smb_dir_entries(struct directory_entry *entries, unsigned char *dirpath,
+add_smb_dir_entries(struct directory_entry *entries, char *dirpath,
 		struct string *page)
 {
-	unsigned char dircolor[8];
+	char dircolor[8];
 	int i;
 
 	/* Setup @dircolor so it's easy to check if we should color dirs. */
 	if (get_opt_bool("document.browse.links.color_dirs", NULL)) {
 		color_to_string(get_opt_color("document.colors.dirs", NULL),
-				(unsigned char *) &dircolor);
+				(char *) &dircolor);
 	} else {
 		dircolor[0] = 0;
 	}
@@ -260,13 +267,13 @@ do_smb(struct connection *conn)
 	struct uri *uri = conn->uri;
 	struct auth_entry *auth = find_auth(uri);
 	struct string string;
-	unsigned char *url;
+	char *url;
 	int dir;
 
 	if ((uri->userlen && uri->passwordlen) || !auth) {
 		url = get_uri_string(uri, URI_BASE);
 	} else {
-		unsigned char *uri_string = get_uri_string(uri, URI_HOST | URI_PORT | URI_DATA);
+		char *uri_string = get_uri_string(uri, URI_HOST | URI_PORT | URI_DATA);
 
 		if (!uri_string || !init_string(&string)) {
 			smb_error(connection_state(S_OUT_OF_MEM));
@@ -303,11 +310,12 @@ do_smb(struct connection *conn)
 	if (dir >= 0) {
 		struct string prefix;
 
-		init_string(&prefix);
-		add_to_string(&prefix, url);
-		add_char_to_string(&prefix, '/');
-		smb_directory(dir, &prefix, conn->uri);
-		done_string(&prefix);
+		if (init_string(&prefix)) {
+			add_to_string(&prefix, url);
+			add_char_to_string(&prefix, '/');
+			smb_directory(dir, &prefix, conn->uri);
+			done_string(&prefix);
+		}
 	} else {
 		const int errno_from_opendir = errno;
 		char buf[READ_SIZE];
@@ -361,7 +369,7 @@ static void
 smb_got_error(struct socket *socket, struct read_buffer *rb)
 {
 	int len = rb->length;
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 	struct connection_state error;
 
 	if (len < 0) {
@@ -403,7 +411,7 @@ static void
 smb_got_data(struct socket *socket, struct read_buffer *rb)
 {
 	int len = rb->length;
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 
 	if (len < 0) {
 		abort_connection(conn, connection_state_for_errno(errno));
@@ -428,7 +436,7 @@ smb_got_data(struct socket *socket, struct read_buffer *rb)
 static void
 smb_got_header(struct socket *socket, struct read_buffer *rb)
 {
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 	struct read_buffer *buf;
 	int error = 0;
 
@@ -447,7 +455,7 @@ smb_got_header(struct socket *socket, struct read_buffer *rb)
 	socket->state = SOCKET_END_ONCLOSE;
 
 	if (rb->length > 0) {
-		unsigned char *ctype = memacpy(rb->data, rb->length);
+		char *ctype = memacpy(rb->data, rb->length);
 
 		if (ctype && *ctype) {
 			if (!strcmp(ctype, "text/x-error")) {

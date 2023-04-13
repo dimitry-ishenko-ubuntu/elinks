@@ -1,4 +1,3 @@
-
 #ifndef EL__OSDEP_UNIX_SYSINFO_H
 #define EL__OSDEP_UNIX_SYSINFO_H
 
@@ -26,6 +25,9 @@ static inline int dir_sep(char x) { return x == '/'; }
 
 #include <pwd.h>
 #include <grp.h>
+
+#include <unistd.h>
+#include <errno.h>
 
 #endif
 

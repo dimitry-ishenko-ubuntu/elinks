@@ -28,11 +28,12 @@ enum select_handler_type {
 	SELECT_HANDLER_READ,
 	SELECT_HANDLER_WRITE,
 	SELECT_HANDLER_ERROR,
-	SELECT_HANDLER_DATA,
 };
 
 /* Get a registered select handler. */
 select_handler_T get_handler(int fd, enum select_handler_type type);
+
+void *get_handler_data(int fd);
 
 /* Set handlers and callback @data for the @fd descriptor. */
 void set_handlers(int fd,
@@ -51,6 +52,8 @@ int can_read(int fd);
 int can_write(int fd);
 
 void terminate_select(void);
+
+const char *get_libevent_version(void);
 
 #ifdef __cplusplus
 }

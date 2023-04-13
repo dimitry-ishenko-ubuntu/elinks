@@ -158,7 +158,7 @@ static const css_applier_T css_appliers[CSS_PT_LAST] = {
 /** This looks for a match in list of selectors. */
 static void
 examine_element(struct html_context *html_context, struct css_selector *base,
-		enum css_selector_type seltype, enum css_selector_relation rel,
+		css_selector_type_T seltype, enum css_selector_relation rel,
 		struct css_selector_set *selectors,
 		struct html_element *element)
 {
@@ -235,10 +235,10 @@ examine_element(struct html_context *html_context, struct css_selector *base,
 	}
 
 	if (element->attr.class_ && seltype <= CST_CLASS) {
-		const unsigned char *class_ = element->attr.class_;
+		const char *class_ = element->attr.class_;
 
 		for (;;) {
-			const unsigned char *begin;
+			const char *begin;
 
 			while (*class_ == ' ') ++class_;
 			if (*class_ == '\0') break;
@@ -266,7 +266,7 @@ get_css_selector_for_element(struct html_context *html_context,
 			     struct css_stylesheet *css,
 			     LIST_OF(struct html_element) *html_stack)
 {
-	unsigned char *code;
+	char *code;
 	struct css_selector *selector;
 
 	assert(element && element->options && css);

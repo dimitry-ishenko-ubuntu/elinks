@@ -31,6 +31,9 @@
 /* Define if you want: Local CGI support */
 #mesondefine CONFIG_CGI
 
+/* Define if you want: codepoint lookup */
+#mesondefine CONFIG_CODEPOINT
+
 /* Define if you want: Combining characters support */
 #mesondefine CONFIG_COMBINE
 
@@ -45,6 +48,9 @@
 
 /* Define if you want: Debug mode support */
 #mesondefine CONFIG_DEBUG
+
+/* Define if you want: DGI support */
+#mesondefine CONFIG_DGI
 
 /* Define if you want: Documentation Tools support */
 #mesondefine CONFIG_DOC
@@ -82,11 +88,18 @@
 /* Define if you want: FTP protocol support */
 #mesondefine CONFIG_FTP
 
+/* Define if you want: Gemini protocol support */
+#mesondefine CONFIG_GEMINI
+
+/* Define to 1 if you want libc gettext. */
+#mesondefine CONFIG_GETTEXT
+
 /* Define if you want: Global history support */
 #mesondefine CONFIG_GLOBHIST
 
 /* Define if you want: GNUTLS support */
 #mesondefine CONFIG_GNUTLS
+
 
 /* Define if you want: Gopher protocol support */
 #mesondefine CONFIG_GOPHER
@@ -148,6 +161,9 @@
 /* Define if you want: Mouse handling support */
 #mesondefine CONFIG_MOUSE
 
+/* Define if you want: mujs support */
+#mesondefine CONFIG_MUJS
+
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 #mesondefine CONFIG_NLS
@@ -166,6 +182,9 @@
 
 /* Define if you want: BEOS support */
 #mesondefine CONFIG_OS_BEOS
+
+/* Define if you want: DOS support */
+#mesondefine CONFIG_OS_DOS
 
 /* Define if you want: EMX support */
 #mesondefine CONFIG_OS_OS2
@@ -188,6 +207,12 @@
 
 /* Define if you want: Pod2HTML support */
 #mesondefine CONFIG_POD2HTML
+
+/* Define if you want: Reproducible build */
+#mesondefine CONFIG_REPRODUCIBLE
+
+/* Define if you want: QuickJS support */
+#mesondefine CONFIG_QUICKJS
 
 /* Define if you want: Browser scripting support */
 #mesondefine CONFIG_SCRIPTING
@@ -242,6 +267,9 @@
 /* Define if you want: XBEL bookmarks support */
 #mesondefine CONFIG_XBEL_BOOKMARKS
 
+/* Define if you want: libxml++ support */
+#mesondefine CONFIG_XML
+
 /* Define if you want: XmlTo support */
 #mesondefine CONFIG_XMLTO
 
@@ -292,12 +320,6 @@
 
 /* Define if you have _beginthread() */
 #mesondefine HAVE_BEGINTHREAD
-
-/* Define to 1 if you have the <brotli/decode.h> header file. */
-#mesondefine HAVE_BROTLI_DECODE_H
-
-/* Define to 1 if you have the <bzlib.h> header file. */
-#mesondefine HAVE_BZLIB_H
 
 /* Define if you have C99 compliant vsnprintf() */
 #mesondefine HAVE_C99_VSNPRINTF
@@ -499,6 +521,9 @@
 /* Define to 1 if you have the <libev/event.h> header file. */
 #mesondefine HAVE_LIBEV_EVENT_H
 
+/* Define to 1 if you have the <libgen.h> header file. */
+#mesondefine HAVE_LIBGEN_H
+
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #mesondefine HAVE_LIBNSL
 
@@ -511,12 +536,6 @@
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #mesondefine HAVE_LIBSOCKET
-
-/* Define to 1 if you have the <limits.h> header file. */
-#mesondefine HAVE_LIMITS_H
-
-/* Define to 1 if you have the <locale.h> header file. */
-#mesondefine HAVE_LOCALE_H
 
 /* Define if you have long long */
 #mesondefine HAVE_LONG_LONG
@@ -606,6 +625,9 @@
 /* Define to 1 if you have the `raise' function. */
 #mesondefine HAVE_RAISE
 
+/* Define to 1 ig you have the `RAND_add' function. */
+#mesondefine HAVE_RAND_ADD
+
 /* Define to 1 if you have the `RAND_bytes' function. */
 #mesondefine HAVE_RAND_BYTES
 
@@ -648,14 +670,8 @@
 /* Define to 1 if you have the `snprintf' function. */
 #mesondefine HAVE_SNPRINTF
 
-/* Define to 1 if you have the <stddef.h> header file. */
-#mesondefine HAVE_STDDEF_H
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #mesondefine HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdlib.h> header file. */
-#mesondefine HAVE_STDLIB_H
 
 /* Define to 1 if you have the `stpcpy' function. */
 #mesondefine HAVE_STPCPY
@@ -680,9 +696,6 @@
 
 /* Define to 1 if you have the <strings.h> header file. */
 #mesondefine HAVE_STRINGS_H
-
-/* Define to 1 if you have the <string.h> header file. */
-#mesondefine HAVE_STRING_H
 
 /* Define to 1 if you have the `strncasecmp' function. */
 #mesondefine HAVE_STRNCASECMP
@@ -714,6 +727,9 @@
 
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #mesondefine HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/kd.h> header file */
+#mesondefine HAVE_SYS_KD_H
 
 /* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
    */
@@ -760,9 +776,6 @@
 
 /* Define to 1 if you have the `timegm' function. */
 #mesondefine HAVE_TIMEGM
-
-/* Define to 1 if you have the <time.h> header file. */
-#mesondefine HAVE_TIME_H
 
 /* Define to 1 if you have the `tsearch' function. */
 #mesondefine HAVE_TSEARCH
@@ -826,6 +839,12 @@
 
 /* Define to 1 if you have the `__argz_stringify' function. */
 #mesondefine HAVE___ARGZ_STRINGIFY
+
+/* Define to 1 if you have the `mkstemps' function. */
+#mesondefine HAVE_MKSTEMPS
+
+/* Define to 1 if you have `typeof` */
+#mesondefine HAVE_TYPEOF
 
 /* Define as const if the declaration of iconv() needs const. */
 #mesondefine ICONV_CONST
@@ -919,8 +938,13 @@
 #endif
 /* Enable GNU extensions on systems that have them.  */
 #ifndef _GNU_SOURCE
-# undef _GNU_SOURCE
+# define _GNU_SOURCE
 #endif
+/* Enable DEFAULT_SOURCE */
+#ifndef _DEFAULT_SOURCE
+# define _DEFAULT_SOURCE
+#endif
+
 /* Enable threading extensions on Solaris.  */
 #ifndef _POSIX_PTHREAD_SEMANTICS
 # undef _POSIX_PTHREAD_SEMANTICS

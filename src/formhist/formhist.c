@@ -13,7 +13,7 @@
 #include "document/forms.h"
 #include "formhist/dialogs.h"
 #include "formhist/formhist.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "main/object.h"
 #include "session/session.h"
@@ -34,7 +34,7 @@
 
 static union option_info forms_history_options[] = {
 	INIT_OPT_BOOL("document.browse.forms", N_("Show form history dialog"),
-		"show_formhist", 0, 0,
+		"show_formhist", OPT_ZERO, 0,
 		N_("Ask if a login form should be saved to file or not. "
 		"This option only disables the dialog, already saved login "
 		"forms are unaffected.")),
@@ -45,16 +45,16 @@ static union option_info forms_history_options[] = {
 INIT_LIST_OF(struct formhist_data, saved_forms);
 
 static struct formhist_data *
-new_formhist_item(unsigned char *url)
+new_formhist_item(char *url)
 {
 	struct formhist_data *form;
 	int url_len = strlen(url);
 
-	form = mem_calloc(1, sizeof(*form) + url_len);
+	form = (struct formhist_data *)mem_calloc(1, sizeof(*form) + url_len);
 	if (!form) return NULL;
 
 	memcpy(form->url, url, url_len);
-	form->submit = mem_alloc(sizeof(*form->submit));
+	form->submit = (LIST_OF(struct submitted_value) *)mem_alloc(sizeof(*form->submit));
 	if (!form->submit) { mem_free(form); return NULL; }
 
 	object_nolock(form, "formhist");
@@ -91,8 +91,8 @@ int
 load_formhist_from_file(void)
 {
 	struct formhist_data *form;
-	unsigned char tmp[MAX_STR_LEN];
-	unsigned char *file;
+	char tmp[MAX_STR_LEN];
+	char *file;
 	FILE *f;
 
 	if (loaded) return 1;
@@ -100,7 +100,7 @@ load_formhist_from_file(void)
 	if (!elinks_home) return 0;
 
 	file = straconcat(elinks_home, FORMS_HISTORY_FILENAME,
-			  (unsigned char *) NULL);
+			  (char *) NULL);
 	if (!file) return 0;
 
 	f = fopen(file, "rb");
@@ -108,12 +108,12 @@ load_formhist_from_file(void)
 	if (!f) return 0;
 
 	while (fgets(tmp, MAX_STR_LEN, f)) {
-		unsigned char *p;
+		char *p;
 		int dontsave = 0;
 
 		if (tmp[0] == '\n' && !tmp[1]) continue;
 
-		p = strchr((const char *)tmp, '\t');
+		p = strchr(tmp, '\t');
 		if (p) {
 			*p = '\0';
 			++p;
@@ -140,22 +140,21 @@ load_formhist_from_file(void)
 		/* Fields type, name, value */
 		while (fgets(tmp, MAX_STR_LEN, f)) {
 			struct submitted_value *sv;
-			unsigned char *type, *name, *value;
-			unsigned char *enc_value;
+			char *type, *name, *value;
+			char *enc_value;
 			enum form_type ftype;
-			int ret;
 
 			if (tmp[0] == '\n' && !tmp[1]) break;
 
 			/* Type */
 			type = tmp;
-			p = strchr((const char *)type, '\t');
+			p = strchr(type, '\t');
 			if (!p) goto fail;
 			*p = '\0';
 
 			/* Name */
 			name = ++p;
-			p = strchr((const char *)name, '\t');
+			p = strchr(name, '\t');
 			if (!p) {
 				/* Compatibility with previous file formats.
 				 * REMOVE AT SOME TIME --Zas */
@@ -163,10 +162,12 @@ load_formhist_from_file(void)
 				name = type;
 
 				if (*name == '*') {
+					static char password[] = "password";
 					name++;
-					type = "password";
+					type = password;
 				} else {
-					type = "text";
+					static char text[] = "text";
+					type = text;
 				}
 
 				goto cont;
@@ -176,13 +177,12 @@ load_formhist_from_file(void)
 			/* Value */
 			value = ++p;
 cont:
-			p = strchr((const char *)value, '\n');
+			p = strchr(value, '\n');
 			if (!p) goto fail;
 			*p = '\0';
 
-			ret = str2form_type(type);
-			if (ret == -1) goto fail;
-			ftype = ret;
+			ftype = str2form_type(type);
+			if (ftype == FC_NONE) goto fail;
 
 			if (form->dontsave) continue;
 
@@ -216,7 +216,7 @@ int
 save_formhist_to_file(void)
 {
 	struct secure_save_info *ssi;
-	unsigned char *file;
+	char *file;
 	struct formhist_data *form;
 	int r;
 
@@ -224,7 +224,7 @@ save_formhist_to_file(void)
 		return 0;
 
 	file = straconcat(elinks_home, FORMS_HISTORY_FILENAME,
-			  (unsigned char *) NULL);
+			  (char *) NULL);
 	if (!file) return 0;
 
 	ssi = secure_open(file);
@@ -244,7 +244,7 @@ save_formhist_to_file(void)
 		secure_fprintf(ssi, "%s\n", form->url);
 
 		foreach (sv, *form->submit) {
-			unsigned char *encvalue;
+			char *encvalue;
 
 			if (sv->value && *sv->value) {
 				/* Obfuscate the value. If we do
@@ -293,7 +293,7 @@ form_exists(struct formhist_data *form1)
 		/* Iterate through submitted entries. */
 		foreach (sv, *form1->submit) {
 			struct submitted_value *sv2;
-			unsigned char *value = NULL;
+			char *value = NULL;
 
 			count++;
 			foreach (sv2, *form->submit) {
@@ -317,7 +317,7 @@ form_exists(struct formhist_data *form1)
 }
 
 static int
-forget_forms_with_url(unsigned char *url)
+forget_forms_with_url(char *url)
 {
 	struct formhist_data *form, *next;
 	int count = 0;
@@ -336,7 +336,7 @@ forget_forms_with_url(unsigned char *url)
 static void
 remember_form(void *form_)
 {
-	struct formhist_data *form = form_;
+	struct formhist_data *form = (struct formhist_data *)form_;
 
 	forget_forms_with_url(form->url);
 	add_to_list(saved_forms, form);
@@ -347,7 +347,7 @@ remember_form(void *form_)
 static void
 dont_remember_form(void *form_)
 {
-	struct formhist_data *form = form_;
+	struct formhist_data *form = (struct formhist_data *)form_;
 
 	done_formhist_item(form);
 }
@@ -355,14 +355,14 @@ dont_remember_form(void *form_)
 static void
 never_for_this_site(void *form_)
 {
-	struct formhist_data *form = form_;
+	struct formhist_data *form = (struct formhist_data *)form_;
 
 	form->dontsave = 1;
 	remember_form(form);
 }
 
-unsigned char *
-get_form_history_value(unsigned char *url, unsigned char *name)
+char *
+get_form_history_value(const char *url, const char *name)
 {
 	struct formhist_data *form;
 

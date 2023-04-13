@@ -45,6 +45,10 @@ DUMP_FUNCTION_SPECIALIZED(struct document *document, struct dump_output *out)
 	const int width = get_opt_int("document.dump.width", NULL);
 #endif	/* DUMP_COLOR_MODE_TRUE */
 
+	int current_link_number = 0;
+	int dumplinks = get_opt_bool("document.dump.terminal_hyperlinks", NULL);
+	struct link *next_link = NULL;
+
 	for (y = 0; y < document->height; y++) {
 #ifdef DUMP_COLOR_MODE_NONE
 		int white = 0;
@@ -62,9 +66,14 @@ DUMP_FUNCTION_SPECIALIZED(struct document *document, struct dump_output *out)
 #endif	/* DUMP_COLOR_MODE_TRUE */
 
 		for (x = 0; x < document->data[y].length; x++) {
+			if (dumplinks) {
+				if (is_start_of_link(document, x, y, &current_link_number, &next_link)) {
+					write_start_of_link(next_link, out);
+				}
+			}
 #ifdef DUMP_CHARSET_UTF8
 			unicode_val_T c;
-			const unsigned char *utf8_buf;
+			const char *utf8_buf;
 #else  /* !DUMP_CHARSET_UTF8 */
 			unsigned char c;
 #endif  /* !DUMP_CHARSET_UTF8 */
@@ -91,7 +100,7 @@ DUMP_FUNCTION_SPECIALIZED(struct document *document, struct dump_output *out)
 			if (c == UCS_NO_CHAR) {
 				/* This is the second cell of
 				 * a double-cell character.  */
-				continue;
+				goto next_iteration;
 			}
 #endif	/* DUMP_CHARSET_UTF8 */
 
@@ -129,9 +138,12 @@ DUMP_FUNCTION_SPECIALIZED(struct document *document, struct dump_output *out)
 			}
 #endif	/* DUMP_COLOR_MODE_TRUE */
 
-			if ((attr & SCREEN_ATTR_FRAME)
-			    && c >= FRAME_CHARS_BEGIN && c < FRAME_CHARS_END)
-				c = out->frame[c - FRAME_CHARS_BEGIN];
+			if (attr & SCREEN_ATTR_FRAME) {
+				c = (unsigned char)c;
+				if (c >= FRAME_CHARS_BEGIN && c < FRAME_CHARS_END) {
+					c = out->frame[c - FRAME_CHARS_BEGIN];
+				}
+			}
 
 #ifdef DUMP_CHARSET_UTF8
 			if (!isscreensafe_ucs(c)) c = ' ';
@@ -143,7 +155,7 @@ DUMP_FUNCTION_SPECIALIZED(struct document *document, struct dump_output *out)
 			if (c == ' ') {
 				/* Count spaces. */
 				white++;
-				continue;
+				goto next_iteration;
 			}
 
 			/* Print spaces if any. */
@@ -165,6 +177,15 @@ DUMP_FUNCTION_SPECIALIZED(struct document *document, struct dump_output *out)
 			if (write_char(c, out))
 				return -1;
 #endif	/* !DUMP_CHARSET_UTF8 */
+
+#if defined(DUMP_CHARSET_UTF8) || defined(DUMP_COLOR_MODE_NONE)
+next_iteration:
+#endif // DUMP_CHARSET_UTF8 || DUMP_COLOR_MODE_NONE
+			if (dumplinks) {
+				if (is_end_of_link(document, x, y, &current_link_number, &next_link)) {
+					write_end_of_link(out);
+				}
+			}
 		}
 
 #ifndef DUMP_COLOR_MODE_NONE

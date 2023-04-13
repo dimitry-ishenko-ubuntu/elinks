@@ -87,26 +87,26 @@ done_http_post(struct http_post *http_post)
  *
  * @relates http_post */
 int
-open_http_post(struct http_post *http_post, const unsigned char *post_data,
+open_http_post(struct http_post *http_post, const char *post_data,
 	       struct connection_state *error)
 {
 	off_t size = 0;
 	size_t length = strlen(post_data);
-	const unsigned char *end = post_data;
+	const char *end = post_data;
 
 	done_http_post(http_post);
 	http_post->post_data = end;
 
 	while (1) {
 		struct stat sb;
-		const unsigned char *begin;
+		const char *begin;
 		int res;
 		struct http_post_file *new_files;
-		unsigned char *filename;
+		char *filename;
 
-		begin = strchr((const char *)end, FILE_CHAR);
+		begin = strchr(end, FILE_CHAR);
 		if (!begin) break;
-		end = strchr((const char *)(begin + 1), FILE_CHAR);
+		end = strchr((begin + 1), FILE_CHAR);
 		if (!end) break;
 		filename = memacpy(begin + 1, end - begin - 1); /* adds '\0' */
 		if (!filename) {
@@ -125,7 +125,7 @@ open_http_post(struct http_post *http_post, const unsigned char *post_data,
 		/* This use of mem_realloc() in a loop consumes O(n^2)
 		 * time but how many files are you really going to
 		 * upload in one request?  */
-		new_files = mem_realloc(http_post->files,
+		new_files = (struct http_post_file *)mem_realloc(http_post->files,
 					(http_post->file_count + 1)
 					* sizeof(*new_files));
 		if (new_files == NULL) {
@@ -149,6 +149,10 @@ open_http_post(struct http_post *http_post, const unsigned char *post_data,
 	return 1;
 }
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 /** @return -2 if no data was read but the caller should retry;
  * -1 if an error occurred and *@a error was set; 0 at end of data;
  * a positive number if that many bytes were read.
@@ -156,18 +160,18 @@ open_http_post(struct http_post *http_post, const unsigned char *post_data,
  * @relates http_post */
 static int
 read_http_post_inline(struct http_post *http_post,
-		      unsigned char buffer[], int max,
+		      char buffer[], int max,
 		      struct connection_state *error)
 {
-	const unsigned char *post = http_post->post_data;
-	const unsigned char *end = strchr((const char *)post, FILE_CHAR);
+	const char *post = http_post->post_data;
+	const char *end = strchr(post, FILE_CHAR);
 	int total = 0;
 
 	assert(http_post->post_fd < 0);
 	if_assert_failed { *error = connection_state(S_INTERNAL); return -1; }
 
 	if (!end)
-		end = strchr((const char *)post, '\0');
+		end = strchr(post, '\0');
 
 	while (post < end && total < max) {
 		int h1, h2;
@@ -189,10 +193,10 @@ read_http_post_inline(struct http_post *http_post,
 	}
 
 	http_post->file_read = 0;
-	end = strchr((const char *)(post + 1), FILE_CHAR);
+	end = strchr((post + 1), FILE_CHAR);
 	assert(end);
 	http_post->post_fd = open(http_post->files[http_post->file_index].name,
-				  O_RDONLY);
+				  O_RDONLY|O_BINARY);
 	/* Be careful not to change errno here.  */
 	if (http_post->post_fd < 0) {
 		http_post->post_data = post;
@@ -214,7 +218,7 @@ read_http_post_inline(struct http_post *http_post,
  * @relates http_post */
 static int
 read_http_post_fd(struct http_post *http_post,
-		  unsigned char buffer[], int max,
+		  char buffer[], int max,
 		  struct connection_state *error)
 {
 	const struct http_post_file *const file
@@ -281,7 +285,7 @@ read_http_post_fd(struct http_post *http_post,
  * @relates http_post */
 int
 read_http_post(struct http_post *http_post,
-	       unsigned char buffer[], int max,
+	       char buffer[], int max,
 	       struct connection_state *error)
 {
 	int total = 0;

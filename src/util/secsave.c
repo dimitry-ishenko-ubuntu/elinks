@@ -19,7 +19,7 @@
 #include "elinks.h"
 
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "osdep/osdep.h" /* Needed for mkstemp() on win32 */
 #include "util/memory.h"
 #include "util/secsave.h"
@@ -65,13 +65,13 @@
 /* FIXME: locking system on files about to be rewritten ? */
 /* FIXME: Low risk race conditions about ssi->file_name. */
 
-enum secsave_errno secsave_errno = SS_ERR_NONE;
+secsave_errno_T secsave_errno = SS_ERR_NONE;
 
 
 /** Open a file for writing in a secure way. @returns a pointer to a
  * structure secure_save_info on success, or NULL on failure. */
 static struct secure_save_info *
-secure_open_umask(unsigned char *file_name)
+secure_open_umask(char *file_name)
 {
 	struct stat st;
 	struct secure_save_info *ssi;
@@ -88,7 +88,7 @@ secure_open_umask(unsigned char *file_name)
 		return NULL;
 	}
 
-	ssi = mem_calloc(1, sizeof(*ssi));
+	ssi = (struct secure_save_info *)mem_calloc(1, sizeof(*ssi));
 	if (!ssi) {
 		secsave_errno = SS_ERR_OUT_OF_MEM;
 		goto end;
@@ -151,9 +151,9 @@ secure_open_umask(unsigned char *file_name)
 		 * then converted to FILE * using fdopen().
 		 */
 		int fd;
-		unsigned char *randname = straconcat(ssi->file_name,
+		char *randname = straconcat(ssi->file_name,
 						     ".tmp_XXXXXX",
-						     (unsigned char *) NULL);
+						     (char *) NULL);
 
 		if (!randname) {
 			secsave_errno = SS_ERR_OUT_OF_MEM;
@@ -203,7 +203,7 @@ end:
 
 /* @relates secure_save_info */
 struct secure_save_info *
-secure_open(unsigned char *file_name)
+secure_open(char *file_name)
 {
 	struct secure_save_info *ssi;
 	mode_t saved_mask;
@@ -359,8 +359,8 @@ secure_fprintf(struct secure_save_info *ssi, const char *format, ...)
 	return ret;
 }
 
-unsigned char *
-secsave_strerror(enum secsave_errno secsave_error, struct terminal *term)
+char *
+secsave_strerror(secsave_errno_T secsave_error, struct terminal *term)
 {
 	switch (secsave_error) {
 	case SS_ERR_OPEN_READ:

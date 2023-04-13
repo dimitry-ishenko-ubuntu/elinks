@@ -41,12 +41,20 @@ srcs += files('vernum.c')
 
 incs = include_directories('..', '.')
 
-extra_args = ['-DHAVE_CONFIG_H', '-fno-strict-aliasing', '-Wno-pointer-sign', '-Wno-builtin-declaration-mismatch', '-Wno-address'] + extracflags
+extra_args = ['-DHAVE_CONFIG_H', '-fno-strict-aliasing', '-Wno-address']
+
+if compiler.has_argument('-Wno-builtin-declaration-mismatch')
+	extra_args += ['-Wno-builtin-declaration-mismatch']
+endif
+
+extra_cpp_args = extra_args
+extra_cpp_args += extracppflags
 
 elinks = executable(
   'elinks', srcs,
   include_directories: incs,
   dependencies: deps,
-  c_args: extra_args,
+  c_args: extra_args + extracflags,
+  cpp_args: extra_cpp_args,
   install: true
 )

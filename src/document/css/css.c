@@ -16,7 +16,7 @@
 #include "document/css/parser.h"
 #include "document/css/stylesheet.h"
 #include "encoding/encoding.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "network/connection.h"
 #include "protocol/uri.h"
@@ -33,25 +33,25 @@ union option_info css_options_info[] = {
 		"documents.")),
 
 	INIT_OPT_BOOL("document.css", N_("Enable CSS"),
-		"enable", 0, 1,
+		"enable", OPT_ZERO, 1,
 		N_("Enable adding of CSS style info to documents.")),
 
 	INIT_OPT_BOOL("document.css", N_("Ignore \"display: none\""),
-		"ignore_display_none", 0, 1,
+		"ignore_display_none", OPT_ZERO, 1,
 		N_("When enabled, elements are rendered, even when their "
 		"display property has the value \"none\". Because ELinks's "
 		"CSS support is still very incomplete, this setting can "
 		"improve the way that some documents are rendered.")),
 
 	INIT_OPT_BOOL("document.css", N_("Import external style sheets"),
-		"import", 0, 1,
+		"import", OPT_ZERO, 1,
 		N_("When enabled any external style sheets that are imported "
 		"from either CSS itself using the @import keyword or from the "
 		"HTML using <link> tags in the document header will also be "
 		"downloaded.")),
 
 	INIT_OPT_STRING("document.css", N_("Default style sheet"),
-		"stylesheet", 0, "",
+		"stylesheet", OPT_ZERO, "",
 		N_("The path to the file containing the default user defined "
 		"Cascading Style Sheet. It can be used to control the basic "
 		"layout of HTML documents. The path is assumed to be relative "
@@ -60,7 +60,7 @@ union option_info css_options_info[] = {
 		"Leave as \"\" to use built-in document styling.")),
 
 	INIT_OPT_STRING("document.css", N_("Media types"),
-		"media", 0, "tty",
+		"media", OPT_ZERO, "tty",
 		N_("CSS media types that ELinks claims to support, separated "
 		"with commas. The \"all\" type is implied. Currently, only "
 		"ASCII characters work reliably here.  See CSS2 section 7: "
@@ -84,14 +84,14 @@ union option_info css_options_info[] = {
  *
  * @return nonzero if the media type is supported, 0 if not.  */
 int
-supports_css_media_type(const unsigned char *optstr,
-			const unsigned char *token, size_t token_length)
+supports_css_media_type(const char *optstr,
+			const char *token, size_t token_length)
 {
 	/* Split @optstr into comma-delimited strings, strip leading
 	 * and trailing spaces from each, and compare them to the
 	 * token.  */
 	while (*optstr != '\0') {
-		const unsigned char *beg, *end;
+		const char *beg, *end;
 
 		while (*optstr == ' ')
 			++optstr;
@@ -142,7 +142,7 @@ import_css(struct css_stylesheet *css, struct uri *uri)
 
 	fragment = get_cache_fragment(cached);
 	if (fragment) {
-		unsigned char *end = fragment->data + fragment->length;
+		char *end = fragment->data + fragment->length;
 
 		css->import_level++;
 		css_parse_stylesheet(css, uri, fragment->data, end);
@@ -153,7 +153,7 @@ import_css(struct css_stylesheet *css, struct uri *uri)
 
 static void
 import_css_file(struct css_stylesheet *css, struct uri *base_uri,
-		const unsigned char *url, int urllen)
+		const char *url, int urllen)
 {
 	struct string string, filename;
 
@@ -169,7 +169,7 @@ import_css_file(struct css_stylesheet *css, struct uri *base_uri,
 	add_bytes_to_string(&filename, url, urllen);
 
 	if (is_in_state(read_encoded_file(&filename, &string), S_OK)) {
-		unsigned char *end = string.source + string.length;
+		char *end = string.source + string.length;
 
 		css->import_level++;
 		css_parse_stylesheet(css, base_uri, string.source, end);
@@ -185,7 +185,7 @@ struct css_stylesheet default_stylesheet = INIT_CSS_STYLESHEET(default_styleshee
 static void
 import_default_css(void)
 {
-	unsigned char *url = get_opt_str("document.css.stylesheet", NULL);
+	char *url = get_opt_str("document.css.stylesheet", NULL);
 
 	if (!css_selector_set_empty(&default_stylesheet.selectors))
 		done_css_stylesheet(&default_stylesheet);

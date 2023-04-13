@@ -4,8 +4,17 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
 #include <ctype.h>
 #include <string.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "elinks.h"
 
@@ -14,13 +23,14 @@
 #include "config/conf.h"
 #include "config/dialogs.h"
 #include "config/domain.h"
+#include "config/home.h"
 #include "config/options.h"
 #include "config/opttypes.h"
 #include "dialogs/status.h"
 #include "document/document.h"
 #include "globhist/globhist.h"
 #include "intl/charsets.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/main.h" /* shrink_memory() */
 #include "main/select.h"
 #include "network/connection.h"
@@ -34,6 +44,7 @@
 #include "util/string.h"
 #include "viewer/text/draw.h"
 
+extern int ui_double_esc;
 
 /* TODO? In the past, covered by shadow and legends, remembered only by the
  * ELinks Elders now, options were in hashes (it was not for a long time, after
@@ -57,7 +68,7 @@ static INIT_LIST_OF(struct option, options_root_tree);
 
 static struct option options_root = INIT_OPTION(
 	/* name: */	"",
-	/* flags: */	0,
+	/* flags: */	OPT_ZERO,
 	/* type: */	OPT_TREE,
 	/* min, max: */	0, 0,
 	/* value: */	&options_root_tree,
@@ -68,7 +79,7 @@ static struct option options_root = INIT_OPTION(
 struct option *config_options;
 struct option *cmdline_options;
 
-static void add_opt_rec(struct option *, unsigned char *, struct option *);
+static void add_opt_rec(struct option *, const char *, struct option *);
 static void free_options_tree(LIST_OF(struct option) *, int recursive);
 
 #ifdef CONFIG_DEBUG
@@ -78,7 +89,7 @@ static void free_options_tree(LIST_OF(struct option) *, int recursive);
 #define bad_punct(c) (c != ')' && c != '>' && !isquote(c) && ispunct(c))
 
 static void
-check_caption(unsigned char *caption)
+check_caption(char *caption)
 {
 	int len;
 	unsigned char c;
@@ -89,7 +100,7 @@ check_caption(unsigned char *caption)
 	if (!len) return;
 
 	c = caption[len - 1];
-	if (isspace(c) || bad_punct(c))
+	if (isspace((unsigned char)c) || bad_punct(c))
 		DBG("bad char at end of caption [%s]", caption);
 
 #ifdef CONFIG_NLS
@@ -98,7 +109,7 @@ check_caption(unsigned char *caption)
 	if (!len) return;
 
 	c = caption[len - 1];
-	if (isspace(c) || bad_punct(c))
+	if (isspace((unsigned char)c) || bad_punct(c))
 		DBG("bad char at end of i18n caption [%s]", caption);
 #endif
 }
@@ -106,7 +117,7 @@ check_caption(unsigned char *caption)
 #undef bad_punct
 
 static void
-check_description(unsigned char *desc)
+check_description(char *desc)
 {
 	int len;
 	unsigned char c;
@@ -117,7 +128,7 @@ check_description(unsigned char *desc)
 	if (!len) return;
 
 	c = desc[len - 1];
-	if (isspace(c))
+	if (isspace((unsigned char)c))
 		DBG("bad char at end of description [%s]", desc);
 
 #ifdef CONFIG_NLS
@@ -129,7 +140,7 @@ check_description(unsigned char *desc)
 		DBG("punctuation char possibly missing at end of i18n description [%s]", desc);
 
 	c = desc[len - 1];
-	if (isspace(c))
+	if (isspace((unsigned char)c))
 		DBG("bad char at end of i18n description [%s]", desc);
 #endif
 }
@@ -170,18 +181,18 @@ static int no_autocreate = 0;
  *
  * @relates option */
 struct option *
-get_opt_rec(struct option *tree, const unsigned char *name_)
+get_opt_rec(struct option *tree, const char *name_)
 {
 	struct option *option;
-	unsigned char *aname = stracpy(name_);
-	unsigned char *name = aname;
-	unsigned char *sep;
+	char *aname = stracpy(name_);
+	char *name = aname;
+	char *sep;
 
 	if (!aname) return NULL;
 
 	/* We iteratively call get_opt_rec() each for path_elements-1, getting
 	 * appropriate tree for it and then resolving [path_elements]. */
-	if ((sep = strrchr((const char *)name, '.'))) {
+	if ((sep = strrchr(name, '.'))) {
 		*sep = '\0';
 
 		tree = get_opt_rec(tree, name);
@@ -226,7 +237,7 @@ get_opt_rec(struct option *tree, const unsigned char *name_)
 			mem_free(aname);
 			return NULL;
 		}
-		mem_free_set(&option->name, stracpy(name));
+		mem_free_set(&option->aname, stracpy(name));
 
 		add_opt_rec(tree, "", option);
 
@@ -243,7 +254,7 @@ get_opt_rec(struct option *tree, const unsigned char *name_)
  * enabled.
  * @relates option */
 struct option *
-get_opt_rec_real(struct option *tree, const unsigned char *name)
+get_opt_rec_real(struct option *tree, const char *name)
 {
 	struct option *opt;
 
@@ -282,9 +293,9 @@ indirect_option(struct option *alias)
 union option_value *
 get_opt_(
 #ifdef CONFIG_DEBUG
-	 unsigned char *file, int line, enum option_type option_type,
+	 char *file, int line, enum option_type option_type,
 #endif
-	 struct option *tree, unsigned char *name, struct session *ses)
+	 struct option *tree, const char *name, struct session *ses)
 {
 	struct option *opt = NULL;
 
@@ -437,7 +448,7 @@ append:
 /** Add option to tree.
  * @relates option */
 static void
-add_opt_rec(struct option *tree, unsigned char *path, struct option *option)
+add_opt_rec(struct option *tree, const char *path, struct option *option)
 {
 	int abi = 0;
 
@@ -488,7 +499,7 @@ add_opt_rec(struct option *tree, unsigned char *path, struct option *option)
 static inline struct listbox_item *
 init_option_listbox_item(struct option *option)
 {
-	struct listbox_item *item = mem_calloc(1, sizeof(*item));
+	struct listbox_item *item = (struct listbox_item *)mem_calloc(1, sizeof(*item));
 
 	if (!item) return NULL;
 
@@ -502,11 +513,11 @@ init_option_listbox_item(struct option *option)
 
 /*! @relates option */
 struct option *
-add_opt(struct option *tree, unsigned char *path, unsigned char *capt,
-	unsigned char *name, enum option_flags flags, enum option_type type,
-	long min, long max, longptr_T value, unsigned char *desc)
+add_opt(struct option *tree, const char *path, const char *capt,
+	const char *name, option_flags_T flags, enum option_type type,
+	long min, long max, longptr_T value, const char *desc)
 {
-	struct option *option = mem_calloc(1, sizeof(*option));
+	struct option *option = (struct option *)mem_calloc(1, sizeof(*option));
 
 	if (!option) return NULL;
 
@@ -539,10 +550,10 @@ add_opt(struct option *tree, unsigned char *path, unsigned char *capt,
 				mem_free(option);
 				return NULL;
 			}
-			option->value.string = (unsigned char *) value;
+			option->value.string = (char *) value;
 			break;
 		case OPT_ALIAS:
-			option->value.string = (unsigned char *) value;
+			option->value.string = (char *) value;
 			break;
 		case OPT_BOOL:
 		case OPT_INT:
@@ -550,14 +561,14 @@ add_opt(struct option *tree, unsigned char *path, unsigned char *capt,
 			option->value.number = (int) value;
 			break;
 		case OPT_LONG:
-			option->value.big_number = (long) value; /* FIXME: cast from void * */
+			option->value.big_number = (intptr_t) value; /* FIXME: cast from void * */
 			break;
 		case OPT_COLOR:
-			decode_color((unsigned char *) value, strlen((unsigned char *) value),
+			decode_color((char *) value, strlen((char *) value),
 					&option->value.color);
 			break;
 		case OPT_COMMAND:
-			option->value.command = (void *) value;
+			option->value.command = (const char * (*)(struct option_elinks *, char ***, int *))value;
 			break;
 		case OPT_LANGUAGE:
 			break;
@@ -595,7 +606,7 @@ done_option(struct option *option)
 		done_listbox_item(&option_browser, option->box_item);
 
 	if (option->flags & OPT_ALLOC) {
-		mem_free_if(option->name);
+		mem_free_if(option->aname);
 		mem_free(option);
 	} else if (!option->capt) {
 		/* We are probably dealing with a built-in autocreated option
@@ -672,7 +683,7 @@ delete_option(struct option *option)
 struct option *
 copy_option(struct option *template_, int flags)
 {
-	struct option *option = mem_calloc(1, sizeof(*option));
+	struct option *option = (struct option *)mem_calloc(1, sizeof(*option));
 
 	if (!option) return NULL;
 
@@ -753,7 +764,7 @@ get_option_shadow(struct option *option, struct option *tree,
 LIST_OF(struct option) *
 init_options_tree(void)
 {
-	LIST_OF(struct option) *ptr = mem_alloc(sizeof(*ptr));
+	LIST_OF(struct option) *ptr = (LIST_OF(struct option) *)mem_alloc(sizeof(*ptr));
 
 	if (ptr) init_list(*ptr);
 	return ptr;
@@ -864,6 +875,31 @@ change_hook_ui(struct session *ses, struct option *current, struct option *chang
 	return 0;
 }
 
+static int
+change_hook_ui_double_esc(struct session *ses, struct option *current, struct option *changed)
+{
+	ui_double_esc = changed->value.number;
+	return 0;
+}
+
+#ifdef CONFIG_MOUSE
+static int
+change_hook_ui_mouse_disable(struct session *ses, struct option *current, struct option *changed)
+{
+	char *lock_filename = straconcat(empty_string_or_(elinks_home), "mouse.lock", (char *)NULL);
+
+	if (lock_filename) {
+		if (changed->value.number) {
+			creat(lock_filename, 0600);
+		} else {
+			unlink(lock_filename);
+		}
+		mem_free(lock_filename);
+	}
+	return 0;
+}
+#endif
+
 /** Make option templates visible or invisible in the option manager.
  * This is called once on startup, and then each time the value of the
  * "config.show_template" option is changed.
@@ -936,7 +972,11 @@ static const struct change_hook_info change_hooks[] = {
 	{ "document.html",		change_hook_html },
 	{ "document.plain",		change_hook_html },
 	{ "terminal",			change_hook_terminal },
+	{ "ui.double_esc",		change_hook_ui_double_esc },
 	{ "ui.language",		change_hook_language },
+#ifdef CONFIG_MOUSE
+	{ "ui.mouse_disable",	change_hook_ui_mouse_disable },
+#endif
 	{ "ui",				change_hook_ui },
 	{ NULL,				NULL },
 };
@@ -945,7 +985,7 @@ void
 init_options(void)
 {
 	cmdline_options = add_opt_tree_tree(&options_root, "", "",
-					    "cmdline", 0, "");
+					    "cmdline", OPT_ZERO, "");
 	register_options(cmdline_options_info, cmdline_options);
 
 	config_options = add_opt_tree_tree(&options_root, "", "",
@@ -956,6 +996,8 @@ init_options(void)
 
 	register_autocreated_options();
 	register_change_hooks(change_hooks);
+
+	ui_double_esc = get_opt_bool("ui.double_esc", NULL);
 }
 
 /*! @relates option */
@@ -963,7 +1005,7 @@ static void
 free_options_tree(LIST_OF(struct option) *tree, int recursive)
 {
 	while (!list_empty(*tree))
-		delete_option_do(tree->next, recursive);
+		delete_option_do((struct option *)tree->next, recursive);
 }
 
 void
@@ -1059,9 +1101,9 @@ check_nonempty_tree(LIST_OF(struct option) *options)
 void
 smart_config_string(struct string *str, int print_comment, int i18n,
 		    LIST_OF(struct option) *options,
-		    unsigned char *path, int depth,
+		    char *path, int depth,
 		    void (*fn)(struct string *, struct option *,
-			       unsigned char *, int, int, int, int))
+			       char *, int, int, int, int))
 {
 	struct option *option;
 
@@ -1114,7 +1156,7 @@ smart_config_string(struct string *str, int print_comment, int i18n,
 
 		/* And the option itself */
 
-		if (option_types[option->type].write) {
+		if (option_types[option->type].write2) {
 			fn(str, option, path, depth,
 			   do_print_comment, 2, i18n);
 
@@ -1202,7 +1244,7 @@ commit_option_values(struct option_resolver *resolvers,
 	assert(resolvers && root && values && size);
 
 	for (i = 0; i < size; i++) {
-		unsigned char *name = resolvers[i].name;
+		const char *name = resolvers[i].name;
 		struct option *option = get_opt_rec(root, name);
 		int id = resolvers[i].id;
 
@@ -1239,7 +1281,7 @@ checkout_option_values(struct option_resolver *resolvers,
 	int i;
 
 	for (i = 0; i < size; i++) {
-		unsigned char *name = resolvers[i].name;
+		const char *name = resolvers[i].name;
 		struct option *option = get_opt_rec(root, name);
 		int id = resolvers[i].id;
 
@@ -1260,7 +1302,7 @@ register_options(union option_info info[], struct option *tree)
 {
 	int i;
 	static const struct option zero = INIT_OPTION(
-		NULL, 0, 0, 0, 0, 0, NULL, NULL);
+		NULL, OPT_ZERO, OPT_BOOL, 0, 0, 0, NULL, NULL);
 
 	/* To let unregister_options() correctly find the end of the
 	 * info[] array, this loop must convert every element from
@@ -1273,7 +1315,7 @@ register_options(union option_info info[], struct option *tree)
 		const struct option_init init = info[i].init;
 
 		struct option *option = &info[i].option;
-		unsigned char *string;
+		char *string;
 
 		*option = zero;
 		option->name = init.name;
@@ -1307,22 +1349,22 @@ register_options(union option_info info[], struct option *tree)
 				}
 				break;
 			case OPT_STRING:
-				string = mem_alloc(MAX_STR_LEN);
+				string = (char *)mem_alloc(MAX_STR_LEN);
 				if (!string) {
 					delete_option(option);
 					continue;
 				}
-				safe_strncpy(string, init.value_dataptr, MAX_STR_LEN);
+				safe_strncpy(string, (const char *)init.value_dataptr, MAX_STR_LEN);
 				option->value.string = string;
 				break;
 			case OPT_COLOR:
-				string = init.value_dataptr;
+				string = (char *)init.value_dataptr;
 				assert(string);
 				decode_color(string, strlen(string),
 						&option->value.color);
 				break;
 			case OPT_CODEPAGE:
-				string = init.value_dataptr;
+				string = (char *)init.value_dataptr;
 				assert(string);
 				option->value.number = get_cp_index(string);
 				break;
@@ -1341,7 +1383,7 @@ register_options(union option_info info[], struct option *tree)
 				option->value.command = init.value_funcptr;
 				break;
 			case OPT_ALIAS:
-				option->value.string = init.value_dataptr;
+				option->value.string = (char *)init.value_dataptr;
 				break;
 		}
 
@@ -1365,4 +1407,16 @@ unregister_options(union option_info info[], struct option *tree)
 
 	for (i--; i >= 0; i--)
 		delete_option_do(&info[i].option, 0);
+}
+
+int
+get_https_by_default(void)
+{
+	return get_opt_bool("connection.ssl.https_by_default", NULL);
+}
+
+const char *
+get_default_protocol(void)
+{
+	return get_opt_str("protocol.default_protocol", NULL);
 }

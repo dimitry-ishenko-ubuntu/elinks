@@ -12,7 +12,7 @@ struct dialog_data;
 struct terminal;
 
 struct widget_info_text	{
-	enum format_align align;
+	format_align_T align;
 	unsigned int is_label:1;
 	unsigned int is_scrollable:1;
 };
@@ -46,13 +46,16 @@ struct widget_data_info_text {
 #endif
 };
 
-void add_dlg_text(struct dialog *dlg, unsigned char *text,
-		  enum format_align align, int bottom_pad);
+void add_dlg_text(struct dialog *dlg, char *text,
+		  format_align_T align, int bottom_pad);
 
 extern const struct widget_ops text_ops;
+
 void dlg_format_text_do(struct dialog_data *dlg_data,
-		    unsigned char *text, int x, int *y, int w, int *rw,
-		    struct color_pair *scolor, enum format_align align, int format_only);
+		const char *text,
+		int x, int *y, int width, int *real_width,
+		struct color_pair *color, format_align_T align,
+		int format_only);
 
 void
 dlg_format_text(struct dialog_data *dlg_data, struct widget_data *widget_data,

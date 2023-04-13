@@ -9,6 +9,10 @@
 #endif
 
 #include <errno.h>
+#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h> /* OS/2 needs this after sys/types.h */
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,7 +36,7 @@ extern "C" {
 
 #include "cache/cache.h"
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "main/select.h"
 #include "network/connection.h"
@@ -70,7 +74,7 @@ struct module fsp_protocol_module = struct_module(
  * - If an error occurs, the child process writes "text/x-error"
  *   without newline to stderr, and an error code and a newline to
  *   stdout.  The error code is either "S" followed by errno or "I"
- *   followed by enum connection_basic_state.  In particular, EPERM
+ *   followed by connection_basic_state_T.  In particular, EPERM
  *   causes the parent process to prompt for username and password.
  *   (In this, fsplib differs from libsmbclient, which uses EACCES if
  *   authentication fails.)
@@ -118,7 +122,7 @@ fsp_error(struct connection_state error)
 static int
 compare(const void *av, const void *bv)
 {
-	const FSP_RDENTRY *a = av, *b = bv;
+	const FSP_RDENTRY *a = (const FSP_RDENTRY *)av, *b = (const FSP_RDENTRY *)bv;
 	int res = ((b->type == FSP_RDTYPE_DIR) - (a->type == FSP_RDTYPE_DIR));
 
 	if (res)
@@ -127,7 +131,7 @@ compare(const void *av, const void *bv)
 }
 
 static void
-display_entry(const FSP_RDENTRY *fentry, const unsigned char dircolor[])
+display_entry(const FSP_RDENTRY *fentry, const char dircolor[])
 {
 	struct string string;
 
@@ -167,7 +171,7 @@ display_entry(const FSP_RDENTRY *fentry, const unsigned char dircolor[])
 }
 
 static void
-sort_and_display_entries(FSP_DIR *dir, const unsigned char dircolor[])
+sort_and_display_entries(FSP_DIR *dir, const char dircolor[])
 {
 	/* fsp_readdir_native in fsplib 0.9 and earlier requires
 	 * the third parameter to point to a non-null pointer
@@ -187,7 +191,7 @@ sort_and_display_entries(FSP_DIR *dir, const unsigned char dircolor[])
 		if (!fresult) break;
 		if (!strcmp(fentry.name, "."))
 			continue;
-		new_table = mem_realloc(table, (size + 1) * sizeof(*table));
+		new_table = (FSP_RDENTRY *)mem_realloc(table, (size + 1) * sizeof(*table));
 		if (!new_table)
 			continue;
 		table = new_table;
@@ -209,8 +213,8 @@ fsp_directory(FSP_SESSION *ses, struct uri *uri)
 {
 	struct string buf;
 	FSP_DIR *dir;
-	unsigned char *data = get_uri_string(uri, URI_DATA);
-	unsigned char dircolor[8] = "";
+	char *data = get_uri_string(uri, URI_DATA);
+	char dircolor[8] = "";
 
 	if (!data)
 		fsp_error(connection_state(S_OUT_OF_MEM));
@@ -247,10 +251,10 @@ do_fsp(struct connection *conn)
 	struct stat sb;
 	struct uri *uri = conn->uri;
 	struct auth_entry *auth;
-	unsigned char *host = get_uri_string(uri, URI_HOST);
-	unsigned char *data = get_uri_string(uri, URI_DATA);
+	char *host = get_uri_string(uri, URI_HOST);
+	char *data = get_uri_string(uri, URI_DATA);
 	unsigned short port = (unsigned short)get_uri_port(uri);
-	unsigned char *password = NULL;
+	char *password = NULL;
 
 	decode_uri(data);
 	if (uri->passwordlen) {
@@ -362,7 +366,7 @@ static void
 fsp_got_error(struct socket *socket, struct read_buffer *rb)
 {
 	int len = rb->length;
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 	struct connection_state error;
 
 	if (len < 0) {
@@ -404,7 +408,7 @@ static void
 fsp_got_data(struct socket *socket, struct read_buffer *rb)
 {
 	int len = rb->length;
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 
 	if (len < 0) {
 		abort_connection(conn, connection_state_for_errno(errno));
@@ -429,7 +433,7 @@ fsp_got_data(struct socket *socket, struct read_buffer *rb)
 static void
 fsp_got_header(struct socket *socket, struct read_buffer *rb)
 {
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 	struct read_buffer *buf;
 	int error = 0;
 
@@ -448,7 +452,7 @@ fsp_got_header(struct socket *socket, struct read_buffer *rb)
 	socket->state = SOCKET_END_ONCLOSE;
 
 	if (rb->length > 0) {
-		unsigned char *ctype = memacpy(rb->data, rb->length);
+		char *ctype = memacpy(rb->data, rb->length);
 
 		if (ctype && *ctype) {
 			if (!strcmp(ctype, "text/x-error")) {

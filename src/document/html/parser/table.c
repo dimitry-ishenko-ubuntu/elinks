@@ -34,7 +34,7 @@
 	mem_align_alloc(bad_html, size, (size) + 1, 0xFF)
 
 static void
-add_table_bad_html_start(struct table *table, unsigned char *start)
+add_table_bad_html_start(struct table *table, char *start)
 {
 	if (table->caption.start && !table->caption.end)
 		return;
@@ -49,7 +49,7 @@ add_table_bad_html_start(struct table *table, unsigned char *start)
 }
 
 static void
-add_table_bad_html_end(struct table *table, unsigned char *end)
+add_table_bad_html_end(struct table *table, char *end)
 {
 	if (table->caption.start && !table->caption.end) {
 		table->caption.end = end;
@@ -63,9 +63,9 @@ add_table_bad_html_end(struct table *table, unsigned char *end)
 
 
 static void
-get_bordercolor(struct html_context *html_context, unsigned char *a, color_T *rgb)
+get_bordercolor(struct html_context *html_context, char *a, color_T *rgb)
 {
-	unsigned char *at;
+	char *at;
 
 	if (!use_document_fg_colors(html_context->options))
 		return;
@@ -83,9 +83,9 @@ get_bordercolor(struct html_context *html_context, unsigned char *a, color_T *rg
 }
 
 static void
-get_align(struct html_context *html_context, unsigned char *attr, int *a)
+get_align(struct html_context *html_context, char *attr, int *a)
 {
-	unsigned char *al = get_attr_val(attr, "align", html_context->doc_cp);
+	char *al = get_attr_val(attr, "align", html_context->doc_cp);
 
 	if (!al) return;
 
@@ -98,9 +98,9 @@ get_align(struct html_context *html_context, unsigned char *attr, int *a)
 }
 
 static void
-get_valign(struct html_context *html_context, unsigned char *attr, int *a)
+get_valign(struct html_context *html_context, char *attr, int *a)
 {
-	unsigned char *al = get_attr_val(attr, "valign", html_context->doc_cp);
+	char *al = get_attr_val(attr, "valign", html_context->doc_cp);
 
 	if (!al) return;
 
@@ -112,17 +112,17 @@ get_valign(struct html_context *html_context, unsigned char *attr, int *a)
 }
 
 static void
-get_column_width(unsigned char *attr, int *width, int sh,
+get_column_width(char *attr, int *width, int sh,
                  struct html_context *html_context)
 {
-	unsigned char *al = get_attr_val(attr, "width", html_context->doc_cp);
+	char *al = get_attr_val(attr, "width", html_context->doc_cp);
 	int len;
 
 	if (!al) return;
 
 	len = strlen(al);
 	if (len && al[len - 1] == '*') {
-		unsigned char *en;
+		char *en;
 		int n;
 
 		al[len - 1] = '\0';
@@ -140,9 +140,9 @@ get_column_width(unsigned char *attr, int *width, int sh,
 
 static void
 set_table_frame(struct html_context *html_context, struct table *table,
-                unsigned char *attr)
+                char *attr)
 {
-	unsigned char *al;
+	char *al;
 
 	if (!table->border) {
 		table->frame = TABLE_FRAME_VOID;
@@ -170,9 +170,9 @@ set_table_frame(struct html_context *html_context, struct table *table,
 
 static void
 set_table_rules(struct html_context *html_context, struct table *table,
-                unsigned char *attr)
+                char *attr)
 {
-	unsigned char *al;
+	char *al;
 
 	table->rules = table->border ? TABLE_RULE_ALL : TABLE_RULE_NONE;
 
@@ -188,7 +188,7 @@ set_table_rules(struct html_context *html_context, struct table *table,
 }
 
 static void
-parse_table_attributes(struct table *table, unsigned char *attr, int real,
+parse_table_attributes(struct table *table, char *attr, int real,
                        struct html_context *html_context)
 {
 	table->fragment_id = get_attr_val(attr, "id", html_context->doc_cp);
@@ -242,22 +242,22 @@ parse_table_attributes(struct table *table, unsigned char *attr, int real,
 
 	set_table_rules(html_context, table, attr);
 
-	table->align = par_format.align;
+	table->align = par_elformat.align;
 	get_align(html_context, attr, &table->align);
 
-	table->color.background = par_format.color.background;
+	table->color.background = par_elformat.color.background;
 	get_bgcolor(html_context, attr, &table->color.background);
 }
 
 
-static struct table *
+struct table *
 new_table(void)
 {
-	struct table *table = mem_calloc(1, sizeof(*table));
+	struct table *table = (struct table *)mem_calloc(1, sizeof(*table));
 
 	if (!table) return NULL;
 
-	table->cells = mem_calloc(INIT_REAL_COLS * INIT_REAL_ROWS,
+	table->cells = (struct table_cell *)mem_calloc(INIT_REAL_COLS * INIT_REAL_ROWS,
 				  sizeof(*table->cells));
 	if (!table->cells) {
 		mem_free(table);
@@ -266,7 +266,7 @@ new_table(void)
 	table->real_cols = INIT_REAL_COLS;
 	table->real_rows = INIT_REAL_ROWS;
 
-	table->columns = mem_calloc(INIT_REAL_COLS, sizeof(*table->columns));
+	table->columns = (struct table_column *)mem_calloc(INIT_REAL_COLS, sizeof(*table->columns));
 	if (!table->columns) {
 		mem_free(table->cells);
 		mem_free(table);
@@ -391,7 +391,7 @@ smart_raise(int target, int base, int unit, int limit)
 	return base;
 }
 
-static struct table_cell *
+struct table_cell *
 new_cell(struct table *table, int dest_col, int dest_row)
 {
 	if (dest_col < table->cols && dest_row < table->rows)
@@ -421,7 +421,7 @@ new_cell(struct table *table, int dest_col, int dest_row)
 					    sizeof(*new_.cells), limit);
 		if (!new_.real_rows) return NULL;
 
-		new_.cells = mem_calloc(new_.real_cols * new_.real_rows,
+		new_.cells = (struct table_cell *)mem_calloc(new_.real_cols * new_.real_rows,
 				       sizeof(*new_.cells));
 		if (!new_.cells) return NULL;
 
@@ -434,7 +434,7 @@ new_cell(struct table *table, int dest_col, int dest_row)
 	}
 }
 
-static void
+void
 new_columns(struct table *table, int span, int width, int align,
 	    int valign, int group)
 {
@@ -446,7 +446,7 @@ new_columns(struct table *table, int span, int width, int align,
 				sizeof(*new_columns), SMART_RAISE_LIMIT);
 		if (!n) return;
 
-		new_columns = mem_realloc(table->columns, n * sizeof(*new_columns));
+		new_columns = (struct table_column *)mem_realloc(table->columns, n * sizeof(*new_columns));
 		if (!new_columns) return;
 
 		table->real_columns_count = n;
@@ -464,7 +464,7 @@ new_columns(struct table *table, int span, int width, int align,
 	}
 }
 
-static void
+void
 set_td_width(struct table *table, int col, int width, int force)
 {
 	if (col >= table->cols_x_count) {
@@ -476,7 +476,7 @@ set_td_width(struct table *table, int col, int width, int force)
 		if (!n && table->cols_x_count) return;
 		if (!n) n = col + 1;
 
-		new_cols_x = mem_realloc(table->cols_x, n * sizeof(*new_cols_x));
+		new_cols_x = (int *)mem_realloc(table->cols_x, n * sizeof(*new_cols_x));
 		if (!new_cols_x) return;
 
 		for (i = table->cols_x_count; i < n; i++)
@@ -501,13 +501,13 @@ set_td_width(struct table *table, int col, int width, int force)
 	table->cols_x[col] = (table->cols_x[col] + width) >> 1;
 }
 
-static unsigned char *
-skip_table(unsigned char *html, unsigned char *eof)
+static char *
+skip_table(char *html, char *eof)
 {
 	int level = 1;
 
 	while (1) {
-		unsigned char *name;
+		char *name;
 		int namelen, closing_tag = 0;
 
 		while (html < eof
@@ -539,13 +539,13 @@ skip_table(unsigned char *html, unsigned char *eof)
 }
 
 struct table *
-parse_table(unsigned char *html, unsigned char *eof, unsigned char **end,
-	    unsigned char *attr, int sh, struct html_context *html_context)
+parse_table(char *html, char *eof, char **end,
+	    char *attr, int sh, struct html_context *html_context)
 {
 	struct table *table;
 	struct table_cell *cell;
-	unsigned char *t_attr, *en, *name;
-	unsigned char *l_fragment_id = NULL;
+	char *t_attr, *en, *name;
+	char *l_fragment_id = NULL;
 	color_T last_bgcolor;
 	int namelen;
 	int in_cell = 0;
@@ -912,7 +912,7 @@ scan_done:
 	}
 
 	if (table->rows) {
-		table->rows_heights = mem_calloc(table->rows, sizeof(*table->rows_heights));
+		table->rows_heights = (int *)mem_calloc(table->rows, sizeof(*table->rows_heights));
 		if (!table->rows_heights)
 			goto abort;
 	} else {

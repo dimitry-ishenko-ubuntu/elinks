@@ -4,12 +4,17 @@
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h> /* OS/2 needs this after sys/types.h */
+#endif
+
 #include "elinks.h"
 
 #include "dialogs/document.h"
 #include "dialogs/download.h"
 #include "dialogs/progress.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "mime/mime.h"
 #include "network/connection.h"
 #include "network/state.h"
@@ -28,7 +33,7 @@
 
 struct bittorrent_download_info {
 	LIST_OF(struct string_list_item) labels;
-	unsigned char *name;
+	char *name;
 	int *selection;
 	size_t size;
 };
@@ -49,7 +54,7 @@ init_bittorrent_download_info(struct bittorrent_meta *meta)
 	struct bittorrent_file *file;
 	size_t max_label = 0;
 
-	info = mem_calloc(1, sizeof(*info));
+	info = (struct bittorrent_download_info *)mem_calloc(1, sizeof(*info));
 	if (!info) return NULL;
 
 	init_list(info->labels);
@@ -83,7 +88,7 @@ init_bittorrent_download_info(struct bittorrent_meta *meta)
 		done_string(&string);
 	}
 
-	info->selection = mem_calloc(info->size, sizeof(*info->selection));
+	info->selection = (int *)mem_calloc(info->size, sizeof(*info->selection));
 	if (!info->selection || info->size != list_size(&meta->files)) {
 		done_bittorrent_download_info(info);
 		return NULL;
@@ -198,7 +203,7 @@ set_bittorrent_files_for_deletion(struct download *download)
 	if (!download->conn || !download->conn->info)
 		return;
 
-	bittorrent = download->conn->info;
+	bittorrent = (struct bittorrent_connection *)download->conn->info;
 	bittorrent->cache->delete_files = 1;
 }
 
@@ -210,7 +215,7 @@ set_bittorrent_notify_on_completion(struct download *download, struct terminal *
 	if (!download->conn || !download->conn->info)
 		return;
 
-	bittorrent = download->conn->info;
+	bittorrent = (struct bittorrent_connection *)download->conn->info;
 	bittorrent->cache->notify_complete = 1;
 	bittorrent->term = term;
 }
@@ -219,7 +224,7 @@ void
 notify_bittorrent_download_complete(struct bittorrent_connection *bittorrent)
 {
 	struct connection *conn = bittorrent->conn;
-	unsigned char *url = get_uri_string(conn->uri, URI_PUBLIC);
+	char *url = get_uri_string(conn->uri, URI_PUBLIC);
 
 	if (!url) return;
 
@@ -235,7 +240,7 @@ notify_bittorrent_download_complete(struct bittorrent_connection *bittorrent)
 widget_handler_status_T
 dlg_show_bittorrent_info(struct dialog_data *dlg_data, struct widget_data *widget_data)
 {
-	struct file_download *file_download = dlg_data->dlg->udata;
+	struct file_download *file_download = (struct file_download *)dlg_data->dlg->udata;
 	struct download *download = &file_download->download;
 	struct string msg;
 
@@ -244,9 +249,9 @@ dlg_show_bittorrent_info(struct dialog_data *dlg_data, struct widget_data *widge
 	    && init_string(&msg)) {
 		struct terminal *term = file_download->term;
 		struct bittorrent_connection *bittorrent;
-		enum msgbox_flags flags = MSGBOX_FREE_TEXT;
+		msgbox_flags_T flags = MSGBOX_FREE_TEXT;
 
-		bittorrent = download->conn->info;
+		bittorrent = (struct bittorrent_connection *)download->conn->info;
 
 		add_bittorrent_meta_to_string(&msg, &bittorrent->meta, term, 1);
 
@@ -268,12 +273,12 @@ dlg_show_bittorrent_info(struct dialog_data *dlg_data, struct widget_data *widge
 /* Compose and return the status message about current download speed and
  * BitTorrent swarm info. It is called fairly often so most values used in here
  * should be easily accessible. */
-unsigned char *
+char *
 get_bittorrent_message(struct download *download, struct terminal *term,
-		       int wide, int full, unsigned char *separator)
+		       int wide, int full, const char *separator)
 {
 	/* Cooresponds to the connection mode enum. */
-	static unsigned char *modes_text[] = {
+	static char *modes_text[] = {
 		N_("downloading (random)"),
 		N_("downloading (rarest first)"),
 		N_("downloading (end game)"),
@@ -282,7 +287,7 @@ get_bittorrent_message(struct download *download, struct terminal *term,
 	struct bittorrent_connection *bittorrent;
 	struct bittorrent_peer_connection *peer;
 	struct string string;
-	unsigned char *msg;
+	char *msg;
 	uint32_t value;
 
 	if (!download->conn
@@ -297,7 +302,7 @@ get_bittorrent_message(struct download *download, struct terminal *term,
 		return NULL;
 	}
 
-	bittorrent = download->conn->info;
+	bittorrent = (struct bittorrent_connection *)download->conn->info;
 
 	add_to_string(&string, msg);
 	mem_free(msg);
@@ -449,7 +454,7 @@ get_bittorrent_message(struct download *download, struct terminal *term,
 
 void
 draw_bittorrent_piece_progress(struct download *download, struct terminal *term,
-			       int x, int y, int width, unsigned char *text,
+			       int x, int y, int width, char *text,
 			       struct color_pair *color)
 {
 	struct bittorrent_connection *bittorrent;
@@ -459,7 +464,7 @@ draw_bittorrent_piece_progress(struct download *download, struct terminal *term,
 	if (!download->conn || !download->conn->info)
 		return;
 
-	bittorrent = download->conn->info;
+	bittorrent = (struct bittorrent_connection *)download->conn->info;
 
 	/* Draw the progress meter part "[###    ]" */
 	if (!text && width > 2) {
@@ -533,7 +538,7 @@ draw_bittorrent_piece_progress(struct download *download, struct terminal *term,
 	}
 
 	if (is_in_state(download->state, S_RESUME)) {
-		static unsigned char s[] = "????"; /* Reduce or enlarge at will. */
+		static char s[] = "????"; /* Reduce or enlarge at will. */
 		unsigned int slen = 0;
 		int max = int_min(sizeof(s), width) - 1;
 		int percent = 0;
@@ -565,9 +570,9 @@ draw_bittorrent_piece_progress(struct download *download, struct terminal *term,
 void
 bittorrent_message_dialog(struct session *ses, void *data)
 {
-	struct bittorrent_message *message = data;
+	struct bittorrent_message *message = (struct bittorrent_message *)data;
 	struct string string;
-	unsigned char *uristring;
+	char *uristring;
 
 	/* Don't show error dialogs for missing CSS stylesheets */
 	if (!init_string(&string))
@@ -612,7 +617,7 @@ bittorrent_message_dialog(struct session *ses, void *data)
 static void
 abort_bittorrent_download_query(struct dialog_data *dlg_data)
 {
-	struct bittorrent_download_info *info = dlg_data->dlg->udata;
+	struct bittorrent_download_info *info = (struct bittorrent_download_info *)dlg_data->dlg->udata;
 
 	done_bittorrent_download_info(info);
 }
@@ -625,8 +630,8 @@ abort_bittorrent_download_query(struct dialog_data *dlg_data)
 static widget_handler_status_T
 bittorrent_download(struct dialog_data *dlg_data, struct widget_data *widget_data)
 {
-	struct type_query *type_query = dlg_data->dlg->udata2;
-	struct bittorrent_download_info *info = dlg_data->dlg->udata;
+	struct type_query *type_query = (struct type_query *)dlg_data->dlg->udata2;
+	struct bittorrent_download_info *info = (struct bittorrent_download_info *)dlg_data->dlg->udata;
 	struct file_download *file_download;
 	struct session *ses = type_query->ses;
 	struct string redirect;
@@ -639,7 +644,7 @@ bittorrent_download(struct dialog_data *dlg_data, struct widget_data *widget_dat
 	add_to_string(&redirect, "bittorrent:");
 	add_uri_to_string(&redirect, type_query->uri, URI_ORIGINAL);
 
-	uri = get_uri(redirect.source, 0);
+	uri = get_uri(redirect.source, URI_NONE);
 
 	done_string(&redirect);
 	tp_cancel(type_query);
@@ -682,7 +687,7 @@ bittorrent_download(struct dialog_data *dlg_data, struct widget_data *widget_dat
 static widget_handler_status_T
 tp_show_header(struct dialog_data *dlg_data, struct widget_data *widget_data)
 {
-	struct type_query *type_query = widget_data->widget->data;
+	struct type_query *type_query = (struct type_query *)widget_data->widget->data;
 
 	cached_header_dialog(type_query->ses, type_query->cached);
 
@@ -698,9 +703,9 @@ bittorrent_query_callback(void *data, struct connection_state state,
 			  struct bittorrent_const_string *response)
 {
 	/* [gettext_accelerator_context(.bittorrent_query_callback)] */
-	struct type_query *type_query = data;
+	struct type_query *type_query = (struct type_query *)data;
 	struct string filename;
-	unsigned char *text;
+	char *text;
 	struct dialog *dlg;
 #define BITTORRENT_QUERY_WIDGETS_COUNT	6
 	int widgets = BITTORRENT_QUERY_WIDGETS_COUNT;

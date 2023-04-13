@@ -27,14 +27,14 @@
 
 
 struct document_refresh *
-init_document_refresh(unsigned char *url, unsigned long seconds)
+init_document_refresh(char *url, unsigned long seconds)
 {
 	struct document_refresh *refresh;
 
-	refresh = mem_alloc(sizeof(*refresh));
+	refresh = (struct document_refresh *)mem_alloc(sizeof(*refresh));
 	if (!refresh) return NULL;
 
-	refresh->uri = get_uri(url, 0);
+	refresh->uri = get_uri(url, URI_NONE);
 	if (!refresh->uri) {
 		mem_free(refresh);
 		return NULL;
@@ -67,7 +67,7 @@ done_document_refresh(struct document_refresh *refresh)
 static void
 do_document_refresh(void *data)
 {
-	struct document_view *doc_view = data;
+	struct document_view *doc_view = (struct document_view *)data;
 	struct document_refresh *refresh = doc_view->document->refresh;
 	struct type_query *type_query;
 

@@ -81,7 +81,7 @@ draw_border_cross(struct terminal *term, int x, int y,
 
 void
 draw_border_char(struct terminal *term, int x, int y,
-		 enum border_char border, struct color_pair *color)
+		 border_char_T border, struct color_pair *color)
 {
 	struct screen_char *screen_char = get_char(term, x, y);
 
@@ -141,6 +141,17 @@ draw_char_data(struct terminal *term, int x, int y, unsigned char data)
 	set_screen_dirty(term->screen, y, y);
 }
 
+void
+draw_space(struct terminal *term, int x, int y, struct screen_char *color)
+{
+	struct screen_char *screen_char = get_char(term, x, y);
+
+	if (!screen_char) return;
+
+	screen_char->data = ' ';
+	if (color) screen_char->c = color->c;
+}
+
 /*! Used by viewer to copy over a document.
  * When doing frame drawing @a x can be different than 0. */
 void
@@ -196,7 +207,7 @@ void
 draw_border(struct terminal *term, struct el_box *box,
 	    struct color_pair *color, int width)
 {
-	static const enum border_char p1[] = {
+	static const border_char_T p1[] = {
 		BORDER_SULCORNER,
 		BORDER_SURCORNER,
 		BORDER_SDLCORNER,
@@ -204,7 +215,7 @@ draw_border(struct terminal *term, struct el_box *box,
 		BORDER_SVLINE,
 		BORDER_SHLINE,
 	};
-	static const enum border_char p2[] = {
+	static const border_char_T p2[] = {
 		BORDER_DULCORNER,
 		BORDER_DURCORNER,
 		BORDER_DDLCORNER,
@@ -212,7 +223,7 @@ draw_border(struct terminal *term, struct el_box *box,
 		BORDER_DVLINE,
 		BORDER_DHLINE,
 	};
-	const enum border_char *p = (width > 1) ? p2 : p1;
+	const border_char_T *p = (width > 1) ? p2 : p1;
 	struct el_box borderbox;
 
 	set_box(&borderbox, box->x - 1, box->y - 1,
@@ -336,12 +347,12 @@ fix_dwchar_around_box(struct terminal *term, struct el_box *box, int border,
 #ifdef CONFIG_UTF8
 void
 draw_char(struct terminal *term, int x, int y,
-	  unicode_val_T data, enum screen_char_attr attr,
+	  unicode_val_T data, int attr,
 	  struct color_pair *color)
 #else
 void
 draw_char(struct terminal *term, int x, int y,
-		unsigned char data, enum screen_char_attr attr,
+		unsigned char data, int attr,
 	  struct color_pair *color)
 #endif /* CONFIG_UTF8 */
 {
@@ -357,10 +368,17 @@ draw_char(struct terminal *term, int x, int y,
 	set_screen_dirty(term->screen, y, y);
 }
 
+#ifdef CONFIG_UTF8
 void
 draw_box(struct terminal *term, struct el_box *box,
-	 unsigned char data, enum screen_char_attr attr,
+	 unicode_val_T data, int attr,
 	 struct color_pair *color)
+#else
+void
+draw_box(struct terminal *term, struct el_box *box,
+	 unsigned char data, int attr,
+	 struct color_pair *color)
+#endif /* CONFIG_UTF8 */
 {
 	struct screen_char *line, *pos, *end;
 	int width, height;
@@ -422,11 +440,12 @@ draw_shadow(struct terminal *term, struct el_box *box,
 #ifdef CONFIG_UTF8
 static void
 draw_text_utf8(struct terminal *term, int x, int y,
-	       unsigned char *text, int length,
-	       enum screen_char_attr attr, struct color_pair *color)
+	       const char *text2, int length,
+	       int attr, struct color_pair *color)
 {
 	struct screen_char *start, *pos;
-	unsigned char *end = text + length;
+	char *text = (char *)text2;
+	char *end = text + length;
 	unicode_val_T data;
 
 	assert(text && length >= 0);
@@ -495,8 +514,8 @@ draw_text_utf8(struct terminal *term, int x, int y,
 
 void
 draw_text(struct terminal *term, int x, int y,
-	  unsigned char *text, int length,
-	  enum screen_char_attr attr, struct color_pair *color)
+	  const char *text, int length,
+	  int attr, struct color_pair *color)
 {
 	int end_pos;
 	struct screen_char *pos, *end;
@@ -561,8 +580,8 @@ draw_text(struct terminal *term, int x, int y,
 
 void
 draw_dlg_text(struct dialog_data *dlg_data, int x, int y,
-	  unsigned char *text, int length,
-	  enum screen_char_attr attr, struct color_pair *color)
+	  const char *text, int length,
+	  int attr, struct color_pair *color)
 {
 	struct terminal *term = dlg_data->win->term;
 	struct el_box *box = &dlg_data->real_box;
@@ -620,8 +639,13 @@ void
 clear_terminal(struct terminal *term)
 {
 	struct el_box box;
+	int bgchar = get_opt_int("ui.background_char", NULL);
 
 	set_box(&box, 0, 0, term->width, term->height);
-	draw_box(term, &box, ' ', 0, NULL);
+#ifdef CONFIG_UTF8
+	draw_box(term, &box, bgchar, 0, get_bfu_color(term, "desktop"));
+#else
+	draw_box(term, &box, (unsigned char)bgchar, 0, get_bfu_color(term, "desktop"));
+#endif
 	set_cursor(term, 0, 0, 1);
 }

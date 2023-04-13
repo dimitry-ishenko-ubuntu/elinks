@@ -173,7 +173,7 @@ struct fastfind_info {
 	unsigned int compress:1;
 
 	int idxtab[FF_MAX_CHARS];
-	unsigned char uniq_chars[FF_MAX_CHARS];
+	char uniq_chars[FF_MAX_CHARS];
 
 #ifdef DEBUG_FASTFIND
 	struct {
@@ -190,7 +190,7 @@ struct fastfind_info {
 		unsigned long memory_usage;
 		unsigned long total_key_len;
 		unsigned int  compressed_nodes;
-		unsigned char *comment;
+		char *comment;
 	} debug;
 #endif
 };
@@ -285,9 +285,9 @@ FF_DBG_dump_stats(struct fastfind_info *info)
 
 
 static struct fastfind_info *
-init_fastfind(struct fastfind_index *index, enum fastfind_flags flags)
+init_fastfind(struct fastfind_index *index, fastfind_flags_T flags)
 {
-	struct fastfind_info *info = mem_calloc(1, sizeof(*info));
+	struct fastfind_info *info = (struct fastfind_info *)mem_calloc(1, sizeof(*info));
 
 	index->handle = info;
 	if (!info) return NULL;
@@ -314,7 +314,7 @@ alloc_ff_data(struct fastfind_info *info)
 
 	/* On error, cleanup is done by fastfind_done(). */
 
-	data = mem_calloc(info->count, sizeof(*data));
+	data = (struct ff_data *)mem_calloc(info->count, sizeof(*data));
 	if (!data) return 0;
 	info->data = data;
 	FF_DBG_mem(info, info->count * sizeof(*data));
@@ -346,12 +346,12 @@ alloc_leafset(struct fastfind_info *info)
 
 	/* info->leafsets[0] is never used since l=0 marks no leaf
 	 * in struct ff_node. That's the reason of that + 2. */
-	leafsets = mem_realloc(info->leafsets,
+	leafsets = (struct ff_node **)mem_realloc(info->leafsets,
 			       sizeof(*leafsets) * (info->leafsets_count + 2));
 	if (!leafsets) return 0;
 	info->leafsets = leafsets;
 
-	leafset = mem_calloc(info->uniq_chars_count, sizeof(*leafset));
+	leafset = (struct ff_node *)mem_calloc(info->uniq_chars_count, sizeof(*leafset));
 	if (!leafset) return 0;
 
 	FF_DBG_mem(info, sizeof(*leafsets));
@@ -366,7 +366,7 @@ alloc_leafset(struct fastfind_info *info)
 static inline int
 char2idx(unsigned char c, struct fastfind_info *info)
 {
-	unsigned char *idx = memchr(info->uniq_chars, c, info->uniq_chars_count);
+	char *idx = (char *)memchr(info->uniq_chars, c, info->uniq_chars_count);
 
 	if (idx) return (idx - info->uniq_chars);
 
@@ -386,7 +386,7 @@ static inline void
 compress_node(struct ff_node *leafset, struct fastfind_info *info,
 	      int i, int pos)
 {
-	struct ff_node_c *new_ = mem_alloc(sizeof(*new_));
+	struct ff_node_c *new_ = (struct ff_node_c *)mem_alloc(sizeof(*new_));
 
 	if (!new_) return;
 
@@ -440,7 +440,7 @@ compress_tree(struct ff_node *leafset, struct fastfind_info *info)
 #define ifcase(c) ( info->case_aware ? (c) : (info->locale_indep ? c_toupper(c) : toupper(c)) )
 
 struct fastfind_index *
-fastfind_index(struct fastfind_index *index, enum fastfind_flags flags)
+fastfind_index(struct fastfind_index *index, fastfind_flags_T flags)
 {
 	struct fastfind_key_value *p;
 	struct fastfind_info *info;
@@ -594,7 +594,7 @@ return_error:
 
 void *
 fastfind_search(struct fastfind_index *index,
-		const unsigned char *key, int key_len)
+		const char *key, int key_len)
 {
 	struct ff_node *current;
 	struct fastfind_info *info;
@@ -602,7 +602,7 @@ fastfind_search(struct fastfind_index *index,
 	assert(index);
 	if_assert_failed return NULL;
 
-	info = index->handle;
+	info = (struct fastfind_info *)index->handle;
 
 	assertm(info != NULL, "FastFind index %s not initialized", index->comment);
 	if_assert_failed return NULL;
@@ -643,7 +643,7 @@ fastfind_done(struct fastfind_index *index)
 	assert(index);
 	if_assert_failed return;
 
-	info = index->handle;
+	info = (struct fastfind_info *)index->handle;
 	if (!info) return;
 
 	FF_DBG_dump_stats(info);
@@ -664,7 +664,7 @@ fastfind_done(struct fastfind_index *index)
 
 #if 0
 struct list {
-	unsigned char *tag;
+	char *tag;
 	int val;
 };
 
@@ -772,7 +772,7 @@ static struct fastfind_index ff_index
 int
 main(int argc, char **argv)
 {
-	unsigned char *key = argv[1];
+	char *key = argv[1];
 	struct list *result;
 
 	if (!key || !*key) {

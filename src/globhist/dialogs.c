@@ -13,7 +13,7 @@
 #include "dialogs/edit.h"
 #include "globhist/dialogs.h"
 #include "globhist/globhist.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/object.h"
 #include "protocol/uri.h"
 #include "terminal/terminal.h"
@@ -41,10 +41,10 @@ is_globhist_item_used(struct listbox_item *item)
 	return is_object_used((struct global_history_item *) item->udata);
 }
 
-static unsigned char *
+static char *
 get_globhist_item_text(struct listbox_item *box_item, struct terminal *term)
 {
-	struct global_history_item *item = box_item->udata;
+	struct global_history_item *item = (struct global_history_item *)box_item->udata;
 	struct string info;
 
 	if (get_opt_int("document.history.global.display_type", NULL)
@@ -56,10 +56,10 @@ get_globhist_item_text(struct listbox_item *box_item, struct terminal *term)
 	return info.source;
 }
 
-static unsigned char *
+static char *
 get_globhist_item_info(struct listbox_item *box_item, struct terminal *term)
 {
-	struct global_history_item *item = box_item->udata;
+	struct global_history_item *item = (struct global_history_item *)box_item->udata;
 	struct string info;
 
 	if (box_item->type == BI_FOLDER) return NULL;
@@ -82,9 +82,9 @@ get_globhist_item_root(struct listbox_item *box_item)
 static struct uri *
 get_globhist_item_uri(struct listbox_item *item)
 {
-	struct global_history_item *historyitem = item->udata;
+	struct global_history_item *historyitem = (struct global_history_item *)item->udata;
 
-	return get_uri(historyitem->url, 0);
+	return get_uri(historyitem->url, URI_NONE);
 }
 
 static int
@@ -96,7 +96,7 @@ can_delete_globhist_item(struct listbox_item *item)
 static void
 delete_globhist_item(struct listbox_item *item, int last)
 {
-	struct global_history_item *historyitem = item->udata;
+	struct global_history_item *historyitem = (struct global_history_item *)item->udata;
 
 	assert(!is_object_used(historyitem));
 
@@ -150,11 +150,11 @@ static const struct listbox_ops gh_listbox_ops = {
 static void
 history_search_do(void *data)
 {
-	struct dialog *dlg = data;
-	struct listbox_item *item = globhist_browser.root.child.next;
+	struct dialog *dlg = (struct dialog *)data;
+	struct listbox_item *item = (struct listbox_item *)globhist_browser.root.child.next;
 	struct listbox_data *box;
 
-	if (!globhist_simple_search(dlg->widgets[1].data, dlg->widgets[0].data)) return;
+	if (!globhist_simple_search((char *)dlg->widgets[1].data, (char *)dlg->widgets[0].data)) return;
 	if (list_empty(globhist_browser.root.child)) return;
 
 	/* Shouldn't we rather do this only for the specific listbox_data box
@@ -211,7 +211,7 @@ push_bookmark_button(struct dialog_data *dlg_data,
 
 	if (!box->sel) return EVENT_PROCESSED;
 
-	historyitem = box->sel->udata;
+	historyitem = (struct global_history_item *)box->sel->udata;
 	if (!historyitem) return EVENT_PROCESSED;
 
 	launch_bm_add_dialog(term, NULL, NULL,

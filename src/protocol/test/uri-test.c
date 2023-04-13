@@ -7,8 +7,41 @@
 
 #include "elinks.h"
 
+int
+get_https_by_default(void)
+{
+	return 0;
+}
+
+const char *
+get_default_protocol(void)
+{
+	return "file://";
+}
+
+char *
+gettext(const char *text)
+{
+	return (char *)text;
+}
+
+int
+os_default_charset(void)
+{
+	return -1;
+}
+
+int current_charset;
+
 #include "protocol/uri.h"
 #include "util/string.h"
+
+/* fake tty get function, needed for charsets.c */
+int
+get_ctl_handle()
+{
+	return -1;
+}
 
 int
 main(int argc, char **argv)

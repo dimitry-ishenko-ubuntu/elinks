@@ -39,8 +39,15 @@ enum download_flags {
 	DOWNLOAD_RESUME_SELECTED = 2,
 
 	/** The file will be opened in an external handler.  */
-	DOWNLOAD_EXTERNAL = 4
+	DOWNLOAD_EXTERNAL = 4,
+
+	/** File overwriting is allowed. This is for temp names, since
+	 * the file is created by the same function that chooses its
+	 * name.  */
+	DOWNLOAD_OVERWRITE = 8
 };
+
+typedef unsigned char download_flags_T;
 
 struct download {
 	/* XXX: order matters there, there's some hard initialization in
@@ -58,7 +65,7 @@ struct download {
 
 	struct connection_state state;
 	struct connection_state prev_error;
-	enum connection_priority pri;
+	connection_priority_T pri;
 };
 
 /** The user has navigated to a resource that ELinks does not display
@@ -91,14 +98,20 @@ struct type_query {
 	/** The name of the frame in which the user navigated to #uri.
 	 * If the user chooses to display the resource, it goes into
 	 * this frame.  This string must be freed with mem_free().  */
-	unsigned char *target_frame;
+	char *target_frame;
+
+	/** input filename extension */
+	char *inpext;
+
+	/** output filename extension */
+	char *outext;
 
 	/** Command line for an external handler, to be run when the
 	 * download finishes.  When ELinks displays the type query,
 	 * it copies this from mime_handler.program of the default
 	 * handler of the type.  The user can then edit the string.
 	 * This string must be freed with mem_free().  */
-	unsigned char *external_handler;
+	char *external_handler;
 
 	/** Whether the external handler is going to use the terminal.
 	 * When ELinks displays the type query, it copies this from
@@ -114,6 +127,7 @@ struct type_query {
 	 * from a "file" URI that does not refer to a local CGI, then
 	 * Elinks need not copy the file.  */
 	unsigned int cgi:1;
+	unsigned int dgi:1;
 
 	/** mailcap entry with copiousoutput */
 	unsigned int copiousoutput:1;
@@ -124,8 +138,8 @@ struct file_download {
 	OBJECT_HEAD(struct file_download);
 
 	struct uri *uri;
-	unsigned char *file;
-	unsigned char *external_handler;
+	char *file;
+	char *external_handler;
 	struct session *ses;
 
 	/** The terminal in which message boxes about the download
@@ -145,6 +159,12 @@ struct file_download {
 	int notify;
 	struct download download;
 
+	/** input filename extension */
+	char *inpext;
+
+	/** output filename extension */
+	char *outext;
+
 	/** Should the file be deleted when destroying the structure */
 	unsigned int delete_:1;
 
@@ -154,12 +174,22 @@ struct file_download {
 	/** Whether to block the terminal when running the external handler. */
 	unsigned int block:1;
 
+	unsigned int dgi:1;
 	/** Mailcap entry with copiousoutput */
 	unsigned int copiousoutput:1;
 	
 	/** The current dialog for this download. Can be NULL. */
 	struct dialog_data *dlg_data;
 	struct listbox_item *box_item;
+};
+
+struct exec_dgi {
+	struct session *ses;
+	char *command;
+	char *file;
+	char *inpext;
+	char *outext;
+	unsigned int del:1;
 };
 
 /** Stack of all running downloads */
@@ -205,12 +235,12 @@ int are_there_downloads(void);
  *
  * @relates cdf_hop */
 typedef void cdf_callback_T(struct terminal *term, int fd,
-			    void *data, enum download_flags flags);
+			    void *data, download_flags_T flags);
 
-void start_download(void *, unsigned char *);
-void resume_download(void *, unsigned char *);
-void create_download_file(struct terminal *, unsigned char *, unsigned char **,
-			  enum download_flags, cdf_callback_T *, void *);
+void start_download(void *, char *);
+void resume_download(void *, char *);
+void create_download_file(struct terminal *, char *, char **,
+			  download_flags_T, cdf_callback_T *, void *);
 
 void abort_all_downloads(void);
 void destroy_downloads(struct session *);
@@ -224,7 +254,7 @@ void done_type_query(struct type_query *type_query);
 void tp_display(struct type_query *type_query);
 void tp_save(struct type_query *type_query);
 void tp_cancel(void *data);
-struct file_download *init_file_download(struct uri *uri, struct session *ses, unsigned char *file, int fd);
+struct file_download *init_file_download(struct uri *uri, struct session *ses, char *file, int fd);
 
 #ifdef __cplusplus
 }

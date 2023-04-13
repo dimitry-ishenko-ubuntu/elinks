@@ -10,6 +10,9 @@ endif
 if conf_data.get('CONFIG_FTP')
 	subdir('ftp')
 endif
+if conf_data.get('CONFIG_GEMINI')
+	subdir('gemini')
+endif
 if conf_data.get('CONFIG_GOPHER')
 	subdir('gopher')
 endif
@@ -29,4 +32,8 @@ subdir('http')
 if conf_data.get('CONFIG_DATA')
 	srcs += files('data.c')
 endif
-srcs += files('about.c', 'common.c', 'date.c', 'header.c', 'protocol.c', 'proxy.c', 'uri.c', 'user.c')
+srcs += files('about.c', 'common.c', 'date.c', 'header.c', 'protocol.cpp', 'proxy.c', 'uri.c', 'user.c')
+
+if get_option('test')
+    subdir('test')
+endif

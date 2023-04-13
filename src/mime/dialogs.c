@@ -12,7 +12,7 @@
 #include "bfu/menu.h"
 #include "config/options.h"
 #include "mime/dialogs.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "terminal/terminal.h"
 #include "util/color.h"
 #include "util/conv.h"
@@ -21,7 +21,7 @@
 
 
 static struct option *
-get_real_opt(unsigned char *base, unsigned char *id)
+get_real_opt(const char *base, char *id)
 {
 	struct option *opt = get_opt_rec_real(config_options, base);
 	struct string translated;
@@ -42,7 +42,7 @@ static void
 really_del_ext(void *fcp)
 {
 	struct option *opt = get_real_opt("mime.extension",
-					  (unsigned char *) fcp);
+					  (char *) fcp);
 
 	if (opt) delete_option(opt);
 }
@@ -52,7 +52,7 @@ menu_del_ext(struct terminal *term, void *fcp, void *xxx2)
 {
 	/* [gettext_accelerator_context(menu_del_ext)] */
 	struct option *opt = NULL;
-	unsigned char *extension = fcp;
+	char *extension = (char *)fcp;
 
 	if (!extension) return;
 
@@ -73,15 +73,15 @@ menu_del_ext(struct terminal *term, void *fcp, void *xxx2)
 
 
 struct extension {
-	unsigned char ext_orig[MAX_STR_LEN];
-	unsigned char ext[MAX_STR_LEN];
-	unsigned char ct[MAX_STR_LEN];
+	char ext_orig[MAX_STR_LEN];
+	char ext[MAX_STR_LEN];
+	char ct[MAX_STR_LEN];
 };
 
 static void
 add_mime_extension(void *data)
 {
-	struct extension *ext = data;
+	struct extension *ext = (struct extension *)data;
 	struct string name;
 
 	if (!ext || !init_string(&name)) return;
@@ -112,12 +112,12 @@ menu_add_ext(struct terminal *term, void *fcp, void *xxx2)
 	new_ = (struct extension *) get_dialog_offset(dlg, MIME_WIDGETS_COUNT);
 
 	if (fcp) {
-		struct option *opt = get_real_opt("mime.extension", fcp);
+		struct option *opt = get_real_opt("mime.extension", (char *)fcp);
 
 		if (opt) {
-			safe_strncpy(new_->ext, fcp, MAX_STR_LEN);
+			safe_strncpy(new_->ext, (const char *)fcp, MAX_STR_LEN);
 			safe_strncpy(new_->ct, opt->value.string, MAX_STR_LEN);
-			safe_strncpy(new_->ext_orig, fcp, MAX_STR_LEN);
+			safe_strncpy(new_->ext_orig, (const char *)fcp, MAX_STR_LEN);
 		}
 
 		mem_free(fcp);
@@ -146,21 +146,21 @@ static struct menu_item mi_no_ext[] = {
 void
 menu_list_ext(struct terminal *term, void *fn_, void *xxx)
 {
-	menu_func_T fn = fn_;
+	menu_func_T fn = (menu_func_T)fn_;
 	LIST_OF(struct option) *opt_tree = get_opt_tree("mime.extension", NULL);
 	struct option *opt;
 	struct menu_item *mi = NULL;
 
 	foreachback (opt, *opt_tree) {
 		struct string translated;
-		unsigned char *translated2;
-		unsigned char *optptr2;
+		char *translated2;
+		char *optptr2;
 
 		if (!strcmp(opt->name, "_template_")) continue;
 
 		if (!init_string(&translated)
-		    || !add_real_optname_to_string(&translated, opt->name,
-						   strlen(opt->name))) {
+		    || !add_real_optname_to_string(&translated, opt->aname,
+						   strlen(opt->aname))) {
 			done_string(&translated);
 			continue;
 		}

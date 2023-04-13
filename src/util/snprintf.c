@@ -365,7 +365,7 @@ dopr(char *buffer, size_t maxlen, const char *format, va_list args_in)
 				break;
 			case 's':
 				strvalue = va_arg(args, char *);
-				if (!strvalue) strvalue = "(NULL)";
+				if (!strvalue) strvalue = (char *)"(NULL)";
 				if (max == -1) {
 					max = strlen(strvalue);
 				}
@@ -373,7 +373,7 @@ dopr(char *buffer, size_t maxlen, const char *format, va_list args_in)
 				fmtstr(buffer, &currlen, maxlen, strvalue, flags, min, max);
 				break;
 			case 'p':
-				strvalue = va_arg(args, void *);
+				strvalue = (char *)va_arg(args, void *);
 				fmtint(buffer, &currlen, maxlen, (long) strvalue, 16, min, max, flags);
 				break;
 			case 'n':
@@ -442,7 +442,7 @@ fmtstr(char *buffer, size_t *currlen, size_t maxlen,
 #ifdef DEBUG_SNPRINTF
 	printf("fmtstr min=%d max=%d s=[%s]\n", min, max, value);
 #endif
-	if (value == 0) value = "<NULL>";
+	if (value == 0) value = (char *)"<NULL>";
 
 	for (strln = 0; value[strln]; ++strln); /* strlen */
 	padlen = min - strln;
@@ -839,7 +839,7 @@ elinks_vasprintf(char **ptr, const char *format, va_list ap)
 	 * allocated by vasprintf to take into account whether the system
 	 * vasprintf (and therefore malloc) or our own vasprintf
 	 * (and therefore mem_alloc) were used. -- Miciah */
-	(*ptr) = (char *) malloc(ret + 1);
+	(*ptr) = (char *)malloc(ret + 1);
 	if (!*ptr) return -1;
 
 	va_copy(ap2, ap);
@@ -865,10 +865,10 @@ elinks_asprintf(char **ptr, const char *format, ...)
 }
 #endif
 
-unsigned char *
+char *
 asprintfa(const char *fmt, ...)
 {
-	unsigned char *str;
+	char *str;
 	va_list ap;
 
 	va_start(ap, fmt);

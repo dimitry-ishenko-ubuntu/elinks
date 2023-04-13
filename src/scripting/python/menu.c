@@ -4,15 +4,14 @@
 #include "config.h"
 #endif
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "scripting/python/pythoninc.h"
 
 #include "elinks.h"
 
 #include "bfu/menu.h"
 #include "document/document.h"
 #include "document/view.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "scripting/python/core.h"
 #include "scripting/python/menu.h"
 #include "session/session.h"
@@ -28,11 +27,11 @@
 static void
 invoke_menu_callback(struct terminal *term, void *data, void *ses)
 {
-	PyObject *callback = data;
+	PyObject *callback = (PyObject *)data;
 	struct session *saved_python_ses = python_ses;
 	PyObject *result;
 
-	python_ses = ses;
+	python_ses = (struct session *)ses;
 
 	result = PyObject_CallFunction(callback, NULL);
 	if (result)
@@ -78,7 +77,11 @@ python_menu(PyObject *self, PyObject *args, PyObject *kwargs)
 	int i;
 	struct menu_item *menu;
 	struct memory_list *ml = NULL;
-	static char *kwlist[] = {"items", "type", NULL};
+
+	static char s_items[] = "items";
+	static char s_type[] = "type";
+
+	static char *kwlist[] = {s_items, s_type, NULL};
 
 	if (!python_ses) {
 		PyErr_SetString(python_elinks_err, "No session");
@@ -145,7 +148,7 @@ python_menu(PyObject *self, PyObject *args, PyObject *kwargs)
 	for (i = 0; i < length; i++) {
 		PyObject *tuple = PySequence_GetItem(items, i);
 		PyObject *name, *callback;
-		unsigned char *contents;
+		char *contents;
 
 		if (!tuple) goto error;
 
@@ -160,7 +163,7 @@ python_menu(PyObject *self, PyObject *args, PyObject *kwargs)
 		Py_DECREF(tuple);
 		if (!name || !callback) goto error;
 
-		contents = (unsigned char *) PyUnicode_AsUTF8(name);
+		contents = (char *) PyUnicode_AsUTF8(name);
 		if (!contents) goto error;
 
 		contents = stracpy(contents);

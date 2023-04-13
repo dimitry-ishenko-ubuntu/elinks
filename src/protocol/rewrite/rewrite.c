@@ -7,7 +7,7 @@
 #include "elinks.h"
 
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/event.h"
 #include "main/module.h"
 #include "protocol/rewrite/rewrite.h"
@@ -52,14 +52,14 @@ static union option_info uri_rewrite_options[] = {
 		"keywords.")),
 
 	INIT_OPT_BOOL("protocol.rewrite", N_("Enable dumb prefixes"),
-		"enable-dumb", 0, 1,
+		"enable-dumb", OPT_ZERO, 1,
 		N_("Enable dumb prefixes - simple URI abbreviations which "
 		"can be written to the Goto URL dialog instead of actual URIs "
 		"- i.e. if you write 'elinks' there, you are directed to "
 		"http://elinks.cz/.")),
 
 	INIT_OPT_BOOL("protocol.rewrite", N_("Enable smart prefixes"),
-		"enable-smart", 0, 1,
+		"enable-smart", OPT_ZERO, 1,
 		N_("Enable smart prefixes - URI templates triggered by "
 		"writing given abbreviation to the Goto URL dialog followed "
 		"by a list of arguments from which the actual URI is composed "
@@ -71,7 +71,7 @@ static union option_info uri_rewrite_options[] = {
 		N_("Dumb prefixes, see enable-dumb description for details.")),
 
 	INIT_OPT_STRING("protocol.rewrite.dumb", NULL,
-		"_template_", 0, "",
+		"_template_", OPT_ZERO, "",
 		/* xgettext:no-c-format */
 		N_("Replacement URI for this dumbprefix:\n"
 		"%c in the string means the current URL\n"
@@ -85,7 +85,7 @@ static union option_info uri_rewrite_options[] = {
 	/* TODO: In some rare occations current link URI and referrer might
 	 * also be useful and dare I mention some kind of proxy argument. --jonas */
 	INIT_OPT_STRING("protocol.rewrite.smart", NULL,
-		"_template_", 0, "",
+		"_template_", OPT_ZERO, "",
 		/* xgettext:no-c-format */
 		N_("Replacement URI for this smartprefix:\n"
 		"%c in the string means the current URL\n"
@@ -94,7 +94,7 @@ static union option_info uri_rewrite_options[] = {
 		"%% in the string means '%'")),
 
 	INIT_OPT_STRING("protocol.rewrite", N_("Default template"),
-		"default_template", 0, "",
+		"default_template", OPT_ZERO, "",
 		/* xgettext:no-c-format */
 		N_("Default URI template used when the string entered in "
 		"the goto dialog does not appear to be a URI or a filename "
@@ -110,7 +110,7 @@ static union option_info uri_rewrite_options[] = {
 		"%% in the template means '%'.")),
 
 #define INIT_OPT_DUMB_PREFIX(prefix, uri) \
-	INIT_OPT_STRING("protocol.rewrite.dumb", NULL, prefix, 0, uri, NULL)
+	INIT_OPT_STRING("protocol.rewrite.dumb", NULL, prefix, OPT_ZERO, uri, NULL)
 
 	INIT_OPT_DUMB_PREFIX("elinks", ELINKS_WEBSITE_URL),
 	INIT_OPT_DUMB_PREFIX("documentation", ELINKS_DOC_URL),
@@ -123,7 +123,7 @@ static union option_info uri_rewrite_options[] = {
 	INIT_OPT_DUMB_PREFIX("g", "https://www.google.com"),
 	INIT_OPT_DUMB_PREFIX("gg", "https://www.google.com"),
 	INIT_OPT_DUMB_PREFIX("go", "https://www.google.com"),
-	INIT_OPT_DUMB_PREFIX("fm", "http://freshmeat.sourceforge.net"),
+	INIT_OPT_DUMB_PREFIX("fc", "https://freshcode.club/"),
 	INIT_OPT_DUMB_PREFIX("sf", "https://sourceforge.net"),
 	INIT_OPT_DUMB_PREFIX("dbug", "https://www.debian.org/Bugs/"),
 	INIT_OPT_DUMB_PREFIX("dpkg", "https://www.debian.org/distrib/packages"),
@@ -136,7 +136,7 @@ static union option_info uri_rewrite_options[] = {
 	INIT_OPT_DUMB_PREFIX("vcss", "https://jigsaw.w3.org/css-validator/validator?uri=%c"),
 
 #define INIT_OPT_SMART_PREFIX(prefix, uri) \
-	INIT_OPT_STRING("protocol.rewrite.smart", NULL, prefix, 0, uri, NULL)
+	INIT_OPT_STRING("protocol.rewrite.smart", NULL, prefix, OPT_ZERO, uri, NULL)
 
 	INIT_OPT_SMART_PREFIX("arc", "https://web.archive.org/web/*/%s"),
 	INIT_OPT_SMART_PREFIX("aur", "https://aur.archlinux.org/packages/?K=%s"),
@@ -203,11 +203,11 @@ get_prefix_tree(enum uri_rewrite_option tree)
 
 #define MAX_URI_ARGS 10
 
-static unsigned char *
-rewrite_uri(unsigned char *url, struct uri *current_uri, unsigned char *arg)
+static char *
+rewrite_uri(char *url, struct uri *current_uri, const char *arg)
 {
 	struct string n = NULL_STRING;
-	unsigned char *args[MAX_URI_ARGS];
+	const char *args[MAX_URI_ARGS];
 	int argslen[MAX_URI_ARGS];
 	int argc = 0;
 	int i;
@@ -279,14 +279,14 @@ rewrite_uri(unsigned char *url, struct uri *current_uri, unsigned char *arg)
 	return n.source;
 }
 
-static unsigned char *
-get_uri_rewrite_prefix(enum uri_rewrite_type type, unsigned char *url)
+static char *
+get_uri_rewrite_prefix(enum uri_rewrite_type type, char *url)
 {
 	enum uri_rewrite_option tree = type == URI_REWRITE_DUMB
 			? URI_REWRITE_DUMB_TREE : URI_REWRITE_SMART_TREE;
 	struct option *prefix_tree = get_prefix_tree(tree);
 	struct option *opt = get_opt_rec_real(prefix_tree, url);
-	unsigned char *exp = opt ? opt->value.string : NULL;
+	char *exp = opt ? opt->value.string : NULL;
 
 	return (exp && *exp) ? exp : NULL;
 }
@@ -294,11 +294,11 @@ get_uri_rewrite_prefix(enum uri_rewrite_type type, unsigned char *url)
 static enum evhook_status
 goto_url_hook(va_list ap, void *data)
 {
-	unsigned char **url = va_arg(ap, unsigned char **);
+	char **url = va_arg(ap, char **);
 	struct session *ses = va_arg(ap, struct session *);
-	unsigned char *uu = NULL;
-	unsigned char *arg = "";
-	unsigned char *argstart = *url + strcspn(*url, " :");
+	char *uu = NULL;
+	const char *arg = "";
+	char *argstart = *url + strcspn(*url, " :");
 
 	if (get_smart_enable() && *argstart) {
 		unsigned char bucket = *argstart;
@@ -313,9 +313,9 @@ goto_url_hook(va_list ap, void *data)
 		uu = get_uri_rewrite_prefix(URI_REWRITE_DUMB, *url);
 
 	if (!uu
-	    && !strchr((const char *)*url, ':')
-	    && !strchr((const char *)*url, '.')
-	    && !strchr((const char *)*url, '/')) {
+	    && !strchr(*url, ':')
+	    && !strchr(*url, '.')
+	    && !strchr(*url, '/')) {
 		uu = get_opt_str("protocol.rewrite.default_template", NULL);
 		if (uu && *uu) {
 			arg = *url;
@@ -339,7 +339,7 @@ goto_url_hook(va_list ap, void *data)
 }
 
 struct event_hook_info uri_rewrite_hooks[] = {
-	{ "goto-url", -1, goto_url_hook },
+	{ "goto-url", -1, goto_url_hook, {NULL} },
 
 	NULL_EVENT_HOOK_INFO
 };

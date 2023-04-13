@@ -9,7 +9,6 @@ TEST_PROGS = \
 
 TESTDEPS = path.o
 
-
 PARSETSTDEPS = \
  $(top_builddir)/src/util/error.o \
  $(top_builddir)/src/util/string.o

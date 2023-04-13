@@ -13,7 +13,7 @@
 #include "config/kbdbind.h"
 #include "config/options.h"
 #include "intl/charsets.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "terminal/draw.h"
 #include "main/timer.h"
 #include "terminal/kbd.h"
@@ -35,7 +35,7 @@ do_dialog(struct terminal *term, struct dialog *dlg,
 {
 	struct dialog_data *dlg_data;
 
-	dlg_data = mem_calloc(1, sizeof(*dlg_data) +
+	dlg_data = (struct dialog_data *)mem_calloc(1, sizeof(*dlg_data) +
 			      sizeof(struct widget_data) * dlg->number_of_widgets);
 	if (!dlg_data) {
 		/* Worry not: freeml() checks whether its argument is NULL. */
@@ -97,7 +97,7 @@ redraw_dialog(struct dialog_data *dlg_data, int layout)
 
 		title_color = get_bfu_color(term, "dialog.title");
 		if (title_color && dlg_data->real_box.width > 2) {
-			unsigned char *title = dlg_data->dlg->title;
+			char *title = dlg_data->dlg->title;
 			int titlelen = strlen(title);
 			int titlecells = titlelen;
 			int x, y;
@@ -159,7 +159,7 @@ init_widget(struct dialog_data *dlg_data, int i)
 	widget_data->widget = &dlg_data->dlg->widgets[i];
 
 	if (widget_data->widget->datalen) {
-		widget_data->cdata = mem_alloc(widget_data->widget->datalen);
+		widget_data->cdata = (char *)mem_alloc(widget_data->widget->datalen);
 		if (!widget_data->cdata) {
 			return NULL;
 		}
@@ -333,7 +333,7 @@ select_button_by_key(struct dialog_data *dlg_data)
 
 	foreach_widget(dlg_data, widget_data) {
 		int hk_pos;
-		unsigned char *hk_ptr;
+		char *hk_ptr;
 		term_event_char_T hk_char;
 
 		if (widget_data->widget->type != WIDGET_BUTTON)
@@ -352,7 +352,7 @@ select_button_by_key(struct dialog_data *dlg_data)
 
 #ifdef CONFIG_UTF8
 		hk_char = cp_to_unicode(codepage, &hk_ptr,
-					strchr((const char *)hk_ptr, '\0'));
+					strchr(hk_ptr, '\0'));
 		/* hk_char can be UCS_NO_CHAR only if the text of the
 		 * widget is not in the expected codepage.  */
 		assert(hk_char != UCS_NO_CHAR);
@@ -375,7 +375,7 @@ dialog_ev_kbd(struct dialog_data *dlg_data)
 	struct widget_data *widget_data = selected_widget(dlg_data);
 	const struct widget_ops *ops = widget_data->widget->ops;
 	/* XXX: KEYMAP_EDIT ? --pasky */
-	enum menu_action action_id;
+	action_id_T action_id;
 	struct term_event *ev = dlg_data->term_event;
 
 	/* First let the widget try out. */
@@ -457,7 +457,7 @@ dialog_ev_abort(struct dialog_data *dlg_data)
 static void
 dialog_func(struct window *win, struct term_event *ev)
 {
-	struct dialog_data *dlg_data = win->data;
+	struct dialog_data *dlg_data = (struct dialog_data *)win->data;
 
 	dlg_data->win = win;
 	dlg_data->term_event = ev;
@@ -741,7 +741,7 @@ refresh_dialog(struct dialog_data *dlg_data, dialog_refresh_handler_T handler, v
 	struct dialog_refresh *refresh = dlg_data->dlg->refresh;
 
 	if (!refresh) {
-		refresh = mem_calloc(1, sizeof(*refresh));
+		refresh = (struct dialog_refresh *)mem_calloc(1, sizeof(*refresh));
 		if (!refresh) return;
 
 		dlg_data->dlg->refresh = refresh;

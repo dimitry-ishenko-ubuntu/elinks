@@ -53,7 +53,7 @@ get_rss_text(struct dom_node *node, enum rss_element_type type)
 static void
 render_rss_item(struct dom_renderer *renderer, struct dom_node *item)
 {
-	struct rss_renderer *rss = renderer->data;
+	struct rss_renderer *rss = (struct rss_renderer *)renderer->data;
 	struct dom_string *title  = get_rss_text(item, RSS_ELEMENT_TITLE);
 	struct dom_string *link   = get_rss_text(item, RSS_ELEMENT_LINK);
 	struct dom_string *author = get_rss_text(item, RSS_ELEMENT_AUTHOR);
@@ -66,7 +66,7 @@ render_rss_item(struct dom_renderer *renderer, struct dom_node *item)
 
 	if (title && is_dom_string_set(title)) {
 		if (item->data.element.type == RSS_ELEMENT_CHANNEL) {
-			unsigned char *str;
+			char *str;
 
 			str = convert_string(renderer->convert_table,
 					     title->string, title->length,
@@ -96,7 +96,7 @@ render_rss_item(struct dom_renderer *renderer, struct dom_node *item)
 	if (date && is_dom_string_set(date)) {
 		if (author && is_dom_string_set(author)) {
 			render_dom_text(renderer, &rss->styles[RSS_STYLE_AUTHOR_DATE_SEP],
-					" - ", 3);
+					(char *)" - ", 3);
 		}
 
 		render_dom_text(renderer, &rss->styles[RSS_STYLE_DATE],
@@ -124,8 +124,8 @@ flush_rss_item(struct dom_renderer *renderer, struct rss_renderer *rss)
 static enum dom_code
 dom_rss_push_element(struct dom_stack *stack, struct dom_node *node, void *xxx)
 {
-	struct dom_renderer *renderer = stack->current->data;
-	struct rss_renderer *rss = renderer->data;
+	struct dom_renderer *renderer = (struct dom_renderer *)stack->current->data;
+	struct rss_renderer *rss = (struct rss_renderer *)renderer->data;
 
 	assert(node && node->parent && renderer && renderer->document);
 
@@ -147,8 +147,8 @@ dom_rss_push_element(struct dom_stack *stack, struct dom_node *node, void *xxx)
 static enum dom_code
 dom_rss_pop_element(struct dom_stack *stack, struct dom_node *node, void *xxx)
 {
-	struct dom_renderer *renderer = stack->current->data;
-	struct rss_renderer *rss = renderer->data;
+	struct dom_renderer *renderer = (struct dom_renderer *)stack->current->data;
+	struct rss_renderer *rss = (struct rss_renderer *)renderer->data;
 
 	assert(node && node->parent && renderer && renderer->document);
 
@@ -165,7 +165,7 @@ dom_rss_pop_element(struct dom_stack *stack, struct dom_node *node, void *xxx)
 static enum dom_code
 dom_rss_push_document(struct dom_stack *stack, struct dom_node *root, void *xxx)
 {
-	struct dom_renderer *renderer = stack->current->data;
+	struct dom_renderer *renderer = (struct dom_renderer *)stack->current->data;
 	struct document *document = renderer->document;
 	struct rss_renderer *rss;
 	int type;
@@ -175,12 +175,12 @@ dom_rss_push_document(struct dom_stack *stack, struct dom_node *root, void *xxx)
 		static int i_want_struct_module_for_dom;
 
 		if (!i_want_struct_module_for_dom) {
-			static const unsigned char default_colors[] =
+			static const char default_colors[] =
 				"title		{ color: lightgreen } "
 				"author		{ color: aqua }"
 				"author-date-sep{ color: aqua }"
 				"date		{ color: aqua }";
-			unsigned char *styles = (unsigned char *) default_colors;
+			char *styles = (char *) default_colors;
 
 			i_want_struct_module_for_dom = 1;
 			/* When someone will get here earlier than at 4am,
@@ -189,8 +189,8 @@ dom_rss_push_document(struct dom_stack *stack, struct dom_node *root, void *xxx)
 			css_parse_stylesheet(css, NULL, styles, styles + sizeof(default_colors));
 		}
 	}
-
-	rss = renderer->data = mem_calloc(1, sizeof(*rss));
+	renderer->data = (void *)mem_calloc(1, sizeof(*rss));
+	rss = (struct rss_renderer *)renderer->data;
 	if (!rss)
 		return DOM_CODE_ALLOC_ERR;
 
@@ -198,7 +198,7 @@ dom_rss_push_document(struct dom_stack *stack, struct dom_node *root, void *xxx)
 
 	for (type = 0; type < RSS_STYLES; type++) {
 		struct screen_char *template_ = &rss->styles[type];
-		static const unsigned char *names[RSS_STYLES] =
+		static const char *names[RSS_STYLES] =
 			{ "title", "author", "author-date-sep", "date" };
 		struct css_selector *selector = NULL;
 
@@ -215,8 +215,8 @@ dom_rss_push_document(struct dom_stack *stack, struct dom_node *root, void *xxx)
 static enum dom_code
 dom_rss_pop_document(struct dom_stack *stack, struct dom_node *root, void *xxx)
 {
-	struct dom_renderer *renderer = stack->current->data;
-	struct rss_renderer *rss = renderer->data;
+	struct dom_renderer *renderer = (struct dom_renderer *)stack->current->data;
+	struct rss_renderer *rss = (struct rss_renderer *)renderer->data;
 
 	mem_free(rss);
 

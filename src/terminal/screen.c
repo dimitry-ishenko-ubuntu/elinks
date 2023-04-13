@@ -34,11 +34,25 @@
  * Please mention ELinks bug 96 in commit logs.  --KON */
 
 /** Mapping from (enum ::border_char - 0xB0) to ASCII characters.  */
-const unsigned char frame_dumb[48] =	"   ||||++||++++++--|-+||++--|-+----++++++++     ";
+const unsigned char frame_dumb[48] = {
+	' ',' ',' ','|','|','|','|','+',
+	'+','|','|','+','+','+','+','+',
+	'+','-','-','|','-','+','|','|',
+	'+','+','-','-','|','-','+','-',
+	'-','-','-','+','+','+','+','+',
+	'+','+','+',' ',' ',' ',' ',' '
+};
 
 /** Mapping from (enum ::border_char - 0xB0) to VT100 line-drawing
  * characters.  */
-static const unsigned char frame_vt100[48] =	"aaaxuuukkuxkjjjkmvwtqnttmlvwtqnvvwwmmllnnjla    ";
+static const unsigned char frame_vt100[48] = {
+	'a','a','a','x','u','u','u','k',
+	'k','u','x','k','j','j','j','k',
+	'm','v','w','t','q','n','t','t',
+	'm','l','v','w','t','q','n','v',
+	'v','w','w','m','m','l','l','n',
+	'n','j','l','a',' ',' ',' ',' '
+};
 
 /** Mapping from (enum ::border_char - 0xB0) to VT100 line-drawing
  * characters encoded in CP437.
@@ -118,7 +132,7 @@ static const unsigned char frame_freebsd[48] = {
 /** Mapping from (enum ::border_char - 0xB0) to obsolete FreeBSD ACS
  * graphics encoded in CP437.
  * When UTF-8 I/O is enabled, ELinks uses this array instead of
- * ::frame_freebsd[], and converts the characters from CP437 to UTF-8.
+  * ::frame_freebsd[], and converts the characters from CP437 to UTF-8.
  *
  * Derived from ::frame_freebsd[] by converting the characters to
  * Unicode and back to CP437.  frame_freebsd[1] = 138 = 0x8a = U+240B
@@ -230,7 +244,7 @@ struct screen_driver_opt {
 	const struct string *underline;
 
 	/** The color mode */
-	enum color_mode color_mode;
+	color_mode_T color_mode;
 
 #if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
 	const struct string *color256_seqs;
@@ -266,13 +280,13 @@ struct screen_driver {
 
 	/** The terminal._template_.type. Together with the #name member they
 	 * uniquely identify the screen_driver. */
-	enum term_mode_type type;
+	term_mode_type_T type;
 
 	/** set_screen_driver_opt() sets these.  */
 	struct screen_driver_opt opt;
 
 	/* The terminal._template_ name. */
-	unsigned char name[1]; /* XXX: Keep last! */
+	char name[1]; /* XXX: Keep last! */
 };
 
 /** Default options for ::TERM_DUMB.  */
@@ -414,7 +428,7 @@ static const struct screen_driver_opt fbterm_screen_driver_opt = {
 };
 
 /** Default options for all the different types of terminals.
- * XXX: Keep in sync with enum term_mode_type. */
+ * XXX: Keep in sync with term_mode_type_T. */
 static const struct screen_driver_opt *const screen_driver_opts[] = {
 	/* TERM_DUMB: */	&dumb_screen_driver_opt,
 	/* TERM_VT100: */	&vt100_screen_driver_opt,
@@ -576,9 +590,9 @@ static int
 screen_driver_change_hook(struct session *ses, struct option *term_spec,
 			  struct option *changed)
 {
-	enum term_mode_type type = get_opt_int_tree(term_spec, "type", NULL);
+	term_mode_type_T type = get_opt_int_tree(term_spec, "type", NULL);
 	struct screen_driver *driver;
-	unsigned char *name = term_spec->name;
+	const char *name = term_spec->name;
 
 	foreach (driver, active_screen_drivers)
 		if (driver->type == type && !strcmp(driver->name, name)) {
@@ -590,12 +604,12 @@ screen_driver_change_hook(struct session *ses, struct option *term_spec,
 }
 
 static inline struct screen_driver *
-add_screen_driver(enum term_mode_type type, struct terminal *term, int env_len)
+add_screen_driver(term_mode_type_T type, struct terminal *term, int env_len)
 {
 	struct screen_driver *driver;
 
 	/* One byte is reserved for name in struct screen_driver. */
-	driver = mem_alloc(sizeof(*driver) + env_len);
+	driver = (struct screen_driver *)mem_alloc(sizeof(*driver) + env_len);
 	if (!driver) return NULL;
 
 	/* These four operations fully initialize *driver.  */
@@ -617,8 +631,8 @@ add_screen_driver(enum term_mode_type type, struct terminal *term, int env_len)
 static inline struct screen_driver *
 get_screen_driver(struct terminal *term)
 {
-	enum term_mode_type type = get_opt_int_tree(term->spec, "type", NULL);
-	unsigned char *name = term->spec->name;
+	term_mode_type_T type = get_opt_int_tree(term->spec, "type", NULL);
+	const char *name = term->spec->name;
 	int len = strlen(name);
 	struct screen_driver *driver;
 
@@ -654,11 +668,12 @@ add_cursor_move_to_string(struct string *screen, int y, int x)
 {
 #ifdef CONFIG_TERMINFO
 	if (get_cmd_opt_bool("terminfo")) {
-		return add_to_string(screen, terminfo_cursor_address(y-1, x-1));
+		const char *aa = terminfo_cursor_address(y-1, x-1);
+		return add_to_string(screen, aa);
 	} else
 #endif
 #define CURSOR_NUM_LEN 10 /* 10 chars for @y and @x numbers should be more than enough. */
-{	unsigned char code[4 + 2 * CURSOR_NUM_LEN + 1];
+{	char code[4 + 2 * CURSOR_NUM_LEN + 1];
 	unsigned int length = 2;
 
 	code[0] = '\033';
@@ -963,7 +978,7 @@ add_char16(struct string *screen, struct screen_driver *driver,
 			 * - COLOR_MODE_16.  Use 16 colors.
 			 * - An unsupported color mode.  Use 16 colors.  */
 			if (driver->opt.color_mode != COLOR_MODE_MONO) {
-				unsigned char code[6] = ";30;40";
+				char code[] = ";30;40";
 				unsigned char bgcolor = TERM_COLOR_BACKGROUND_16(ch->c.color);
 
 				code[2] += TERM_COLOR_FOREGROUND_16(ch->c.color);
@@ -1005,8 +1020,8 @@ add_char16(struct string *screen, struct screen_driver *driver,
 static inline void
 add_char_color(struct string *screen, const struct string *seq, unsigned char color)
 {
-	unsigned char color_buf[3];
-	unsigned char *color_pos = color_buf;
+	char color_buf[3];
+	char *color_pos = color_buf;
 	int seq_pos = 0;
        	int color_len = 1;
 
@@ -1172,13 +1187,13 @@ static const struct string color_true_seqs[] = {
 static inline void
 add_char_true_color(struct string *screen, const struct string *seq, unsigned char *colors)
 {
-	unsigned char color_buf[3];
+	char color_buf[3];
 	int i;
 
 	check_string_magic(seq);
 	add_string_to_string(screen, seq);
 	for (i = 0; i < 3; i++) {
-		unsigned char *color_pos = color_buf;
+		char *color_pos = color_buf;
 		int color_len = 1;
 		unsigned char color = colors[i];
 
@@ -1439,7 +1454,7 @@ erase_screen(struct terminal *term)
 
 #ifdef CONFIG_TERMINFO
 	if (get_cmd_opt_bool("terminfo")) {
-		char *text = terminfo_clear_screen();
+		const char *text = terminfo_clear_screen();
 		hard_write(term->fdout, text, strlen(text));
 	} else 
 #endif
@@ -1462,7 +1477,7 @@ init_screen(void)
 {
 	struct terminal_screen *screen;
 
-	screen = mem_calloc(1, sizeof(*screen));
+	screen = (struct terminal_screen *)mem_calloc(1, sizeof(*screen));
 	if (!screen) return NULL;
 
 	screen->lcx = -1;
@@ -1493,7 +1508,7 @@ resize_screen(struct terminal *term, int width, int height)
 
 	bsize = size * sizeof(*image);
 
-	image = mem_realloc(screen->image, bsize * 2);
+	image = (struct screen_char *)mem_realloc(screen->image, bsize * 2);
 	if (!image) return;
 
 	screen->image = image;

@@ -40,9 +40,9 @@ struct event_handler {
 	void *data;
 };
 
-struct event {
+struct el_event {
 	/* The event name has to be unique. */
-	unsigned char *name;
+	char *name;
 
 	/* There are @count event @handlers all ordered by priority. */
 	struct event_handler *handlers;
@@ -52,7 +52,7 @@ struct event {
 	int id;
 };
 
-static struct event *events = NULL;
+static struct el_event *events = NULL;
 static unsigned int eventssize = 0;
 static struct hash *event_hash = NULL;
 
@@ -68,16 +68,16 @@ static struct hash *event_hash = NULL;
 	mem_align_alloc(ptr, (size), (size) + 1, EVENT_GRANULARITY)
 
 static inline int
-invalid_event_id(register int id)
+invalid_event_id(int id)
 {
 	return (id < 0 || id >= eventssize || id == EVENT_NONE);
 }
 
 int
-register_event(unsigned char *name)
+register_event(const char *name)
 {
 	int id = get_event_id(name);
-	struct event *event;
+	struct el_event *event;
 	int namelen;
 
 	if (id != EVENT_NONE) return id;
@@ -117,7 +117,7 @@ register_event(unsigned char *name)
 }
 
 int
-get_event_id(unsigned char *name)
+get_event_id(const char *name)
 {
 	struct hash_item *item;
 	int namelen;
@@ -130,7 +130,7 @@ get_event_id(unsigned char *name)
 	namelen = strlen(name);
 	item = get_hash_item(event_hash, name, namelen);
 	if (item) {
-		struct event *event = item->value;
+		struct el_event *event = (struct el_event *)item->value;
 
 		assertm(event != NULL, "Hash item with no value");
 		if_assert_failed return EVENT_NONE;
@@ -141,7 +141,7 @@ get_event_id(unsigned char *name)
 	return EVENT_NONE;
 }
 
-unsigned char *
+char *
 get_event_name(int id)
 {
 	if (invalid_event_id(id)) return NULL;
@@ -181,7 +181,7 @@ trigger_event(int id, ...)
 }
 
 void
-trigger_event_name(unsigned char *name, ...)
+trigger_event_name(const char *name, ...)
 {
 	va_list ap;
 	int id = get_event_id(name);
@@ -192,7 +192,7 @@ trigger_event_name(unsigned char *name, ...)
 }
 
 static inline void
-move_event_handler(struct event *event, int to, int from)
+move_event_handler(struct el_event *event, int to, int from)
 {
 	int d = int_max(to, from);
 
@@ -203,7 +203,7 @@ move_event_handler(struct event *event, int to, int from)
 int
 register_event_hook(int id, event_hook_T callback, int priority, void *data)
 {
-	struct event *event;
+	struct el_event *event;
 	int i;
 
 	assert(callback);
@@ -219,7 +219,7 @@ register_event_hook(int id, event_hook_T callback, int priority, void *data)
 	if (i == event->count) {
 		struct event_handler *eh;
 
-		eh = mem_realloc(event->handlers,
+		eh = (struct event_handler *)mem_realloc(event->handlers,
 				 (event->count + 1) * sizeof(*event->handlers));
 
 		if (!eh) return EVENT_NONE;
@@ -245,7 +245,7 @@ register_event_hook(int id, event_hook_T callback, int priority, void *data)
 void
 unregister_event_hook(int id, event_hook_T callback)
 {
-	struct event *event;
+	struct el_event *event;
 
 	assert(callback);
 	if_assert_failed return;
@@ -268,7 +268,7 @@ unregister_event_hook(int id, event_hook_T callback)
 			} else {
 				struct event_handler *eh;
 
-				eh = mem_realloc(event->handlers,
+				eh = (struct event_handler *)mem_realloc(event->handlers,
 						 event->count * sizeof(*event->handlers));
 				if (eh) event->handlers = eh;
 			}
@@ -289,7 +289,7 @@ register_event_hooks(struct event_hook_info *hooks)
 		if (id == EVENT_NONE) continue;
 
 		register_event_hook(id, hooks[i].callback, hooks[i].priority,
-		                    hooks[i].data);
+		                    hooks[i].adata);
 	}
 }
 
