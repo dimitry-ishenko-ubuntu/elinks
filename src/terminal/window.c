@@ -57,7 +57,7 @@ void
 add_window(struct terminal *term, window_handler_T handler, void *data)
 {
 	struct term_event ev;
-	struct window *win = mem_calloc(1, sizeof(*win));
+	struct window *win = (struct window *)mem_calloc(1, sizeof(*win));
 
 	if (!win) {
 		mem_free_if(data);
@@ -135,7 +135,7 @@ static void
 empty_window_handler(struct window *win, struct term_event *ev)
 {
 	struct terminal *term = win->term;
-	struct ewd *ewd = win->data;
+	struct ewd *ewd = (struct ewd *)win->data;
 	void (*fn)(void *) = ewd->fn;
 	void *data = ewd->data;
 
@@ -165,7 +165,7 @@ empty_window_handler(struct window *win, struct term_event *ev)
 void
 add_empty_window(struct terminal *term, void (*fn)(void *), void *data)
 {
-	struct ewd *ewd = mem_alloc(sizeof(*ewd));
+	struct ewd *ewd = (struct ewd *)mem_alloc(sizeof(*ewd));
 
 	if (!ewd) return;
 	ewd->fn = fn;
@@ -232,7 +232,7 @@ would_window_receive_keypresses(const struct window *win)
 	assert(!list_empty(term->windows));
 	if_assert_failed return 0;
 
-	selected = term->windows.next;
+	selected = (const struct window *)term->windows.next;
 	if (selected->type != WINDOW_TAB) return 0;
 
 	selected = get_current_tab(term);

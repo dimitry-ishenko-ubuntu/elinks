@@ -11,7 +11,7 @@
 #include "elinks.h"
 
 #include "document/view.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "protocol/uri.h"
 #include "util/memory.h"
@@ -137,7 +137,7 @@ set_mark(unsigned char mark, struct view_state *mark_vs)
 
 	if (!mark_vs) return;
 
-	vs = mem_calloc(1, sizeof(*vs));
+	vs = (struct view_state *)mem_calloc(1, sizeof(*vs));
 	if (!vs) return;
 	copy_vs(vs, mark_vs);
 

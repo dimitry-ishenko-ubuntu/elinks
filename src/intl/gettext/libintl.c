@@ -9,7 +9,7 @@
 
 #include "elinks.h"
 
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "intl/gettext/gettextP.h"
 #include "util/error.h"
 #include "util/memory.h"
@@ -71,10 +71,10 @@ struct language languages[] = {
  * other side, it's ISO639 for gettext as well etc. So what?  --pasky */
 
 int
-iso639_to_language(unsigned char *iso639)
+iso639_to_language(char *iso639)
 {
-	unsigned char *l = stracpy(iso639);
-	unsigned char *p;
+	char *l = stracpy(iso639);
+	char *p;
 	int i, ll;
 
 	if (!l)
@@ -82,15 +82,15 @@ iso639_to_language(unsigned char *iso639)
 
 	/* The environment variable transformation. */
 
-	p = strchr((const char *)l, '.');
+	p = strchr(l, '.');
 	if (p)
 		*p = '\0';
 
-	p = strchr((const char *)l, '_');
+	p = strchr(l, '_');
 	if (p)
 		*p = '-';
 	else
-		p = strchr((const char *)l, '-');
+		p = strchr(l, '-');
 
 	/* Exact match. */
 
@@ -133,7 +133,7 @@ iso639_to_language(unsigned char *iso639)
 
 int system_language = 0;
 
-unsigned char *
+const char *
 language_to_iso639(int language)
 {
 	/* Language is "system", we need to extract the index from
@@ -148,7 +148,7 @@ language_to_iso639(int language)
 }
 
 int
-name_to_language(const unsigned char *name)
+name_to_language(const char *name)
 {
 	int i;
 
@@ -160,7 +160,7 @@ name_to_language(const unsigned char *name)
 	return 1;
 }
 
-unsigned char *
+char *
 language_to_name(int language)
 {
 	return languages[language].name;
@@ -169,7 +169,7 @@ language_to_name(int language)
 int
 get_system_language_index(void)
 {
-	unsigned char *l;
+	char *l;
 
 	/* At this point current_language must be "system" yet. */
 	l = getenv("LANGUAGE");
@@ -188,7 +188,7 @@ int current_language = 0;
 void
 set_language(int language)
 {
-	unsigned char *p;
+	char *p;
 
 	if (!system_language)
 		system_language = get_system_language_index();
@@ -205,11 +205,11 @@ set_language(int language)
 
 	if (!LANGUAGE) {
 		/* We never free() this, purely intentionally. */
-		LANGUAGE = malloc(256);
+		LANGUAGE = (char *)malloc(256);
 	}
 	if (LANGUAGE) {
 		strcpy(LANGUAGE, language_to_iso639(language));
-		p = strchr((const char *)LANGUAGE, '-');
+		p = strchr(LANGUAGE, '-');
 		if (p) {
 			*p = '_';
 		}
@@ -222,3 +222,25 @@ set_language(int language)
 		_nl_msg_cat_cntr++;
 	}
 }
+
+static void
+init_gettext(struct module *module)
+{
+}
+
+static void
+done_gettext(struct module *module)
+{
+	mem_free_set(&LANGUAGE, NULL);
+}
+
+struct module gettext_module = struct_module(
+	/* name: */		"gettext (ELinks)",
+	/* options: */		NULL,
+	/* hooks: */		NULL,
+	/* submodules: */	NULL,
+	/* data: */		NULL,
+	/* init: */		init_gettext,
+	/* done: */		done_gettext
+);
+

@@ -18,6 +18,7 @@
 #include "elinks.h"
 
 #include "config/options.h"
+#include "intl/charsets.h"
 #include "osdep/osdep.h"
 #include "protocol/common.h"
 #include "protocol/protocol.h"
@@ -49,8 +50,9 @@ init_directory_listing(struct string *page, struct uri *uri)
 	struct string dirpath = NULL_STRING;
 	struct string decoded = NULL_STRING;
 	struct string location = NULL_STRING;
-	unsigned char *info;
+	const char *info;
 	int local = (uri->protocol == PROTOCOL_FILE);
+	char *charset = straconcat("<meta charset=\"", get_cp_mime_name(get_cp_index("System")), "\"/>", (char *) NULL);
 
 	if (!init_string(page)
 	    || !init_string(&dirpath)
@@ -73,7 +75,13 @@ init_directory_listing(struct string *page, struct uri *uri)
 	if (!local && !add_char_to_string(&location, '/'))
 		goto out_of_memory;
 
-	if (!add_to_string(page, "<html>\n<head><title>"))
+	if (!add_to_string(page, "<html>\n<head>"))
+		goto out_of_memory;
+
+	if (!add_to_string(page, charset))
+		goto out_of_memory;
+
+	if (!add_to_string(page, "<title>"))
 		goto out_of_memory;
 
 	if (!local && !add_html_to_string(page, location.source, location.length))
@@ -118,11 +126,11 @@ init_directory_listing(struct string *page, struct uri *uri)
 
 	/* Make the directory path with links to each subdir. */
 	{
-		const unsigned char *slash = dirpath.source;
-		const unsigned char *pslash = slash;
-		const unsigned char sep = local ? CHAR_DIR_SEP :  '/';
+		const char *slash = dirpath.source;
+		const char *pslash = slash;
+		const char sep = local ? CHAR_DIR_SEP :  '/';
 
-		while ((slash = strchr((const char *)slash, sep)) != NULL) {
+		while ((slash = strchr(slash, sep)) != NULL) {
 			done_string(&decoded);
 			if (!init_string(&decoded)
 			    || !add_bytes_to_string(&decoded, pslash, slash - pslash))
@@ -150,6 +158,7 @@ out_of_memory:
 	done_string(&dirpath);
 	done_string(&decoded);
 	done_string(&location);
+	mem_free_if(charset);
 
 	return page->length > 0
 		? connection_state(S_OK)

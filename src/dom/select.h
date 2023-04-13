@@ -119,8 +119,8 @@ struct dom_select_node {
 
 	/* Flags, specifying how the matching should be done. */
 	union {
-		enum dom_select_element_match element;
-		enum dom_select_attribute_match attribute;
+		/* enum dom_select_element_match*/ unsigned int element;
+		/*enum dom_select_attribute_match*/ unsigned int attribute;
 		enum dom_select_text_match text;
 	} match;
 };
@@ -187,7 +187,7 @@ enum dom_select_pseudo {
 struct dom_select {
 	struct dom_select_node *selector;
 	unsigned long specificity;
-	enum dom_select_pseudo pseudo;
+	/*enum dom_select_pseudo*/ unsigned int pseudo;
 };
 
 enum dom_select_syntax {

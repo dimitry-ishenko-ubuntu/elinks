@@ -16,6 +16,24 @@
 #include "session/session.h"
 #include "util/test.h"
 
+enum retval {
+	RET_OK,		/* All is well */
+	RET_ERROR,	/* Failed to fetch URL or write document when dumping */
+	RET_SIGNAL,	/* Catched SIGTERM which forced program to stop */
+	RET_SYNTAX,	/* Cmdline syntax error or bad or missing dump URL */
+	RET_FATAL,	/* Fatal error occurred during initialization */
+	RET_PING,	/* --remote "ping()" found no running ELinkses */
+	RET_REMOTE,	/* --remote failed to connect to a running ELinks */
+	RET_COMMAND,	/* Used internally for exiting from cmdline commands */
+};
+
+
+struct program {
+	int terminate;
+	enum retval retval;
+	char *path;
+} program;
+
 #define STUB_MODULE(name)				\
 	struct module name = struct_module(		\
 		/* name: */		"Stub " #name,	\
@@ -29,10 +47,12 @@
 STUB_MODULE(auth_module);
 STUB_MODULE(bittorrent_protocol_module);
 STUB_MODULE(cgi_protocol_module);
+STUB_MODULE(dgi_protocol_module);
 STUB_MODULE(file_protocol_module);
 STUB_MODULE(finger_protocol_module);
 STUB_MODULE(fsp_protocol_module);
 STUB_MODULE(ftp_protocol_module);
+STUB_MODULE(gemini_protocol_module);
 STUB_MODULE(gopher_protocol_module);
 STUB_MODULE(http_protocol_module);
 STUB_MODULE(nntp_protocol_module);
@@ -41,7 +61,7 @@ STUB_MODULE(uri_rewrite_module);
 STUB_MODULE(user_protocol_module);
 
 static void
-stub_called(const unsigned char *fun)
+stub_called(const char *fun)
 {
 	die("FAIL: stub %s\n", fun);
 }
@@ -64,11 +84,13 @@ STUB_PROTOCOL_HANDLER(about_protocol_handler);
 STUB_PROTOCOL_HANDLER(bittorrent_protocol_handler);
 STUB_PROTOCOL_HANDLER(bittorrent_peer_protocol_handler);
 STUB_PROTOCOL_HANDLER(data_protocol_handler);
+STUB_PROTOCOL_HANDLER(dgi_protocol_handler);
 STUB_PROTOCOL_EXTERNAL_HANDLER(ecmascript_protocol_handler);
 STUB_PROTOCOL_HANDLER(file_protocol_handler);
 STUB_PROTOCOL_HANDLER(finger_protocol_handler);
 STUB_PROTOCOL_HANDLER(fsp_protocol_handler);
 STUB_PROTOCOL_HANDLER(ftp_protocol_handler);
+STUB_PROTOCOL_HANDLER(gemini_protocol_handler);
 STUB_PROTOCOL_HANDLER(gopher_protocol_handler);
 STUB_PROTOCOL_HANDLER(http_protocol_handler);
 STUB_PROTOCOL_HANDLER(news_protocol_handler);
@@ -78,8 +100,8 @@ STUB_PROTOCOL_HANDLER(smb_protocol_handler);
 STUB_PROTOCOL_EXTERNAL_HANDLER(user_protocol_handler);
 
 /* declared in "protocol/user.h" */
-unsigned char *
-get_user_program(struct terminal *term, unsigned char *progid, int progidlen)
+char *
+get_user_program(struct terminal *term, const char *progid, int progidlen)
 {
 	stub_called("get_user_program");
 	return NULL;
@@ -88,14 +110,14 @@ get_user_program(struct terminal *term, unsigned char *progid, int progidlen)
 /* declared in "session/session.h" */
 void
 print_error_dialog(struct session *ses, struct connection_state state,
-		   struct uri *uri, enum connection_priority priority)
+		   struct uri *uri, connection_priority_T priority)
 {
 	stub_called("print_error_dialog");
 }
 
 /* declared in "bfu/msgbox.h" */
-unsigned char *
-msg_text(struct terminal *term, unsigned char *format, ...)
+char *
+msg_text(struct terminal *term, const char *format, ...)
 {
 	stub_called("msg_text");
 	return NULL;
@@ -104,8 +126,8 @@ msg_text(struct terminal *term, unsigned char *format, ...)
 /* declared in "bfu/msgbox.h" */
 struct dialog_data *
 msg_box(struct terminal *term, struct memory_list *mem_list,
-	enum msgbox_flags flags, unsigned char *title, enum format_align align,
-	unsigned char *text, void *udata, int buttons, ...)
+	msgbox_flags_T flags, char *title, format_align_T align,
+	char *text, void *udata, int buttons, ...)
 {
 	/* mem_list should be freed here but because this is just a
 	 * test program it won't matter.  */

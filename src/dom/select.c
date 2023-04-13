@@ -19,12 +19,12 @@
 /* Selector parsing: */
 
 /* Maps the content of a scanner token to a pseudo-class or -element ID. */
-static enum dom_select_pseudo
+static /*enum dom_select_pseudo*/ unsigned int
 get_dom_select_pseudo(struct dom_scanner_token *token)
 {
 	static struct {
 		struct dom_string string;
-		enum dom_select_pseudo pseudo;
+		/*enum dom_select_pseudo*/ unsigned int pseudo;
 	} pseudo_info[] = {
 
 #define INIT_DOM_SELECT_PSEUDO_STRING(str, type) \
@@ -294,7 +294,7 @@ parse_dom_select_pseudo(struct dom_select *select, struct dom_select_node *sel,
 			struct dom_scanner *scanner)
 {
 	struct dom_scanner_token *token = get_dom_scanner_token(scanner);
-	enum dom_select_pseudo pseudo;
+	/*enum dom_select_pseudo*/ unsigned int pseudo;
 	enum dom_code code;
 
 	/* Skip double :'s in front of some pseudo's (::first-line, etc.) */
@@ -441,7 +441,7 @@ parse_dom_select(struct dom_select *select, struct dom_stack *stack,
 
 			sel.node.type = DOM_NODE_ATTRIBUTE;
 			sel.match.attribute |= DOM_SELECT_ATTRIBUTE_SPACE_LIST;
-			set_dom_string(&sel.node.string, "class", -1);
+			set_dom_string(&sel.node.string, (char *)"class", -1);
 			copy_dom_string(&sel.node.data.attribute.value, &token->string);
 			break;
 
@@ -478,7 +478,7 @@ parse_dom_select(struct dom_select *select, struct dom_stack *stack,
 		if (sel.node.type == DOM_NODE_UNKNOWN)
 			continue;
 
-		select_node = mem_calloc(1, sizeof(*select_node));
+		select_node = (struct dom_select_node *)mem_calloc(1, sizeof(*select_node));
 		copy_struct(select_node, &sel);
 
 		if (!dom_stack_is_empty(stack)) {
@@ -527,7 +527,7 @@ parse_dom_select(struct dom_select *select, struct dom_stack *stack,
 struct dom_select *
 init_dom_select(enum dom_select_syntax syntax, struct dom_string *string)
 {
-	struct dom_select *select = mem_calloc(1, sizeof(select));
+	struct dom_select *select = (struct dom_select *)mem_calloc(1, sizeof(select));
 	struct dom_stack stack;
 	enum dom_code code;
 
@@ -689,7 +689,7 @@ match_attribute_value(struct dom_select_node *selector, struct dom_node *node)
 				break;
 
 			default:
-				if (isspace(str.string[str.length]))
+				if (isspace((unsigned char)str.string[str.length]))
 					return 1;
 			}
 		}
@@ -704,7 +704,7 @@ match_attribute_value(struct dom_select_node *selector, struct dom_node *node)
 			break;
 
 		default:
-			do_compare = isspace(str.string[0]);
+			do_compare = isspace((unsigned char)str.string[0]);
 		}
 
 		str.length--, str.string++;
@@ -736,7 +736,7 @@ match_attribute_selectors(struct dom_select_node *base, struct dom_node *node)
 		return 0;
 
 	foreach_dom_node (selnodes, selnode, index) {
-		struct dom_select_node *selector = (void *) selnode;
+		struct dom_select_node *selector = (struct dom_select_node *) selnode;
 		struct dom_node *attr;
 
 		if (has_attribute_match(selector, DOM_SELECT_ATTRIBUTE_ID)) {
@@ -779,7 +779,7 @@ match_element_relation(struct dom_select_node *selector, struct dom_node *node,
 		       struct dom_stack *stack)
 {
 	struct dom_stack_state *state;
-	enum dom_select_element_match relation = get_element_relation(selector);
+	/*enum dom_select_element_match*/ unsigned int relation = get_element_relation(selector);
 	int i, index;
 
 	assert(relation);
@@ -901,12 +901,12 @@ match_element_selector(struct dom_select_node *selector, struct dom_node *node,
 enum dom_code
 dom_select_push_element(struct dom_stack *stack, struct dom_node *node, void *data)
 {
-	struct dom_select_data *select_data = get_dom_select_data(stack);
+	struct dom_select_data *select_data = (struct dom_select_data *)get_dom_select_data(stack);
 	struct dom_stack_state *state;
 	int pos;
 
 	foreach_dom_stack_state(&select_data->stack, state, pos) {
-		struct dom_select_node *selector = (void *) state->node;
+		struct dom_select_node *selector = (struct dom_select_node *) state->node;
 
 		/* FIXME: Since the same dom_select_node can be multiple times
 		 * on the select_data->stack, cache what select nodes was
@@ -931,7 +931,7 @@ dom_select_push_element(struct dom_stack *stack, struct dom_node *node, void *da
 enum dom_code
 dom_select_pop_element(struct dom_stack *stack, struct dom_node *node, void *data)
 {
-	struct dom_select_data *select_data = get_dom_select_data(stack);
+	struct dom_select_data *select_data = (struct dom_select_data *)get_dom_select_data(stack);
 	struct dom_stack_state *state;
 	int index;
 
@@ -957,9 +957,9 @@ dom_select_pop_element(struct dom_stack *stack, struct dom_node *node, void *dat
 enum dom_code
 dom_select_push_text(struct dom_stack *stack, struct dom_node *node, void *data)
 {
-	struct dom_select_data *select_data = get_dom_select_data(stack);
+	struct dom_select_data *select_data = (struct dom_select_data *)get_dom_select_data(stack);
 	struct dom_stack_state *state = get_dom_stack_top(&select_data->stack);
-	struct dom_select_node *selector = (void *) state->node;
+	struct dom_select_node *selector = (struct dom_select_node *) state->node;
 	struct dom_select_node *text_sel = get_child_dom_select_node(selector, DOM_NODE_TEXT);
 
 	WDBG("Text node: %d chars", node->string.length);

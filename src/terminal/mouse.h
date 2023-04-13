@@ -7,6 +7,9 @@ extern "C" {
 
 struct interlink_event;
 struct itrm;
+struct session;
+
+extern int mouse_enabled;
 
 /* The mouse reporting button byte looks like:
  *
@@ -93,12 +96,13 @@ struct term_event_mouse {
 #define B_WHEEL_UP	3
 #define B_WHEEL_DOWN	4
 
-#define BM_ACT		32
-#define B_DOWN		0
-#define B_UP		32
+#define BM_ACT          48
+#define B_DOWN          0
+#define B_UP            16
+#define B_DRAG          32
+#define B_MOVE          48
 
 #define BM_DRAG		64
-#define B_DRAG		64
 
 #define mouse_get_action(mouse_)		((mouse_)->button & BM_ACT)
 #define mouse_action_is(mouse_, value)	(mouse_get_action(mouse_) == (value))
@@ -120,7 +124,7 @@ void send_mouse_init_sequence(int h);
 void send_mouse_done_sequence(int h);
 void disable_mouse(void);
 void enable_mouse(void);
-void toggle_mouse(void);
+void toggle_mouse(struct session *ses);
 int decode_terminal_mouse_escape_sequence(struct itrm *itrm, struct interlink_event *ev, int el, int v);
 
 #ifdef __cplusplus

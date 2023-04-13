@@ -7,6 +7,7 @@
 #include "elinks.h"
 
 #include "cache/cache.h"
+#include "config/conf.h"
 #include "network/connection.h"
 #include "protocol/about.h"
 #include "protocol/protocol.h"
@@ -16,8 +17,8 @@
 
 #ifndef CONFIG_SMALL
 struct about_page {
-	unsigned char *name;
-	unsigned char *string;
+	const char *name;
+	const char *string;
 };
 
 static const struct about_page about_pages[] = {
@@ -96,20 +97,37 @@ about_protocol_handler(struct connection *conn)
 	if (cached && !cached->content_type) {
 #ifndef CONFIG_SMALL
 		{
-			const struct about_page *page = about_pages;
+			if (!strncmp(conn->uri->data, "config", 6)) {
+				char *str;
 
-			for (; page->name; page++) {
-				int len;
-				unsigned char *str;
+				if (conn->referrer && conn->referrer->protocol == PROTOCOL_ABOUT) {
+					set_option_or_save(conn->uri->data);
+				}
+				str = create_about_config_string();
 
-				if (strcmp(conn->uri->data, page->name))
-					continue;
+				if (str) {
+					int len = strlen(str);
 
-				str = page->string;
-				len = strlen(str);
-				add_fragment(cached, 0, str, len);
-				conn->from = len;
-				break;
+					add_fragment(cached, 0, str, len);
+					conn->from = len;
+					mem_free(str);
+				}
+			} else {
+				const struct about_page *page = about_pages;
+
+				for (; page->name; page++) {
+					int len;
+					const char *str;
+
+					if (strcmp(conn->uri->data, page->name))
+						continue;
+
+					str = page->string;
+					len = strlen(str);
+					add_fragment(cached, 0, str, len);
+					conn->from = len;
+					break;
+				}
 			}
 		}
 #endif

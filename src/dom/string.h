@@ -16,17 +16,17 @@ extern "C" {
 
 struct dom_string {
 	unsigned int length;
-	unsigned char *string;
+	char *string;
 };
 
 #define INIT_DOM_STRING(strvalue, strlength) \
-	{ (strlength), (strvalue) }
+	{ (strlength), (char *)(strvalue) }
 
 #define STATIC_DOM_STRING(strvalue) \
-	{ sizeof(strvalue) - 1, (strvalue) }
+	{ sizeof(strvalue) - 1, (char *)(strvalue) }
 
 static inline void
-set_dom_string(struct dom_string *string, unsigned char *value, size_t length)
+set_dom_string(struct dom_string *string, char *value, size_t length)
 {
 	string->string = value;
 	string->length = length == -1 ? strlen(value) : length;
@@ -53,11 +53,11 @@ dom_string_ncasecmp(struct dom_string *string1, struct dom_string *string2, size
 	set_dom_string(string1, (string2)->string, (string2)->length)
 
 static inline struct dom_string *
-add_to_dom_string(struct dom_string *string, unsigned char *str, size_t len)
+add_to_dom_string(struct dom_string *string, const char *str, size_t len)
 {
-	unsigned char *newstring;
+	char *newstring;
 
-	newstring = mem_realloc(string->string, string->length + len + 1);
+	newstring = (char *)mem_realloc(string->string, string->length + len + 1);
 	if (!newstring)
 		return NULL;
 

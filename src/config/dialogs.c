@@ -18,7 +18,7 @@
 #include "config/kbdbind.h"
 #include "config/options.h"
 #include "config/opttypes.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/event.h"
 #include "main/object.h"
 #include "session/session.h"
@@ -39,12 +39,12 @@ disable_success_msgbox(void *dummy)
 }
 
 void
-write_config_dialog(struct terminal *term, unsigned char *config_file,
+write_config_dialog(struct terminal *term, char *config_file,
 		    int secsave_error, int stdio_error)
 {
 	/* [gettext_accelerator_context(write_config_dialog)] */
-	unsigned char *errmsg = NULL;
-	unsigned char *strerr;
+	char *errmsg = NULL;
+	char *strerr;
 
 	if (secsave_error == SS_ERR_NONE && !stdio_error) {
 		if (!get_opt_bool("ui.success_msgbox", NULL)) return;
@@ -63,7 +63,7 @@ write_config_dialog(struct terminal *term, unsigned char *config_file,
 
 	if (stdio_error > 0)
 		errmsg = straconcat(strerr, " (", strerror(stdio_error), ")",
-				    (unsigned char *) NULL);
+				    (char *) NULL);
 
 	info_box(term, MSGBOX_FREE_TEXT,
 		 N_("Write config error"), ALIGN_CENTER,
@@ -99,7 +99,7 @@ is_option_used(struct listbox_item *item)
 	return is_object_used((struct option *) item->udata);
 }
 
-static unsigned char *
+static char *
 get_range_string(struct option *option)
 {
 	struct string info;
@@ -114,25 +114,25 @@ get_range_string(struct option *option)
 	return info.source;
 }
 
-static unsigned char *
+static char *
 get_option_text(struct listbox_item *item, struct terminal *term)
 {
-	struct option *option = item->udata;
-	unsigned char *desc = option->capt ? option->capt : option->name;
+	struct option *option = (struct option *)item->udata;
+	const char *desc = option->capt ? option->capt : option->name;
 
 	if (option->flags & OPT_TOUCHED)
 		return straconcat(_(desc, term),
 				  " (", _("modified", term), ")",
-				  (unsigned char *) NULL);
+				  (char *) NULL);
 
 	return stracpy(_(desc, term));
 }
 
-static unsigned char *
+static char *
 get_option_info(struct listbox_item *item, struct terminal *term)
 {
-	struct option *option = item->udata;
-	unsigned char *desc, *type;
+	struct option *option = (struct option *)item->udata;
+	char *desc, *type;
 	struct string info;
 
 	if (!init_string(&info)) return NULL;
@@ -143,7 +143,7 @@ get_option_info(struct listbox_item *item, struct terminal *term)
 	if (option->type == OPT_TREE) {
 		type = straconcat(type, " ",
 				  _("(expand by pressing space)", term),
-				  (unsigned char *) NULL);
+				  (char *) NULL);
 	}
 
 	add_format_to_string(&info, "\n%s: %s", _("Type", term), type);
@@ -152,8 +152,8 @@ get_option_info(struct listbox_item *item, struct terminal *term)
 		mem_free(type);
 	}
 
-	if (option_types[option->type].write) {
-		unsigned char *range;
+	if (option_types[option->type].write2) {
+		char *range;
 		struct string value;
 
 		if (!init_string(&value)) {
@@ -161,7 +161,7 @@ get_option_info(struct listbox_item *item, struct terminal *term)
 			return NULL;
 		}
 
-		option_types[option->type].write(option, &value);
+		option_types[option->type].write2(option, &value);
 
 		range = get_range_string(option);
 		if (range) {
@@ -181,7 +181,7 @@ get_option_info(struct listbox_item *item, struct terminal *term)
 
 	}
 
-	desc = _(option->desc  ? option->desc : (unsigned char *) "N/A", term);
+	desc = _(option->desc  ? option->desc : (char *) "N/A", term);
 	if (*desc)
 		add_format_to_string(&info, "\n\n%s:\n%s", _("Description", term), desc);
 
@@ -191,7 +191,7 @@ get_option_info(struct listbox_item *item, struct terminal *term)
 static struct listbox_item *
 get_option_root(struct listbox_item *item)
 {
-	struct option *option = item->udata;
+	struct option *option = (struct option *)item->udata;
 
 	/* The config_options root has no listbox so return that
 	 * we are at the bottom. */
@@ -202,9 +202,9 @@ get_option_root(struct listbox_item *item)
 
 static enum listbox_match
 match_option(struct listbox_item *item, struct terminal *term,
-	     unsigned char *text)
+	     char *text)
 {
-	struct option *option = item->udata;
+	struct option *option = (struct option *)item->udata;
 
 	if (option->type == OPT_TREE)
 		return LISTBOX_MATCH_IMPOSSIBLE;
@@ -219,7 +219,7 @@ match_option(struct listbox_item *item, struct terminal *term,
 static int
 can_delete_option(struct listbox_item *item)
 {
-	struct option *option = item->udata;
+	struct option *option = (struct option *)item->udata;
 
 	if (option->root) {
 		struct option *parent_option = option->root;
@@ -233,7 +233,7 @@ can_delete_option(struct listbox_item *item)
 static void
 delete_option_item(struct listbox_item *item, int last)
 {
-	struct option *option = item->udata;
+	struct option *option = (struct option *)item->udata;
 
 	assert(!is_object_used(option));
 
@@ -266,14 +266,14 @@ static widget_handler_status_T
 check_valid_option(struct dialog_data *dlg_data, struct widget_data *widget_data)
 {
 	struct terminal *term = dlg_data->win->term;
-	struct option *option = dlg_data->dlg->udata;
-	struct session *ses = dlg_data->dlg->udata2;
-	unsigned char *value = widget_data->cdata;
-	unsigned char *chinon;
+	struct option *option = (struct option *)dlg_data->dlg->udata;
+	struct session *ses = (struct session *)dlg_data->dlg->udata2;
+	char *value = widget_data->cdata;
+	char *chinon;
 	int dummy_line = 0;
 
 	commandline = 1;
-	chinon = option_types[option->type].read(option, &value, &dummy_line);
+	chinon = option_types[option->type].read2(option, &value, &dummy_line);
 	if (chinon) {
 		if (option_types[option->type].set &&
 		    option_types[option->type].set(option, chinon)) {
@@ -301,13 +301,13 @@ build_edit_dialog(struct terminal *term, struct session *ses,
 	/* [gettext_accelerator_context(.build_edit_dialog)] */
 #define EDIT_WIDGETS_COUNT 5
 	struct dialog *dlg;
-	unsigned char *value, *name, *desc, *range;
+	char *value, *name, *desc, *range;
 	struct string tvalue;
 
 	if (!init_string(&tvalue)) return;
 
 	commandline = 1;
-	option_types[option->type].write(option, &tvalue);
+	option_types[option->type].write2(option, &tvalue);
 	commandline = 0;
 
 	/* Create the dialog */
@@ -329,18 +329,18 @@ build_edit_dialog(struct terminal *term, struct session *ses,
 	name = straconcat(_("Name", term), ": ", option->name, "\n",
 			  _("Type", term), ": ",
 			  _(option_types[option->type].name, term),
-			  (unsigned char *) NULL);
+			  (char *) NULL);
 	desc = straconcat(_("Description", term), ": \n",
 			  _(option->desc ? option->desc
-				  	 : (unsigned char *) "N/A", term),
-			  (unsigned char *) NULL);
+				  	 : (char *) "N/A", term),
+			  (char *) NULL);
 	range = get_range_string(option);
 	if (range) {
 		if (*range) {
-			unsigned char *tmp;
+			char *tmp;
 
 			tmp = straconcat(name, " ", range,
-					 (unsigned char *) NULL);
+					 (char *) NULL);
 			if (tmp) {
 				mem_free(name);
 				name = tmp;
@@ -381,10 +381,10 @@ push_edit_button(struct dialog_data *dlg_data,
 
 	/* Show history item info */
 	if (!box->sel || !box->sel->udata) return EVENT_PROCESSED;
-	option = box->sel->udata;
+	option = (struct option *)box->sel->udata;
 
-	if (!option_types[option->type].write ||
-	    !option_types[option->type].read ||
+	if (!option_types[option->type].write2 ||
+	    !option_types[option->type].read2 ||
 	    !option_types[option->type].set) {
 		info_box(term, 0,
 			 N_("Edit"), ALIGN_LEFT,
@@ -394,7 +394,7 @@ push_edit_button(struct dialog_data *dlg_data,
 		return EVENT_PROCESSED;
 	}
 
-	build_edit_dialog(term, dlg_data->dlg->udata, option);
+	build_edit_dialog(term, (struct session *)dlg_data->dlg->udata, option);
 
 	return EVENT_PROCESSED;
 }
@@ -406,9 +406,9 @@ struct add_option_to_tree_ctx {
 };
 
 static void
-add_option_to_tree(void *data, unsigned char *name)
+add_option_to_tree(void *data, char *name)
 {
-	struct add_option_to_tree_ctx *ctx = data;
+	struct add_option_to_tree_ctx *ctx = (struct add_option_to_tree_ctx *)data;
 	struct option *old = get_opt_rec_real(ctx->option, name);
 	struct option *new_;
 
@@ -422,7 +422,7 @@ add_option_to_tree(void *data, unsigned char *name)
 static widget_handler_status_T
 check_option_name(struct dialog_data *dlg_data, struct widget_data *widget_data)
 {
-	unsigned char *p;
+	char *p;
 
 	for (p = widget_data->cdata; *p; p++)
 		if (!is_option_name_char(*p)) {
@@ -461,7 +461,7 @@ invalid_option:
 			goto invalid_option;
 	}
 
-	option = item->udata;
+	option = (struct option *)item->udata;
 
 	if (!(option->flags & OPT_AUTOCREATE)) {
 		if (option->root) option = option->root;
@@ -469,7 +469,7 @@ invalid_option:
 			goto invalid_option;
 	}
 
-	ctx = mem_alloc(sizeof(*ctx));
+	ctx = (struct add_option_to_tree_ctx *)mem_alloc(sizeof(*ctx));
 	if (!ctx) return EVENT_PROCESSED;
 	ctx->option = option;
 	ctx->widget_data = dlg_data->widgets_data;
@@ -532,11 +532,11 @@ static int keybinding_text_toggle;
 
 /* XXX: ACTION_BOX_SIZE is just a quick hack, we ought to allocate
  * the sub-arrays separately. --pasky */
-#define ACTION_BOX_SIZE 128
+#define ACTION_BOX_SIZE 138
 static struct listbox_item *action_box_items[KEYMAP_MAX][ACTION_BOX_SIZE];
 
 struct listbox_item *
-get_keybinding_action_box_item(enum keymap_id keymap_id, action_id_T action_id)
+get_keybinding_action_box_item(keymap_id_T keymap_id, action_id_T action_id)
 {
 	assert(action_id < ACTION_BOX_SIZE);
 	if_assert_failed return NULL;
@@ -632,19 +632,19 @@ is_keybinding_used(struct listbox_item *item)
 	return is_object_used((struct keybinding *) item->udata);
 }
 
-static unsigned char *
+static char *
 get_keybinding_text(struct listbox_item *item, struct terminal *term)
 {
-	struct keybinding *keybinding = item->udata;
+	struct keybinding *keybinding = (struct keybinding *)item->udata;
 	struct string info;
 
 	if (item->depth == 0) {
-		struct keymap *keymap = item->udata;
+		struct keymap *keymap = (struct keymap *)item->udata;
 
 		return stracpy(keybinding_text_toggle ? keymap->str
 		                                      : _(keymap->desc, term));
 	} else if (item->depth < 2) {
-		const struct action *action = item->udata;
+		const struct action *action = (const struct action *)item->udata;
 
 		return stracpy(keybinding_text_toggle ? action->str
 		                                      : _(action->desc, term));
@@ -655,11 +655,12 @@ get_keybinding_text(struct listbox_item *item, struct terminal *term)
 	return info.source;
 }
 
-static unsigned char *
+static char *
 get_keybinding_info(struct listbox_item *item, struct terminal *term)
 {
-	struct keybinding *keybinding = item->udata;
-	unsigned char *action, *keymap;
+	struct keybinding *keybinding = (struct keybinding *)item->udata;
+	char *action;
+	const char *keymap;
 	struct string info;
 
 	if (item->depth < 2) return NULL;
@@ -686,11 +687,11 @@ get_keybinding_root(struct listbox_item *item)
 	if (item->depth == 0) return NULL;
 
 	if (item->depth == 1) {
-		const struct action *action = item->udata;
+		const struct action *action = (const struct action *)item->udata;
 
 		return keymap_box_item[action->keymap_id];
 	} else {
-		struct keybinding *kb = item->udata;
+		struct keybinding *kb = (struct keybinding *)item->udata;
 
 		return get_keybinding_action_box_item(kb->keymap_id, kb->action_id);
 	}
@@ -698,16 +699,16 @@ get_keybinding_root(struct listbox_item *item)
 
 static enum listbox_match
 match_keybinding(struct listbox_item *item, struct terminal *term,
-		 unsigned char *text)
+		 char *text)
 {
-	const struct action *action = item->udata;
-	unsigned char *desc;
+	const struct action *action = (const struct action *)item->udata;
+	char *desc;
 
 	if (item->depth != 1)
 		return LISTBOX_MATCH_IMPOSSIBLE;
 
 	desc = keybinding_text_toggle
-	     ? action->str : _(action->desc, term);
+	     ? action->astr : _(action->adesc, term);
 
 	if ((desc && strcasestr((const char *)desc, (const char *)text)))
 		return LISTBOX_MATCH_OK;
@@ -725,7 +726,7 @@ can_delete_keybinding(struct listbox_item *item)
 static void
 delete_keybinding_item(struct listbox_item *item, int last)
 {
-	struct keybinding *keybinding = item->udata;
+	struct keybinding *keybinding = (struct keybinding *)item->udata;
 
 	assert(item->depth == 2 && !is_object_used(keybinding));
 
@@ -751,7 +752,7 @@ static const struct listbox_ops keybinding_listbox_ops = {
 struct kbdbind_add_hop {
 	struct terminal *term;
 	action_id_T action_id;
-	enum keymap_id keymap_id;
+	keymap_id_T keymap_id;
 	struct term_event_keyboard kbd;
 	struct widget_data *widget_data;
 };
@@ -759,7 +760,7 @@ struct kbdbind_add_hop {
 static struct kbdbind_add_hop *
 new_hop_from(struct kbdbind_add_hop *hop)
 {
-	struct kbdbind_add_hop *new_hop = mem_alloc(sizeof(*new_hop));
+	struct kbdbind_add_hop *new_hop = (struct kbdbind_add_hop *)mem_alloc(sizeof(*new_hop));
 
 	if (new_hop)
 		copy_struct(new_hop, hop);
@@ -770,7 +771,7 @@ new_hop_from(struct kbdbind_add_hop *hop)
 static void
 really_really_add_keybinding(void *data)
 {
-	struct kbdbind_add_hop *hop = data;
+	struct kbdbind_add_hop *hop = (struct kbdbind_add_hop *)data;
 	struct keybinding *keybinding;
 
 	assert(hop);
@@ -783,10 +784,10 @@ really_really_add_keybinding(void *data)
 }
 
 static void
-really_add_keybinding(void *data, unsigned char *keystroke)
+really_add_keybinding(void *data, char *keystroke)
 {
 	/* [gettext_accelerator_context(.really_add_keybinding.yn)] */
-	struct kbdbind_add_hop *hop = data;
+	struct kbdbind_add_hop *hop = (struct kbdbind_add_hop *)data;
 	action_id_T action_id;
 
 	/* check_keystroke() has parsed @keystroke to @hop->kbd.  */
@@ -833,8 +834,8 @@ really_add_keybinding(void *data, unsigned char *keystroke)
 static widget_handler_status_T
 check_keystroke(struct dialog_data *dlg_data, struct widget_data *widget_data)
 {
-	struct kbdbind_add_hop *hop = dlg_data->dlg->udata2;
-	unsigned char *keystroke = widget_data->cdata;
+	struct kbdbind_add_hop *hop = (struct kbdbind_add_hop *)dlg_data->dlg->udata2;
+	char *keystroke = widget_data->cdata;
 
 	if (parse_keystroke(keystroke, &hop->kbd) >= 0)
 		return EVENT_PROCESSED;
@@ -853,7 +854,7 @@ push_kbdbind_add_button(struct dialog_data *dlg_data,
 	struct listbox_data *box = get_dlg_listbox_data(dlg_data);
 	struct listbox_item *item = box->sel;
 	struct kbdbind_add_hop *hop;
-	unsigned char *text;
+	char *text;
 
 	if (!item || !item->depth) {
 		info_box(term, 0, N_("Add keybinding"), ALIGN_CENTER,
@@ -861,18 +862,18 @@ push_kbdbind_add_button(struct dialog_data *dlg_data,
 		return EVENT_PROCESSED;
 	}
 
-	hop = mem_calloc(1, sizeof(*hop));
+	hop = (struct kbdbind_add_hop *)mem_calloc(1, sizeof(*hop));
 	if (!hop) return EVENT_PROCESSED;
 	hop->term = term;
 	hop->widget_data = dlg_data->widgets_data;
 
 	if (item->depth == 2) {
-		struct keybinding *keybinding = item->udata;
+		struct keybinding *keybinding = (struct keybinding *)item->udata;
 
 		hop->action_id = keybinding->action_id;
 		hop->keymap_id = keybinding->keymap_id;
 	} else {
-		const struct action *action = item->udata;
+		const struct action *action = (const struct action *)item->udata;
 
 		hop->action_id = action->num;
 		hop->keymap_id = action->keymap_id;

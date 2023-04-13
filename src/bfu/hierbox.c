@@ -16,7 +16,7 @@
 #include "bfu/msgbox.h"
 #include "bfu/text.h"
 #include "config/kbdbind.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "protocol/uri.h"
 #include "session/task.h"
 #include "terminal/screen.h"
@@ -47,7 +47,7 @@ add_listbox_item(struct hierbox_browser *browser, struct listbox_item *root,
 		root = &browser->root;
 	}
 
-	item = mem_calloc(1, sizeof(*item));
+	item = (struct listbox_item *)mem_calloc(1, sizeof(*item));
 	if (!item) return NULL;
 
 	init_list(item->child);
@@ -133,12 +133,12 @@ recursively_set_expanded(struct listbox_item *item, int expanded)
 static widget_handler_status_T
 hierbox_ev_kbd(struct dialog_data *dlg_data)
 {
-	struct hierbox_browser *browser = dlg_data->dlg->udata2;
+	struct hierbox_browser *browser = (struct hierbox_browser *)dlg_data->dlg->udata2;
 	struct widget_data *widget_data = dlg_data->widgets_data;
 	struct widget *widget = widget_data->widget;
 	struct listbox_data *box;
 	struct listbox_item *selected;
-	enum menu_action action_id;
+	action_id_T action_id;
 	struct term_event *ev = dlg_data->term_event;
 
 	/* Check if listbox has something to say to this */
@@ -213,13 +213,13 @@ hierbox_ev_kbd(struct dialog_data *dlg_data)
 static widget_handler_status_T
 hierbox_ev_init(struct dialog_data *dlg_data)
 {
-	struct hierbox_browser *browser = dlg_data->dlg->udata2;
+	struct hierbox_browser *browser = (struct hierbox_browser *)dlg_data->dlg->udata2;
 	struct hierbox_dialog_list_item *item;
 	struct listbox_item *litem;
 
 	/* If we fail here it only means automatic updating
 	 * will not be possible so no need to panic. */
-	item = mem_alloc(sizeof(*item));
+	item = (struct hierbox_dialog_list_item *)mem_alloc(sizeof(*item));
 	if (item) {
 		item->dlg_data = dlg_data;
 		add_to_list(browser->dialogs, item);
@@ -238,7 +238,7 @@ static widget_handler_status_T
 hierbox_ev_abort(struct dialog_data *dlg_data)
 {
 	struct listbox_data *box = get_dlg_listbox_data(dlg_data);
-	struct hierbox_browser *browser = dlg_data->dlg->udata2;
+	struct hierbox_browser *browser = (struct hierbox_browser *)dlg_data->dlg->udata2;
 	struct hierbox_dialog_list_item *item;
 
 	/* Save state and delete the box structure */
@@ -345,7 +345,7 @@ static int
 scan_for_marks(struct listbox_item *item, void *info_, int *offset)
 {
 	if (item->marked) {
-		struct listbox_context *context = info_;
+		struct listbox_context *context = (struct listbox_context *)info_;
 
 		context->item = NULL;
 		*offset = 0;
@@ -357,7 +357,7 @@ scan_for_marks(struct listbox_item *item, void *info_, int *offset)
 static int
 scan_for_used(struct listbox_item *item, void *info_, int *offset)
 {
-	struct listbox_context *context = info_;
+	struct listbox_context *context = (struct listbox_context *)info_;
 
 	if (context->box->ops->is_used(item)) {
 		context->item = item;
@@ -375,7 +375,7 @@ init_listbox_context(struct listbox_data *box, struct terminal *term,
 {
 	struct listbox_context *context;
 
-	context = mem_calloc(1, sizeof(*context));
+	context = (struct listbox_context *)mem_calloc(1, sizeof(*context));
 	if (!context) return NULL;
 
 	context->item = item;
@@ -387,7 +387,7 @@ init_listbox_context(struct listbox_data *box, struct terminal *term,
 	/* Look if it wouldn't be more interesting to blast off the marked
 	 * item. */
 	assert(!list_empty(*box->items));
-	traverse_listbox_items_list(box->items->next, box, 0, 0,
+	traverse_listbox_items_list((struct listbox_item *)box->items->next, box, 0, 0,
 				    scanner, context);
 
 	return context;
@@ -396,7 +396,7 @@ init_listbox_context(struct listbox_data *box, struct terminal *term,
 static void
 done_listbox_context(void *context_)
 {
-	struct listbox_context *context = context_;
+	struct listbox_context *context = (struct listbox_context *)context_;
 
 	if (context->item)
 		context->box->ops->unlock(context->item);
@@ -413,7 +413,7 @@ push_hierbox_info_button(struct dialog_data *dlg_data, struct widget_data *butto
 	struct listbox_item *item = box->sel;
 	struct terminal *term = dlg_data->win->term;
 	struct listbox_context *context;
-	unsigned char *msg;
+	char *msg;
 
 	if (!item) return EVENT_PROCESSED;
 
@@ -482,10 +482,10 @@ recursively_goto_each_listbox(struct session *ses, struct listbox_item *root,
 static int
 goto_marked(struct listbox_item *item, void *data_, int *offset)
 {
-	struct listbox_context *context = data_;
+	struct listbox_context *context = (struct listbox_context *)data_;
 
 	if (item->marked) {
-		struct session *ses = context->dlg_data->dlg->udata;
+		struct session *ses = (struct session *)context->dlg_data->dlg->udata;
 		struct listbox_data *box = context->box;
 
 		recursively_goto_listbox(ses, item, box);
@@ -500,7 +500,7 @@ push_hierbox_goto_button(struct dialog_data *dlg_data,
 {
 	struct listbox_data *box = get_dlg_listbox_data(dlg_data);
 	struct listbox_item *item = box->sel;
-	struct session *ses = dlg_data->dlg->udata;
+	struct session *ses = (struct session *)dlg_data->dlg->udata;
 	struct terminal *term = dlg_data->win->term;
 	struct listbox_context *context;
 
@@ -511,7 +511,7 @@ push_hierbox_goto_button(struct dialog_data *dlg_data,
 
 	if (!context->item) {
 		context->dlg_data = dlg_data;
-		traverse_listbox_items_list(context->box->items->next,
+		traverse_listbox_items_list((struct listbox_item *)context->box->items->next,
 					    context->box, 0, 0,
 					    goto_marked, context);
 
@@ -595,8 +595,8 @@ print_delete_error(struct listbox_item *item, struct terminal *term,
 		   const struct listbox_ops *ops, enum delete_error err)
 {
 	struct string msg;
-	unsigned char *errmsg;
-	unsigned char *text;
+	char *errmsg;
+	char *text;
 
 	switch (err) {
 	case DELETE_IMPOSSIBLE:
@@ -631,7 +631,7 @@ print_delete_error(struct listbox_item *item, struct terminal *term,
 	mem_free(text);
 
 	if (item->type == BI_LEAF) {
-		unsigned char *info = ops->get_info(item, term);
+		char *info = ops->get_info(item, term);
 
 		if (info) {
 			add_format_to_string(&msg, "\n\n%s", info);
@@ -667,7 +667,7 @@ do_delete_item(struct listbox_item *item, struct listbox_context *info,
 static int
 delete_marked(struct listbox_item *item, void *data_, int *offset)
 {
-	struct listbox_context *context = data_;
+	struct listbox_context *context = (struct listbox_context *)data_;
 
 	if (item->marked && !context->box->ops->is_used(item)) {
 		/* Save the first marked so it can be deleted last */
@@ -686,14 +686,14 @@ delete_marked(struct listbox_item *item, void *data_, int *offset)
 static void
 push_ok_delete_button(void *context_)
 {
-	struct listbox_context *context = context_;
+	struct listbox_context *context = (struct listbox_context *)context_;
 	struct listbox_item *root;
 	int last = 0;
 
 	if (context->item) {
 		context->box->ops->unlock(context->item);
 	} else {
-		traverse_listbox_items_list(context->box->items->next,
+		traverse_listbox_items_list((struct listbox_item *)context->box->items->next,
 					    context->box, 0, 0,
 					    delete_marked, context);
 		if (!context->item) return;
@@ -717,12 +717,12 @@ static widget_handler_status_T
 query_delete_selected_item(void *context_)
 {
 	/* [gettext_accelerator_context(query_delete_selected_item)] */
-	struct listbox_context *context, *oldcontext = context_;
+	struct listbox_context *context, *oldcontext = (struct listbox_context *)context_;
 	struct terminal *term = oldcontext->term;
 	struct listbox_data *box = oldcontext->box;
 	const struct listbox_ops *ops = box->ops;
 	struct listbox_item *item = box->sel;
-	unsigned char *text;
+	char *text;
 	enum delete_error delete_;
 
 	assert(item);
@@ -754,7 +754,7 @@ query_delete_selected_item(void *context_)
 			MSG_BOX_BUTTON(N_("~Yes"), push_ok_delete_button, B_ENTER),
 			MSG_BOX_BUTTON(N_("~No"), done_listbox_context, B_ESC));
 	} else {
-		unsigned char *msg = ops->get_info(item, term);
+		char *msg = ops->get_info(item, term);
 
 		ops->lock(item);
 
@@ -824,7 +824,7 @@ push_hierbox_delete_button(struct dialog_data *dlg_data,
 static int
 delete_unused(struct listbox_item *item, void *data_, int *offset)
 {
-	struct listbox_context *context = data_;
+	struct listbox_context *context = (struct listbox_context *)data_;
 
 	if (context->box->ops->is_used(item)) return 0;
 
@@ -835,9 +835,9 @@ delete_unused(struct listbox_item *item, void *data_, int *offset)
 static void
 do_clear_browser(void *context_)
 {
-	struct listbox_context *context = context_;
+	struct listbox_context *context = (struct listbox_context *)context_;
 
-	traverse_listbox_items_list(context->box->items->next,
+	traverse_listbox_items_list((struct listbox_item *)context->box->items->next,
 				    context->box, 0, 0,
 				    delete_unused, context);
 }
@@ -887,8 +887,8 @@ push_hierbox_clear_button(struct dialog_data *dlg_data,
 static int
 scan_for_matches(struct listbox_item *item, void *info_, int *offset)
 {
-	struct listbox_context *context = info_;
-	unsigned char *text = (unsigned char *) context->widget_data;
+	struct listbox_context *context = (struct listbox_context *)info_;
+	char *text = (char *)context->widget_data;
 
 	if (!*text) {
 		item->visible = 1;
@@ -922,9 +922,9 @@ mark_visible(struct listbox_item *item, void *xxx, int *offset)
 
 
 static void
-search_hierbox_browser(void *data, unsigned char *text)
+search_hierbox_browser(void *data, char *text)
 {
-	struct dialog_data *dlg_data = data;
+	struct dialog_data *dlg_data = (struct dialog_data *)data;
 	struct listbox_data *box = get_dlg_listbox_data(dlg_data);
 	struct terminal *term = dlg_data->win->term;
 	struct listbox_context *context;
@@ -933,9 +933,9 @@ search_hierbox_browser(void *data, unsigned char *text)
 	if (!context) return;
 
 	/* Eeew :/ */
-	context->widget_data = (void *) text;
+	context->widget_data = (struct widget_data *) text;
 
-	traverse_listbox_items_list(box->items->next, box, 0, 0,
+	traverse_listbox_items_list((struct listbox_item *)box->items->next, box, 0, 0,
 				    scan_for_matches, context);
 
 	if (!context->item && *text) {
@@ -956,7 +956,7 @@ search_hierbox_browser(void *data, unsigned char *text)
 			break;
 		}
 
-		traverse_listbox_items_list(box->items->next, box, 0, 0,
+		traverse_listbox_items_list((struct listbox_item *)box->items->next, box, 0, 0,
 					    mark_visible, NULL);
 	}
 

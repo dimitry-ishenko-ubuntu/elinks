@@ -23,7 +23,7 @@
 
 struct form_type_name {
 	enum form_type num;
-	unsigned char *name;
+	const char *name;
 };
 
 static struct form_type_name form_type2name[] = {
@@ -41,8 +41,8 @@ static struct form_type_name form_type2name[] = {
 
 #define FORM_TYPE_COUNT (sizeof(form_type2name)/sizeof(struct form_type_name))
 
-int
-str2form_type(unsigned char *s)
+enum form_type
+str2form_type(const char *s)
 {
 	int n;
 
@@ -50,10 +50,10 @@ str2form_type(unsigned char *s)
 		if (!strcmp(form_type2name[n].name, s))
 			return form_type2name[n].num;
 
-	return -1;
+	return FC_NONE;
 }
 
-unsigned char *
+const char *
 form_type2str(enum form_type num)
 {
 	int n;
@@ -71,7 +71,7 @@ form_type2str(enum form_type num)
 struct form *
 init_form(void)
 {
-	struct form *form = mem_calloc(1, sizeof(*form));
+	struct form *form = (struct form *)mem_calloc(1, sizeof(*form));
 
 	if (!form) return NULL;
 

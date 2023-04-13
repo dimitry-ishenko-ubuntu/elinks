@@ -27,6 +27,9 @@
 /* Unsafe macros */
 #include "document/html/internal.h"
 
+#if 0 //def CONFIG_XML
+#include <libxml++/libxml++.h>
+#endif
 
 #if 0
 void
@@ -47,7 +50,7 @@ dump_html_stack(struct html_context *html_context)
 
 
 struct html_element *
-search_html_stack(struct html_context *html_context, unsigned char *name)
+search_html_stack(struct html_context *html_context, const char *name)
 {
 	struct html_element *element;
 	int namelen;
@@ -75,7 +78,7 @@ void
 kill_html_stack_item(struct html_context *html_context, struct html_element *e)
 {
 #ifdef CONFIG_ECMASCRIPT
-	unsigned char *onload = NULL;
+	char *onload = NULL;
 #endif
 
 	assert(e);
@@ -86,17 +89,28 @@ kill_html_stack_item(struct html_context *html_context, struct html_element *e)
 	if_assert_failed return;
 
 #ifdef CONFIG_ECMASCRIPT
+
+#if 0 //def CONFIG_XML
+	xmlpp::Element *elem = e->node;
+	if (elem) {
+		xmlpp::ustring onload_value = elem->get_attribute_value("onload");
+		if (onload_value != "") {
+			onload = memacpy(onload_value.c_str(), onload_value.size());
+		}
+	}
+#else
 	/* As our another tiny l33t extension, we allow the onLoad attribute for
 	 * any element, executing it when that element is fully loaded. */
 	if (e->options)
 		onload = get_attr_val(e->options, "onLoad",
 		                     html_context->doc_cp);
+#endif
 	if (html_context->part
 	    && html_context->part->document
 	    && onload && *onload && *onload != '^') {
 		/* XXX: The following expression alone amounts two #includes. */
-		add_to_string_list(&html_context->part->document->onload_snippets,
-		                   onload, -1);
+		add_to_ecmascript_string_list(&html_context->part->document->onload_snippets,
+		                   onload, -1, 0);
 	}
 	mem_free_if(onload);
 #endif
@@ -119,6 +133,8 @@ kill_html_stack_item(struct html_context *html_context, struct html_element *e)
 	mem_free_if(e->attr.onfocus);
 	mem_free_if(e->attr.onmouseout);
 	mem_free_if(e->attr.onblur);
+	mem_free_if(e->attr.onkeydown);
+	mem_free_if(e->attr.onkeyup);
 
 	del_from_list(e);
 	mem_free(e);
@@ -135,12 +151,12 @@ void
 html_stack_dup(struct html_context *html_context, enum html_element_mortality_type type)
 {
 	struct html_element *e;
-	struct html_element *ep = html_context->stack.next;
+	struct html_element *ep = (struct html_element *)html_context->stack.next;
 
 	assertm(ep && (void *) ep != &html_context->stack, "html stack empty");
 	if_assert_failed return;
 
-	e = mem_alloc(sizeof(*e));
+	e = (struct html_element *)mem_alloc(sizeof(*e));
 	if (!e) return;
 
 	copy_struct(e, ep);
@@ -157,7 +173,8 @@ html_stack_dup(struct html_context *html_context, enum html_element_mortality_ty
 	/* We don't want to propagate these. */
 	/* XXX: For sure? --pasky */
 	e->attr.onclick = e->attr.ondblclick = e->attr.onmouseover = e->attr.onhover
-		= e->attr.onfocus = e->attr.onmouseout = e->attr.onblur = NULL;
+		= e->attr.onfocus = e->attr.onmouseout = e->attr.onblur
+		= e->attr.onkeydown = e->attr.onkeyup = NULL;
 
 #if 0
 	if (e->name) {
@@ -207,7 +224,7 @@ kill_html_stack_until(struct html_context *html_context, int ls, ...)
 
 		va_start(arg, ls);
 		while (1) {
-			unsigned char *s = va_arg(arg, unsigned char *);
+			char *s = va_arg(arg, char *);
 			int slen;
 
 			if (!s) break;

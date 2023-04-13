@@ -4,8 +4,8 @@
 #include "config.h"
 #endif
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "scripting/python/pythoninc.h"
+
 #include <osdefs.h>
 
 #include <stdlib.h>
@@ -13,6 +13,7 @@
 #include "elinks.h"
 
 #include "config/home.h"
+#include "main/main.h"
 #include "main/module.h"
 #include "scripting/python/core.h"
 #include "scripting/python/dialogs.h"
@@ -37,13 +38,13 @@ PyObject *python_hooks = NULL;
 void
 alert_python_error(void)
 {
-	unsigned char *msg = "(no traceback available)";
+	const char *msg = "(no traceback available)";
 	PyObject *err_type = NULL, *err_value = NULL, *err_traceback = NULL;
 	PyObject *tb_module = NULL;
 	PyObject *msg_list = NULL;
 	PyObject *empty_string = NULL;
 	PyObject *msg_string = NULL;
-	unsigned char *temp;
+	char *temp;
 
 	/*
 	 * Retrieve the current error indicator and use the format_exception()
@@ -74,7 +75,7 @@ alert_python_error(void)
 	msg_string = PyObject_CallMethod(empty_string, "join", "O", msg_list);
 	if (!msg_string) goto end;
 
-	temp = (unsigned char *) PyUnicode_AsUTF8(msg_string);
+	temp = (char *) PyUnicode_AsUTF8(msg_string);
 	if (temp) msg = temp;
 
 end:
@@ -98,7 +99,7 @@ static int
 set_python_search_path(void)
 {
 	struct string new_python_path;
-	unsigned char *old_python_path;
+	char *old_python_path;
 	int result = -1;
 
 	if (!init_string(&new_python_path)) return result;
@@ -110,7 +111,7 @@ set_python_search_path(void)
 	if (!add_to_string(&new_python_path, CONFDIR))
 		goto end;
 
-	old_python_path = (unsigned char *) getenv("PYTHONPATH");
+	old_python_path = (char *) getenv("PYTHONPATH");
 	if (old_python_path && !add_format_to_string(&new_python_path, "%c%s",
 						     DELIM, old_python_path))
 		goto end;
@@ -377,6 +378,9 @@ python_error:
 	return NULL;
 }
 
+static wchar_t *program_name;
+
+static char elpythonversion[32];
 
 void
 init_python(struct module *module)
@@ -385,9 +389,20 @@ init_python(struct module *module)
 		return;
 	}
 
+	program_name = Py_DecodeLocale(program.path, NULL);
+
+	if (program_name == NULL) {
+		fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
+		exit(1);
+	}
+	Py_SetProgramName(program_name);  /* optional but recommended */
+
 	PyImport_AppendInittab("elinks", PyInit_elinks);
 
 	Py_Initialize();
+
+	snprintf(elpythonversion, 31, "Python %s", PY_VERSION);
+	module->name = elpythonversion;
 
 	if (!hooks_module_exists()) {
 		return;
@@ -419,6 +434,7 @@ cleanup_python(struct module *module)
 		Py_XDECREF(temp);
 
 		Py_Finalize();
+		PyMem_RawFree(program_name);
 	}
 }
 

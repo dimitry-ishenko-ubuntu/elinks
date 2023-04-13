@@ -23,27 +23,27 @@
 static inline struct dom_stack_state *
 realloc_dom_stack_states(struct dom_stack_state **states, size_t size)
 {
-	return mem_align_alloc(states, size, size + 1,
+	return (struct dom_stack_state *)mem_align_alloc(states, size, size + 1,
 			       DOM_STACK_STATE_GRANULARITY);
 }
 
 static inline struct dom_stack_state *
 realloc_dom_stack_context(struct dom_stack_context ***contexts, size_t size)
 {
-	return mem_align_alloc(contexts, size, size + 1,
+	return (struct dom_stack_state *)mem_align_alloc(contexts, size, size + 1,
 			       DOM_STACK_STATE_GRANULARITY);
 }
 
-static inline unsigned char *
+static inline char *
 realloc_dom_stack_state_objects(struct dom_stack_context *context, size_t depth)
 {
 #ifdef DEBUG_MEMLEAK
-	return mem_align_alloc__(__FILE__, __LINE__, (void **) &context->state_objects,
+	return (char *)mem_align_alloc__(__FILE__, __LINE__, (void **) &context->state_objects,
 			       depth, depth + 1,
 			       context->info->object_size,
 			       DOM_STACK_STATE_GRANULARITY);
 #else
-	return mem_align_alloc__((void **) &context->state_objects,
+	return (char *)mem_align_alloc__((void **) &context->state_objects,
 			       depth, depth + 1,
 			       context->info->object_size,
 			       DOM_STACK_STATE_GRANULARITY);
@@ -51,7 +51,7 @@ realloc_dom_stack_state_objects(struct dom_stack_context *context, size_t depth)
 }
 
 void
-init_dom_stack(struct dom_stack *stack, enum dom_stack_flag flags)
+init_dom_stack(struct dom_stack *stack, /*enum dom_stack_flag*/ unsigned int flags)
 {
 	assert(stack);
 
@@ -87,7 +87,7 @@ add_dom_stack_context(struct dom_stack *stack, void *data,
 	if (!realloc_dom_stack_context(&stack->contexts, stack->contexts_size))
 		return NULL;
 
-	context = mem_calloc(1, sizeof(*context));
+	context = (struct dom_stack_context *)mem_calloc(1, sizeof(*context));
 	if (!context)
 		return NULL;
 
@@ -372,7 +372,7 @@ walk_dom_nodes(struct dom_stack *stack, struct dom_node *root)
 
 	while (!dom_stack_is_empty(stack)) {
 		struct dom_stack_state *state = get_dom_stack_top(stack);
-		struct dom_stack_walk_state *wstate = get_dom_stack_state_data(context, state);
+		struct dom_stack_walk_state *wstate = (struct dom_stack_walk_state *)get_dom_stack_state_data(context, state);
 		struct dom_node_list *list = wstate->list;
 		struct dom_node *node = state->node;
 
@@ -448,8 +448,8 @@ walk_dom_nodes(struct dom_stack *stack, struct dom_node *root)
 
 /* Compress a string to a single line with newlines etc. replaced with "\\n"
  * sequence. */
-static inline unsigned char *
-compress_string(unsigned char *string, unsigned int length)
+static inline char *
+compress_string(char *string, unsigned int length)
 {
 	struct string buffer;
 	unsigned char escape[2] = "\\";
@@ -457,7 +457,7 @@ compress_string(unsigned char *string, unsigned int length)
 	if (!init_string(&buffer)) return NULL;
 
 	for (; length > 0; string++, length--) {
-		unsigned char *bytes = string;
+		char *bytes = string;
 
 		if (*string == '\n' || *string == '\r' || *string == '\t') {
 			bytes	  = escape;

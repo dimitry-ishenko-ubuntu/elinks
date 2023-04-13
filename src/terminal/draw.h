@@ -28,6 +28,7 @@ struct terminal;
  *
  * XXX: The bold mask is used as part of the color encoding. */
 enum screen_char_attr {
+	SCREEN_ATTR_NONE = 0,
 	SCREEN_ATTR_UNSEARCHABLE = 0x01,
 	SCREEN_ATTR_NODE_NUMBER = 0x02,
 	SCREEN_ATTR_BOLD	= 0x08,
@@ -36,6 +37,8 @@ enum screen_char_attr {
 	SCREEN_ATTR_STANDOUT	= 0x40,
 	SCREEN_ATTR_FRAME	= 0x80,
 };
+
+typedef unsigned short screen_char_attr_T;
 
 /** One position in the terminal screen's image. */
 struct screen_char {
@@ -223,6 +226,8 @@ enum border_char {
 	BORDER_DSCROSS	  = BD_MIXED(VERTICAL_DOUBLE_AND_HORIZONTAL_SINGLE),
 };
 
+typedef int border_char_T;
+
 /* 0 -> 1 <- 2 v 3 ^ */
 enum border_cross_direction {
 	BORDER_X_RIGHT = 0,
@@ -247,7 +252,7 @@ void draw_char_data(struct terminal *term, int x, int y, unsigned char data);
 
 /** Sets the data to @a border and of a screen position. */
 void draw_border_char(struct terminal *term, int x, int y,
-		      enum border_char border, struct color_pair *color);
+		      border_char_T border, struct color_pair *color);
 
 /** Sets the cross position of two borders. */
 void draw_border_cross(struct terminal *, int x, int y,
@@ -256,18 +261,27 @@ void draw_border_cross(struct terminal *, int x, int y,
 /** Draws a char. */
 #ifdef CONFIG_UTF8
 void draw_char(struct terminal *term, int x, int y,
-	       unicode_val_T data, enum screen_char_attr attr,
+	       unicode_val_T data, int attr,
 	       struct color_pair *color);
 #else
 void draw_char(struct terminal *term, int x, int y,
-	       unsigned char data, enum screen_char_attr attr,
+	       unsigned char data, int attr,
 	       struct color_pair *color);
 #endif /* CONFIG_UTF8 */
 
+void draw_space(struct terminal *term, int x, int y,
+		struct screen_char *color);
+
 /** Draws area defined by @a box using the same colors and attributes. */
+#ifdef CONFIG_UTF8
 void draw_box(struct terminal *term, struct el_box *box,
-	      unsigned char data, enum screen_char_attr attr,
+	      unicode_val_T data, int attr,
 	      struct color_pair *color);
+#else
+void draw_box(struct terminal *term, struct el_box *box,
+	      unsigned char data, int attr,
+	      struct color_pair *color);
+#endif
 
 /** Draws a shadow of @a width and @a height with color @a color
  * around @a box. */
@@ -285,14 +299,14 @@ void fix_dwchar_around_box(struct terminal *term, struct el_box *box, int border
 
 /** Draws @a length chars from @a text. */
 void draw_text(struct terminal *term, int x, int y,
-	       unsigned char *text, int length,
-	       enum screen_char_attr attr,
+	       const char *text, int length,
+	       int attr,
 	       struct color_pair *color);
 
 /** Draws text for dialogs. */
 void draw_dlg_text(struct dialog_data *dlg_data, int x, int y,
-	  unsigned char *text, int length,
-	  enum screen_char_attr attr, struct color_pair *color);
+	  const char *text, int length,
+	  int attr, struct color_pair *color);
 
 
 /** Draws @a length chars from @a line on the screen.  */

@@ -10,13 +10,18 @@
 #include <unistd.h>
 #endif
 
+#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h> /* OS/2 needs this after sys/types.h */
+#endif
+
 #include "elinks.h"
 
 #include "cache/cache.h"
 #include "config/options.h"
 #include "document/document.h"
 #include "encoding/encoding.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/object.h"
 #include "main/select.h"
 #include "main/timer.h"
@@ -67,7 +72,7 @@ static INIT_LIST_OF(struct keepalive_connection, keepalive_connections);
 static void check_keepalive_connections(void);
 static void notify_connection_callbacks(struct connection *conn);
 
-static /* inline */ enum connection_priority
+static /* inline */ connection_priority_T
 get_priority(struct connection *conn)
 {
 	int priority;
@@ -174,7 +179,7 @@ add_host_connection(struct connection *conn)
 	struct host_connection *host_conn = get_host_connection(conn);
 
 	if (!host_conn && conn->uri->host) {
-		host_conn = mem_calloc(1, sizeof(*host_conn));
+		host_conn = (struct host_connection *)mem_calloc(1, sizeof(*host_conn));
 		if (!host_conn) return 0;
 
 		host_conn->uri = get_uri_reference(conn->uri);
@@ -210,11 +215,11 @@ static void
 check_queue_bugs(void)
 {
 	struct connection *conn;
-	enum connection_priority prev_priority = 0;
+	connection_priority_T prev_priority = 0;
 	int cc = 0;
 
 	foreach (conn, connection_queue) {
-		enum connection_priority priority = get_priority(conn);
+		connection_priority_T priority = get_priority(conn);
 
 		cc += conn->running;
 
@@ -237,34 +242,34 @@ static void
 set_connection_socket_state(struct socket *socket, struct connection_state state)
 {
 	assert(socket);
-	set_connection_state(socket->conn, state);
+	set_connection_state((struct connection *)socket->conn, state);
 }
 
 static void
 set_connection_socket_timeout(struct socket *socket, struct connection_state state)
 {
 	assert(socket);
-	set_connection_timeout(socket->conn);
+	set_connection_timeout((struct connection *)socket->conn);
 }
 
 static void
 retry_connection_socket(struct socket *socket, struct connection_state state)
 {
 	assert(socket);
-	retry_connection(socket->conn, state);
+	retry_connection((struct connection *)socket->conn, state);
 }
 
 static void
 done_connection_socket(struct socket *socket, struct connection_state state)
 {
 	assert(socket);
-	abort_connection(socket->conn, state);
+	abort_connection((struct connection *)socket->conn, state);
 }
 
 static struct connection *
 init_connection(struct uri *uri, struct uri *proxied_uri, struct uri *referrer,
-		off_t start, enum cache_mode cache_mode,
-		enum connection_priority priority)
+		off_t start, cache_mode_T cache_mode,
+		connection_priority_T priority)
 {
 	static struct socket_operations connection_socket_operations = {
 		set_connection_socket_state,
@@ -272,7 +277,7 @@ init_connection(struct uri *uri, struct uri *proxied_uri, struct uri *referrer,
 		retry_connection_socket,
 		done_connection_socket,
 	};
-	struct connection *conn = mem_calloc(1, sizeof(*conn));
+	struct connection *conn = (struct connection *)mem_calloc(1, sizeof(*conn));
 
 	if (!conn) return NULL;
 
@@ -343,7 +348,7 @@ stat_timer(struct connection *conn)
 static void
 upload_stat_timer(struct connection *conn)
 {
-	struct http_connection_info *http = conn->info;
+	struct http_connection_info *http = (struct http_connection_info *)conn->info;
 
 	assert(conn->http_upload_progress);
 	assert(http);
@@ -491,7 +496,7 @@ static inline void
 add_to_queue(struct connection *conn)
 {
 	struct connection *c;
-	enum connection_priority priority = get_priority(conn);
+	connection_priority_T priority = get_priority(conn);
 
 	foreach (c, connection_queue)
 		if (get_priority(c) > priority)
@@ -563,7 +568,7 @@ init_keepalive_connection(struct connection *conn, long timeout_in_seconds,
 	assert(uri->host);
 	if_assert_failed return NULL;
 
-	keep_conn = mem_calloc(1, sizeof(*keep_conn));
+	keep_conn = (struct keepalive_connection *)mem_calloc(1, sizeof(*keep_conn));
 	if (!keep_conn) return NULL;
 
 	keep_conn->uri = get_uri_reference(uri);
@@ -679,7 +684,7 @@ check_keepalive_connections(void)
 	for (; p > MAX_KEEPALIVE_CONNECTIONS; p--) {
 		assertm(!list_empty(keepalive_connections), "keepalive list empty");
 		if_assert_failed return;
-		done_keepalive_connection(keepalive_connections.prev);
+		done_keepalive_connection((struct keepalive_connection *)keepalive_connections.prev);
 	}
 
 	if (!list_empty(keepalive_connections))
@@ -691,7 +696,7 @@ static inline void
 abort_all_keepalive_connections(void)
 {
 	while (!list_empty(keepalive_connections))
-		done_keepalive_connection(keepalive_connections.next);
+		done_keepalive_connection((struct keepalive_connection *)keepalive_connections.next);
 
 	check_keepalive_connections();
 }
@@ -796,7 +801,7 @@ retry_connection(struct connection *conn, struct connection_state state)
 static int
 try_to_suspend_connection(struct connection *conn, struct uri *uri)
 {
-	enum connection_priority priority = get_priority(conn);
+	connection_priority_T priority = get_priority(conn);
 	struct connection *c;
 
 	foreachback (c, connection_queue) {
@@ -834,13 +839,13 @@ check_queue(void)
 	int max_conns = get_opt_int("connection.max_connections", NULL);
 
 again:
-	conn = connection_queue.next;
+	conn = (struct connection *)connection_queue.next;
 	check_queue_bugs();
 	check_keepalive_connections();
 
 	while (conn != (struct connection *) &connection_queue) {
 		struct connection *c;
-		enum connection_priority pri = get_priority(conn);
+		connection_priority_T pri = get_priority(conn);
 
 		for (c = conn; c != (struct connection *) &connection_queue && get_priority(c) == pri;) {
 			struct connection *cc = c;
@@ -884,7 +889,7 @@ register_check_queue(void)
 
 int
 load_uri(struct uri *uri, struct uri *referrer, struct download *download,
-	 enum connection_priority pri, enum cache_mode cache_mode, off_t start)
+	 connection_priority_T pri, cache_mode_T cache_mode, off_t start)
 {
 	struct cache_entry *cached;
 	struct connection *conn;
@@ -1076,7 +1081,7 @@ cancel_download(struct download *download, int interrupt)
 
 void
 move_download(struct download *old, struct download *new_,
-	      enum connection_priority newpri)
+	      connection_priority_T newpri)
 {
 	struct connection *conn;
 
@@ -1200,6 +1205,9 @@ connection_timeout_1(struct connection *conn)
 void
 set_connection_timeout(struct connection *conn)
 {
+	if (conn->xhr_timeout) {
+		return;
+	}
 	kill_timer(&conn->timer);
 
 	install_timer(&conn->timer, (milliseconds_T)
@@ -1209,12 +1217,25 @@ set_connection_timeout(struct connection *conn)
 			* 500), (void (*)(void *)) connection_timeout_1, conn);
 }
 
+static void
+connection_timeout_xhr_1(struct connection *conn)
+{
+	install_timer(&conn->timer, conn->xhr_timeout / 2, (void (*)(void *)) connection_timeout, conn);
+}
+
+void
+set_connection_timeout_xhr(struct connection *conn, milliseconds_T timeout)
+{
+	kill_timer(&conn->timer);
+	conn->xhr_timeout = timeout;
+	install_timer(&conn->timer, timeout / 2, (void (*)(void *)) connection_timeout_xhr_1, conn);
+}
 
 void
 abort_all_connections(void)
 {
 	while (!list_empty(connection_queue)) {
-		abort_connection(connection_queue.next,
+		abort_connection((struct connection *)connection_queue.next,
 				 connection_state(S_INTERRUPTED));
 	}
 

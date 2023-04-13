@@ -4,6 +4,10 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -27,7 +31,7 @@ static int
 menu_contains(struct menu_item *m, int f)
 {
 	if (m->func != do_select_submenu)
-		return (long) m->data == f;
+		return (intptr_t) m->data == f;
 
 	foreach_menu_item (m, m->data) {
 		if (menu_contains(m, f))
@@ -40,8 +44,8 @@ menu_contains(struct menu_item *m, int f)
 void
 do_select_submenu(struct terminal *term, void *menu_, void *ses_)
 {
-	struct menu_item *menu = menu_;
-	struct session *ses = ses_;
+	struct menu_item *menu = (struct menu_item *)menu_;
+	struct session *ses = (struct session *)ses_;
 	struct menu_item *m;
 	int def = int_max(0, get_current_state(ses));
 	int sel = 0;
@@ -57,7 +61,7 @@ do_select_submenu(struct terminal *term, void *menu_, void *ses_)
 }
 
 void
-new_menu_item(struct list_menu *menu, unsigned char *name, int data, int fullname)
+new_menu_item(struct list_menu *menu, char *name, int data, int fullname)
 	/* name == NULL - up;	data == -1 - down */
 {
 	struct menu_item *new_menu_item = NULL; /* no uninitialized warnings */
@@ -82,7 +86,7 @@ new_menu_item(struct list_menu *menu, unsigned char *name, int data, int fullnam
 
 	if (data == -1) {
 		int size = (menu->stack_size + 1) * sizeof(*menu->stack);
-		struct menu_item **stack = mem_realloc(menu->stack, size);
+		struct menu_item **stack = (struct menu_item **)mem_realloc(menu->stack, size);
 
 		if (stack) {
 			menu->stack = stack;
@@ -113,7 +117,7 @@ new_menu_item(struct list_menu *menu, unsigned char *name, int data, int fullnam
 	} else {
 		add_to_menu(items, name, NULL, ACT_MAIN_NONE,
 			    selected_item,
-			    (void *) (long) data, (fullname ? MENU_FULLNAME : 0));
+			    (void *) (intptr_t) data, (fullname ? MENU_FULLNAME : 0));
 	}
 
 	if (stack_size >= 2) {
@@ -142,7 +146,7 @@ free_menu(struct menu_item *m) /* Grrr. Recursion */
 
 	foreach_menu_item (mm, m) {
 		mem_free_if(mm->text);
-		if (mm->func == do_select_submenu) free_menu(mm->data);
+		if (mm->func == do_select_submenu) free_menu((struct menu_item *)mm->data);
 	}
 
 	mem_free(m);
@@ -169,31 +173,30 @@ destroy_menu(struct list_menu *menu)
 }
 
 void
-menu_labels(struct menu_item *items, unsigned char *base, unsigned char **lbls)
+menu_labels(struct menu_item *items, const char *base, char **lbls)
 {
 	struct menu_item *item;
-	unsigned char *bs;
+	char *bs;
 
 	foreach_menu_item (item, items) {
-		bs = (item->flags & MENU_FULLNAME) ? (unsigned char *) ""
-						   : base;
-		bs = straconcat(bs, item->text, (unsigned char *) NULL);
+		const char *bs2 = (item->flags & MENU_FULLNAME) ? "" : base;
+		bs = straconcat(bs2, item->text, (char *) NULL);
 		if (!bs) continue;
 
 		if (item->func == do_select_submenu) {
 			add_to_strn(&bs, " ");
-			menu_labels(item->data, bs, lbls);
+			menu_labels((struct menu_item *)item->data, bs, lbls);
 			mem_free(bs);
 		} else {
 			assert(item->func == selected_item);
-			lbls[(long) item->data] = bs;
+			lbls[(intptr_t) item->data] = bs;
 		}
 	}
 }
 
 void
 add_select_item(struct list_menu *menu, struct string *string,
-		struct string *orig_string, unsigned char **value,
+		struct string *orig_string, char **value,
 		int order, int dont_add)
 {
 	int pos = order - 1;

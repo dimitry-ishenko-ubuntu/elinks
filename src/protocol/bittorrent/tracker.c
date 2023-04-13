@@ -4,6 +4,11 @@
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h> /* OS/2 needs this after sys/types.h */
+#endif
+
 #include "elinks.h"
 
 #include "cache/cache.h"
@@ -36,7 +41,7 @@ static void do_send_bittorrent_tracker_request(struct connection *conn);
 static void
 set_bittorrent_tracker_interval(struct connection *conn)
 {
-	struct bittorrent_connection *bittorrent = conn->info;
+	struct bittorrent_connection *bittorrent = (struct bittorrent_connection *)conn->info;
 	int interval = get_opt_int("protocol.bittorrent.tracker.interval",
 	                           NULL);
 
@@ -64,8 +69,8 @@ static void
 bittorrent_tracker_callback(void *data, struct connection_state state,
 			    struct bittorrent_const_string *response)
 {
-	struct connection *conn = data;
-	struct bittorrent_connection *bittorrent = conn ? conn->info : NULL;
+	struct connection *conn = (struct connection *)data;
+	struct bittorrent_connection *bittorrent = (struct bittorrent_connection *)(conn ? conn->info : NULL);
 
 	/* We just did event=stopped and don't have any connection attached. */
 	if (!bittorrent) return;
@@ -142,9 +147,9 @@ check_bittorrent_stopped_request(void *____)
 static void
 do_send_bittorrent_tracker_request(struct connection *conn)
 {
-	struct bittorrent_connection *bittorrent = conn->info;
+	struct bittorrent_connection *bittorrent = (struct bittorrent_connection *)conn->info;
 	int stopped = (bittorrent->tracker.event == BITTORRENT_EVENT_STOPPED);
-	unsigned char *ip, *key;
+	char *ip, *key;
 	struct string request;
 	struct uri *uri = NULL;
 	int numwant, index, min_size;
@@ -180,11 +185,11 @@ do_send_bittorrent_tracker_request(struct connection *conn)
 	add_uri_to_string(&request, uri, URI_BASE);
 
 	add_to_string(&request, "?info_hash=");
-	encode_uri_string(&request, bittorrent->meta.info_hash,
+	encode_uri_string(&request, (char *)bittorrent->meta.info_hash,
 			  sizeof(bittorrent->meta.info_hash), 1);
 
 	add_to_string(&request, "&peer_id=");
-	encode_uri_string(&request, bittorrent->peer_id,
+	encode_uri_string(&request, (char *)bittorrent->peer_id,
 			  sizeof(bittorrent->peer_id), 1);
 
 	add_format_to_string(&request, "&uploaded=%ld", bittorrent->uploaded);
@@ -207,7 +212,7 @@ do_send_bittorrent_tracker_request(struct connection *conn)
 	}
 
 	if (bittorrent->tracker.event != BITTORRENT_EVENT_REGULAR) {
-		unsigned char *event;
+		const char *event;
 
 		switch (bittorrent->tracker.event) {
 		case BITTORRENT_EVENT_STARTED:
@@ -248,7 +253,7 @@ do_send_bittorrent_tracker_request(struct connection *conn)
 	if (get_opt_bool("protocol.bittorrent.tracker.compact", NULL))
 		add_to_string(&request, "&compact=1");
 
-	uri = get_uri(request.source, 0);
+	uri = get_uri(request.source, URI_NONE);
 	done_string(&request);
 	if (!uri) {
 		if (!stopped)
@@ -277,7 +282,7 @@ do_send_bittorrent_tracker_request(struct connection *conn)
 void
 send_bittorrent_tracker_request(struct connection *conn)
 {
-	struct bittorrent_connection *bittorrent = conn->info;
+	struct bittorrent_connection *bittorrent = (struct bittorrent_connection *)conn->info;
 
 	/* Kill the timer when we are not sending a periodic request to make
 	 * sure that there are only one tracker request at any time. */
@@ -289,7 +294,7 @@ send_bittorrent_tracker_request(struct connection *conn)
 void
 done_bittorrent_tracker_connection(struct connection *conn)
 {
-	struct bittorrent_connection *bittorrent = conn->info;
+	struct bittorrent_connection *bittorrent = (struct bittorrent_connection *)conn->info;
 
 	kill_timer(&bittorrent->tracker.timer);
 

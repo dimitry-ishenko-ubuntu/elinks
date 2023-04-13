@@ -18,7 +18,7 @@
 #include "bookmarks/dialogs.h"
 #include "config/home.h"
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "main/object.h"
 #include "protocol/uri.h"
@@ -46,19 +46,19 @@ static struct bookmark *bm_snapshot_last_folder;
 
 static union option_info bookmark_options_info[] = {
 	INIT_OPT_TREE("", N_("Bookmarks"),
-		"bookmarks", 0,
+		"bookmarks", OPT_ZERO,
 		N_("Bookmark options.")),
 
 #ifdef CONFIG_XBEL_BOOKMARKS
 	INIT_OPT_INT("bookmarks", N_("File format"),
-		"file_format", 0, 0, 1, 0,
+		"file_format", OPT_ZERO, 0, 1, 0,
 		N_("File format for bookmarks (affects both reading and "
 		"saving):\n"
 		"0 is the default native ELinks format\n"
 		"1 is XBEL universal XML bookmarks format")),
 #else
 	INIT_OPT_INT("bookmarks", N_("File format"),
-		"file_format", 0, 0, 1, 0,
+		"file_format", OPT_ZERO, 0, 1, 0,
 		N_("File format for bookmarks (affects both reading and "
 		"saving):\n"
 		"0 is the default native ELinks format\n"
@@ -66,14 +66,14 @@ static union option_info bookmark_options_info[] = {
 #endif
 
 	INIT_OPT_BOOL("bookmarks", N_("Save folder state"),
-		"folder_state", 0, 1,
+		"folder_state", OPT_ZERO, 1,
 		N_("When saving bookmarks also store whether folders are "
 		"expanded or not, so the look of the bookmark dialog is "
 		"kept across ELinks sessions. If disabled all folders will "
 		"appear unexpanded next time ELinks is run.")),
 
 	INIT_OPT_BOOL("ui.sessions", N_("Periodic snapshotting"),
-		"snapshot", 0, 0,
+		"snapshot", OPT_ZERO, 0,
 		N_("Automatically save a snapshot of all tabs periodically. "
 		"This will periodically bookmark the tabs of each terminal "
 		"in a separate folder for recovery after a crash.\n"
@@ -87,10 +87,10 @@ static enum evhook_status bookmark_change_hook(va_list ap, void *data);
 static enum evhook_status bookmark_write_hook(va_list ap, void *data);
 
 struct event_hook_info bookmark_hooks[] = {
-	{ "bookmark-delete", 0, bookmark_change_hook, NULL },
-	{ "bookmark-move",   0, bookmark_change_hook, NULL },
-	{ "bookmark-update", 0, bookmark_change_hook, NULL },
-	{ "periodic-saving", 0, bookmark_write_hook,  NULL },
+	{ "bookmark-delete", 0, bookmark_change_hook, {NULL} },
+	{ "bookmark-move",   0, bookmark_change_hook, {NULL} },
+	{ "bookmark-update", 0, bookmark_change_hook, {NULL} },
+	{ "periodic-saving", 0, bookmark_write_hook,  {NULL} },
 
 	NULL_EVENT_HOOK_INFO,
 };
@@ -251,7 +251,7 @@ delete_bookmark(struct bookmark *bm)
 	static int delete_bookmark_event_id = EVENT_NONE;
 
 	while (!list_empty(bm->child)) {
-		delete_bookmark(bm->child.next);
+		delete_bookmark((struct bookmark *)bm->child.next);
 	}
 
 	if (check_bookmark_cache(bm->url)) {
@@ -276,7 +276,7 @@ delete_bookmark(struct bookmark *bm)
  * @param foldername
  *  The title of the folder, in UTF-8.  */
 static void
-delete_folder_by_name(const unsigned char *foldername)
+delete_folder_by_name(const char *foldername)
 {
 	struct bookmark *bookmark, *next;
 
@@ -305,11 +305,11 @@ delete_folder_by_name(const unsigned char *foldername)
  *
  * @return the new bookmark, or NULL on error.  */
 static struct bookmark *
-init_bookmark(struct bookmark *root, unsigned char *title, unsigned char *url)
+init_bookmark(struct bookmark *root, const char *title, const char *url)
 {
 	struct bookmark *bm;
 
-	bm = mem_calloc(1, sizeof(*bm));
+	bm = (struct bookmark *)mem_calloc(1, sizeof(*bm));
 	if (!bm) return NULL;
 
 	bm->title = stracpy(title);
@@ -379,8 +379,8 @@ add_bookmark_item_to_bookmarks(struct bookmark *bm, struct bookmark *root, int p
  *
  * @see add_bookmark_cp() */
 struct bookmark *
-add_bookmark(struct bookmark *root, int place, unsigned char *title,
-	     unsigned char *url)
+add_bookmark(struct bookmark *root, int place, const char *title,
+	     const char *url)
 {
 	enum listbox_item_type type;
 	struct bookmark *bm;
@@ -435,12 +435,12 @@ add_bookmark(struct bookmark *root, int place, unsigned char *title,
  * @see add_bookmark() */
 struct bookmark *
 add_bookmark_cp(struct bookmark *root, int place, int codepage,
-		unsigned char *title, unsigned char *url)
+		const char *title, const char *url)
 {
 	const int utf8_cp = get_cp_index("UTF-8");
 	struct conv_table *table;
-	unsigned char *utf8_title = NULL;
-	unsigned char *utf8_url = NULL;
+	char *utf8_title = NULL;
+	char *utf8_url = NULL;
 	struct bookmark *bookmark = NULL;
 
 	if (!url)
@@ -471,13 +471,13 @@ add_bookmark_cp(struct bookmark *root, int place, int codepage,
  * If any of the fields are NULL, the value is left unchanged. */
 int
 update_bookmark(struct bookmark *bm, int codepage,
-		unsigned char *title, unsigned char *url)
+		char *title, char *url)
 {
 	static int update_bookmark_event_id = EVENT_NONE;
 	const int utf8_cp = get_cp_index("UTF-8");
 	struct conv_table *table;
-	unsigned char *title2 = NULL;
-	unsigned char *url2 = NULL;
+	char *title2 = NULL;
+	char *url2 = NULL;
 
 	table = get_translation_table(codepage, utf8_cp);
 	if (!table)
@@ -541,7 +541,7 @@ update_bookmark(struct bookmark *bm, int codepage,
  *
  * @return The bookmark, or NULL if not found.  */
 struct bookmark *
-get_bookmark_by_name(struct bookmark *folder, unsigned char *title)
+get_bookmark_by_name(struct bookmark *folder, char *title)
 {
 	struct bookmark *bookmark;
 	LIST_OF(struct bookmark) *lh;
@@ -556,7 +556,7 @@ get_bookmark_by_name(struct bookmark *folder, unsigned char *title)
 
 /* Search bookmark cache for item matching url. */
 struct bookmark *
-get_bookmark(unsigned char *url)
+get_bookmark(char *url)
 {
 	struct hash_item *item;
 
@@ -568,18 +568,18 @@ get_bookmark(unsigned char *url)
 
 	item = get_hash_item(bookmark_cache, url, strlen(url));
 
-	return item ? item->value : NULL;
+	return (struct bookmark *)(item ? item->value : NULL);
 }
 
 static void
 bookmark_terminal(struct terminal *term, struct bookmark *folder)
 {
-	unsigned char title[MAX_STR_LEN], url[MAX_STR_LEN];
+	char title[MAX_STR_LEN], url[MAX_STR_LEN];
 	struct window *tab;
 	int term_cp = get_terminal_codepage(term);
 
 	foreachback_tab (tab, term->windows) {
-		struct session *ses = tab->data;
+		struct session *ses = (struct session *)tab->data;
 
 		if (!get_current_url(ses, url, MAX_STR_LEN))
 			continue;
@@ -600,7 +600,7 @@ bookmark_terminal(struct terminal *term, struct bookmark *folder)
  * @param foldername
  *   The name of the new bookmark folder, in UTF-8.  */
 void
-bookmark_terminal_tabs(struct terminal *term, unsigned char *foldername)
+bookmark_terminal_tabs(struct terminal *term, char *foldername)
 {
 	struct bookmark *folder = add_bookmark(NULL, 1, foldername, NULL);
 
@@ -619,16 +619,16 @@ bookmark_all_terminals(struct bookmark *folder)
 		return;
 
 	if (list_is_singleton(terminals)) {
-		bookmark_terminal(terminals.next, folder);
+		bookmark_terminal((struct terminal *)terminals.next, folder);
 		return;
 	}
 
 	foreach (term, terminals) {
-		unsigned char subfoldername[4];
+		char subfoldername[5];
 		struct bookmark *subfolder;
 
-		if (ulongcat(subfoldername, NULL, n, sizeof(subfoldername), 0)
-		     >= sizeof(subfoldername))
+		if (ulongcat(subfoldername, NULL, n, sizeof(subfoldername)-1, 0)
+		     >= sizeof(subfoldername)-1)
 			return;
 
 		++n;
@@ -643,10 +643,10 @@ bookmark_all_terminals(struct bookmark *folder)
 }
 
 
-unsigned char *
+char *
 get_auto_save_bookmark_foldername_utf8(void)
 {
-	unsigned char *foldername;
+	char *foldername;
 	int from_cp, to_cp;
 	struct conv_table *convert_table;
 
@@ -670,7 +670,7 @@ get_auto_save_bookmark_foldername_utf8(void)
 void
 bookmark_auto_save_tabs(struct terminal *term)
 {
-	unsigned char *foldername; /* UTF-8 */
+	char *foldername; /* UTF-8 */
 
 	if (get_cmd_opt_bool("anonymous")
 	    || !get_opt_bool("ui.sessions.auto_save", NULL))
@@ -726,7 +726,7 @@ bookmark_snapshot(void)
  * @param foldername
  *   The name of the bookmark folder, in UTF-8.  */
 void
-open_bookmark_folder(struct session *ses, unsigned char *foldername)
+open_bookmark_folder(struct session *ses, char *foldername)
 {
 	struct bookmark *bookmark;
 	struct bookmark *folder = NULL;

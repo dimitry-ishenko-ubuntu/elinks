@@ -11,7 +11,7 @@
 #include "bfu/dialog.h"
 #include "document/forms.h"
 #include "formhist/formhist.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/object.h"
 #include "protocol/auth/auth.h"
 #include "protocol/auth/dialogs.h"
@@ -31,16 +31,16 @@
 static void
 auth_ok(void *data)
 {
-	struct dialog *dlg = data;
-	struct auth_entry *entry = dlg->udata2;
-	struct session *ses = dlg->udata;
+	struct dialog *dlg = (struct dialog *)data;
+	struct auth_entry *entry = (struct auth_entry *)dlg->udata2;
+	struct session *ses = (struct session *)dlg->udata;
 
 	entry->blocked = 0;
 	entry->valid = auth_entry_has_userinfo(entry);
 
 #ifdef CONFIG_FORMHIST
 	if (get_opt_bool("document.browse.forms.show_formhist", ses)) {
-		unsigned char *url = get_uri_string(entry->uri, URI_HTTP_AUTH);
+		char *url = get_uri_string(entry->uri, URI_HTTP_AUTH);
 
 		if (url) {
 			struct form form;
@@ -90,7 +90,7 @@ auth_ok(void *data)
 static void
 auth_cancel(void *data)
 {
-	struct auth_entry *entry = data;
+	struct auth_entry *entry = (struct auth_entry *)data;
 
 	entry->blocked = 0;
 	del_auth_entry(entry);
@@ -105,7 +105,7 @@ do_auth_dialog(struct session *ses, void *data)
 	struct dialog_data *dlg_data;
 	struct terminal *term = ses->tab->term;
 	struct auth_entry *a = get_invalid_auth_entry();
-	unsigned char sticker[MAX_STR_LEN], *text;
+	char sticker[MAX_STR_LEN], *text;
 	int sticker_len;
 
 	if (!a || a->blocked) return;
@@ -115,8 +115,8 @@ do_auth_dialog(struct session *ses, void *data)
 
 #ifdef CONFIG_FORMHIST
 	{
-		unsigned char *user = get_form_history_value(text, "user");
-		unsigned char *password = get_form_history_value(text, "password");
+		char *user = get_form_history_value(text, "user");
+		char *password = get_form_history_value(text, "password");
 
 		if (user) {
 			strncpy(a->user, user, AUTH_USER_MAXLEN - 1);
@@ -187,18 +187,18 @@ is_auth_entry_used(struct listbox_item *item)
 	return is_object_used((struct auth_entry *) item->udata);
 }
 
-static unsigned char *
+static char *
 get_auth_entry_text(struct listbox_item *item, struct terminal *term)
 {
-	struct auth_entry *auth_entry = item->udata;
+	struct auth_entry *auth_entry = (struct auth_entry *)item->udata;
 
 	return get_uri_string(auth_entry->uri, URI_HTTP_AUTH);
 }
 
-static unsigned char *
+static char *
 get_auth_entry_info(struct listbox_item *item, struct terminal *term)
 {
-	struct auth_entry *auth_entry = item->udata;
+	struct auth_entry *auth_entry = (struct auth_entry *)item->udata;
 	struct string info;
 
 	if (item->type == BI_FOLDER) return NULL;
@@ -231,7 +231,7 @@ get_auth_entry_info(struct listbox_item *item, struct terminal *term)
 static struct uri *
 get_auth_entry_uri(struct listbox_item *item)
 {
-	struct auth_entry *auth_entry = item->udata;
+	struct auth_entry *auth_entry = (struct auth_entry *)item->udata;
 
 	return get_composed_uri(auth_entry->uri, URI_HTTP_AUTH);
 }
@@ -251,7 +251,7 @@ can_delete_auth_entry(struct listbox_item *item)
 static void
 delete_auth_entry(struct listbox_item *item, int last)
 {
-	struct auth_entry *auth_entry = item->udata;
+	struct auth_entry *auth_entry = (struct auth_entry *)item->udata;
 
 	assert(!is_object_used(auth_entry));
 

@@ -11,7 +11,7 @@
 #include "bfu/dialog.h"
 #include "bfu/button.h"
 #include "bfu/group.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "terminal/draw.h"
 #include "terminal/terminal.h"
 #include "util/color.h"
@@ -36,7 +36,7 @@ dlg_format_group(struct dialog_data *dlg_data,
 	while (n--) {
 		int widget_width;
 		int width;
-		unsigned char *text = widget_data->widget->text;
+		char *text = widget_data->widget->text;
 		int label_length;
 		int label_padding;
 
@@ -57,7 +57,7 @@ dlg_format_group(struct dialog_data *dlg_data,
 		} else if (widget_is_textfield(widget_data)) {
 #ifdef CONFIG_UTF8
 			if (term->utf8_cp) {
-				width = utf8_ptr2cells(widget_data->widget->data,
+				width = utf8_ptr2cells((char *)widget_data->widget->data,
 						       NULL);
 			} else
 #endif /* CONFIG_UTF8 */

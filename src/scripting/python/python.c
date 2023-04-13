@@ -4,12 +4,11 @@
 #include "config.h"
 #endif
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "scripting/python/pythoninc.h"
 
 #include "elinks.h"
 
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "scripting/python/core.h"
 #include "scripting/python/hooks.h"

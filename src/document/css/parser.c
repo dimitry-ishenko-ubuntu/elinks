@@ -77,7 +77,7 @@ css_parse_properties(LIST_OF(struct css_property) *props,
 
 		/* We might be on track of something, cook up the struct. */
 
-		prop = mem_calloc(1, sizeof(*prop));
+		prop = (struct css_property *)mem_calloc(1, sizeof(*prop));
 		if (!prop) {
 			goto ride_on;
 		}
@@ -137,7 +137,7 @@ css_parse_media_types(struct scanner *scanner)
 {
 	int matched = 0;
 	int empty = 1;
-	const unsigned char *const optstr = get_opt_str("document.css.media", NULL);
+	const char *const optstr = get_opt_str("document.css.media", NULL);
 	struct scanner_token *token = get_scanner_token(scanner);
 
 	while (token && token->type == CSS_TOKEN_IDENT) {
@@ -360,7 +360,7 @@ css_parse_selector(struct css_stylesheet *css, struct scanner *scanner,
 		struct scanner_token last_token;
 		struct css_selector *selector;
 		enum css_selector_relation reltype = CSR_ROOT;
-		enum css_selector_type seltype = CST_ELEMENT;
+		css_selector_type_T seltype = CST_ELEMENT;
 
 		assert(token);
 		assert(!last_fragment);
@@ -457,7 +457,7 @@ css_parse_selector(struct css_stylesheet *css, struct scanner *scanner,
 					last_token.string, last_token.length);
 			if (!selector) continue;
 
-			pkg = mem_calloc(1, sizeof(*pkg));
+			pkg = (struct selector_pkg *)mem_calloc(1, sizeof(*pkg));
 			if (!pkg) continue;
 			add_to_list(*selectors, pkg);
 			pkg->selector = selector;
@@ -600,7 +600,7 @@ css_parse_ruleset(struct css_stylesheet *css, struct scanner *scanner)
 	 * waste that having the property multiple times in a selector, I
 	 * believe. --pasky */
 
-	pkg = selectors.next;
+	pkg = (struct selector_pkg *)selectors.next;
 	css_parse_properties(&properties, scanner);
 
 	skip_css_tokens(scanner, '}');
@@ -629,7 +629,7 @@ css_parse_ruleset(struct css_stylesheet *css, struct scanner *scanner)
 
 void
 css_parse_stylesheet(struct css_stylesheet *css, struct uri *base_uri,
-		     const unsigned char *string, const unsigned char *end)
+		     const char *string, const char *end)
 {
 	struct scanner scanner;
 

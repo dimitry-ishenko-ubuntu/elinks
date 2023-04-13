@@ -6,6 +6,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h> /* OS/2 needs this after sys/types.h */
+#endif
 
 #include "elinks.h"
 
@@ -22,13 +26,13 @@
 #include "util/string.h"
 #include "util/snprintf.h"
 
-const bittorrent_id_T BITTORRENT_NULL_ID;
+const bittorrent_id_T BITTORRENT_NULL_ID = {};
 
 /* Debug function which returns printable peer ID. */
-unsigned char *
+char *
 get_peer_id(bittorrent_id_T peer_id)
 {
-	static unsigned char hex[41];
+	static char hex[41];
 	int i, j;
 
 	if (bittorrent_id_is_empty(peer_id)) {
@@ -52,12 +56,12 @@ get_peer_id(bittorrent_id_T peer_id)
 	return hex;
 }
 
-unsigned char *
-get_peer_message(enum bittorrent_message_id message_id)
+const char *
+get_peer_message(bittorrent_message_id_T message_id)
 {
 	static struct {
-		enum bittorrent_message_id message_id;
-		unsigned char *name;
+		bittorrent_message_id_T message_id;
+		const char *name;
 	} messages[] = {
 		{ BITTORRENT_MESSAGE_INCOMPLETE,	"incomplete"	 },
 		{ BITTORRENT_MESSAGE_KEEP_ALIVE,	"keep-alive"	 },
@@ -83,10 +87,10 @@ get_peer_message(enum bittorrent_message_id message_id)
 }
 
 
-unsigned char *
+char *
 get_hexed_bittorrent_id(bittorrent_id_T id)
 {
-	static unsigned char hex[SHA_DIGEST_LENGTH * 2 + 1];
+	static char hex[SHA_DIGEST_LENGTH * 2 + 1];
 	int i;
 
 	for (i = 0; i < sizeof(bittorrent_id_T); i++) {
@@ -103,14 +107,14 @@ get_hexed_bittorrent_id(bittorrent_id_T id)
 
 int
 bittorrent_piece_is_valid(struct bittorrent_meta *meta,
-			  uint32_t piece, unsigned char *data, uint32_t datalen)
+			  uint32_t piece, char *data, uint32_t datalen)
 {
-	unsigned char *piece_hash;
+	char *piece_hash;
 	bittorrent_id_T data_hash;
 
 	assert(piece < meta->pieces);
 
-	SHA1(data, datalen, data_hash);
+	SHA1((unsigned char *)data, datalen, (unsigned char *)data_hash);
 	piece_hash = &meta->piece_hash[piece * SHA_DIGEST_LENGTH];
 
 	return !memcmp(data_hash, piece_hash, SHA_DIGEST_LENGTH);
@@ -143,7 +147,7 @@ done_bittorrent_message(struct bittorrent_message *message)
 void
 init_bittorrent_peer_id(bittorrent_id_T peer_id)
 {
-	unsigned char *version = VERSION;
+	const char *version = VERSION;
 	int dots = 0;
 	int i = 0;
 
@@ -168,7 +172,7 @@ init_bittorrent_peer_id(bittorrent_id_T peer_id)
 	}
 
 	/* Hmm, sizeof(peer_id) don't work here. */
-	random_nonce(peer_id + i, sizeof(bittorrent_id_T) - i);
+	random_nonce((unsigned char *)(peer_id + i), sizeof(bittorrent_id_T) - i);
 	while (i < sizeof(bittorrent_id_T)) {
 		peer_id[i] = hx(peer_id[i] & 0xF);
 		i++;
@@ -211,7 +215,7 @@ get_peer_from_bittorrent_pool(struct bittorrent_connection *bittorrent,
 enum bittorrent_state
 add_peer_to_bittorrent_pool(struct bittorrent_connection *bittorrent,
 			    bittorrent_id_T id, int port,
-			    const unsigned char *ip, int iplen)
+			    const char *ip, int iplen)
 {
 	struct bittorrent_peer *peer;
 
@@ -223,7 +227,7 @@ add_peer_to_bittorrent_pool(struct bittorrent_connection *bittorrent,
 
 	/* The ID can be NULL for the compact format. */
 	if (id) {
-		enum bittorrent_blacklist_flags flags;
+		bittorrent_blacklist_flags_T flags;
 
 		if (bittorrent_id_is_empty(id))
 			return BITTORRENT_STATE_ERROR;
@@ -239,7 +243,7 @@ add_peer_to_bittorrent_pool(struct bittorrent_connection *bittorrent,
 
 	/* Really add the peer. */
 
-	peer = mem_calloc(1, sizeof(*peer) + iplen);
+	peer = (struct bittorrent_peer *)mem_calloc(1, sizeof(*peer) + iplen);
 	if (!peer) return BITTORRENT_STATE_OUT_OF_MEM;
 
 	peer->port = port;
@@ -281,7 +285,7 @@ add_bittorrent_peer_request(struct bittorrent_peer_status *status,
 	request = get_bittorrent_peer_request(status, piece, offset, length);
 	if (request) return;
 
-	request = mem_alloc(sizeof(*request));
+	request = (struct bittorrent_peer_request *)mem_alloc(sizeof(*request));
 	if (!request) return;
 
 	request->piece	= piece;
@@ -327,7 +331,7 @@ struct bittorrent_fetcher {
 static void
 bittorrent_fetch_callback(struct download *download, void *data)
 {
-	struct bittorrent_fetcher *fetcher = data;
+	struct bittorrent_fetcher *fetcher = (struct bittorrent_fetcher *)data;
 	struct fragment *fragment;
 	struct bittorrent_const_string response;
 	struct cache_entry *cached = download->cached;
@@ -398,7 +402,7 @@ init_bittorrent_fetch(struct bittorrent_fetcher **fetcher_ref,
 {
 	struct bittorrent_fetcher *fetcher;
 
-	fetcher = mem_calloc(1, sizeof(*fetcher));
+	fetcher = (struct bittorrent_fetcher *)mem_calloc(1, sizeof(*fetcher));
 	if (!fetcher) {
 		callback(data, connection_state(S_OUT_OF_MEM), NULL);
 		return NULL;
@@ -422,7 +426,7 @@ init_bittorrent_fetch(struct bittorrent_fetcher **fetcher_ref,
 static void
 end_bittorrent_fetch(void *fetcher_data)
 {
-	struct bittorrent_fetcher *fetcher = fetcher_data;
+	struct bittorrent_fetcher *fetcher = (struct bittorrent_fetcher *)fetcher_data;
 
 	assert(fetcher && !fetcher->callback);
 
@@ -460,7 +464,7 @@ done_bittorrent_fetch(struct bittorrent_fetcher **fetcher_ref)
 struct bittorrent_blacklist_item {
 	LIST_HEAD(struct bittorrent_blacklist_item);
 
-	enum bittorrent_blacklist_flags flags;
+	bittorrent_blacklist_flags_T flags;
 	bittorrent_id_T id;
 };
 
@@ -481,7 +485,7 @@ get_bittorrent_blacklist_item(bittorrent_id_T peer_id)
 
 void
 add_bittorrent_blacklist_flags(bittorrent_id_T peer_id,
-			       enum bittorrent_blacklist_flags flags)
+			       bittorrent_blacklist_flags_T flags)
 {
 	struct bittorrent_blacklist_item *item;
 
@@ -491,7 +495,7 @@ add_bittorrent_blacklist_flags(bittorrent_id_T peer_id,
 		return;
 	}
 
-	item = mem_calloc(1, sizeof(*item));
+	item = (struct bittorrent_blacklist_item *)mem_calloc(1, sizeof(*item));
 	if (!item) return;
 
 	item->flags = flags;
@@ -502,7 +506,7 @@ add_bittorrent_blacklist_flags(bittorrent_id_T peer_id,
 
 void
 del_bittorrent_blacklist_flags(bittorrent_id_T peer_id,
-			       enum bittorrent_blacklist_flags flags)
+			       bittorrent_blacklist_flags_T flags)
 {
 	struct bittorrent_blacklist_item *item;
 
@@ -516,7 +520,7 @@ del_bittorrent_blacklist_flags(bittorrent_id_T peer_id,
 	mem_free(item);
 }
 
-enum bittorrent_blacklist_flags
+bittorrent_blacklist_flags_T
 get_bittorrent_blacklist_flags(bittorrent_id_T peer_id)
 {
 	struct bittorrent_blacklist_item *item;

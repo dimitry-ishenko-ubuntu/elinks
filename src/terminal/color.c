@@ -39,9 +39,9 @@ color_distance(const struct rgb *c1, const struct rgb *c2)
 #define GREEN_COLOR_MASK	0x0000FF00
 #define BLUE_COLOR_MASK		0x000000FF
 
-#define RED_COLOR(color)	(((color) & RED_COLOR_MASK)   >> 16)
-#define GREEN_COLOR(color)	(((color) & GREEN_COLOR_MASK) >>  8)
-#define BLUE_COLOR(color)	(((color) & BLUE_COLOR_MASK)  >>  0)
+#define RED_COLOR(color)	(unsigned char)(((color) & RED_COLOR_MASK)   >> 16)
+#define GREEN_COLOR(color)	(unsigned char)(((color) & GREEN_COLOR_MASK) >>  8)
+#define BLUE_COLOR(color)	(unsigned char)(((color) & BLUE_COLOR_MASK)  >>  0)
 
 #define RED(color)	(RED_COLOR(color)   << 3)
 #define GREEN(color)	(GREEN_COLOR(color) << 2)
@@ -199,7 +199,7 @@ typedef int assert_enough_color_modes[
  *
  * This table is based mostly on wild guesses of mine. Feel free to
  * correct it. --pasky */
-static const unsigned char fg_color[16][8] = {
+static const char fg_color[16][8] = {
 	/* bk  r  gr  br  bl   m   c   w */
 
 	/* 0 (black) */
@@ -242,7 +242,7 @@ static const unsigned char fg_color[16][8] = {
 #define use_inverse(bg, fg) CMPCODE(fg & TERM_COLOR_MASK) < CMPCODE(bg)
 
 NONSTATIC_INLINE void
-set_term_color16(struct screen_char *schar, enum color_flags flags,
+set_term_color16(struct screen_char *schar, color_flags_T flags,
 		 unsigned char fg, unsigned char bg)
 {
 	/* Adjusts the foreground color to be more visible. */
@@ -321,7 +321,7 @@ get_term_color256(unsigned int index)
 
 void
 get_screen_char_color(struct screen_char *schar, struct color_pair *pair,
-		      enum color_flags flags, enum color_mode color_mode)
+		      color_flags_T flags, color_mode_T color_mode)
 {
 	unsigned char fg, bg;
 
@@ -376,7 +376,7 @@ get_screen_char_color(struct screen_char *schar, struct color_pair *pair,
 
 void
 set_term_color(struct screen_char *schar, struct color_pair *pair,
-	       enum color_flags flags, enum color_mode color_mode)
+	       color_flags_T flags, color_mode_T color_mode)
 {
 	const struct color_mode_info *mode;
 	enum palette_range palette_range = PALETTE_FULL;

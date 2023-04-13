@@ -1,0 +1,1 @@
+audio/*; echo.exe %s | socat - /tmp/mpv.sock 2> /dev/null > /dev/null

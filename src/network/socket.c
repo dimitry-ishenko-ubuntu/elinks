@@ -86,7 +86,7 @@ static INIT_LIST_OF(struct socket_weak_ref, socket_weak_refs);
 #define DEBUG_TRANSFER_LOGFILE "/tmp/log"
 
 static void
-debug_transfer_log(unsigned char *data, int len)
+debug_transfer_log(char *data, int len)
 {
 	int fd = open(DEBUG_TRANSFER_LOGFILE, O_WRONLY | O_APPEND | O_CREAT, 0622);
 
@@ -107,7 +107,7 @@ static struct connect_info *
 init_connection_info(struct uri *uri, struct socket *socket,
 		     socket_connect_T connect_done)
 {
-	struct connect_info *connect_info = mem_calloc(1, sizeof(*connect_info));
+	struct connect_info *connect_info = (struct connect_info *)mem_calloc(1, sizeof(*connect_info));
 
 	if (!connect_info) return NULL;
 
@@ -140,7 +140,7 @@ init_socket(void *conn, struct socket_operations *ops)
 {
 	struct socket *socket;
 
-	socket = mem_calloc(1, sizeof(*socket));
+	socket = (struct socket *)mem_calloc(1, sizeof(*socket));
 	if (!socket) return NULL;
 
 	socket->fd = -1;
@@ -234,7 +234,7 @@ dns_found(struct socket *socket, struct sockaddr_storage *addr, int addrlen)
 
 	size = sizeof(*addr) * addrlen;
 
-	connect_info->addr = mem_alloc(size);
+	connect_info->addr = (struct sockaddr_storage *)mem_alloc(size);
 	if (!connect_info->addr) {
 		socket->ops->done(socket, connection_state(S_OUT_OF_MEM));
 		return;
@@ -257,10 +257,10 @@ void
 make_connection(struct socket *socket, struct uri *uri,
 		socket_connect_T connect_done, int no_cache)
 {
-	unsigned char *host = get_uri_string(uri, URI_DNS_HOST);
+	char *host = get_uri_string(uri, URI_DNS_HOST);
 	struct connect_info *connect_info;
 	enum dns_result result;
-	enum blacklist_flags verify;
+	blacklist_flags_T verify;
 
 	socket->ops->set_timeout(socket, connection_state(0));
 
@@ -281,7 +281,7 @@ make_connection(struct socket *socket, struct uri *uri,
 	 * complete_connect_socket() work from the HTTP implementation. */
 	socket->need_ssl = get_protocol_need_ssl(uri->protocol);
 	if (!socket->set_no_tls) {
-		enum blacklist_flags flags = get_blacklist_flags(uri);
+		blacklist_flags_T flags = get_blacklist_flags(uri);
 		socket->no_tls = ((flags & SERVER_BLACKLIST_NO_TLS) != 0);
 		socket->set_no_tls = 1;
 	}
@@ -534,9 +534,49 @@ connected(struct socket *socket)
 	complete_connect_socket(socket, NULL, NULL);
 }
 
+static int to_bind;
+static struct sockaddr_in sa_bind;
+
+#ifdef CONFIG_IPV6
+static int to_bind_ipv6;
+static struct sockaddr_in6 sa6_bind;
+#endif
+
+static void
+init_bind_address(void)
+{
+	char *bind_address = get_cmd_opt_str("bind-address");
+#ifdef CONFIG_IPV6
+	char *bind_address_ipv6 = get_cmd_opt_str("bind-address-ipv6");
+#endif
+
+#ifdef HAVE_INET_PTON
+	to_bind = (bind_address && *bind_address);
+
+	if (to_bind) {
+		memset(&sa_bind, 0, sizeof sa_bind);
+		sa_bind.sin_family = AF_INET;
+		inet_pton(AF_INET, bind_address, &(sa_bind.sin_addr));
+		sa_bind.sin_port = htons(0);
+	}
+
+#ifdef CONFIG_IPV6
+	to_bind_ipv6 = (bind_address_ipv6 && *bind_address_ipv6);
+
+	if (to_bind_ipv6) {
+		memset(&sa6_bind, 0, sizeof sa6_bind);
+		sa6_bind.sin6_family = AF_INET6;
+		inet_pton(AF_INET6, bind_address_ipv6, &(sa6_bind.sin6_addr));
+		sa6_bind.sin6_port = htons(0);
+	}
+#endif
+#endif
+}
+
 void
 connect_socket(struct socket *csocket, struct connection_state state)
 {
+	static int initialized;
 	int sock = -1;
 	struct connect_info *connect_info = csocket->connect_info;
 	int i;
@@ -554,10 +594,11 @@ connect_socket(struct socket *csocket, struct connection_state state)
 	 * about such a connection attempt.
 	 * XXX: Unify with @local_only handling? --pasky */
 	int silent_fail = 0;
-	unsigned char *bind_address = get_cmd_opt_str("bind-address");
-	unsigned char *bind_address_ipv6 = get_cmd_opt_str("bind-address-ipv6");
-	int to_bind = (bind_address && *bind_address);
-	int to_bind_ipv6 = (bind_address_ipv6 && *bind_address_ipv6);
+
+	if (!initialized) {
+		init_bind_address();
+		initialized = 1;
+	}
 
 	csocket->ops->set_state(csocket, state);
 
@@ -634,10 +675,7 @@ connect_socket(struct socket *csocket, struct connection_state state)
 			struct sockaddr_in sa;
 			int res;
 
-			memset(&sa, 0, sizeof sa);
-			sa.sin_family = AF_INET;
-			inet_pton(AF_INET, bind_address, &(sa.sin_addr));
-			sa.sin_port = htons(0);
+			memcpy(&sa, &sa_bind, sizeof sa);
 			res = bind(sock, (struct sockaddr *)(void *)&sa, sizeof sa);
 
 			if (res < 0) {
@@ -651,10 +689,7 @@ connect_socket(struct socket *csocket, struct connection_state state)
 			struct sockaddr_in6 sa;
 			int res;
 
-			memset(&sa, 0, sizeof sa);
-			sa.sin6_family = AF_INET6;
-			inet_pton(AF_INET6, bind_address_ipv6, &(sa.sin6_addr));
-			sa.sin6_port = htons(0);
+			memcpy(&sa, &sa6_bind, sizeof sa);
 			res = bind(sock, (struct sockaddr *)(void *)&sa, sizeof sa);
 
 			if (res < 0) {
@@ -665,8 +700,6 @@ connect_socket(struct socket *csocket, struct connection_state state)
 		}
 #endif
 #endif
-
-
 		csocket->fd = sock;
 
 #ifdef CONFIG_IPV6
@@ -753,11 +786,11 @@ struct write_buffer {
 	int length;
 	int pos;
 
-	unsigned char data[1]; /* must be at end of struct */
+	char data[1]; /* must be at end of struct */
 };
 
 static int
-generic_write(struct socket *socket, unsigned char *data, int len)
+generic_write(struct socket *socket, char *data, int len)
 {
 	int wr = safe_write(socket->fd, data, len);
 
@@ -775,7 +808,7 @@ generic_write(struct socket *socket, unsigned char *data, int len)
 static void
 write_select(struct socket *socket)
 {
-	struct write_buffer *wb = socket->write_buffer;
+	struct write_buffer *wb = (struct write_buffer *)socket->write_buffer;
 	int wr;
 
 	assertm(wb != NULL, "write socket has no buffer");
@@ -852,7 +885,7 @@ write_select(struct socket *socket)
 }
 
 void
-write_to_socket(struct socket *socket, unsigned char *data, int len,
+write_to_socket(struct socket *socket, char *data, int len,
 		struct connection_state state, socket_write_T write_done)
 {
 	select_handler_T read_handler;
@@ -865,7 +898,7 @@ write_to_socket(struct socket *socket, unsigned char *data, int len,
 
 	socket->ops->set_timeout(socket, connection_state(0));
 
-	wb = mem_alloc(sizeof(*wb) + len);
+	wb = (struct write_buffer *)mem_alloc(sizeof(*wb) + len);
 	if (!wb) {
 		socket->ops->done(socket, connection_state(S_OUT_OF_MEM));
 		return;
@@ -893,7 +926,7 @@ write_to_socket(struct socket *socket, unsigned char *data, int len,
 #define RD_SIZE(rb, len) ((RD_MEM(rb) + (len)) & ~(RD_ALLOC_GR - 1))
 
 static ssize_t
-generic_read(struct socket *socket, unsigned char *data, int len)
+generic_read(struct socket *socket, char *data, int len)
 {
 	ssize_t rd = safe_read(socket->fd, data, len);
 
@@ -931,7 +964,7 @@ read_select(struct socket *socket)
 	if (!rb->freespace) {
 		int size = RD_SIZE(rb, rb->length);
 
-		rb = mem_realloc(rb, size);
+		rb = (struct read_buffer *)mem_realloc(rb, size);
 		if (!rb) {
 			socket->ops->done(socket, connection_state(S_OUT_OF_MEM));
 			return;
@@ -992,7 +1025,7 @@ alloc_read_buffer(struct socket *socket)
 {
 	struct read_buffer *rb;
 
-	rb = mem_calloc(1, RD_SIZE(rb, 0));
+	rb = (struct read_buffer *)mem_calloc(1, RD_SIZE(rb, 0));
 	if (!rb) {
 		socket->ops->done(socket, connection_state(S_OUT_OF_MEM));
 		return NULL;
@@ -1055,7 +1088,7 @@ read_response_from_socket(struct socket *socket)
 }
 
 void
-request_from_socket(struct socket *socket, unsigned char *data, int datalen,
+request_from_socket(struct socket *socket, char *data, int datalen,
 		    struct connection_state state, enum socket_state sock_state,
 		    socket_read_T read_done)
 {

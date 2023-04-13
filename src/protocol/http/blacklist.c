@@ -19,8 +19,8 @@
 struct blacklist_entry {
 	LIST_HEAD(struct blacklist_entry);
 
-	enum blacklist_flags flags;
-	unsigned char host[1]; /* Must be last. */
+	blacklist_flags_T flags;
+	char host[1]; /* Must be last. */
 };
 
 static INIT_LIST_OF(struct blacklist_entry, blacklist);
@@ -44,7 +44,7 @@ get_blacklist_entry(struct uri *uri)
 }
 
 void
-add_blacklist_entry(struct uri *uri, enum blacklist_flags flags)
+add_blacklist_entry(struct uri *uri, blacklist_flags_T flags)
 {
 	struct blacklist_entry *entry = get_blacklist_entry(uri);
 
@@ -53,7 +53,7 @@ add_blacklist_entry(struct uri *uri, enum blacklist_flags flags)
 		return;
 	}
 
-	entry = mem_alloc(sizeof(*entry) + uri->hostlen);
+	entry = (struct blacklist_entry *)mem_alloc(sizeof(*entry) + uri->hostlen);
 	if (!entry) return;
 
 	entry->flags = flags;
@@ -62,7 +62,7 @@ add_blacklist_entry(struct uri *uri, enum blacklist_flags flags)
 }
 
 void
-del_blacklist_entry(struct uri *uri, enum blacklist_flags flags)
+del_blacklist_entry(struct uri *uri, blacklist_flags_T flags)
 {
 	struct blacklist_entry *entry = get_blacklist_entry(uri);
 
@@ -75,7 +75,7 @@ del_blacklist_entry(struct uri *uri, enum blacklist_flags flags)
 	mem_free(entry);
 }
 
-enum blacklist_flags
+blacklist_flags_T
 get_blacklist_flags(struct uri *uri)
 {
 	struct blacklist_entry *entry = get_blacklist_entry(uri);

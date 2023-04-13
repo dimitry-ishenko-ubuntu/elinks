@@ -23,7 +23,7 @@
 #include <inttypes.h> /* OMG */
 #endif
 
-#if defined(HAVE_POLL_H) && defined(HAVE_POLL) && !defined(INTERIX) && !defined(__HOS_AIX__)
+#if defined(HAVE_POLL_H) && defined(HAVE_POLL) && !defined(INTERIX) && !defined(__HOS_AIX__) && !defined(CONFIG_OS_DOS)
 #define USE_POLL
 #include <poll.h>
 #endif
@@ -59,10 +59,11 @@ do {							\
 
 #include "elinks.h"
 
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/main.h"
 #include "main/select.h"
 #include "main/timer.h"
+#include "osdep/osdep.h"
 #include "osdep/signals.h"
 #include "terminal/terminal.h"
 #include "util/error.h"
@@ -72,6 +73,20 @@ do {							\
 
 #ifndef FD_SETSIZE
 #define FD_SETSIZE 1024
+#endif
+
+#ifdef USE_LIBEVENT
+const char *
+get_libevent_version(void)
+{
+	return event_get_version();
+}
+#else
+const char *
+get_libevent_version(void)
+{
+	return "";
+}
 #endif
 
 /*
@@ -140,7 +155,7 @@ register_bottom_half_do(select_handler_T fn, void *data)
 		if (bh->fn == fn && bh->data == data)
 			return 0;
 
-	bh = mem_alloc(sizeof(*bh));
+	bh = (struct bottom_half *)mem_alloc(sizeof(*bh));
 	if (!bh) return -1;
 	bh->fn = fn;
 	bh->data = data;
@@ -153,7 +168,7 @@ void
 check_bottom_halves(void)
 {
 	while (!list_empty(bottom_halves)) {
-		struct bottom_half *bh = bottom_halves.prev;
+		struct bottom_half *bh = (struct bottom_half *)bottom_halves.prev;
 		select_handler_T fn = bh->fn;
 		void *data = bh->data;
 
@@ -199,7 +214,7 @@ int event_enabled = 0;
 static inline
 struct event *timer_event(struct timer *tm)
 {
-	return (struct event *)((unsigned char *)tm - sizeof_struct_event);
+	return (struct event *)((char *)tm - sizeof_struct_event);
 }
 
 #ifdef HAVE_EVENT_BASE_SET
@@ -241,7 +256,7 @@ set_event_for_action(int h, void (*func)(void *), struct event **evptr, short ev
 #ifdef EV_PERSIST
 			evtype |= EV_PERSIST;
 #endif
-			*evptr = mem_alloc(sizeof_struct_event);
+			*evptr = (struct event *)mem_alloc(sizeof_struct_event);
 			event_set(*evptr, h, evtype, event_callback, *evptr);
 #ifdef HAVE_EVENT_BASE_SET
 			if (event_base_set(event_base, *evptr) == -1)
@@ -363,11 +378,20 @@ get_handler(int fd, enum select_handler_type tp)
 		case SELECT_HANDLER_READ:	return threads[fd].read_func;
 		case SELECT_HANDLER_WRITE:	return threads[fd].write_func;
 		case SELECT_HANDLER_ERROR:	return threads[fd].error_func;
-		case SELECT_HANDLER_DATA:	return threads[fd].data;
 	}
 
 	INTERNAL("get_handler: bad type %d", tp);
 	return NULL;
+}
+
+void *
+get_handler_data(int fd)
+{
+	if (fd >= w_max) {
+		return NULL;
+	}
+
+	return threads[fd].data;
 }
 
 void
@@ -404,7 +428,7 @@ set_handlers(int fd, select_handler_T read_func, select_handler_T write_func,
 			return;
 		}
 	if (fd >= n_threads) {
-		struct thread *tmp_threads = mem_realloc(threads, (fd + 1) * sizeof(struct thread));
+		struct thread *tmp_threads = (struct thread *)mem_realloc(threads, (fd + 1) * sizeof(struct thread));
 
 		if (!tmp_threads) {
 			elinks_internal("out of memory");
@@ -549,7 +573,7 @@ select_loop(void (*init)(void))
 			timeout = (struct timeval *) &t;
 		}
 
-		n = select(w_max, &x_read, &x_write, &x_error, timeout);
+		n = loop_select(w_max, &x_read, &x_write, &x_error, timeout);
 		if (n < 0) {
 			/* The following calls (especially gettext)
 			 * might change errno.  */
@@ -559,7 +583,7 @@ select_loop(void (*init)(void))
 			uninstall_alarm();
 			if (errno_from_select != EINTR) {
 				ERROR(gettext("The call to %s failed: %d (%s)"),
-				      "select()", errno_from_select, (unsigned char *) strerror(errno_from_select));
+				      "select()", errno_from_select, (char *) strerror(errno_from_select));
 				if (++select_errors > 10) /* Infinite loop prevention. */
 					INTERNAL(gettext("%d select() failures."),
 						 select_errors);
@@ -640,7 +664,7 @@ can_read_or_write(int fd, int write)
 	else
 		rfds = &fds;
 
-	return select(fd + 1, rfds, wfds, NULL, &tv);
+	return select2(fd + 1, rfds, wfds, NULL, &tv);
 #endif
 }
 

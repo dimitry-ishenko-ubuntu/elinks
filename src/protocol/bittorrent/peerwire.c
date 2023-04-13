@@ -53,7 +53,7 @@ enum bittorrent_handshake_state {
 
 /* Storing the version identification part of the handshake as one entity
  * (length prefix and string) makes it much easier to verify and write. */
-static const bittorrent_id_T BITTORRENT_ID = "\023BitTorrent protocol";
+static const bittorrent_id_T BITTORRENT_ID = {'\023','B','i','t','T','o','r','r','e','n','t',' ','p','r','o','t','o','c','o','l'};
 
 /* Has the last message written to the peer socket been sent or not? */
 #define bittorrent_peer_is_sending(peer) ((peer)->socket->write_buffer)
@@ -224,7 +224,7 @@ sent_bittorrent_peer_message(struct socket *socket)
 {
 	assert(!socket->write_buffer);
 	/* Check if there are pending messages or requests. */
-	update_bittorrent_peer_connection_state(socket->conn);
+	update_bittorrent_peer_connection_state((struct bittorrent_peer_connection *)socket->conn);
 }
 
 static inline void
@@ -232,7 +232,7 @@ add_bittorrent_peer_integer(struct string *string, uint32_t integer)
 {
 	uint32_t data = htonl(integer);
 
-	add_bytes_to_string(string, (unsigned char *) &data, sizeof(data));
+	add_bytes_to_string(string, (char *) &data, sizeof(data));
 }
 
 /* Common lowlevel backend for composing a peer message and writing it to the
@@ -243,7 +243,7 @@ do_send_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
 {
 	struct bittorrent_connection *bittorrent = peer->bittorrent;
 	struct string string;
-	unsigned char msgid_str[1] = { (unsigned char) message->id };
+	char msgid_str[1] = { (char) message->id };
 	uint32_t msglen = 0;
 
 	assert(!bittorrent_peer_is_sending(peer));
@@ -253,7 +253,7 @@ do_send_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
 		return BITTORRENT_STATE_OUT_OF_MEM;
 
 	/* Reserve 4 bytes to the message length and add the message ID byte. */
-	add_bytes_to_string(&string, (unsigned char *) &msglen, sizeof(msglen));
+	add_bytes_to_string(&string, (char *) &msglen, sizeof(msglen));
 
 	/* XXX: Can't use add_char_to_string() here because the message ID
 	 * can be zero. */
@@ -275,7 +275,7 @@ do_send_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
 		/* Are bitfield messages allowed at this point? */
 		assert(!peer->local.bitfield);
 
-		add_bytes_to_string(&string, bitfield->bits, bytes);
+		add_bytes_to_string(&string, (char *)bitfield->bits, bytes);
 
 		assert(string.length == 5 + bytes);
 		break;
@@ -296,7 +296,7 @@ do_send_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
 	}
 	case BITTORRENT_MESSAGE_PIECE:
 	{
-		unsigned char *data;
+		char *data;
 
 		assert(!peer->remote.choked);
 		assert(test_bitfield_bit(bittorrent->cache->bitfield, message->piece));
@@ -338,7 +338,7 @@ do_send_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
 	/* Insert the real message length. */
 	msglen = string.length - sizeof(uint32_t);
 	msglen = htonl(msglen);
-	memcpy(string.source, (unsigned char *) &msglen, sizeof(msglen));
+	memcpy(string.source, (char *) &msglen, sizeof(msglen));
 
 	/* Any message will cause bitfield messages to become invalid. */
 	peer->local.bitfield = 1;
@@ -363,7 +363,7 @@ do_send_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
  * connection struct to disappear from under us. */
 void
 send_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
-			     enum bittorrent_message_id message_id, ...)
+			     bittorrent_message_id_TT message_id, ...)
 {
 	struct bittorrent_peer_request message_store, *message = &message_store;
 	va_list args;
@@ -402,7 +402,7 @@ send_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
 
 	va_end(args);
 
-	message = mem_alloc(sizeof(*message));
+	message = (struct bittorrent_peer_request *)mem_alloc(sizeof(*message));
 	if (!message) return;
 
 	memcpy(message, &message_store, sizeof(*message));
@@ -430,12 +430,12 @@ get_bittorrent_peer_integer(struct read_buffer *buffer, int offset)
 	return ntohl(*((uint32_t *) (buffer->data + offset)));
 }
 
-static enum bittorrent_message_id
+static bittorrent_message_id_T
 check_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
 			      struct read_buffer *buffer, uint32_t *length)
 {
 	uint32_t message_length;
-	enum bittorrent_message_id message_id;
+	bittorrent_message_id_T message_id;
 
 	*length = 0;
 
@@ -464,14 +464,14 @@ check_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
 
 static enum bittorrent_state
 read_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
-			     enum bittorrent_message_id message_id,
+			     bittorrent_message_id_T message_id,
 			     struct read_buffer *buffer, uint32_t message_length,
 			     int *write_errno)
 {
 	struct bittorrent_connection *bittorrent = peer->bittorrent;
 	enum bittorrent_state state;
 	uint32_t piece, offset, length;
-	unsigned char *data;
+	char *data;
 
 	assert(message_id != BITTORRENT_MESSAGE_INCOMPLETE);
 
@@ -624,7 +624,7 @@ read_bittorrent_peer_message(struct bittorrent_peer_connection *peer,
 static void
 read_bittorrent_peer_data(struct socket *socket, struct read_buffer *buffer)
 {
-	struct bittorrent_peer_connection *peer = socket->conn;
+	struct bittorrent_peer_connection *peer = (struct bittorrent_peer_connection *)socket->conn;
 
 	if (!peer->remote.handshake) {
 		enum bittorrent_handshake_state state;
@@ -641,7 +641,7 @@ read_bittorrent_peer_data(struct socket *socket, struct read_buffer *buffer)
 
 	/* All messages atleast contains an integer prefix. */
 	while (buffer->length > sizeof(uint32_t)) {
-		enum bittorrent_message_id message_id;
+		bittorrent_message_id_T message_id;
 		uint32_t length;
 		int write_errno = 0;
 
@@ -701,7 +701,7 @@ read_bittorrent_peer_data(struct socket *socket, struct read_buffer *buffer)
 static void
 sent_bittorrent_peer_handshake(struct socket *socket)
 {
-	struct bittorrent_peer_connection *peer = socket->conn;
+	struct bittorrent_peer_connection *peer = (struct bittorrent_peer_connection *)socket->conn;
 	struct read_buffer *buffer = peer->socket->read_buffer;
 
 	assert(buffer);
@@ -723,11 +723,11 @@ sent_bittorrent_peer_handshake(struct socket *socket)
 void
 send_bittorrent_peer_handshake(struct socket *socket)
 {
-	struct bittorrent_peer_connection *peer = socket->conn;
+	struct bittorrent_peer_connection *peer = (struct bittorrent_peer_connection *)socket->conn;
 	struct bittorrent_connection *bittorrent = peer->bittorrent;
 	struct bittorrent_meta *meta = &bittorrent->meta;
-	unsigned char reserved[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-	unsigned char handshake[BITTORRENT_PEER_HANDSHAKE_SIZE];
+	char reserved[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	char handshake[BITTORRENT_PEER_HANDSHAKE_SIZE];
 	int i = 0;
 
 #define add_to_handshake(handshake, i, data) \
@@ -775,7 +775,7 @@ send_bittorrent_peer_handshake(struct socket *socket)
 /* Checks for the DHT flags used by atleast Brams client to indicate it supports
  * trackerless BitTorrent. */
 static inline int
-bittorrent_peer_supports_dht(unsigned char flags[8])
+bittorrent_peer_supports_dht(char flags[8])
 {
 	return !!(flags[7] & 1);
 }
@@ -901,7 +901,7 @@ check_bittorrent_peer_handshake(struct bittorrent_peer_connection *peer,
 static enum bittorrent_handshake_state
 do_read_bittorrent_peer_handshake(struct socket *socket, struct read_buffer *buffer)
 {
-	struct bittorrent_peer_connection *peer = socket->conn;
+	struct bittorrent_peer_connection *peer = (struct bittorrent_peer_connection *)socket->conn;
 	enum bittorrent_handshake_state state;
 
 	state = check_bittorrent_peer_handshake(peer, buffer);

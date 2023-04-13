@@ -36,7 +36,7 @@ struct zstd_enc_data {
 static int
 zstd_open(struct stream_encoded *stream, int fd)
 {
-	struct zstd_enc_data *data = mem_calloc(1, sizeof(*data));
+	struct zstd_enc_data *data = (struct zstd_enc_data *)mem_calloc(1, sizeof(*data));
 
 	stream->data = NULL;
 	if (!data) {
@@ -57,8 +57,8 @@ zstd_open(struct stream_encoded *stream, int fd)
 }
 
 
-static unsigned char *
-zstd_decode_buffer(struct stream_encoded *st, unsigned char *data, int len, int *new_len)
+static char *
+zstd_decode_buffer(struct stream_encoded *st, char *data, int len, int *new_len)
 {
 	struct zstd_enc_data *enc_data = (struct zstd_enc_data *)st->data;
 	int error;
@@ -73,10 +73,10 @@ zstd_decode_buffer(struct stream_encoded *st, unsigned char *data, int len, int 
 	enc_data->output.dst = NULL;
 
 	do {
-		unsigned char *new_buffer;
+		char *new_buffer;
 		size_t size = enc_data->output.size + ELINKS_ZSTD_BUFFER_LENGTH;
 
-		new_buffer = mem_realloc(enc_data->output.dst, size);
+		new_buffer = (char *)mem_realloc(enc_data->output.dst, size);
 		if (!new_buffer) {
 			error = 1;
 			break;
@@ -95,11 +95,11 @@ zstd_decode_buffer(struct stream_encoded *st, unsigned char *data, int len, int 
 	} while (enc_data->input.pos < enc_data->input.size);
 
 	*new_len = enc_data->output.pos;
-	return enc_data->output.dst;
+	return (char *)enc_data->output.dst;
 }
 
 static int
-zstd_read(struct stream_encoded *stream, unsigned char *buf, int len)
+zstd_read(struct stream_encoded *stream, char *buf, int len)
 {
 	struct zstd_enc_data *data = (struct zstd_enc_data *) stream->data;
 
@@ -109,7 +109,7 @@ zstd_read(struct stream_encoded *stream, unsigned char *buf, int len)
 
 	if (!data->decoded) {
 		size_t read_pos = 0;
-		unsigned char *tmp_buf = malloc(len);
+		char *tmp_buf = (char *)mem_alloc(len);
 		int new_len;
 
 		if (!tmp_buf) {
@@ -141,7 +141,7 @@ zstd_read(struct stream_encoded *stream, unsigned char *buf, int len)
 			mem_free(data->output.dst);
 			data->output.dst = NULL;
 		} else {
-			memcpy(buf, data->output.dst + data->sent_pos, length);
+			memcpy(buf, (void *)((char *)(data->output.dst) + data->sent_pos), length);
 			data->sent_pos += length;
 		}
 
@@ -170,7 +170,13 @@ zstd_close(struct stream_encoded *stream)
 	}
 }
 
-static const unsigned char *const zstd_extensions[] = { ".zst", NULL };
+const char *
+get_zstd_version(void)
+{
+	return ZSTD_versionString();
+}
+
+static const char *const zstd_extensions[] = { ".zst", NULL };
 
 const struct decoding_backend zstd_decoding_backend = {
 	"zstd",

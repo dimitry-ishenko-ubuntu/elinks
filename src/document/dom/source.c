@@ -60,9 +60,9 @@ struct source_renderer {
 
 
 static inline void
-render_dom_flush(struct dom_renderer *renderer, unsigned char *string)
+render_dom_flush(struct dom_renderer *renderer, char *string)
 {
-	struct source_renderer *data = renderer->data;
+	struct source_renderer *data = (struct source_renderer *)renderer->data;
 	struct screen_char *template_ = &data->styles[DOM_NODE_TEXT];
 	int length = string - renderer->position;
 
@@ -80,7 +80,7 @@ static inline void
 render_dom_node_text(struct dom_renderer *renderer, struct screen_char *template_,
 		     struct dom_node *node)
 {
-	unsigned char *string = node->string.string;
+	char *string = node->string.string;
 	int length = node->string.length;
 
 	if (node->type == DOM_NODE_ENTITY_REFERENCE) {
@@ -104,10 +104,10 @@ render_dom_node_enhanced_text(struct dom_renderer *renderer, struct dom_node *no
 	struct source_renderer *data = renderer->data;
 	regex_t *regex = &data->url_regex;
 	regmatch_t regmatch;
-	unsigned char *string = node->string.string;
+	char *string = node->string.string;
 	int length = node->string.length;
 	struct screen_char *template_ = &data->styles[node->type];
-	unsigned char *alloc_string;
+	char *alloc_string;
 
 	if (check_dom_node_source(renderer, string, length)) {
 		render_dom_flush(renderer, string);
@@ -148,8 +148,8 @@ render_dom_node_enhanced_text(struct dom_renderer *renderer, struct dom_node *no
 static enum dom_code
 render_dom_node_source(struct dom_stack *stack, struct dom_node *node, void *xxx)
 {
-	struct dom_renderer *renderer = stack->current->data;
-	struct source_renderer *data = renderer->data;
+	struct dom_renderer *renderer = (struct dom_renderer *)stack->current->data;
+	struct source_renderer *data = (struct source_renderer *)renderer->data;
 
 	assert(node && renderer && renderer->document);
 
@@ -170,8 +170,8 @@ render_dom_node_source(struct dom_stack *stack, struct dom_node *node, void *xxx
 static enum dom_code
 render_dom_element_source(struct dom_stack *stack, struct dom_node *node, void *xxx)
 {
-	struct dom_renderer *renderer = stack->current->data;
-	struct source_renderer *data = renderer->data;
+	struct dom_renderer *renderer = (struct dom_renderer *)stack->current->data;
+	struct source_renderer *data = (struct source_renderer *)renderer->data;
 
 	assert(node && renderer && renderer->document);
 
@@ -183,12 +183,12 @@ render_dom_element_source(struct dom_stack *stack, struct dom_node *node, void *
 static enum dom_code
 render_dom_element_end_source(struct dom_stack *stack, struct dom_node *node, void *xxx)
 {
-	struct dom_renderer *renderer = stack->current->data;
-	struct source_renderer *data = renderer->data;
+	struct dom_renderer *renderer = (struct dom_renderer *)stack->current->data;
+	struct source_renderer *data = (struct source_renderer *)renderer->data;
 	struct dom_stack_state *state = get_dom_stack_top(stack);
-	struct sgml_parser_state *pstate = get_dom_stack_state_data(stack->contexts[0], state);
+	struct sgml_parser_state *pstate = (struct sgml_parser_state *)get_dom_stack_state_data(stack->contexts[0], state);
 	struct dom_scanner_token *token = &pstate->end_token;
-	unsigned char *string = token->string.string;
+	char *string = token->string.string;
 	int length = token->string.length;
 
 	assert(node && renderer && renderer->document);
@@ -208,10 +208,10 @@ render_dom_element_end_source(struct dom_stack *stack, struct dom_node *node, vo
 }
 
 static void
-set_base_uri(struct dom_renderer *renderer, unsigned char *value, size_t valuelen)
+set_base_uri(struct dom_renderer *renderer, char *value, size_t valuelen)
 {
-	unsigned char *href = memacpy(value, valuelen);
-	unsigned char *uristring;
+	char *href = memacpy(value, valuelen);
+	char *uristring;
 	struct uri *uri;
 
 	if (!href) return;
@@ -219,7 +219,7 @@ set_base_uri(struct dom_renderer *renderer, unsigned char *value, size_t valuele
 	mem_free(href);
 
 	if (!uristring) return;
-	uri = get_uri(uristring, 0);
+	uri = get_uri(uristring, URI_NONE);
 	mem_free(uristring);
 
 	if (!uri) return;
@@ -231,8 +231,8 @@ set_base_uri(struct dom_renderer *renderer, unsigned char *value, size_t valuele
 static enum dom_code
 render_dom_attribute_source(struct dom_stack *stack, struct dom_node *node, void *xxx)
 {
-	struct dom_renderer *renderer = stack->current->data;
-	struct source_renderer *data = renderer->data;
+	struct dom_renderer *renderer = (struct dom_renderer *)stack->current->data;
+	struct source_renderer *data = (struct source_renderer *)renderer->data;
 	struct screen_char *template_ = &data->styles[node->type];
 
 	assert(node && renderer->document);
@@ -241,7 +241,7 @@ render_dom_attribute_source(struct dom_stack *stack, struct dom_node *node, void
 
 	if (is_dom_string_set(&node->data.attribute.value)) {
 		int quoted = node->data.attribute.quoted == 1;
-		unsigned char *value = node->data.attribute.value.string - quoted;
+		char *value = node->data.attribute.value.string - quoted;
 		int valuelen = node->data.attribute.value.length + quoted * 2;
 
 		if (check_dom_node_source(renderer, value, 0)) {
@@ -259,8 +259,8 @@ render_dom_attribute_source(struct dom_stack *stack, struct dom_node *node, void
 			 * is at the start of the value string. */
 			for (skips = 0; skips < valuelen; skips++) {
 				if ((quoted && skips == 0)
-				    || isspace(value[skips])
-				    || value[skips] < ' ')
+				    || isspace((unsigned char)value[skips])
+				    || (unsigned char)value[skips] < ' ')
 					continue;
 
 				break;
@@ -276,8 +276,8 @@ render_dom_attribute_source(struct dom_stack *stack, struct dom_node *node, void
 			 * link text. */
 			for (skips = 0; skips < valuelen; skips++) {
 				if ((quoted && skips == 0)
-				    || isspace(value[valuelen - skips - 1])
-				    || value[valuelen - skips - 1] < ' ')
+				    || isspace((unsigned char)value[valuelen - skips - 1])
+				    || (unsigned char)value[valuelen - skips - 1] < ' ')
 					continue;
 
 				break;
@@ -307,9 +307,9 @@ render_dom_attribute_source(struct dom_stack *stack, struct dom_node *node, void
 static enum dom_code
 render_dom_cdata_source(struct dom_stack *stack, struct dom_node *node, void *xxx)
 {
-	struct dom_renderer *renderer = stack->current->data;
-	struct source_renderer *data = renderer->data;
-	unsigned char *string = node->string.string;
+	struct dom_renderer *renderer = (struct dom_renderer *)stack->current->data;
+	struct source_renderer *data = (struct source_renderer *)renderer->data;
+	char *string = node->string.string;
 
 	assert(node && renderer && renderer->document);
 
@@ -330,7 +330,7 @@ render_dom_cdata_source(struct dom_stack *stack, struct dom_node *node, void *xx
 static enum dom_code
 render_dom_document_start(struct dom_stack *stack, struct dom_node *node, void *xxx)
 {
-	struct dom_renderer *renderer = stack->current->data;
+	struct dom_renderer *renderer = (struct dom_renderer *)stack->current->data;
 	struct document *document = renderer->document;
 	struct source_renderer *data;
 	int type;
@@ -340,7 +340,7 @@ render_dom_document_start(struct dom_stack *stack, struct dom_node *node, void *
 		static int i_want_struct_module_for_dom;
 
 		if (!i_want_struct_module_for_dom) {
-			static const unsigned char default_colors[] =
+			static const char default_colors[] =
 				"document	{ color: yellow } "
 				"element	{ color: lightgreen } "
 				"entity-reference { color: red } "
@@ -357,8 +357,8 @@ render_dom_document_start(struct dom_stack *stack, struct dom_node *node, void *
 					     default_colors + sizeof(default_colors));
 		}
 	}
-
-	data = renderer->data = mem_calloc(1, sizeof(*data));
+	renderer->data = (void *)mem_calloc(1, sizeof(*data));
+	data = (struct source_renderer *)renderer->data;
 
 	/* Initialize styles for all the DOM node types. */
 
@@ -391,8 +391,8 @@ render_dom_document_start(struct dom_stack *stack, struct dom_node *node, void *
 static enum dom_code
 render_dom_document_end(struct dom_stack *stack, struct dom_node *node, void *xxx)
 {
-	struct dom_renderer *renderer = stack->current->data;
-	struct source_renderer *data = renderer->data;
+	struct dom_renderer *renderer = (struct dom_renderer *)stack->current->data;
+	struct source_renderer *data = (struct source_renderer *)renderer->data;
 
 	/* If there are no non-element nodes after the last element node make
 	 * sure that we flush to the end of the cache entry source including

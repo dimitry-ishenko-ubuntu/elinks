@@ -1,6 +1,10 @@
 #ifndef EL__DOCUMENT_FORMS_H
 #define EL__DOCUMENT_FORMS_H
 
+#ifdef CONFIG_QUICKJS
+#include <quickjs/quickjs.h>
+#endif
+
 #include "util/lists.h"
 
 #ifdef __cplusplus
@@ -35,11 +39,19 @@ struct form {
 	int form_num;
 	int form_end;		/**< @see #form_num */
 
-	unsigned char *action;
-	unsigned char *name;
-	unsigned char *onsubmit;
-	unsigned char *target;
+	char *action;
+	char *name;
+	char *onsubmit;
+	char *target;
 	enum form_method method;
+
+#ifdef CONFIG_ECMASCRIPT
+#ifdef CONFIG_QUICKJS
+	JSValue ecmascript_obj;
+#else
+	void *ecmascript_obj;
+#endif
+#endif
 
 	LIST_OF(struct el_form_control) items;
 };
@@ -59,6 +71,7 @@ enum form_type {
 	FC_RESET,
 	FC_BUTTON,
 	FC_HIDDEN,
+	FC_NONE = -1
 };
 
 enum form_mode {
@@ -66,6 +79,8 @@ enum form_mode {
 	FORM_MODE_READONLY,
 	FORM_MODE_DISABLED,
 };
+
+typedef unsigned char form_mode_T;
 
 #define form_field_is_readonly(field) ((field)->mode != FORM_MODE_NORMAL)
 
@@ -86,35 +101,35 @@ struct el_form_control {
 	int position;
 
 	enum form_type type;
-	enum form_mode mode;
+	form_mode_T mode;
 
-	unsigned char *id; /**< used by scripts */
-	unsigned char *name;
-	unsigned char *alt;
+	char *id; /**< used by scripts */
+	char *name;
+	char *alt;
 	/** Default value, cannot be changed by document scripts.
 	 * - For ::FC_TEXT, ::FC_PASSWORD, and ::FC_TEXTAREA:
 	 *   @c default_value is in the charset of the document.
 	 * - For ::FC_FILE: The parser does not set @c default_value.  */
-	unsigned char *default_value;
+	char *default_value;
 	int default_state;
 	int size;
 	int cols, rows;
 	enum form_wrap wrap;
 	int maxlength;
 	int nvalues;
-	unsigned char **values;
+	char **values;
 	/** Labels in a selection menu.
 	 * - For ::FC_SELECT: @c labels are in the charset of the terminal.
 	 *   (That charset can be UTF-8 only if CONFIG_UTF8 is defined,
 	 *   and is assumed to be unibyte otherwise.)  The charset of
 	 *   the document and the UTF-8 I/O option have no effect here.  */
-	unsigned char **labels;
+	char **labels;
 	struct menu_item *menu;
 };
 
 /* Numerical form type <-> form type name */
-int str2form_type(unsigned char *s);
-unsigned char *form_type2str(enum form_type num);
+enum form_type str2form_type(const char *s);
+const char *form_type2str(enum form_type num);
 
 struct form *init_form(void);
 void done_form(struct form *form);

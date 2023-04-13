@@ -8,6 +8,9 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #ifdef HAVE_TERMIOS_H
@@ -26,7 +29,7 @@
 #include "elinks.h"
 
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/main.h"
 #include "main/select.h"
 #include "main/timer.h"
@@ -99,7 +102,7 @@ itrm_queue_write(struct itrm *itrm)
 			     get_handler(itrm->out.sock, SELECT_HANDLER_READ),
 			     NULL,
 			     get_handler(itrm->out.sock, SELECT_HANDLER_ERROR),
-			     get_handler(itrm->out.sock, SELECT_HANDLER_DATA));
+			     get_handler_data(itrm->out.sock));
 	} else {
 		assert(itrm->out.queue.len > 0);
 		memmove(itrm->out.queue.data, itrm->out.queue.data + written, itrm->out.queue.len);
@@ -108,7 +111,7 @@ itrm_queue_write(struct itrm *itrm)
 
 
 void
-itrm_queue_event(struct itrm *itrm, unsigned char *data, int len)
+itrm_queue_event(struct itrm *itrm, char *data, int len)
 {
 	int w = 0;
 
@@ -124,7 +127,7 @@ itrm_queue_event(struct itrm *itrm, unsigned char *data, int len)
 
 	if (w < len) {
 		int left = len - w;
-		unsigned char *c = mem_realloc(itrm->out.queue.data,
+		unsigned char *c = (unsigned char *)mem_realloc(itrm->out.queue.data,
 					       itrm->out.queue.len + left);
 
 		if (!c) {
@@ -153,7 +156,7 @@ kbd_ctrl_c(void)
 	 * pending from the terminal, so do not reset
 	 * ditrm->bracketed_pasting.  */
 	set_kbd_interlink_event(&ev, KBD_CTRL_C, KBD_MOD_NONE);
-	itrm_queue_event(ditrm, (unsigned char *) &ev, sizeof(ev));
+	itrm_queue_event(ditrm, (char *) &ev, sizeof(ev));
 }
 
 #define write_sequence(fd, seq) \
@@ -167,6 +170,10 @@ kbd_ctrl_c(void)
 static void
 send_init_sequence(int h, int altscreen)
 {
+#ifdef CONFIG_OS_DOS
+	save_terminal();
+#endif
+	want_draw();
 	write_sequence(h, INIT_TERMINAL_SEQ);
 
 	/* If alternate screen is supported switch to it. */
@@ -174,10 +181,14 @@ send_init_sequence(int h, int altscreen)
 		write_sequence(h, INIT_ALT_SCREEN_SEQ);
 	}
 #ifdef CONFIG_MOUSE
-	if (! get_opt_bool("ui.mouse_disable", NULL))
+	if (mouse_enabled) {
 		send_mouse_init_sequence(h);
+	}
 #endif
+#ifndef CONFIG_OS_DOS
 	write_sequence(h, INIT_BRACKETED_PASTE_SEQ);
+#endif
+	done_draw();
 }
 
 #define DONE_CLS_SEQ		"\033[2J"	/**< Erase in Display, Clear All */
@@ -188,7 +199,10 @@ send_init_sequence(int h, int altscreen)
 static void
 send_done_sequence(int h, int altscreen)
 {
+	want_draw();
+#ifndef CONFIG_OS_DOS
 	write_sequence(h, DONE_BRACKETED_PASTE_SEQ);
+#endif
 	write_sequence(h, DONE_CLS_SEQ);
 
 #ifdef CONFIG_MOUSE
@@ -201,6 +215,10 @@ send_done_sequence(int h, int altscreen)
 	}
 
 	write_sequence(h, DONE_TERMINAL_SEQ);
+	done_draw();
+#ifdef CONFIG_OS_DOS
+	restore_terminal();
+#endif
 }
 
 
@@ -218,9 +236,9 @@ resize_terminal(void)
 }
 
 void
-get_terminal_name(unsigned char name[MAX_TERM_LEN])
+get_terminal_name(char name[MAX_TERM_LEN])
 {
-	unsigned char *term = getenv("TERM");
+	char *term = getenv("TERM");
 	int i;
 
 	memset(name, 0, MAX_TERM_LEN);
@@ -304,9 +322,13 @@ handle_trm(int std_in, int std_out, int sock_in, int sock_out, int ctl_in,
 	struct itrm *itrm;
 	struct terminal_info info;
 	struct interlink_event_size *size = &info.event.info.size;
-	unsigned char *ts;
+	char *ts;
 
 	memset(&info, 0, sizeof(info));
+
+#ifdef CONFIG_OS_DOS
+	dos_setraw(ctl_in, 1);
+#endif
 
 	get_terminal_size(ctl_in, &size->width, &size->height);
 	info.event.ev = EVENT_INIT;
@@ -321,10 +343,10 @@ handle_trm(int std_in, int std_out, int sock_in, int sock_out, int ctl_in,
 		info.magic = INTERLINK_NORMAL_MAGIC;
 	}
 
-	itrm = mem_calloc(1, sizeof(*itrm));
+	itrm = (struct itrm *)mem_calloc(1, sizeof(*itrm));
 	if (!itrm) return;
 
-	itrm->in.queue.data = mem_calloc(1, ITRM_IN_QUEUE_SIZE);
+	itrm->in.queue.data = (unsigned char *)mem_calloc(1, ITRM_IN_QUEUE_SIZE);
 	if (!itrm->in.queue.data) {
 		mem_free(itrm);
 		return;
@@ -379,7 +401,7 @@ handle_trm(int std_in, int std_out, int sock_in, int sock_out, int ctl_in,
 }
 
 
-/** A select_handler_T read_func and error_func for the pipe (long) @a h.
+/** A select_handler_T read_func and error_func for the pipe (intptr_t) @a h.
  * This is called when the subprocess started on the terminal of this
  * ELinks process exits.  ELinks then resumes using the terminal.  */
 static void
@@ -443,7 +465,7 @@ free_itrm(struct itrm *itrm)
 			/* Set the window title to the value of $TERM if X11
 			 * wasn't compiled in. Should hopefully make at least
 			 * half the users happy. (debian bug #312955) */
-			unsigned char title[MAX_TERM_LEN];
+			char title[MAX_TERM_LEN];
 
 			get_terminal_name(title);
 			if (*title)
@@ -482,22 +504,30 @@ free_itrm(struct itrm *itrm)
  * @a text should look like "width,height,old-width,old-height"
  * where width and height are integers. */
 static inline void
-resize_terminal_from_str(unsigned char *text)
+resize_terminal_from_str(const char *text_)
 {
 	enum { NEW_WIDTH = 0, NEW_HEIGHT, OLD_WIDTH, OLD_HEIGHT, NUMBERS };
 	int numbers[NUMBERS];
 	int i;
+	char *text2, *text;
 
-	assert(text && *text);
+	assert(text_ && *text_);
 	if_assert_failed return;
 
+	text2 = stracpy(text_);
+	if (!text2) {
+		return;
+	}
+	text = text2;
+
 	for (i = 0; i < NUMBERS; i++) {
-		unsigned char *p = strchr((const char *)text, ',');
+		char *p = strchr(text, ',');
 
 		if (p) {
 			*p++ = '\0';
 
 		} else if (i < OLD_HEIGHT) {
+			mem_free(text2);
 			return;
 		}
 
@@ -509,10 +539,11 @@ resize_terminal_from_str(unsigned char *text)
 	resize_window(numbers[NEW_WIDTH], numbers[NEW_HEIGHT],
 		      numbers[OLD_WIDTH], numbers[OLD_HEIGHT]);
 	resize_terminal();
+	mem_free(text2);
 }
 
 void
-dispatch_special(unsigned char *text)
+dispatch_special(const char *text)
 {
 	switch (text[0]) {
 		case TERM_FN_TITLE:
@@ -557,7 +588,7 @@ dispatch_special(unsigned char *text)
 }
 
 static void inline
-safe_hard_write(int fd, unsigned char *buf, int len)
+safe_hard_write(int fd, const char *buf, int len)
 {
 	if (is_blocked()) return;
 
@@ -577,7 +608,7 @@ in_sock(struct itrm *itrm)
 	char ch;
 	int fg; /* enum term_exec */
 	ssize_t bytes_read, i, p;
-	unsigned char buf[ITRM_OUT_QUEUE_SIZE];
+	char buf[ITRM_OUT_QUEUE_SIZE];
 
 	bytes_read = safe_read(itrm->in.sock, buf, ITRM_OUT_QUEUE_SIZE);
 	if (bytes_read <= 0) goto free_and_return;
@@ -600,7 +631,7 @@ has_nul_byte:
 	p = 0;
 
 #define RD(xx) {							\
-		unsigned char cc;					\
+		char cc;					\
 									\
 		if (p < bytes_read)					\
 			cc = buf[p++];					\
@@ -637,7 +668,7 @@ has_nul_byte:
 
 	} else {
 		int blockh;
-		unsigned char *param;
+		char *param;
 		int path_len, del_len, param_len;
 
 		/* TODO: Should this be changed to allow TERM_EXEC_NEWWIN
@@ -652,7 +683,7 @@ has_nul_byte:
 		del_len = delete_.length;
 		param_len = path_len + del_len + 3;
 
-		param = mem_alloc(param_len);
+		param = (char *)mem_alloc(param_len);
 		if (!param) goto nasty_thing;
 
 		param[0] = fg;
@@ -661,8 +692,13 @@ has_nul_byte:
 
 		if (fg == TERM_EXEC_FG) block_itrm();
 
+#ifndef WIN32
 		blockh = start_thread((void (*)(void *, int)) exec_thread,
 				      param, param_len);
+#else
+		exec_thread(param, param_len);
+
+#endif
 		mem_free(param);
 
 		if (blockh == -1) {
@@ -675,11 +711,11 @@ has_nul_byte:
 		if (fg == TERM_EXEC_FG) {
 			set_handlers(blockh, (select_handler_T) unblock_itrm_x,
 				     NULL, (select_handler_T) unblock_itrm_x,
-				     (void *) (long) blockh);
+				     (void *) (intptr_t) blockh);
 
 		} else {
 			set_handlers(blockh, close_handle, NULL, close_handle,
-				     (void *) (long) blockh);
+				     (void *) (intptr_t) blockh);
 		}
 	}
 
@@ -710,7 +746,7 @@ free_and_return:
  * - 0 if the control sequence does not comply with ECMA-48.
  * - The length of the control sequence otherwise.  */
 static inline int
-get_esc_code(unsigned char *str, int len, unsigned char *final_byte,
+get_esc_code(unsigned char *str, int len, char *final_byte,
 	     int *first_param_value)
 {
 	const int parameter_pos = 2;
@@ -768,8 +804,16 @@ get_esc_code(unsigned char *str, int len, unsigned char *final_byte,
 
 #ifdef DEBUG_ITRM_QUEUE
 #include <stdio.h>
-#include <ctype.h>	/* isprint() isspace() */
+#include <ctype.h>	/* isprint() isspace((unsigned char)) */
 #endif
+
+int ui_double_esc;
+
+static inline int
+get_ui_double_esc(void)
+{
+	return ui_double_esc;
+}
 
 /** Decode a control sequence that begins with CSI (CONTROL SEQUENCE
  * INTRODUCER) encoded as ESC [, and set @a *ev accordingly.
@@ -785,10 +829,15 @@ static int
 decode_terminal_escape_sequence(struct itrm *itrm, struct interlink_event *ev)
 {
 	struct term_event_keyboard kbd = { KBD_UNDEF, KBD_MOD_NONE };
-	unsigned char c;
+	char c;
 	int v;
 	int el;
 
+	if (itrm->in.queue.len == 2 && itrm->in.queue.data[1] == ASCII_ESC && get_ui_double_esc()) {
+		kbd.key = KBD_ESC;
+		set_kbd_interlink_event(ev, kbd.key, kbd.modifier);
+		return 2;
+	}
 	if (itrm->in.queue.len < 3) return -1;
 
 	if (itrm->in.queue.data[2] == '[') {
@@ -1098,7 +1147,7 @@ process_queue(struct itrm *itrm)
 		for (i = 0; i < itrm->in.queue.len; i++)
 			if (itrm->in.queue.data[i] == ASCII_ESC)
 				fprintf(stderr, "ESC ");
-			else if (isprint(itrm->in.queue.data[i]) && !isspace(itrm->in.queue.data[i]))
+			else if (isprint(itrm->in.queue.data[i]) && !isspace((unsigned char)itrm->in.queue.data[i]))
 				fprintf(stderr, "%c ", itrm->in.queue.data[i]);
 			else
 				fprintf(stderr, "0x%02x ", itrm->in.queue.data[i]);
@@ -1136,8 +1185,12 @@ process_queue(struct itrm *itrm)
 			 * beginning of e.g. ESC ESC 0x5B 0x41,
 			 * which we should parse as Esc Up.  */
 			if (itrm->in.queue.len < 3) {
-				/* Need more data to figure it out.  */
-				el = -1;
+				if (get_ui_double_esc()) {
+					el = decode_terminal_escape_sequence(itrm, &ev);
+				} else {
+					/* Need more data to figure it out.  */
+					el = -1;
+				}
 			} else if (itrm->in.queue.data[2] == 0x5B
 				   || itrm->in.queue.data[2] == 0x4F) {
 				/* The first ESC appears to be followed
@@ -1173,8 +1226,8 @@ process_queue(struct itrm *itrm)
 		else {
 			el = 2;
 			set_kbd_interlink_event(&ev,
-						os2xtd[itrm->in.queue.data[1]].key,
-						os2xtd[itrm->in.queue.data[1]].modifier);
+						os2xtd[(unsigned char)itrm->in.queue.data[1]].key,
+						os2xtd[(unsigned char)itrm->in.queue.data[1]].modifier);
 		}
 	}
 

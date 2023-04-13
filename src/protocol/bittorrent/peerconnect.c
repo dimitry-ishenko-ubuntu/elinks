@@ -69,7 +69,7 @@ static void
 check_bittorrent_peer_blacklisting(struct bittorrent_peer_connection *peer,
 				   struct connection_state state)
 {
-	enum bittorrent_blacklist_flags flags = BITTORRENT_BLACKLIST_NONE;
+	bittorrent_blacklist_flags_T flags = BITTORRENT_BLACKLIST_NONE;
 
 	if (bittorrent_id_is_empty(peer->id)
 	    || !get_opt_bool("protocol.http.bugs.allow_blacklist", NULL))
@@ -145,7 +145,7 @@ set_bittorrent_peer_connection_timeout(struct bittorrent_peer_connection *peer)
 static void
 set_bittorrent_socket_state(struct socket *socket, struct connection_state state)
 {
-	struct bittorrent_peer_connection *peer = socket->conn;
+	struct bittorrent_peer_connection *peer = (struct bittorrent_peer_connection *)socket->conn;
 
 	if (is_in_state(state, S_TRANS) && peer->bittorrent)
 		set_connection_state(peer->bittorrent->conn,
@@ -158,7 +158,7 @@ static void
 set_bittorrent_socket_timeout(struct socket *socket, struct connection_state state)
 {
 	assert(is_in_state(state, 0));
-	set_bittorrent_peer_connection_timeout(socket->conn);
+	set_bittorrent_peer_connection_timeout((struct bittorrent_peer_connection *)socket->conn);
 }
 
 /* Called when a non-fatal  error condition has appeared, i.e. the condition is
@@ -166,7 +166,7 @@ set_bittorrent_socket_timeout(struct socket *socket, struct connection_state sta
 static void
 retry_bittorrent_socket(struct socket *socket, struct connection_state state)
 {
-	struct bittorrent_peer_connection *peer = socket->conn;
+	struct bittorrent_peer_connection *peer = (struct bittorrent_peer_connection *)socket->conn;
 
 	check_bittorrent_peer_blacklisting(peer, state);
 
@@ -183,7 +183,7 @@ retry_bittorrent_socket(struct socket *socket, struct connection_state state)
 static void
 done_bittorrent_socket(struct socket *socket, struct connection_state state)
 {
-	struct bittorrent_peer_connection *peer = socket->conn;
+	struct bittorrent_peer_connection *peer = (struct bittorrent_peer_connection *)socket->conn;
 
 	check_bittorrent_peer_blacklisting(peer, state);
 
@@ -210,7 +210,7 @@ init_bittorrent_peer_connection(int socket)
 {
 	struct bittorrent_peer_connection *peer;
 
-	peer = mem_calloc(1, sizeof(*peer));
+	peer = (struct bittorrent_peer_connection *)mem_calloc(1, sizeof(*peer));
 	if (!peer) return NULL;
 
 	peer->socket = init_socket(peer, &bittorrent_socket_operations);
@@ -296,13 +296,13 @@ make_bittorrent_peer_connection(struct bittorrent_connection *bittorrent,
 	if (!init_string(&uri_string)) goto out;
 	if (!add_format_to_string(&uri_string,
 #ifdef CONFIG_IPV6
-				  strchr((const char *)peer_info->ip, ':') ?
+				  strchr(peer_info->ip, ':') ?
 				  "bittorrent-peer://[%s]:%u/" :
 #endif
 				  "bittorrent-peer://%s:%u/",
 				  peer_info->ip, (unsigned) peer_info->port))
 		goto out;
-	uri = get_uri(uri_string.source, 0);
+	uri = get_uri(uri_string.source, URI_NONE);
 	if (!uri) goto out;
 
 	make_connection(peer->socket, uri, send_bittorrent_peer_handshake, 1);
@@ -333,7 +333,7 @@ accept_bittorrent_peer_connection(void *____)
 {
 	struct sockaddr_in addr;
 	int peer_sock;
-	int addrlen = sizeof(addr);
+	socklen_t addrlen = sizeof(addr);
 	struct bittorrent_peer_connection *peer;
 	struct read_buffer *buffer;
 
@@ -368,10 +368,10 @@ accept_bittorrent_peer_connection(void *____)
 struct connection_state
 init_bittorrent_listening_socket(struct connection *conn)
 {
-	struct bittorrent_connection *bittorrent = conn->info;
+	struct bittorrent_connection *bittorrent = (struct bittorrent_connection *)conn->info;
 	struct sockaddr_in addr, addr2;
 	uint16_t port, max_port;
-	int len;
+	socklen_t len;
 
 	/* XXX: Always add the connection to the list even if we fail so we can
 	 * safely assume it is in done_bittorrent_listening_socket(). */
@@ -439,7 +439,7 @@ init_bittorrent_listening_socket(struct connection *conn)
 void
 done_bittorrent_listening_socket(struct connection *conn)
 {
-	struct bittorrent_connection *connection, *bittorrent = conn->info;
+	struct bittorrent_connection *connection, *bittorrent = (struct bittorrent_connection *)conn->info;
 
 	/* The bittorrent connection might not even have been added if the
 	 * request for the metainfo file failed so carefully look it up. */

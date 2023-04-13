@@ -14,12 +14,30 @@
 #include "document/html/parse-meta-refresh.h"
 #include "util/memory.h"
 
+/* fake tty get function, needed for charsets.c */
+int
+get_ctl_handle() {
+	return -1;
+}
+
+char *
+gettext(const char *text)
+{
+	return (char *)text;
+}
+
+int
+os_default_charset(void)
+{
+	return -1;
+}
+
 struct meta_refresh_test_case
 {
-	const unsigned char *content;
+	const char *content;
 	int error;
 	unsigned long delay;
-	const unsigned char *url;
+	const char *url;
 };
 
 static const struct meta_refresh_test_case meta_refresh_test_cases[] = {
@@ -180,9 +198,9 @@ main(void)
 	int count_fail = 0;
 
 	for (test = meta_refresh_test_cases; test->content; test++) {
-		static unsigned char dummy[] = "dummy";
+		static char dummy[] = "dummy";
 		unsigned long delay = 21;
-		unsigned char *url = dummy;
+		char *url = dummy;
 		
 		int error = html_parse_meta_refresh(test->content,
 						    &delay, &url);

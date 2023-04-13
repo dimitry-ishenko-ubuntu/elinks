@@ -8,10 +8,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h> /* OS/2 needs this after sys/types.h */
+#endif
+
 #include "elinks.h"
 
 #include "cache/cache.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "network/connection.h"
 #include "network/socket.h"
@@ -35,7 +40,7 @@ static void nntp_send_command(struct connection *conn);
 
 /* Resolves the target by looking at the part of the URI _after_ last '/' */
 static enum nntp_target
-get_nntp_target(unsigned char *data, int datalen)
+get_nntp_target(char *data, int datalen)
 {
 	enum nntp_target target = NNTP_TARGET_ARTICLE_NUMBER;
 	int pos;
@@ -71,10 +76,10 @@ get_nntp_target(unsigned char *data, int datalen)
  * non empty and valid numbers and that the range is valid. */
 static int
 init_nntp_article_range(struct nntp_connection_info *nntp,
-			unsigned char *data, int datalen)
+			char *data, int datalen)
 {
 	long start_number, end_number;
-	unsigned char *end;
+	char *end;
 
 	errno = 0;
 	start_number = strtol(data, (char **) &end, 10);
@@ -99,8 +104,8 @@ init_nntp_connection_info(struct connection *conn)
 {
 	struct uri *uri = conn->uri;
 	struct nntp_connection_info *nntp;
-	unsigned char *groupend;
-	unsigned char *data;
+	char *groupend;
+	char *data;
 	int datalen;
 
 	assert(conn->info == NULL);
@@ -110,7 +115,7 @@ init_nntp_connection_info(struct connection *conn)
 		return NULL;
 	}
 
-	nntp = mem_calloc(1, sizeof(*nntp));
+	nntp = (struct nntp_connection_info *)mem_calloc(1, sizeof(*nntp));
 	if (!nntp) {
 		abort_connection(conn, connection_state(S_OUT_OF_MEM));
 		return NULL;
@@ -125,7 +130,7 @@ init_nntp_connection_info(struct connection *conn)
 	datalen = uri->datalen;
 
 	/* Check for <group>/ */
-	groupend = memchr(data, '/', datalen);
+	groupend = (char *)memchr(data, '/', datalen);
 	if (groupend) {
 		int grouplen = groupend - data;
 
@@ -208,7 +213,7 @@ nntp_quit(struct connection *conn)
 		return;
 	}
 
-	info = mem_calloc(1, sizeof(*info));
+	info = (struct nntp_connection_info *)mem_calloc(1, sizeof(*info));
 	if (!info) {
 		abort_connection(conn, connection_state(S_OUT_OF_MEM));
 		return;
@@ -224,7 +229,7 @@ nntp_quit(struct connection *conn)
 static void
 nntp_end_request(struct connection *conn, struct connection_state state)
 {
-	struct nntp_connection_info *nntp = conn->info;
+	struct nntp_connection_info *nntp = (struct nntp_connection_info *)conn->info;
 
 	if (nntp->target == NNTP_TARGET_QUIT) {
 		abort_connection(conn, state);
@@ -250,7 +255,7 @@ nntp_end_request(struct connection *conn, struct connection_state state)
 static void
 read_nntp_data(struct socket *socket, struct read_buffer *rb)
 {
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 
 	if (socket->state == SOCKET_CLOSED) {
 		nntp_end_request(conn, connection_state(S_OK));
@@ -275,7 +280,7 @@ read_nntp_data(struct socket *socket, struct read_buffer *rb)
 
 /* Translate NNTP code to the internal connection state. */
 static struct connection_state
-get_nntp_connection_state(enum nntp_code code)
+get_nntp_connection_state(nntp_code_T code)
 {
 	switch (code) {
 	case NNTP_CODE_400_GOODBYE:		return connection_state(S_NNTP_SERVER_HANG_UP);
@@ -309,8 +314,8 @@ get_nntp_connection_state(enum nntp_code code)
 static void
 nntp_got_response(struct socket *socket, struct read_buffer *rb)
 {
-	struct connection *conn = socket->conn;
-	struct nntp_connection_info *nntp = conn->info;
+	struct connection *conn = (struct connection *)socket->conn;
+	struct nntp_connection_info *nntp = (struct nntp_connection_info *)conn->info;
 
 	if (socket->state == SOCKET_CLOSED) {
 		nntp_end_request(conn, connection_state(S_OK));
@@ -368,7 +373,7 @@ nntp_got_response(struct socket *socket, struct read_buffer *rb)
 static void
 nntp_get_response(struct socket *socket)
 {
-	struct connection *conn = socket->conn;
+	struct connection *conn = (struct connection *)socket->conn;
 	struct read_buffer *rb = alloc_read_buffer(conn->socket);
 
 	if (!rb) return;
@@ -519,7 +524,7 @@ add_nntp_command_to_string(struct string *req, struct nntp_connection_info *nntp
 static void
 nntp_send_command(struct connection *conn)
 {
-	struct nntp_connection_info *nntp = conn->info;
+	struct nntp_connection_info *nntp = (struct nntp_connection_info *)conn->info;
 	struct string req;
 
 	nntp->command = get_nntp_command(nntp);
@@ -578,8 +583,8 @@ nntp_protocol_handler(struct connection *conn)
 void
 news_protocol_handler(struct connection *conn)
 {
-	unsigned char *protocol;
-	unsigned char *server = get_nntp_server();
+	const char *protocol;
+	char *server = get_nntp_server();
 	struct string location;
 
 	if (!*server) server = getenv("NNTPSERVER");

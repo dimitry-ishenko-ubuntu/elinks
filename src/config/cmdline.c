@@ -5,6 +5,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
@@ -13,6 +14,10 @@
 #include <sys/stat.h> /* OS/2 needs this after sys/types.h */
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
+#endif
+
+#ifdef HAVE_IDNA_H
+#include <idna.h>
 #endif
 
 /* We need to have it here. Stupid BSD. */
@@ -29,7 +34,7 @@
 #include "config/conf.h"
 #include "config/options.h"
 #include "config/opttypes.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "network/dns.h"
 #include "protocol/uri.h"
 #include "session/session.h"
@@ -41,10 +46,10 @@
 
 
 /* Hack to handle URL extraction for -remote commands */
-static unsigned char *remote_url;
+static char *remote_url;
 
 static enum retval
-parse_options_(int argc, unsigned char *argv[], struct option *opt,
+parse_options_(int argc, char *argv[], struct option *opt,
                LIST_OF(struct string_list_item) *url_list)
 {
 	while (argc) {
@@ -52,9 +57,9 @@ parse_options_(int argc, unsigned char *argv[], struct option *opt,
 
 		if (argv[-1][0] == '-' && argv[-1][1]) {
 			struct option *option;
-			unsigned char *argname = &argv[-1][1];
-			unsigned char *oname = stracpy(argname);
-			unsigned char *err;
+			char *argname = &argv[-1][1];
+			char *oname = stracpy(argname);
+			const char *err;
 
 			if (!oname) continue;
 
@@ -64,14 +69,14 @@ parse_options_(int argc, unsigned char *argv[], struct option *opt,
 			option = get_opt_rec(opt, argname);
 			if (!option) option = get_opt_rec(opt, oname);
 			if (!option) {
-				unsigned char *pos;
+				char *pos;
 
 				oname++; /* the '-' */
 				/* Substitute '-' by '_'. This helps
 				 * compatibility with that very wicked browser
 				 * called 'lynx'. */
-				for (pos = strchr((const char *)oname, '_'); pos;
-				     pos = strchr((const char *)pos, '_'))
+				for (pos = strchr(oname, '_'); pos;
+				     pos = strchr(pos, '_'))
 					*pos = '-';
 				option = get_opt_rec(opt, oname);
 				oname--;
@@ -116,7 +121,7 @@ unknown_option:
 }
 
 enum retval
-parse_options(int argc, unsigned char *argv[],
+parse_options(int argc, char *argv[],
 	      LIST_OF(struct string_list_item) *url_list)
 {
 	return parse_options_(argc, argv, cmdline_options, url_list);
@@ -127,8 +132,8 @@ parse_options(int argc, unsigned char *argv[],
  Options handlers
 **********************************************************************/
 
-static unsigned char *
-eval_cmd(struct option *o, unsigned char ***argv, int *argc)
+static const char *
+eval_cmd(struct option *o, char ***argv, int *argc)
 {
 	if (*argc < 1) return gettext("Parameter expected");
 
@@ -141,36 +146,55 @@ eval_cmd(struct option *o, unsigned char ***argv, int *argc)
 	return NULL;
 }
 
-static unsigned char *
-forcehtml_cmd(struct option *o, unsigned char ***argv, int *argc)
+static const char *
+forcehtml_cmd(struct option *o, char ***argv, int *argc)
 {
 	safe_strncpy(get_opt_str("mime.default_type", NULL), "text/html", MAX_STR_LEN);
 	return NULL;
 }
 
-static unsigned char *
-lookup_cmd(struct option *o, unsigned char ***argv, int *argc)
+static const char *
+lookup_cmd(struct option *o, char ***argv, int *argc)
 {
 	struct sockaddr_storage *addrs = NULL;
 	int addrno, i;
+	char *idname, *idname2;
+	int allocated = 0;
 
 	if (!*argc) return gettext("Parameter expected");
 	if (*argc > 1) return gettext("Too many parameters");
 
 	(*argv)++; (*argc)--;
-	if (do_real_lookup(*(*argv - 1), &addrs, &addrno, 0) == DNS_ERROR) {
+
+	idname = *(*argv - 1);
+
+#ifdef CONFIG_IDN
+	if (idname) {
+		int code = idna_to_ascii_lz(idname, &idname2, 0);
+
+		if (code == IDNA_SUCCESS) {
+			idname = idname2;
+			allocated = 1;
+		}
+	}
+#endif
+
+	if (do_real_lookup(idname, &addrs, &addrno, 0) == DNS_ERROR) {
 #ifdef HAVE_HERROR
 		herror(gettext("error"));
 #else
 		usrerror(gettext("Host not found"));
 #endif
+		if (allocated) {
+			free(idname2);
+		}
 		return "";
 	}
 
 	for (i = 0; i < addrno; i++) {
 #ifdef CONFIG_IPV6
 		struct sockaddr_in6 addr = *((struct sockaddr_in6 *) &(addrs)[i]);
-		unsigned char p[INET6_ADDRSTRLEN];
+		char p[INET6_ADDRSTRLEN];
 
 		if (! inet_ntop(addr.sin6_family,
 				(addr.sin6_family == AF_INET6 ? (void *) &addr.sin6_addr
@@ -192,11 +216,15 @@ lookup_cmd(struct option *o, unsigned char ***argv, int *argc)
 
 	fflush(stdout);
 
+	if (allocated) {
+		free(idname2);
+	}
+
 	return "";
 }
 
 #define skipback_whitespace(start, S) \
-	while ((start) < (S) && isspace((S)[-1])) (S)--;
+	while ((start) < (S) && isspace((unsigned char)(S)[-1])) (S)--;
 
 enum remote_method_enum {
 	REMOTE_METHOD_OPENURL,
@@ -210,12 +238,12 @@ enum remote_method_enum {
 };
 
 struct remote_method {
-	unsigned char *name;
+	const char *name;
 	enum remote_method_enum type;
 };
 
-static unsigned char *
-remote_cmd(struct option *o, unsigned char ***argv, int *argc)
+static const char *
+remote_cmd(struct option *o, char ***argv, int *argc)
 {
 	struct remote_method remote_methods[] = {
 		{ "openURL",	  REMOTE_METHOD_OPENURL },
@@ -227,9 +255,9 @@ remote_cmd(struct option *o, unsigned char ***argv, int *argc)
 		{ "search",	  REMOTE_METHOD_SEARCH },
 		{ NULL,		  REMOTE_METHOD_NOT_SUPPORTED },
 	};
-	unsigned char *command, *arg, *argend, *argstring;
+	char *command, *arg, *argend, *argstring;
 	int method, len = 0;
-	unsigned char *remote_argv[10];
+	char *remote_argv[10];
 	int remote_argc;
 
 	if (*argc < 1) return gettext("Parameter expected");
@@ -265,7 +293,7 @@ remote_cmd(struct option *o, unsigned char ***argv, int *argc)
 
 	remote_argc = 0;
 	do {
-		unsigned char *start, *end;
+		char *start, *end;
 
 		if (remote_argc > sizeof_array(remote_argv)) {
 			mem_free(argstring);
@@ -278,7 +306,7 @@ remote_cmd(struct option *o, unsigned char ***argv, int *argc)
 
 		if (*start == '"') {
 			end = ++start;
-			while ((end = strchr((const char *)end, '"'))) {
+			while ((end = strchr(end, '"'))) {
 				/* Treat "" inside quoted arg as ". */
 				if (end[1] != '"')
 					break;
@@ -306,7 +334,7 @@ remote_cmd(struct option *o, unsigned char ***argv, int *argc)
 			*start = 0;
 
 		} else {
-			end = strchr((const char *)start, ',');
+			end = strchr(start, ',');
 			if (!end) {
 				end = start + strlen(start);
 				arg = end;
@@ -325,7 +353,7 @@ remote_cmd(struct option *o, unsigned char ***argv, int *argc)
 	} while (*arg);
 
 	for (method = 0; remote_methods[method].name; method++) {
-		unsigned char *name = remote_methods[method].name;
+		const char *name = remote_methods[method].name;
 
 		if (!c_strlcasecmp(command, len, name, -1))
 			break;
@@ -340,12 +368,12 @@ remote_cmd(struct option *o, unsigned char ***argv, int *argc)
 		}
 
 		if (remote_argc == 2) {
-			unsigned char *where = remote_argv[1];
+			char *where = remote_argv[1];
 
-			if (strstr((const char *)where, "new-window")) {
+			if (strstr(where, "new-window")) {
 				remote_session_flags |= SES_REMOTE_NEW_WINDOW;
 
-			} else if (strstr((const char *)where, "new-tab")) {
+			} else if (strstr(where, "new-tab")) {
 				remote_session_flags |= SES_REMOTE_NEW_TAB;
 
 			} else {
@@ -423,8 +451,8 @@ remote_cmd(struct option *o, unsigned char ***argv, int *argc)
 	return NULL;
 }
 
-static unsigned char *
-version_cmd(struct option *o, unsigned char ***argv, int *argc)
+static const char *
+version_cmd(struct option *o, char ***argv, int *argc)
 {
 	printf("%s\n", full_static_version);
 	fflush(stdout);
@@ -444,7 +472,7 @@ version_cmd(struct option *o, unsigned char ***argv, int *argc)
 
 #define gettext_nonempty(x) (*(x) ? gettext(x) : (x))
 
-static void print_option_desc(const unsigned char *desc)
+static void print_option_desc(const char *desc)
 {
 	struct string wrapped;
 	static const struct string indent = INIT_STRING("            ", 12);
@@ -466,25 +494,25 @@ static void print_option_desc(const unsigned char *desc)
 	done_string(&wrapped);
 }
 
-static void print_full_help_outer(struct option *tree, unsigned char *path);
+static void print_full_help_outer(struct option *tree, const char *path);
 
 static void
-print_full_help_inner(struct option *tree, unsigned char *path,
+print_full_help_inner(struct option *tree, const char *path,
 		      int trees)
 {
 	struct option *option;
-	unsigned char saved[MAX_STR_LEN];
-	unsigned char *savedpos = saved;
+	char saved[MAX_STR_LEN];
+	char *savedpos = saved;
 
 	*savedpos = 0;
 
 	foreach (option, *tree->value.tree) {
 		enum option_type type = option->type;
-		unsigned char *help;
-		unsigned char *capt = option->capt;
-		unsigned char *desc = (option->desc && *option->desc)
-				      ? (unsigned char *) gettext(option->desc)
-				      : (unsigned char *) "N/A";
+		const char *help;
+		const char *capt = option->capt;
+		char *desc = (option->desc && *option->desc)
+				      ? (char *) gettext(option->desc)
+				      : (char *) "N/A";
 
 		if (trees != (type == OPT_TREE))
 			continue;
@@ -496,7 +524,7 @@ print_full_help_inner(struct option *tree, unsigned char *path,
 			continue;
 
 		if (!capt && !c_strncasecmp(option->name, "_template_", 10))
-			capt = (unsigned char *) N_("Template option folder");
+			capt = (char *) N_("Template option folder");
 
 		if (!capt) {
 			int len = strlen(option->name);
@@ -543,7 +571,7 @@ print_full_help_inner(struct option *tree, unsigned char *path,
 			case OPT_COLOR:
 			{
 				color_T color = option->value.color;
-				unsigned char hexcolor[8];
+				char hexcolor[8];
 
 				printf(gettext("(default: %s)"),
 				       get_color_string(color, hexcolor));
@@ -557,6 +585,9 @@ print_full_help_inner(struct option *tree, unsigned char *path,
 #ifdef CONFIG_NLS
 				printf(gettext("(default: \"%s\")"),
 				       language_to_name(option->value.number));
+#else
+				printf(gettext("(default: \"%s\")"),
+				       "System");
 #endif
 				break;
 
@@ -599,7 +630,7 @@ print_full_help_inner(struct option *tree, unsigned char *path,
 }
 
 static void
-print_full_help_outer(struct option *tree, unsigned char *path)
+print_full_help_outer(struct option *tree, const char *path)
 {
 	print_full_help_inner(tree, path, 0);
 	print_full_help_inner(tree, path, 1);
@@ -612,17 +643,17 @@ print_short_help(void)
 	struct option *option;
 	struct string string = NULL_STRING;
 	struct string *saved = NULL;
-	unsigned char align[ALIGN_WIDTH];
+	char align[ALIGN_WIDTH];
 
 	/* Initialize @space used to align captions. */
 	memset(align, ' ', sizeof(align) - 1);
 	align[sizeof(align) - 1] = 0;
 
 	foreach (option, *cmdline_options->value.tree) {
-		unsigned char *capt;
-		unsigned char *help;
-		unsigned char *info = saved ? saved->source
-					    : (unsigned char *) "";
+		const char *capt;
+		const char *help;
+		char *info = saved ? saved->source
+					    : (char *) "";
 		int len = strlen(option->name);
 
 		/* Avoid printing compatibility options */
@@ -666,10 +697,10 @@ print_short_help(void)
 
 #undef gettext_nonempty
 
-static unsigned char *
-printhelp_cmd(struct option *option, unsigned char ***argv, int *argc)
+static const char *
+printhelp_cmd(struct option *option, char ***argv, int *argc)
 {
-	unsigned char *lineend = strchr((const char *)full_static_version, '\n');
+	char *lineend = strchr(full_static_version, '\n');
 
 	if (lineend) *lineend = '\0';
 
@@ -693,10 +724,10 @@ printhelp_cmd(struct option *option, unsigned char ***argv, int *argc)
 	return "";
 }
 
-static unsigned char *
-redir_cmd(struct option *option, unsigned char ***argv, int *argc)
+static const char *
+redir_cmd(struct option *option, char ***argv, int *argc)
 {
-	unsigned char *target;
+	const char *target;
 
 	/* I can't get any dirtier. --pasky */
 
@@ -732,10 +763,10 @@ redir_cmd(struct option *option, unsigned char ***argv, int *argc)
 	return NULL;
 }
 
-static unsigned char *
-printconfigdump_cmd(struct option *option, unsigned char ***argv, int *argc)
+static const char *
+printconfigdump_cmd(struct option *option, char ***argv, int *argc)
 {
-	unsigned char *config_string;
+	char *config_string;
 
 	/* Print all. */
 	get_opt_int("config.saving_style", NULL) = 2;
@@ -759,8 +790,12 @@ printconfigdump_cmd(struct option *option, unsigned char ***argv, int *argc)
 
 union option_info cmdline_options_info[] = {
 	/* [gettext_accelerator_context(IGNORE)] */
+	INIT_OPT_BOOL("", N_("Load config also for slave instances"),
+		"always-load-config", OPT_ZERO, 0,
+		N_("Load config also for slave instances. Slower, but more robust.")),
+
 	INIT_OPT_BOOL("", N_("Restrict to anonymous mode"),
-		"anonymous", 0, 0,
+		"anonymous", OPT_ZERO, 0,
 		N_("Restricts ELinks so it can run on an anonymous account. "
 		"Local file browsing, downloads, and modification of options "
 		"will be disabled. Execution of viewers is allowed, but "
@@ -768,79 +803,79 @@ union option_info cmdline_options_info[] = {
 		"modified.")),
 
 	INIT_OPT_BOOL("", N_("Autosubmit first form"),
-		"auto-submit", 0, 0,
+		"auto-submit", OPT_ZERO, 0,
 		N_("Automatically submit the first form in the given URLs.")),
 
 	INIT_OPT_INT("", N_("Clone internal session with given ID"),
-		"base-session", 0, 0, INT_MAX, 0,
+		"base-session", OPT_ZERO, 0, INT_MAX, 0,
 		N_("Used internally when opening ELinks instances in new "
 		"windows. The ID maps to information that will be used when "
 		"creating the new instance. You don't want to use it.")),
 
 	INIT_OPT_STRING("", N_("Use a specific local IP address"),
-		"bind-address", 0, "",
+		"bind-address", OPT_ZERO, "",
 		N_("Use a specific local IP address")),
 
 	INIT_OPT_STRING("", N_("Use a specific local IPv6 address"),
-		"bind-address-ipv6", 0, "",
+		"bind-address-ipv6", OPT_ZERO, "",
 		N_("Use a specific local IPv6 address")),
 
 	INIT_OPT_COMMAND("", NULL, "confdir", OPT_HIDDEN, redir_cmd, NULL),
 
 	INIT_OPT_STRING("", N_("Name of directory with configuration file"),
-		"config-dir", 0, "",
+		"config-dir", OPT_ZERO, "",
 		N_("Path of the directory ELinks will read and write its "
 		"config and runtime state files to instead of ~/.elinks. "
 		"If the path does not begin with a '/' it is assumed to be "
 		"relative to your HOME directory.")),
 
 	INIT_OPT_COMMAND("", N_("Print default configuration file to stdout"),
-		"config-dump", 0, printconfigdump_cmd,
+		"config-dump", OPT_ZERO, printconfigdump_cmd,
 		N_("Print a configuration file with options set to the "
 		"built-in defaults to stdout.")),
 
 	INIT_OPT_COMMAND("", NULL, "conffile", OPT_HIDDEN, redir_cmd, NULL),
 
 	INIT_OPT_STRING("", N_("Name of configuration file"),
-		"config-file", 0, "elinks.conf",
+		"config-file", OPT_ZERO, "elinks.conf",
 		N_("Name of the configuration file that all configuration "
 		"options will be read from and written to. It should be "
 		"relative to config-dir.")),
 
 	INIT_OPT_COMMAND("", N_("Print help for configuration options"),
-		"config-help", 0, printhelp_cmd,
+		"config-help", OPT_ZERO, printhelp_cmd,
 		N_("Print help for configuration options and exit.")),
 
 	INIT_OPT_CMDALIAS("", N_("MIME type assumed for unknown document types"),
-		"default-mime-type", 0, "mime.default_type",
+		"default-mime-type", OPT_ZERO, "mime.default_type",
 		N_("The default MIME type used for documents of unknown "
 		"type.")),
 
 	INIT_OPT_BOOL("", N_("Ignore user-defined keybindings"),
-		"default-keys", 0, 0,
+		"default-keys", OPT_ZERO, 0,
 		N_("When set, all keybindings from configuration files will "
 		"be ignored. It forces use of default keybindings and will "
 		"reset user-defined ones on save.")),
 
 	INIT_OPT_BOOL("", N_("Print formatted versions of given URLs to stdout"),
-		"dump", 0, 0,
+		"dump", OPT_ZERO, 0,
 		N_("Print formatted plain-text versions of given URLs to "
 		"stdout.")),
 
 	INIT_OPT_CMDALIAS("", N_("Codepage to use with -dump"),
-		"dump-charset", 0, "document.dump.codepage",
+		"dump-charset", OPT_ZERO, "document.dump.codepage",
 		N_("Codepage used when formatting dump output.")),
 
 	INIT_OPT_CMDALIAS("", N_("Color mode used with -dump"),
-		"dump-color-mode", 0, "document.dump.color_mode",
+		"dump-color-mode", OPT_ZERO, "document.dump.color_mode",
 		N_("Color mode used with -dump.")),
 
 	INIT_OPT_CMDALIAS("", N_("Width of document formatted with -dump"),
-		"dump-width", 0, "document.dump.width",
+		"dump-width", OPT_ZERO, "document.dump.width",
 		N_("Width of the dump output.")),
 
 	INIT_OPT_COMMAND("", N_("Evaluate configuration file directive"),
-		"eval", 0, eval_cmd,
+		"eval", OPT_ZERO, eval_cmd,
 		N_("Specify configuration file directives on the command-line "
 		"which will be evaluated after all configuration files has "
 		"been read. Example usage:\n"
@@ -848,52 +883,52 @@ union option_info cmdline_options_info[] = {
 
 	/* lynx compatibility */
 	INIT_OPT_COMMAND("", N_("Interpret documents of unknown types as HTML"),
-		"force-html", 0, forcehtml_cmd,
+		"force-html", OPT_ZERO, forcehtml_cmd,
 		N_("Makes ELinks assume documents of unknown types are HTML. "
 		"Useful when using ELinks as an external viewer from MUAs. "
 		"This is equivalent to -default-mime-type text/html.")),
 
 	/* XXX: -?, -h and -help share the same caption and should be kept in
 	 * the current order for usage help printing to be ok */
-	INIT_OPT_COMMAND("", NULL, "?", 0, printhelp_cmd, NULL),
+	INIT_OPT_COMMAND("", NULL, "?", OPT_ZERO, printhelp_cmd, NULL),
 
-	INIT_OPT_COMMAND("", NULL, "h", 0, printhelp_cmd, NULL),
+	INIT_OPT_COMMAND("", NULL, "h", OPT_ZERO, printhelp_cmd, NULL),
 
 	INIT_OPT_COMMAND("", N_("Print usage help and exit"),
-		"help", 0, printhelp_cmd,
+		"help", OPT_ZERO, printhelp_cmd,
 		N_("Print usage help and exit.")),
 
 	INIT_OPT_BOOL("", N_("Only permit local connections"),
-		"localhost", 0, 0,
+		"localhost", OPT_ZERO, 0,
 		N_("Restricts ELinks to work offline and only connect to "
 		"servers with local addresses (ie. 127.0.0.1). No connections "
 		"to remote servers will be permitted.")),
 
 	INIT_OPT_COMMAND("", N_("Print detailed usage help and exit"),
-		"long-help", 0, printhelp_cmd,
+		"long-help", OPT_ZERO, printhelp_cmd,
 		N_("Print detailed usage help and exit.")),
 
 	INIT_OPT_COMMAND("", N_("Look up specified host"),
-		"lookup", 0, lookup_cmd,
+		"lookup", OPT_ZERO, lookup_cmd,
 		N_("Look up specified host and print all DNS resolved IP "
 		"addresses.")),
 
 	INIT_OPT_BOOL("", N_("Run as separate instance"),
-		"no-connect", 0, 0,
+		"no-connect", OPT_ZERO, 0,
 		N_("Run ELinks as a separate instance instead of connecting "
 		"to an existing instance. Note that normally no runtime state "
 		"files (bookmarks, history, etc.) are written to the disk "
 		"when this option is used. See also -touch-files.")),
 
 	INIT_OPT_BOOL("", N_("Disable use of files in ~/.elinks"),
-		"no-home", 0, 0,
+		"no-home", OPT_ZERO, 0,
 		N_("Disables creation and use of files in the user specific "
 		"home configuration directory (~/.elinks). It forces default "
 		"configuration values to be used and disables saving of "
 		"runtime state files.")),
 
 	INIT_OPT_BOOL("", N_("Disable libevent"),
-		"no-libevent", 0, 0,
+		"no-libevent", OPT_ZERO, 0,
 		N_("Disables libevent.")),
 
 	INIT_OPT_CMDALIAS("", N_("Disable link numbering in dump output"),
@@ -910,7 +945,7 @@ union option_info cmdline_options_info[] = {
 		"Note that this really affects only -dump, nothing else.")),
 
 	INIT_OPT_COMMAND("", N_("Control an already running ELinks"),
-		"remote", 0, remote_cmd,
+		"remote", OPT_ZERO, remote_cmd,
 		N_("Control a remote ELinks instance by passing commands to "
 		"it. The option takes an additional argument containing the "
 		"method which should be invoked and any parameters that "
@@ -932,7 +967,7 @@ union option_info cmdline_options_info[] = {
 		"\txfeDoCommand(openBrowser) : open new window")),
 
 	INIT_OPT_INT("", N_("Connect to session ring with given ID"),
-		"session-ring", 0, 0, INT_MAX, 0,
+		"session-ring", OPT_ZERO, 0, INT_MAX, 0,
 		N_("ID of session ring this ELinks session should connect to. "
 		"ELinks works in so-called session rings, whereby all "
 		"instances of ELinks are interconnected and share state "
@@ -952,25 +987,25 @@ union option_info cmdline_options_info[] = {
 		"is used. See also -touch-files.")),
 
 	INIT_OPT_BOOL("", N_("Print the source of given URLs to stdout"),
-		"source", 0, 0,
+		"source", OPT_ZERO, 0,
 		N_("Print given URLs in source form to stdout.")),
 
 	INIT_OPT_COMMAND("", NULL, "stdin", OPT_HIDDEN, redir_cmd, NULL),
 
 	INIT_OPT_BOOL("", N_("Whether to use terminfo"),
-		"terminfo", 0, 0,
+		"terminfo", OPT_ZERO, 0,
 		N_("When enabled, terminfo ncurses functions will be used "
 		"instead of hardcoded sequences.")),
 
 	INIT_OPT_BOOL("", N_("Touch files in ~/.elinks when running with -no-connect/-session-ring"),
-		"touch-files", 0, 0,
+		"touch-files", OPT_ZERO, 0,
 		N_("When enabled, runtime state files (bookmarks, history, "
 		"etc.) are written to disk, even when -no-connect or "
 		"-session-ring is used. The option has no effect if not used "
 		"in conjunction with any of these options.")),
 
 	INIT_OPT_INT("", N_("Verbose level"),
-		"verbose", 0, 0, VERBOSE_LEVELS - 1, VERBOSE_WARNINGS,
+		"verbose", OPT_ZERO, 0, VERBOSE_LEVELS - 1, VERBOSE_WARNINGS,
 		N_("The verbose level controls what messages are shown at "
 		"start up and while running:\n"
 		"\t0 means only show serious errors\n"
@@ -978,7 +1013,7 @@ union option_info cmdline_options_info[] = {
 		"\t2 means show all messages")),
 
 	INIT_OPT_COMMAND("", N_("Print version information and exit"),
-		"version", 0, version_cmd,
+		"version", OPT_ZERO, version_cmd,
 		N_("Print ELinks version information and exit.")),
 
 	NULL_OPTION_INFO,

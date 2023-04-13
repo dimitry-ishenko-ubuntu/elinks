@@ -14,7 +14,7 @@
 #include "config/kbdbind.h"
 #include "config/options.h"
 #include "dialogs/exmode.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/module.h"
 #include "session/session.h"
 #include "session/task.h"
@@ -35,13 +35,13 @@
 
 static INIT_INPUT_HISTORY(exmode_history);
 
-typedef int (*exmode_handler_T)(struct session *, unsigned char *, unsigned char *);
+typedef int (*exmode_handler_T)(struct session *, char *, char *);
 
 static int
-exmode_action_handler(struct session *ses, unsigned char *command,
-		      unsigned char *args)
+exmode_action_handler(struct session *ses, char *command,
+		      char *args)
 {
-	enum main_action action_id = get_action_from_string(KEYMAP_MAIN, command);
+	main_action_T action_id = get_action_from_string(KEYMAP_MAIN, command);
 
 	if (action_id == ACT_MAIN_NONE) return 0;
 	if (action_id == ACT_MAIN_QUIT) action_id = ACT_MAIN_REALLY_QUIT;
@@ -60,8 +60,8 @@ exmode_action_handler(struct session *ses, unsigned char *command,
 }
 
 static int
-exmode_confcmd_handler(struct session *ses, unsigned char *command,
-			unsigned char *args)
+exmode_confcmd_handler(struct session *ses, char *command,
+			char *args)
 {
 	enum parse_error err;
 
@@ -84,14 +84,14 @@ static const exmode_handler_T exmode_handlers[] = {
 };
 
 static void
-exmode_exec(struct session *ses, unsigned char buffer[INPUT_LINE_BUFFER_SIZE])
+exmode_exec(struct session *ses, char buffer[INPUT_LINE_BUFFER_SIZE])
 {
 	/* First look it up as action, then try it as an event (but the event
 	 * part should be thought out somehow yet, I s'pose... let's leave it
 	 * off for now). Then try to evaluate it as configfile command. Then at
 	 * least pop up an error. */
-	unsigned char *command = buffer;
-	unsigned char *args = command;
+	char *command = buffer;
+	char *args = command;
 	int i;
 
 	while (*command == ':') command++;
@@ -109,6 +109,67 @@ exmode_exec(struct session *ses, unsigned char buffer[INPUT_LINE_BUFFER_SIZE])
 	}
 }
 
+void
+try_exmode_exec(struct session *ses, const char *val)
+{
+	char *next;
+	struct string res;
+	struct string inp;
+	struct string what = INIT_STRING("\\\"", 2);
+	struct string replace = INIT_STRING("\"", 1);
+
+	if (!val || !init_string(&res)) {
+		return;
+	}
+	if (!init_string(&inp)) {
+		done_string(&res);
+		return;
+	}
+	add_to_string(&inp, val);
+	string_replace(&res, &inp, &what, &replace);
+	next = res.source;
+
+	while (1) {
+		char *command, *args;
+
+		while (*next && isspace((unsigned char)(*next))) next++;
+
+		command = args = next;
+
+		while (*command == ':') command++;
+
+		if (!*command) {
+			break;
+		}
+
+		while (*args && !isspace((unsigned char)(*args)) && *args != ';') args++;
+
+		if (*args == ';') {
+			*args = 0;
+			next = args + 1;
+		} else {
+			if (*args) *args++ = 0;
+			next = args;
+
+			for (int quote = 0; *next; next++) {
+				if (*next == '"') {
+					quote = !quote;
+					continue;
+				}
+				if (*next == ';' && !quote) {
+					*next++ = 0;
+					break;
+				}
+			}
+		}
+		for (int i = 0; exmode_handlers[i]; i++) {
+			if (exmode_handlers[i](ses, command, args))
+				break;
+		}
+	}
+	done_string(&inp);
+	done_string(&res);
+}
 
 static enum input_line_code
 exmode_input_handler(struct input_line *input_line, int action_id)

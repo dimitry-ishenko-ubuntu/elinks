@@ -29,9 +29,9 @@
 
 static inline void
 init_template(struct screen_char *template_, struct document_options *options,
-	      enum screen_char_attr attr, color_T foreground, color_T background)
+	      screen_char_attr_T attr, color_T foreground, color_T background)
 {
-	struct text_style style = INIT_TEXT_STYLE((int)attr, foreground, background);
+	struct text_style style = INIT_TEXT_STYLE((short int)attr, foreground, background);
 
 	get_screen_char_template(template_, options, style);
 }
@@ -100,7 +100,7 @@ realloc_line(struct document *document, int x, int y)
 static struct node *
 add_search_node(struct dom_renderer *renderer, int width)
 {
-	struct node *node = mem_alloc(sizeof(*node));
+	struct node *node = (struct node *)mem_alloc(sizeof(*node));
 
 	if (node) {
 		set_box(&node->box, renderer->canvas_x, renderer->canvas_y,
@@ -116,7 +116,7 @@ add_search_node(struct dom_renderer *renderer, int width)
 
 static void
 render_dom_line(struct dom_renderer *renderer, struct screen_char *template_,
-		unsigned char *string, int length)
+		char *string, int length)
 {
 	struct document *document = renderer->document;
 	struct conv_table *convert = renderer->convert_table;
@@ -124,7 +124,7 @@ render_dom_line(struct dom_renderer *renderer, struct screen_char *template_,
 	int x, charlen;
 #ifdef CONFIG_UTF8
 	int utf8 = document->options.utf8;
-	unsigned char *end;
+	char *end;
 #endif /* CONFIG_UTF8 */
 
 
@@ -145,7 +145,7 @@ render_dom_line(struct dom_renderer *renderer, struct screen_char *template_,
 	end = string + length;
 #endif /* CONFIG_UTF8 */
 	for (x = 0, charlen = 1; x < length;x += charlen, renderer->canvas_x++) {
-		unsigned char *text = &string[x];
+		char *text = &string[x];
 
 		/* This is mostly to be able to break out so the indentation
 		 * level won't get to high. */
@@ -194,11 +194,11 @@ render_dom_line(struct dom_renderer *renderer, struct screen_char *template_,
 	mem_free(string);
 }
 
-static inline unsigned char *
-split_dom_line(unsigned char *line, int length, int *linelen)
+static inline char *
+split_dom_line(char *line, int length, int *linelen)
 {
-	unsigned char *end = line + length;
-	unsigned char *pos;
+	char *end = line + length;
+	char *pos;
 
 	/* End of line detection.
 	 * We handle \r, \r\n and \n types here. */
@@ -223,12 +223,12 @@ split_dom_line(unsigned char *line, int length, int *linelen)
 
 void
 render_dom_text(struct dom_renderer *renderer, struct screen_char *template_,
-		unsigned char *string, int length)
+		char *string, int length)
 {
 	int linelen;
 
 	for (; length > 0; string += linelen, length -= linelen) {
-		unsigned char *newline = split_dom_line(string, length, &linelen);
+		char *newline = split_dom_line(string, length, &linelen);
 
 		if (linelen)
 			render_dom_line(renderer, template_, string, linelen);
@@ -245,17 +245,18 @@ render_dom_text(struct dom_renderer *renderer, struct screen_char *template_,
 	ALIGN_LINK(&(doc)->links, (doc)->nlinks, size)
 
 NONSTATIC_INLINE struct link *
-add_dom_link(struct dom_renderer *renderer, unsigned char *string, int length,
-	     unsigned char *uristring, int urilength)
+add_dom_link(struct dom_renderer *renderer, const char *cstring, int length,
+	     char *uristring, int urilength)
 {
 	struct document *document = renderer->document;
 	int x = renderer->canvas_x;
 	int y = renderer->canvas_y;
-	unsigned char *where;
+	char *where;
 	struct link *link;
 	struct point *point;
 	struct screen_char template_;
 	color_T fgcolor;
+	char *string = (char *)cstring; // todo fix
 
 	if (!realloc_document_links(document, document->nlinks + 1))
 		return NULL;

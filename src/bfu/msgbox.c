@@ -12,7 +12,7 @@
 #include "bfu/button.h"
 #include "bfu/msgbox.h"
 #include "bfu/text.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "terminal/terminal.h"
 #include "util/color.h"
 #include "util/memlist.h"
@@ -22,9 +22,9 @@
 
 
 struct dialog_data *
-msg_box(struct terminal *term, struct memory_list *ml, enum msgbox_flags flags,
-	unsigned char *title, enum format_align align,
-	unsigned char *text, void *udata, int buttons, ...)
+msg_box(struct terminal *term, struct memory_list *ml, msgbox_flags_T flags,
+	char *title, format_align_T align,
+	char *text, void *udata, int buttons, ...)
 {
 	struct dialog *dlg;
 	va_list ap;
@@ -66,11 +66,11 @@ msg_box(struct terminal *term, struct memory_list *ml, enum msgbox_flags flags,
 	va_start(ap, buttons);
 
 	while (dlg->number_of_widgets < buttons + 1) {
-		unsigned char *label;
+		char *label;
 		done_handler_T *done;
 		int bflags;
 
-		label = va_arg(ap, unsigned char *);
+		label = va_arg(ap, char *);
 		done = va_arg(ap, done_handler_T *);
 		bflags = va_arg(ap, int);
 
@@ -93,17 +93,17 @@ msg_box(struct terminal *term, struct memory_list *ml, enum msgbox_flags flags,
 	return do_dialog(term, dlg, ml);
 }
 
-static inline unsigned char *
-msg_text_do(unsigned char *format, va_list ap)
+static inline char *
+msg_text_do(char *format, va_list ap)
 {
-	unsigned char *info;
+	char *info;
 	int infolen, len;
 	va_list ap2;
 
 	va_copy(ap2, ap);
 
 	infolen = vsnprintf(NULL, 0, format, ap2);
-	info = mem_alloc(infolen + 1);
+	info = (char *)mem_alloc(infolen + 1);
 	if (!info) return NULL;
 
 	len = vsnprintf((char *) info, infolen + 1, format, ap);
@@ -117,10 +117,10 @@ msg_text_do(unsigned char *format, va_list ap)
 	return info;
 }
 
-unsigned char *
-msg_text(struct terminal *term, unsigned char *format, ...)
+char *
+msg_text(struct terminal *term, const char *format, ...)
 {
-	unsigned char *info;
+	char *info;
 	va_list ap;
 
 	va_start(ap, format);
@@ -142,9 +142,9 @@ abort_refreshed_msg_box_handler(struct dialog_data *dlg_data)
 static enum dlg_refresh_code
 refresh_msg_box(struct dialog_data *dlg_data, void *data)
 {
-	unsigned char *(*get_info)(struct terminal *, void *) = data;
+	char *(*get_info)(struct terminal *, void *) = (char *(*)(struct terminal *, void *))data;
 	void *msg_data = dlg_data->dlg->udata2;
-	unsigned char *info = get_info(dlg_data->win->term, msg_data);
+	char *info = get_info(dlg_data->win->term, msg_data);
 
 	if (!info) return REFRESH_CANCEL;
 
@@ -155,14 +155,14 @@ refresh_msg_box(struct dialog_data *dlg_data, void *data)
 }
 
 void
-refreshed_msg_box(struct terminal *term, enum msgbox_flags flags,
-		  unsigned char *title, enum format_align align,
-		  unsigned char *(get_info)(struct terminal *, void *),
+refreshed_msg_box(struct terminal *term, msgbox_flags_T flags,
+		  char *title, format_align_T align,
+		  char *(get_info)(struct terminal *, void *),
 		  void *data)
 {
 	/* [gettext_accelerator_context(refreshed_msg_box)] */
 	struct dialog_data *dlg_data;
-	unsigned char *info = get_info(term, data);
+	char *info = get_info(term, data);
 
 	if (!info) return;
 
@@ -178,13 +178,13 @@ refreshed_msg_box(struct terminal *term, enum msgbox_flags flags,
 	 * is freed. */
 	dlg_data->dlg->udata = info;
 	dlg_data->dlg->abort = abort_refreshed_msg_box_handler;
-	refresh_dialog(dlg_data, refresh_msg_box, get_info);
+	refresh_dialog(dlg_data, refresh_msg_box, (void *)get_info);
 }
 
 struct dialog_data *
-info_box(struct terminal *term, enum msgbox_flags flags,
-	 unsigned char *title, enum format_align align,
-	 unsigned char *text)
+info_box(struct terminal *term, msgbox_flags_T flags,
+	 char *title, format_align_T align,
+	 char *text)
 {
 	/* [gettext_accelerator_context(info_box)] */
 	return msg_box(term, NULL, flags,

@@ -16,7 +16,7 @@
 #include "dialogs/menu.h"
 #include "dialogs/progress.h"
 #include "dialogs/status.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/object.h"
 #include "main/select.h"
 #include "network/connection.h"
@@ -58,7 +58,7 @@ do_abort_download(struct file_download *file_download)
 static widget_handler_status_T
 dlg_set_notify(struct dialog_data *dlg_data, struct widget_data *widget_data)
 {
-	struct file_download *file_download = dlg_data->dlg->udata;
+	struct file_download *file_download = (struct file_download *)dlg_data->dlg->udata;
 
 	file_download->notify = 1;
 	/* The user of this terminal wants to be notified about the
@@ -82,7 +82,7 @@ dlg_set_notify(struct dialog_data *dlg_data, struct widget_data *widget_data)
 static widget_handler_status_T
 dlg_abort_download(struct dialog_data *dlg_data, struct widget_data *widget_data)
 {
-	struct file_download *file_download = dlg_data->dlg->udata;
+	struct file_download *file_download = (struct file_download *)dlg_data->dlg->udata;
 
 	object_unlock(file_download);
 	register_bottom_half(do_abort_download, file_download);
@@ -92,7 +92,7 @@ dlg_abort_download(struct dialog_data *dlg_data, struct widget_data *widget_data
 static widget_handler_status_T
 push_delete_button(struct dialog_data *dlg_data, struct widget_data *widget_data)
 {
-	struct file_download *file_download = dlg_data->dlg->udata;
+	struct file_download *file_download = (struct file_download *)dlg_data->dlg->udata;
 
 	file_download->delete_ = 1;
 #ifdef CONFIG_BITTORRENT
@@ -107,7 +107,7 @@ push_delete_button(struct dialog_data *dlg_data, struct widget_data *widget_data
 static widget_handler_status_T
 dlg_undisplay_download(struct dialog_data *dlg_data, struct widget_data *widget_data)
 {
-	struct file_download *file_download = dlg_data->dlg->udata;
+	struct file_download *file_download = (struct file_download *)dlg_data->dlg->udata;
 
 	object_unlock(file_download);
 	register_bottom_half(undisplay_download, file_download);
@@ -118,7 +118,7 @@ dlg_undisplay_download(struct dialog_data *dlg_data, struct widget_data *widget_
 static void
 download_abort_function(struct dialog_data *dlg_data)
 {
-	struct file_download *file_download = dlg_data->dlg->udata;
+	struct file_download *file_download = (struct file_download *)dlg_data->dlg->udata;
 
 	file_download->dlg_data = NULL;
 }
@@ -127,16 +127,16 @@ download_abort_function(struct dialog_data *dlg_data)
 static void
 download_dialog_layouter(struct dialog_data *dlg_data)
 {
-	struct file_download *file_download = dlg_data->dlg->udata;
+	struct file_download *file_download = (struct file_download *)dlg_data->dlg->udata;
 	struct terminal *term = dlg_data->win->term;
 	int w = dialog_max_width(term);
 	int rw = w;
 	int x, y = 0;
 	int url_len;
-	unsigned char *url;
+	char *url;
 	struct download *download = &file_download->download;
 	struct color_pair *dialog_text_color = get_bfu_color(term, "dialog.text");
-	unsigned char *msg = get_download_msg(download, term, 1, 1, "\n");
+	char *msg = get_download_msg(download, term, 1, 1, "\n");
 	int show_meter = (download_is_progressing(download)
 			  && download->progress->size >= 0);
 #ifdef CONFIG_BITTORRENT
@@ -306,11 +306,11 @@ is_file_download_used(struct listbox_item *item)
 	return is_object_used((struct file_download *) item->udata);
 }
 
-static unsigned char *
+static char *
 get_file_download_text(struct listbox_item *item, struct terminal *term)
 {
-	struct file_download *file_download = item->udata;
-	unsigned char *uristring;
+	struct file_download *file_download = (struct file_download *)item->udata;
+	char *uristring;
 
 	uristring = get_uri_string(file_download->uri, URI_PUBLIC);
 	if (uristring) {
@@ -325,7 +325,7 @@ get_file_download_text(struct listbox_item *item, struct terminal *term)
 	return uristring;
 }
 
-static unsigned char *
+static char *
 get_file_download_info(struct listbox_item *item, struct terminal *term)
 {
 	return NULL;
@@ -334,7 +334,7 @@ get_file_download_info(struct listbox_item *item, struct terminal *term)
 static struct uri *
 get_file_download_uri(struct listbox_item *item)
 {
-	struct file_download *file_download = item->udata;
+	struct file_download *file_download = (struct file_download *)item->udata;
 
 	return get_uri_reference(file_download->uri);
 }
@@ -354,7 +354,7 @@ can_delete_file_download(struct listbox_item *item)
 static void
 delete_file_download(struct listbox_item *item, int last)
 {
-	struct file_download *file_download = item->udata;
+	struct file_download *file_download = (struct file_download *)item->udata;
 
 	assert(!is_object_used(file_download));
 	register_bottom_half(do_abort_download, file_download);
@@ -375,11 +375,11 @@ static void
 draw_file_download(struct listbox_item *item, struct listbox_context *context,
 		   int x, int y, int width)
 {
-	struct file_download *file_download = item->udata;
+	struct file_download *file_download = (struct file_download *)item->udata;
 	struct download *download = &file_download->download;
-	unsigned char *stylename;
+	const char *stylename;
 	struct color_pair *color;
-	unsigned char *text;
+	char *text;
 	int length;
 	int trimmedlen;
 	int meter = DOWNLOAD_METER_WIDTH;
@@ -478,8 +478,8 @@ push_info_button(struct dialog_data *dlg_data, struct widget_data *button)
 {
 	struct listbox_data *box = get_dlg_listbox_data(dlg_data);
 	struct terminal *term = dlg_data->win->term;
-	struct session *ses = dlg_data->dlg->udata;
-	struct file_download *file_download = box->sel ? box->sel->udata : NULL;
+	struct session *ses = (struct session *)dlg_data->dlg->udata;
+	struct file_download *file_download = (struct file_download *)(box->sel ? box->sel->udata : NULL);
 
 	assert(ses);
 

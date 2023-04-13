@@ -13,8 +13,29 @@
 
 #include "elinks.h"
 
-#include "intl/gettext/libintl.h"
+#ifdef CONFIG_BROTLI
+#include "encoding/brotli.h"
+#endif
+#ifdef CONFIG_GZIP
+#include "encoding/gzip.h"
+#endif
+#ifdef CONFIG_BZIP2
+#include "encoding/bzip2.h"
+#endif
+#ifdef CONFIG_LZMA
+#include "encoding/lzma.h"
+#endif
+#ifdef CONFIG_ZSTD
+#include "encoding/zstd.h"
+#endif
+
+#if defined(CONFIG_MOUSE) && defined(CONFIG_GPM)
+#include <gpm.h>
+#endif
+
+#include "intl/libintl.h"
 #include "main/module.h"
+#include "main/select.h"
 #include "main/version.h"
 #include "terminal/terminal.h"
 #include "util/error.h"
@@ -64,8 +85,8 @@ add_modules_to_string(struct string *string, struct terminal *term)
 static void
 wrap_string(struct string *string, int start_at, int maxlen)
 {
-	unsigned char *pos, *start_pos;
-	unsigned char *last_pos = NULL;
+	char *pos, *start_pos;
+	char *last_pos = NULL;
 
 	assert(string && string->source && start_at < string->length);
 	if_assert_failed return;
@@ -73,7 +94,7 @@ wrap_string(struct string *string, int start_at, int maxlen)
 	if (maxlen <= 0) return;
 
 	pos = start_pos = &string->source[start_at];
-	while ((pos = strchr((const char *)pos, ' '))) {
+	while ((pos = strchr(pos, ' '))) {
 		int len = pos - start_pos;
 
 		if (len < maxlen) {
@@ -88,10 +109,10 @@ wrap_string(struct string *string, int start_at, int maxlen)
 }
 
 /* @more will add more information especially for info box. */
-unsigned char *
+char *
 get_dyn_full_version(struct terminal *term, int more)
 {
-	static const unsigned char comma[] = ", ";
+	static unsigned char comma[] = ", ";
 	struct string string;
 
 	if (!init_string(&string)) return NULL;
@@ -103,9 +124,10 @@ get_dyn_full_version(struct terminal *term, int more)
 	}
 
 	add_char_to_string(&string, '\n');
+#ifndef CONFIG_REPRODUCIBLE
 	add_format_to_string(&string, _("Built on %s %s", term),
 			     build_date, build_time);
-
+#endif
 	if (more) {
 		add_to_string(&string, "\n\n");
 		add_to_string(&string, _("Text WWW browser", term));
@@ -132,22 +154,29 @@ get_dyn_full_version(struct terminal *term, int more)
 		comma, "IPv6",
 #endif
 #ifdef CONFIG_BROTLI
-		comma, "brotli",
+		comma, "brotli(", get_brotli_version(),")",
 #endif
 #ifdef CONFIG_GZIP
-		comma, "gzip",
+		comma, "gzip(", get_gzip_version(),")",
 #endif
 #ifdef CONFIG_BZIP2
-		comma, "bzip2",
+		comma, "bzip2(", get_bzip2_version(), ")",
 #endif
 #ifdef CONFIG_LZMA
-		comma, "lzma",
+		comma, "lzma(", get_lzma_version(), ")",
 #endif
 #ifdef CONFIG_ZSTD
-		comma, "zstd",
+		comma, "zstd(", get_zstd_version(), ")",
 #endif
 #ifndef CONFIG_MOUSE
 		comma, _("No mouse", term),
+#else
+#ifdef CONFIG_GPM
+		comma, "gpm(", Gpm_GetLibVersion(NULL), ")",
+#endif
+#ifdef CONFIG_SYSMOUSE
+		comma, "sysmouse",
+#endif
 #endif
 #ifdef CONFIG_UTF8
 		comma, "UTF-8",
@@ -156,23 +185,23 @@ get_dyn_full_version(struct terminal *term, int more)
 		comma, _("Combining characters", term),
 #endif
 #ifdef CONFIG_LIBEV
-		comma, (event_enabled ? _("libev", term) : _("libev (disabled)", term)),
+		comma, (event_enabled ? _("libev", term) : _("libev (disabled)", term)), "(", get_libevent_version(), ")",
 #endif
 #ifdef CONFIG_LIBEVENT
-		comma, (event_enabled ? _("libevent", term) : _("libevent (disabled)", term)),
+		comma, (event_enabled ? _("libevent", term) : _("libevent (disabled)", term)), "(", get_libevent_version(), ")",
 #endif
 #ifdef CONFIG_TERMINFO
 		comma, (get_cmd_opt_bool("terminfo") ? _("terminfo", term) : _("terminfo (disabled)", term)),
 #endif
 		comma,
-		(unsigned char *) NULL
+		(char *) NULL
 	);
 
 	add_modules_to_string(&string, term);
 
 	if (!more) {
 		int start_at = 0;
-		unsigned char *last_newline = strrchr((const char *)string.source, '\n');
+		char *last_newline = strrchr(string.source, '\n');
 
 		if (last_newline) {
 			start_at = last_newline - string.source + 1;
@@ -188,7 +217,7 @@ get_dyn_full_version(struct terminal *term, int more)
 void
 init_static_version(void)
 {
-	unsigned char *s = get_dyn_full_version((struct terminal *) NULL, 0);
+	char *s = get_dyn_full_version((struct terminal *) NULL, 0);
 
 	if (s) {
 		safe_strncpy(full_static_version, s, sizeof(full_static_version));

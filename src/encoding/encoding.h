@@ -13,7 +13,6 @@ enum stream_encoding {
 	ENCODING_GZIP,
 	ENCODING_BZIP2,
 	ENCODING_LZMA,
-	ENCODING_DEFLATE,
 	ENCODING_BROTLI,
 	ENCODING_ZSTD,
 
@@ -21,28 +20,30 @@ enum stream_encoding {
 	ENCODINGS_KNOWN,
 };
 
+typedef unsigned char stream_encoding_T;
+
 struct stream_encoded {
-	enum stream_encoding encoding;
+	stream_encoding_T encoding;
 	void *data;
 };
 
 struct decoding_backend {
-	const unsigned char *name;
-	const unsigned char *const *extensions;
-	int (*open)(struct stream_encoded *stream, int fd);
-	int (*read)(struct stream_encoded *stream, unsigned char *data, int len);
-	unsigned char *(*decode_buffer)(struct stream_encoded *stream, unsigned char *data, int len, int *new_len);
-	void (*close)(struct stream_encoded *stream);
+	const char *name;
+	const char *const *extensions;
+	int (*eopen)(struct stream_encoded *stream, int fd);
+	int (*eread)(struct stream_encoded *stream, char *data, int len);
+	char *(*decode_buffer)(struct stream_encoded *stream, char *data, int len, int *new_len);
+	void (*eclose)(struct stream_encoded *stream);
 };
 
-struct stream_encoded *open_encoded(int, enum stream_encoding);
-int read_encoded(struct stream_encoded *, unsigned char *, int);
-unsigned char *decode_encoded_buffer(struct stream_encoded *stream, enum stream_encoding encoding, unsigned char *data, int len, int *new_len);
+struct stream_encoded *open_encoded(int, stream_encoding_T);
+int read_encoded(struct stream_encoded *, char *, int);
+char *decode_encoded_buffer(struct stream_encoded *stream, stream_encoding_T encoding, char *data, int len, int *new_len);
 void close_encoded(struct stream_encoded *);
 
-const unsigned char *const *listext_encoded(enum stream_encoding);
-enum stream_encoding guess_encoding(unsigned char *filename);
-const unsigned char *get_encoding_name(enum stream_encoding encoding);
+const char *const *listext_encoded(stream_encoding_T);
+stream_encoding_T guess_encoding(char *filename);
+const char *get_encoding_name(stream_encoding_T encoding);
 
 /* Read from open @stream into the @page string */
 struct connection_state

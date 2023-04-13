@@ -17,7 +17,7 @@
 #include "bfu/inpfield.h"
 #include "bfu/menu.h"
 #include "config/kbdbind.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "session/session.h"
 #include "terminal/draw.h"
 #include "terminal/event.h"
@@ -54,7 +54,7 @@
 /* Types and structures */
 
 /* Submenu indicator, displayed at right. */
-static unsigned char m_submenu[] = ">>";
+static char m_submenu[] = ">>";
 static int m_submenu_len = sizeof(m_submenu) - 1;
 
 /* Prototypes */
@@ -111,7 +111,7 @@ void
 do_menu_selected(struct terminal *term, struct menu_item *items,
 		 void *data, int selected, int hotkeys)
 {
-	struct menu *menu = mem_calloc(1, sizeof(*menu));
+	struct menu *menu = (struct menu *)mem_calloc(1, sizeof(*menu));
 
 	if (menu) {
 		menu->selected = selected;
@@ -141,7 +141,7 @@ select_menu_item(struct terminal *term, struct menu_item *it, void *data)
 	/* We save these values due to delete_window() call below. */
 	menu_func_T func = it->func;
 	void *it_data = it->data;
-	enum main_action action_id = it->action_id;
+	main_action_T action_id = it->action_id;
 
 	if (!mi_is_selectable(it)) return;
 
@@ -150,14 +150,14 @@ select_menu_item(struct terminal *term, struct menu_item *it, void *data)
 		it->flags &= ~FREE_DATA;
 
 		while (!list_empty(term->windows)) {
-			struct window *win = term->windows.next;
+			struct window *win = (struct window *)term->windows.next;
 
 			if (win->handler != menu_handler
 			    && win->handler != mainmenu_handler)
 				break;
 
 			if (win->handler == mainmenu_handler) {
-				deselect_mainmenu(term, win->data);
+				deselect_mainmenu(term, (struct menu *)win->data);
 				redraw_terminal(term);
 			} else
 				delete_window(win);
@@ -165,7 +165,7 @@ select_menu_item(struct terminal *term, struct menu_item *it, void *data)
 	}
 
 	if (action_id != ACT_MAIN_NONE && !func) {
-		struct session *ses = data;
+		struct session *ses = (struct session *)data;
 
 		do_action(ses, action_id, 1);
 		return;
@@ -190,7 +190,7 @@ select_menu(struct terminal *term, struct menu *menu)
 static int
 get_menuitem_text_width(struct terminal *term, struct menu_item *mi)
 {
-	unsigned char *text;
+	char *text;
 
 	if (!mi_has_left_text(mi)) return 0;
 
@@ -229,7 +229,7 @@ get_menuitem_rtext_width(struct terminal *term, struct menu_item *mi)
 		}
 
 	} else if (mi_has_right_text(mi)) {
-		unsigned char *rtext = mi->rtext;
+		char *rtext = mi->rtext;
 
 		if (mi_rtext_translate(mi))
 			rtext = _(rtext, term);
@@ -371,7 +371,7 @@ set_menu_selection(struct menu *menu, int pos)
  *         separators). For double-width glyph width == 2.
  * len - length of text in bytes */
 static inline void
-draw_menu_left_text(struct terminal *term, unsigned char *text, int len,
+draw_menu_left_text(struct terminal *term, char *text, int len,
 		    int x, int y, int width, struct color_pair *color)
 {
 	int w = width - (L_TEXT_SPACE + R_TEXT_SPACE);
@@ -398,20 +398,20 @@ draw_menu_left_text(struct terminal *term, unsigned char *text, int len,
 
 
 static inline void
-draw_menu_left_text_hk(struct terminal *term, unsigned char *text,
+draw_menu_left_text_hk(struct terminal *term, char *text,
 		       int hotkey_pos, int x, int y, int width,
 		       struct color_pair *color, int selected)
 {
 	struct color_pair *hk_color = get_bfu_color(term, "menu.hotkey.normal");
 	struct color_pair *hk_color_sel = get_bfu_color(term, "menu.hotkey.selected");
-	enum screen_char_attr hk_attr = get_opt_bool("ui.dialogs.underline_hotkeys", NULL)
+	screen_char_attr_T hk_attr = get_opt_bool("ui.dialogs.underline_hotkeys", NULL)
 				      ? SCREEN_ATTR_UNDERLINE : 0;
 	unsigned char c;
 	int xbase = x + L_TEXT_SPACE;
 	int w = width - (L_TEXT_SPACE + R_TEXT_SPACE);
 	int hk_state = 0;
 #ifdef CONFIG_UTF8
-	unsigned char *text2, *end;
+	char *text2, *end;
 #endif
 
 #ifdef CONFIG_DEBUG
@@ -456,7 +456,7 @@ draw_menu_left_text_hk(struct terminal *term, unsigned char *text,
 
 #ifdef CONFIG_UTF8
 utf8:
-	end = strchr((const char *)text, '\0');
+	end = strchr(text, '\0');
 	text2 = text;
 	for (x = 0; x - !!hk_state < w && *text2; x++) {
 		unicode_val_T data;
@@ -521,7 +521,7 @@ utf8:
 }
 
 static inline void
-draw_menu_right_text(struct terminal *term, unsigned char *text, int len,
+draw_menu_right_text(struct terminal *term, char *text, int len,
 		     int x, int y, int width, struct color_pair *color)
 {
 	int w = width - (L_RTEXT_SPACE + R_RTEXT_SPACE);
@@ -611,7 +611,7 @@ display_menu(struct terminal *term, struct menu *menu)
 
 		if (mi_has_left_text(mi)) {
 			int l = mi->hotkey_pos;
-			unsigned char *text = mi->text;
+			char *text = mi->text;
 
 			if (mi_text_translate(mi))
 				text = _(text, term);
@@ -658,7 +658,7 @@ display_menu(struct terminal *term, struct menu *menu)
 			}
 
 		} else if (mi_has_right_text(mi)) {
-			unsigned char *rtext = mi->rtext;
+			char *rtext = mi->rtext;
 
 			if (mi_rtext_translate(mi))
 				rtext = _(rtext, term);
@@ -714,7 +714,7 @@ menu_mouse_handler(struct menu *menu, struct term_event *ev)
 
 				if (w1->handler != menu_handler) break;
 
-				m1 = w1->data;
+				m1 = (struct menu *)w1->data;
 
 				if (check_mouse_position(ev, &m1->box)) {
 					delete_window_ev(win, ev);
@@ -781,10 +781,10 @@ menu_page_down(struct menu *menu)
 #undef DIST
 
 static inline int
-search_menu_item(struct menu_item *item, unsigned char *buffer,
+search_menu_item(struct menu_item *item, char *buffer,
 		 struct terminal *term)
 {
-	unsigned char *text, *match;
+	char *text, *match;
 
 	/* set_menu_selection asserts selectability. */
 	if (!mi_has_left_text(item) || !mi_is_selectable(item)) return 0;
@@ -795,11 +795,11 @@ search_menu_item(struct menu_item *item, unsigned char *buffer,
 	text = stracpy(text);
 	if (!text) return 0;
 
-	match = strchr((const char *)text, '~');
+	match = strchr(text, '~');
 	if (match)
 		memmove(match, match + 1, strlen(match));
 
-	match = strcasestr((const char *)text, (const char *)buffer);
+	match = strcasestr(text, buffer);
 	mem_free(text);
 
 	return !!match;
@@ -808,9 +808,9 @@ search_menu_item(struct menu_item *item, unsigned char *buffer,
 static enum input_line_code
 menu_search_handler(struct input_line *line, int action_id)
 {
-	struct menu *menu = line->data;
+	struct menu *menu = (struct menu *)line->data;
 	struct terminal *term = menu->win->term;
-	unsigned char *buffer = line->buffer;
+	char *buffer = line->buffer;
 	struct window *win;
 	int pos = menu->selected;
 	int start;
@@ -824,7 +824,7 @@ menu_search_handler(struct input_line *line, int action_id)
 		/* XXX: The input line dialog window is above the menu window.
 		 * Remove it from the top, so that select_menu() will correctly
 		 * remove all the windows it has to and then readd it. */
-		win = term->windows.next;
+		win = (struct window *)term->windows.next;
 		del_from_list(win);
 		select_menu(term, menu);
 		add_to_list(term->windows, win);
@@ -870,8 +870,8 @@ search_menu(struct menu *menu)
 {
 	struct terminal *term = menu->win->term;
 	struct window *current_tab = get_current_tab(term);
-	struct session *ses = current_tab ? current_tab->data : NULL;
-	unsigned char *prompt = _("Search menu/", term);
+	struct session *ses = (struct session *)(current_tab ? current_tab->data : NULL);
+	char *prompt = _("Search menu/", term);
 
 	if (menu->size < 1 || !ses) return;
 
@@ -882,7 +882,7 @@ static void
 menu_kbd_handler(struct menu *menu, struct term_event *ev)
 {
 	struct window *win = menu->win;
-	enum menu_action action_id = kbd_action(KEYMAP_MENU, ev, NULL);
+	action_id_T action_id = kbd_action(KEYMAP_MENU, ev, NULL);
 	int s = 0;
 
 	switch (action_id) {
@@ -894,7 +894,7 @@ menu_kbd_handler(struct menu *menu, struct term_event *ev)
 
 				delete_window_ev(win, ev);
 
-				select_menu(next_win->term, next_win->data);
+				select_menu(next_win->term, (struct menu *)next_win->data);
 
 				return;
 			}
@@ -999,7 +999,7 @@ enter:
 static void
 menu_handler(struct window *win, struct term_event *ev)
 {
-	struct menu *menu = win->data;
+	struct menu *menu = (struct menu *)win->data;
 
 	menu->win = win;
 
@@ -1042,7 +1042,7 @@ do_mainmenu(struct terminal *term, struct menu_item *items,
 	struct window *win;
 
 	if (!term->main_menu) {
-		term->main_menu = mem_calloc(1, sizeof(*menu));
+		term->main_menu = (struct menu *)mem_calloc(1, sizeof(*menu));
 		if (!term->main_menu) return;
 		init = 1;
 	}
@@ -1127,7 +1127,7 @@ display_mainmenu(struct terminal *term, struct menu *menu)
 	for (i = menu->first; i < menu->size; i++) {
 		struct menu_item *mi = &menu->items[i];
 		struct color_pair *color = normal_color;
-		unsigned char *text = mi->text;
+		char *text = mi->text;
 		int l = mi->hotkey_pos;
 		int textlen;
 		int selected = (i == menu->selected);
@@ -1248,7 +1248,7 @@ mainmenu_mouse_handler(struct menu *menu, struct term_event *ev)
 		/* We don't initialize to menu->first here, since it breaks
 		 * horizontal scrolling using mouse in some cases. --Zas */
 		foreach_menu_item (item, menu->items) {
-			unsigned char *text = item->text;
+			char *text = item->text;
 
 			if (!mi_has_left_text(item)) continue;
 
@@ -1285,7 +1285,7 @@ static void
 mainmenu_kbd_handler(struct menu *menu, struct term_event *ev)
 {
 	struct window *win = menu->win;
-	enum menu_action action_id = kbd_action(KEYMAP_MENU, ev, NULL);
+	action_id_T action_id = kbd_action(KEYMAP_MENU, ev, NULL);
 
 	switch (action_id) {
 	case ACT_MENU_ENTER:
@@ -1345,7 +1345,7 @@ mainmenu_kbd_handler(struct menu *menu, struct term_event *ev)
 static void
 mainmenu_handler(struct window *win, struct term_event *ev)
 {
-	struct menu *menu = win->data;
+	struct menu *menu = (struct menu *)win->data;
 
 	menu->win = win;
 
@@ -1376,7 +1376,7 @@ mainmenu_handler(struct window *win, struct term_event *ev)
 	mem_align_alloc(mi_, size, (size) + 2, 0xF)
 
 struct menu_item *
-new_menu(enum menu_item_flags flags)
+new_menu(menu_item_flags_T flags)
 {
 	struct menu_item *mi = NULL;
 
@@ -1386,13 +1386,13 @@ new_menu(enum menu_item_flags flags)
 }
 
 void
-add_to_menu(struct menu_item **mi, unsigned char *text, unsigned char *rtext,
-	    enum main_action action_id, menu_func_T func, void *data,
-	    enum menu_item_flags flags)
+add_to_menu(struct menu_item **mi, const char *text, const char *rtext,
+	    main_action_T action_id, menu_func_T func, void *data,
+	    menu_item_flags_T flags)
 {
 	int n = count_items(*mi);
 	/* XXX: Don't clear the last and special item. */
-	struct menu_item *item = realloc_menu_items(mi, n + 1);
+	struct menu_item *item = (struct menu_item *)realloc_menu_items(mi, n + 1);
 
 	if (!item) return;
 

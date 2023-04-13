@@ -4,12 +4,11 @@
 #include "config.h"
 #endif
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "scripting/python/pythoninc.h"
 
 #include "elinks.h"
 
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "protocol/uri.h"
 #include "scripting/python/core.h"
 #include "scripting/python/open.h"
@@ -41,10 +40,15 @@ background -- By default a new tab is opened in the foreground. If\n\
 PyObject *
 python_open(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	unsigned char *url;
+	char *url;
 	int new_tab = 0, background = 0;
 	struct uri *uri;
-	static char *kwlist[] = {"url", "new_tab", "background", NULL};
+
+	static char s_url[] = "url";
+	static char s_new_tab[] = "new_tab";
+	static char s_background[] = "background";
+
+	static char *kwlist[] = {s_url, s_new_tab, s_background, NULL};
 
 	if (!python_ses) {
 		PyErr_SetString(python_elinks_err, "No session");

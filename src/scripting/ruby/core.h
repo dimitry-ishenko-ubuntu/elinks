@@ -1,7 +1,7 @@
-
 #ifndef EL__SCRIPTING_RUBY_CORE_H
 #define EL__SCRIPTING_RUBY_CORE_H
 
+#undef _GNU_SOURCE
 #include <ruby.h>	/* for VALUE */
 
 #ifdef __cplusplus
@@ -27,7 +27,7 @@ struct session;
 
 extern VALUE erb_module;
 
-void alert_ruby_error(struct session *ses, unsigned char *msg);
+void alert_ruby_error(struct session *ses, const char *msg);
 void erb_report_error(struct session *ses, int state);
 
 void init_ruby(struct module *module);

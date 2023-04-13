@@ -111,7 +111,7 @@ struct dom_stack_context {
 	 * parser this holds DTD-oriented info about the node (recorded in
 	 * struct #sgml_node_info). E.g.  whether an element node is optional.
 	 */
-	unsigned char *state_objects;
+	char *state_objects;
 
 	/** Info about node callbacks and such. */
 	struct dom_stack_context_info *info;
@@ -138,7 +138,7 @@ struct dom_stack {
 	size_t depth;
 
 	/** Flags given to ref:[init_dom_stack]. */
-	enum dom_stack_flag flags;
+	/*enum dom_stack_flag*/ unsigned int flags;
 
 	/** Contexts for the pushed and popped nodes. */
 	struct dom_stack_context **contexts;
@@ -246,7 +246,7 @@ extern struct dom_stack_context_info dom_stack_trace_context_info;
  * @param stack		Pointer to a (preallocated) stack.
  * @param flags		Any flags needed for controlling the behaviour of the stack.
  */
-void init_dom_stack(struct dom_stack *stack, enum dom_stack_flag flags);
+void init_dom_stack(struct dom_stack *stack, /*enum dom_stack_flag*/ unsigned int flags);
 
 /** Release a DOM stack
  *

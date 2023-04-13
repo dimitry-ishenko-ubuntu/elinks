@@ -25,7 +25,7 @@
 #include "document/renderer.h"
 #include "document/view.h"
 #include "intl/charsets.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/select.h"
 #include "main/main.h"
 #include "network/connection.h"
@@ -35,6 +35,7 @@
 #include "protocol/protocol.h"
 #include "protocol/uri.h"
 #include "session/download.h"
+#include "session/session.h"
 #include "terminal/color.h"
 #include "terminal/hardio.h"
 #include "terminal/terminal.h"
@@ -81,7 +82,7 @@ struct dump_output {
 #endif
 
 	/** Bytes waiting to be flushed.  */
-	unsigned char buf[D_BUF];
+	char buf[D_BUF];
 };
 
 /** Mapping from CP437 box-drawing characters to simpler CP437 characters.
@@ -131,7 +132,7 @@ dump_output_prepare_frame(struct dump_output *out, int to_cp)
 		     subst >= FRAME_CHARS_BEGIN && subst < FRAME_CHARS_END;
 		     subst = frame_simplify[subst - FRAME_CHARS_BEGIN]) {
 			unicode_val_T ucs = cp2u(cp437, subst);
-			const unsigned char *result = u2cp_no_nbsp(ucs, to_cp);
+			const char *result = u2cp_no_nbsp(ucs, to_cp);
 
 			if (result && cp2u(to_cp, result[0]) == ucs
 			    && !result[1]) {
@@ -172,7 +173,7 @@ dump_output_alloc(int fd, struct string *string, int cp)
 	assert((fd == -1) ^ (string == NULL));
 	if_assert_failed return NULL;
 
-	out = mem_alloc(sizeof(*out));
+	out = (struct dump_output *)mem_alloc(sizeof(*out));
 	if (out) {
 		out->fd = fd;
 		out->string = string;
@@ -208,6 +209,48 @@ dump_output_flush(struct dump_output *out)
 }
 
 static int
+is_start_of_link(struct document *document, int x, int y, int *current_link_number, struct link **ret)
+{
+	int i = *current_link_number;
+
+	for (; i < document->nlinks; i++) {
+		struct link *link = &document->links[i];
+
+		if (link->points[0].x == x && link->points[0].y == y) {
+			*current_link_number = i;
+			*ret = link;
+			return 1;
+		}
+
+		if (link->points[0].y > y) {
+			break;
+		}
+	}
+	return 0;
+}
+
+static int
+is_end_of_link(struct document *document, int x, int y, int *current_link_number, struct link **ret)
+{
+	int i = *current_link_number;
+
+	for (; i < document->nlinks; i++) {
+		struct link *link = &document->links[i];
+
+		if (link->points[link->npoints - 1].x == x && link->points[link->npoints - 1].y == y) {
+			*current_link_number = i;
+			*ret = link;
+			return 1;
+		}
+
+		if (link->points[0].y > y) {
+			break;
+		}
+	}
+	return 0;
+}
+
+static int
 write_char(unsigned char c, struct dump_output *out)
 {
 	if (out->bufpos >= D_BUF) {
@@ -219,11 +262,34 @@ write_char(unsigned char c, struct dump_output *out)
 	return 0;
 }
 
+static void
+write_start_of_link(struct link *link, struct dump_output *out)
+{
+	char buf[D_BUF];
+	char *where = link->where ?: link->where_img;
+
+	snprintf(buf, D_BUF, "\033]8;;%s\033\\", where);
+
+	for (char *st = buf; *st; st++) {
+		write_char(*st, out);
+	}
+}
+
+static void
+write_end_of_link(struct dump_output *out)
+{
+	char buf[] = "\033]8;;\033\\";
+
+	for (char *st = buf; *st; st++) {
+		write_char(*st, out);
+	}
+}
+
 static int
 write_color_16(unsigned char color, struct dump_output *out)
 {
-	unsigned char bufor[] = "\033[0;30;40m";
-	unsigned char *data = bufor;
+	char bufor[] = "\033[0;30;40m";
+	char *data = bufor;
 	int background = (color >> 4) & 7;
 	int foreground = color & 7;
 
@@ -255,11 +321,11 @@ write_color_16(unsigned char color, struct dump_output *out)
 #if defined(CONFIG_88_COLORS) || defined(CONFIG_256_COLORS)
 
 static int
-write_color_256(const unsigned char *str, unsigned char color,
+write_color_256(const char *str, unsigned char color,
 		struct dump_output *out)
 {
-	unsigned char bufor[16];
-	unsigned char *data = bufor;
+	char bufor[16];
+	char *data = bufor;
 
 	snprintf(bufor, 16, "\033[%s;5;%dm", str, color);
 	while(*data) {
@@ -283,11 +349,11 @@ write_color_256(const unsigned char *str, unsigned char color,
 #ifdef CONFIG_TRUE_COLOR
 
 static int
-write_true_color(const unsigned char *str, const unsigned char *color,
+write_true_color(const char *str, const unsigned char *color,
 		 struct dump_output *out)
 {
-	unsigned char bufor[24];
-	unsigned char *data = bufor;
+	char bufor[24];
+	char *data = bufor;
 
 	snprintf(bufor, 24, "\033[%s;2;%d;%d;%dm", str, color[0], color[1], color[2]);
 	while(*data) {
@@ -320,23 +386,24 @@ write_true_color(const unsigned char *str, const unsigned char *color,
 
 /*! @return 0 on success, -1 on error */
 static int
-dump_references(struct document *document, int fd, unsigned char buf[D_BUF])
+dump_references(struct document *document, int fd, char buf[D_BUF])
 {
 	if (document->nlinks
 	    && get_opt_bool("document.dump.references", NULL)) {
-		unsigned char key_sym[64] = {0};
+		char key_sym[64] = {0};
 		int x;
-		unsigned char *header = "\nReferences\n\n   Visible links\n";
-		const unsigned char *label_key = get_opt_str("document.browse.links.label_key", NULL);
+		const char *header = "\nReferences\n\n   Visible links\n";
+		const char *label_key = get_opt_str("document.browse.links.label_key", NULL);
 		int headlen = strlen(header);
 		int base = strlen(label_key);
+		int dumplinks = get_opt_bool("document.dump.terminal_hyperlinks", NULL);
 
 		if (hard_write(fd, header, headlen) != headlen)
 			return -1;
 
 		for (x = 0; x < document->nlinks; x++) {
 			struct link *link = &document->links[x];
-			unsigned char *where = link->where;
+			char *where = link->where ?: link->where_img;
 			size_t reflen;
 
 			if (!where) continue;
@@ -345,18 +412,40 @@ dump_references(struct document *document, int fd, unsigned char buf[D_BUF])
 
 				dec2qwerty(x + 1, key_sym, label_key, base);
 
-				if (link->title && *link->title)
-					snprintf(buf, D_BUF, "%4s. %s\n\t%s\n",
+				if (link->title && *link->title) {
+					if (dumplinks) {
+						snprintf(buf, D_BUF, "%4s. \033]8;;%s\033\\%s\033]8;;\033\\\n",
+						 key_sym, where, link->title);
+					} else {
+						snprintf(buf, D_BUF, "%4s. %s\n\t%s\n",
 						 key_sym, link->title, where);
-				else
-					snprintf(buf, D_BUF, "%4s. %s\n",
+					}
+				} else {
+					if (dumplinks) {
+						snprintf(buf, D_BUF, "%4s. \033]8;;%s\033\\%s\033]8;;\033\\\n",
+						 key_sym, where, where);
+					} else {
+						snprintf(buf, D_BUF, "%4s. %s\n",
 						 key_sym, where);
+					}
+				}
 			} else {
-				if (link->title && *link->title)
-					snprintf(buf, D_BUF, "   . %s\n\t%s\n",
+				if (link->title && *link->title) {
+					if (dumplinks) {
+						snprintf(buf, D_BUF, "   . \033]8;;%s\033\\%s\033]8;;\033\\\n",
+						 where, link->title);
+					} else {
+						snprintf(buf, D_BUF, "   . %s\n\t%s\n",
 						 link->title, where);
-				else
-					snprintf(buf, D_BUF, "   . %s\n", where);
+					}
+				} else {
+					if (dumplinks) {
+						snprintf(buf, D_BUF, "   . \033]8;;%s\033\\%s\033]8;;\033\\\n",
+						 where, where);
+					} else {
+						snprintf(buf, D_BUF, "   . %s\n", where);
+					}
+				}
 			}
 
 			reflen = strlen(buf);
@@ -409,6 +498,10 @@ dump_formatted(int fd, struct download *download, struct cache_entry *cached)
 	o.frames = 0;
 	o.links_numbering = get_opt_bool("document.dump.numbering", NULL);
 	o.dump = 1;
+
+#ifdef CONFIG_SCRIPTING
+	maybe_pre_format_html(cached, NULL);
+#endif
 
 	init_vs(&vs, cached->uri, -1);
 
@@ -488,7 +581,7 @@ nextfrag:
 
 			if (w < 0)
 				ERROR(gettext("Can't write to stdout: %s"),
-				      (unsigned char *) strerror(errno));
+				      (char *) strerror(errno));
 			else
 				ERROR(gettext("Can't write to stdout."));
 
@@ -504,8 +597,8 @@ nextfrag:
 	return 0;
 }
 
-static unsigned char *
-subst_url(unsigned char *str, struct string *url)
+static char *
+subst_url(char *str, struct string *url)
 {
 	struct string string;
 
@@ -560,12 +653,12 @@ subst_url(unsigned char *str, struct string *url)
 }
 
 static void
-dump_print(unsigned char *option, struct string *url)
+dump_print(const char *option, struct string *url)
 {
-	unsigned char *str = get_opt_str(option, NULL);
+	char *str = get_opt_str(option, NULL);
 
 	if (str) {
-		unsigned char *realstr = subst_url(str, url);
+		char *realstr = subst_url(str, url);
 
 		if (realstr) {
 			printf("%s", realstr);
@@ -620,9 +713,9 @@ terminate:
 }
 
 static void
-dump_start(unsigned char *url)
+dump_start(char *url)
 {
-	unsigned char *wd = get_cwd();
+	char *wd = get_cwd();
 	struct uri *uri = get_translated_uri(url, wd);
 
 	mem_free_if(wd);
@@ -655,7 +748,7 @@ dump_next(LIST_OF(struct string_list_item) *url_list)
 	if (url_list) {
 		/* Steal all them nice list items but keep the same order */
 		while (!list_empty(*url_list)) {
-			item = url_list->next;
+			item = (struct string_list_item *)url_list->next;
 			del_from_list(item);
 			add_to_list_end(todo_list, item);
 		}
@@ -667,7 +760,7 @@ dump_next(LIST_OF(struct string_list_item) *url_list)
 
 		program.terminate = 0;
 
-		item = todo_list.next;
+		item = (struct string_list_item *)todo_list.next;
 		del_from_list(item);
 		add_to_list(done_list, item);
 

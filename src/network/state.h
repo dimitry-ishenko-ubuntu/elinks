@@ -13,6 +13,7 @@ enum connection_priority {
 	PRI_MAIN	= 0,
 	PRI_DOWNLOAD	= 0,
 	PRI_FRAME,
+	PRI_IFRAME,
 	PRI_CSS,
 	PRI_NEED_IMG,
 	PRI_IMG,
@@ -20,6 +21,8 @@ enum connection_priority {
 	PRI_CANCEL,
 	PRIORITIES,
 };
+
+typedef unsigned char connection_priority_T;
 
 #define is_system_error(state)		((state).basic == S_ERRNO)
 #define is_in_state(state,basic_)       ((state).basic == (basic_))
@@ -113,26 +116,28 @@ enum connection_basic_state {
 	S_FSP_OPEN_SESSION_UNKN = -100900,
 };
 
+typedef int connection_basic_state_T;
+
 /** Either an ELinks internal status code or an error code from the
  * system.  Use connection_state() or connection_state_for_errno()
  * to construct objects of this type.  */
 struct connection_state {
 	/** An ELinks internal status code, or ::S_ERRNO if this
 	 * structure holds a system error instead.  */
-	enum connection_basic_state basic;
+	connection_basic_state_T basic;
 
 	/** When #basic is ::S_ERRNO, syserr is the saved value of
 	 * errno.  Otherwise, syserr should be 0.  */
 	int syserr;
 };
 
-unsigned char *get_state_message(struct connection_state state, struct terminal *term);
+char *get_state_message(struct connection_state state, struct terminal *term);
 void done_state_message(void);
 
 static inline struct connection_state
-connection_state(enum connection_basic_state basic)
+connection_state(connection_basic_state_T basic)
 {
-	struct connection_state state = {0};
+	struct connection_state state = {};
 
 	assert(basic != S_ERRNO);
 	if_assert_failed basic = S_INTERNAL;
@@ -144,7 +149,7 @@ connection_state(enum connection_basic_state basic)
 static inline struct connection_state
 connection_state_for_errno(int syserr)
 {
-	struct connection_state state = {0};
+	struct connection_state state = {};
 
 	/* read_encoded_file() can pass syserr==0 here, so don't
 	 * assert otherwise.  */

@@ -16,9 +16,7 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#ifdef HAVE_TIME_H
 #include <time.h>
-#endif
 
 /* Blame BSD for position of this includes. */
 #ifdef HAVE_NETINET_IN_H
@@ -43,7 +41,7 @@
 
 #include "config/home.h"
 #include "config/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/interlink.h"
 #include "main/main.h"
 #include "main/select.h"
@@ -179,7 +177,7 @@ get_address(struct socket_info *info, enum addr_type type)
 		goto free_and_error;
 	}
 
-	addr = mem_calloc(1, sizeof(*addr));
+	addr = (struct sockaddr_un *)mem_calloc(1, sizeof(*addr));
 	if (!addr) goto free_and_error;
 
 	memcpy(addr->sun_path, path.source, path.length); /* ending '\0' is done by calloc() */
@@ -213,7 +211,7 @@ alloc_address(struct socket_info *info)
 	if_assert_failed return 0;
 
 	/* calloc() is safer there. */
-	sa = mem_calloc(1, sizeof(*sa));
+	sa = (struct sockaddr_un *)mem_calloc(1, sizeof(*sa));
 	if (!sa) return 0;
 
 	info->addr = (struct sockaddr *) sa;
@@ -264,7 +262,7 @@ get_address(struct socket_info *info, enum addr_type type)
 	if (port < IPPORT_USERRESERVED)
 		return -1; /* Just in case of... */
 
-	sin = mem_calloc(1, sizeof(*sin));
+	sin = (struct sockaddr_in *)mem_calloc(1, sizeof(*sin));
 	if (!sin) return -1;
 
 	sin->sin_family = AF_INET;
@@ -286,7 +284,7 @@ alloc_address(struct socket_info *info)
 	if_assert_failed return 0;
 
 	/* calloc() is safer there. */
-	sa = mem_calloc(1, sizeof(*sa));
+	sa = (struct sockaddr_in *)mem_calloc(1, sizeof(*sa));
 	if (!sa) return 0;
 
 	info->addr = (struct sockaddr *) sa;
@@ -327,10 +325,10 @@ setsock_reuse_addr(int fd)
 #define CONNECT_TRIES_DELAY		50000
 
 static void
-report_af_unix_error(unsigned char *function, int error)
+report_af_unix_error(const char *function, int error)
 {
 	ERROR(gettext("The call to %s failed: %d (%s)"),
-	      function, error, (unsigned char *) strerror(error));
+	      function, error, (char *) strerror(error));
 }
 
 /* Called when we receive a connection on listening socket. */
@@ -338,7 +336,7 @@ static void
 af_unix_connection(struct socket_info *info)
 {
 	int ns;
-	int l;
+	socklen_t l;
 
 	assert(info);
 	if_assert_failed return;
@@ -371,7 +369,7 @@ elinks_usleep(unsigned long useconds)
 
 	delay.tv_sec = 0;
 	delay.tv_usec = useconds;
-	select(0, &dummy1, &dummy2, &dummy3, &delay);
+	select2(0, &dummy1, &dummy2, &dummy3, &delay);
 }
 
 /* Listen on socket for internal ELinks communication.

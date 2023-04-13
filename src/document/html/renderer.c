@@ -4,11 +4,17 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
 /* Our current implementation of combining characters requires
  * wcwidth().  Therefore the configure script should have disabled
  * CONFIG_COMBINE if wcwidth() doesn't exist.  */
 #ifdef CONFIG_COMBINE
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 500	/* for wcwidth */
+#endif
 #endif
 
 #include <ctype.h>
@@ -26,6 +32,7 @@
 #include "document/docdata.h"
 #include "document/document.h"
 #include "document/html/frames.h"
+#include "document/html/iframes.h"
 #include "document/html/parser.h"
 #include "document/html/parser/parse.h"
 #include "document/html/renderer.h"
@@ -62,16 +69,11 @@ enum link_state {
 	LINK_STATE_SAME,
 };
 
-struct link_state_info {
-	unsigned char *link;
-	unsigned char *target;
-	unsigned char *image;
-	struct el_form_control *form;
-};
+typedef unsigned char link_state_T;
 
 struct table_cache_entry_key {
-	unsigned char *start;
-	unsigned char *end;
+	char *start;
+	char *end;
 	int align;
 	int margin;
 	int width;
@@ -93,42 +95,10 @@ struct table_cache_entry {
 static int table_cache_entries;
 static struct hash *table_cache;
 
-
-struct renderer_context {
-	int last_link_to_move;
-	struct tag *last_tag_to_move;
-	/* All tags between document->tags and this tag (inclusive) should
-	 * be aligned to the next line break, unless some real content follows
-	 * the tag. Therefore, this virtual tags list accumulates new tags as
-	 * they arrive and empties when some real content is written; if a line
-	 * break is inserted in the meanwhile, the tags follow it (ie. imagine
-	 * <a name="x"> <p>, then the "x" tag follows the line breaks inserted
-	 * by the <p> tag). */
-	struct tag *last_tag_for_newline;
-
-	struct link_state_info link_state_info;
-
-	struct conv_table *convert_table;
-
-	/* Used for setting cache info from HTTP-EQUIV meta tags. */
-	struct cache_entry *cached;
-
-	int g_ctrl_num;
-	int subscript;	/* Count stacked subscripts */
-	int supscript;	/* Count stacked supscripts */
-
-	unsigned int empty_format:1;
-	unsigned int nobreak:1;
-	unsigned int nosearchable:1;
-	unsigned int nowrap:1; /* Activated/deactivated by SP_NOWRAP. */
-};
-
-static struct renderer_context renderer_context;
-
+struct renderer_context renderer_context;
 
 /* Prototypes */
-static void line_break(struct html_context *);
-static void put_chars(struct html_context *, unsigned char *, int);
+static void put_chars(struct html_context *, const char *, int);
 
 #define X(x_)	(part->box.x + (x_))
 #define Y(y_)	(part->box.y + (y_))
@@ -140,8 +110,8 @@ static void put_chars(struct html_context *, unsigned char *, int);
 static inline void
 set_screen_char_color(struct screen_char *schar,
 		      color_T bgcolor, color_T fgcolor,
-		      enum color_flags color_flags,
-		      enum color_mode color_mode)
+		      color_flags_T color_flags,
+		      color_mode_T color_mode)
 {
 	struct color_pair colors = INIT_COLOR_PAIR(bgcolor, fgcolor);
 
@@ -174,7 +144,7 @@ realloc_line(struct html_context *html_context, struct document *document,
 	end = &line->chars[length];
 	end->data = ' ';
 	end->attr = 0;
-	set_screen_char_color(end, par_format.color.background, 0x0,
+	set_screen_char_color(end, par_elformat.color.background, 0x0,
 			      COLOR_ENSURE_CONTRAST, /* for bug 461 */
 			      document->options.color_mode);
 
@@ -185,24 +155,6 @@ realloc_line(struct html_context *html_context, struct document *document,
 	line->length = length + 1;
 
 	return orig_length;
-}
-
-void
-expand_lines(struct html_context *html_context, struct part *part,
-             int x, int y, int lines, color_T bgcolor)
-{
-	int line;
-
-	assert(part && part->document);
-	if_assert_failed return;
-
-	if (!use_document_bg_colors(&part->document->options))
-		return;
-
-	par_format.color.background = bgcolor;
-
-	for (line = 0; line < lines; line++)
-		realloc_line(html_context, part->document, Y(y + line), X(x));
 }
 
 static inline int
@@ -299,6 +251,33 @@ get_frame_char(struct html_context *html_context, struct part *part,
 	return template_;
 }
 
+static inline struct screen_char *
+get_format_screen_char(struct html_context *html_context,
+                       link_state_T link_state)
+{
+	static struct text_style ta_cache = INIT_TEXT_STYLE(-1, 0x0, 0x0);
+	static struct screen_char schar_cache;
+
+	if (memcmp(&ta_cache, &elformat.style, sizeof(ta_cache))) {
+		copy_struct(&ta_cache, &elformat.style);
+		struct text_style final_style = elformat.style;
+
+		get_screen_char_template(&schar_cache, html_context->options, final_style);
+	}
+
+	if (!!(schar_cache.attr & SCREEN_ATTR_UNSEARCHABLE)
+	    ^ !!renderer_context.nosearchable) {
+		schar_cache.attr ^= SCREEN_ATTR_UNSEARCHABLE;
+	}
+	if (link_state != LINK_STATE_NONE
+	    && !elformat.form
+	    && html_context->options->underline_links) {
+		schar_cache.attr |= SCREEN_ATTR_UNDERLINE;
+	}
+
+	return &schar_cache;
+}
+
 void
 draw_frame_hchars(struct part *part, int x, int y, int width,
 		  unsigned char data, color_T bgcolor, color_T fgcolor,
@@ -316,6 +295,36 @@ draw_frame_hchars(struct part *part, int x, int y, int width,
 	for (width -= 1; width; width--, x++) {
 		copy_screen_chars(&POS(x, y), template_, 1);
 	}
+
+	if (par_elformat.blockquote_level) {
+		draw_blockquote_chars(part, y, html_context);
+	}
+}
+
+void
+draw_blockquote_chars(struct part *part, int y, struct html_context *html_context)
+{
+	int i;
+	int x = par_elformat.orig_leftmargin;
+	struct screen_char *const schar = get_format_screen_char(html_context, 0);
+
+	if (LEN(y) + par_elformat.blockquote_level <= x) {
+		return;
+	}
+
+	schar->data = '>';
+	for (i = 1; i < par_elformat.blockquote_level; i++) {
+		copy_screen_chars(&POS(x, y), schar, 1);
+#ifdef CONFIG_UTF8
+		if (part->char_width) part->char_width[x] = 1;
+#endif
+		x++;
+	}
+	schar->data = ' ';
+	copy_screen_chars(&POS(x, y), schar, 1);
+#ifdef CONFIG_UTF8
+	if (part->char_width) part->char_width[x] = 1;
+#endif
 }
 
 void
@@ -338,31 +347,31 @@ draw_frame_vchars(struct part *part, int x, int y, int height,
 	}
 }
 
-static inline struct screen_char *
-get_format_screen_char(struct html_context *html_context,
-                       enum link_state link_state)
+void
+expand_lines(struct html_context *html_context, struct part *part,
+             int x, int y, int lines, color_T bgcolor)
 {
-	static struct text_style ta_cache = INIT_TEXT_STYLE(-1, 0x0, 0x0);
-	static struct screen_char schar_cache;
+	int line;
 
-	if (memcmp(&ta_cache, &format.style, sizeof(ta_cache))) {
-		copy_struct(&ta_cache, &format.style);
-		struct text_style final_style = format.style;
+	assert(part && part->document);
+	if_assert_failed return;
 
-		get_screen_char_template(&schar_cache, html_context->options, final_style);
+	if (!use_document_bg_colors(&part->document->options) && !par_elformat.blockquote_level)
+		return;
+
+	par_elformat.color.background = bgcolor;
+
+	if (x < 0) {
+		x = 0;
 	}
 
-	if (!!(schar_cache.attr & SCREEN_ATTR_UNSEARCHABLE)
-	    ^ !!renderer_context.nosearchable) {
-		schar_cache.attr ^= SCREEN_ATTR_UNSEARCHABLE;
-	}
-	if (link_state != LINK_STATE_NONE
-	    && !format.form
-	    && html_context->options->underline_links) {
-		schar_cache.attr |= SCREEN_ATTR_UNDERLINE;
-	}
+	for (line = 0; line < lines; line++) {
+		realloc_line(html_context, part->document, Y(y + line), X(x));
 
-	return &schar_cache;
+		if (par_elformat.blockquote_level) {
+			draw_blockquote_chars(part, y + line, html_context);
+		}
+	}
 }
 
 /* document.comb_x and document.comb_y exist only when CONFIG_COMBINE
@@ -396,15 +405,13 @@ assert_comb_x_y_ok(const struct document *document)
 #ifdef CONFIG_COMBINE
 /** Discard any combining characters that have not yet been combined
  * with to the previous base character.  */
-static void
+void
 discard_comb_x_y(struct document *document)
 {
 	document->comb_x = -1;
 	document->comb_y = -1;
 	document->combi_length = 0;
 }
-#else
-# define discard_comb_x_y(document) ((void) 0)
 #endif
 
 #ifdef CONFIG_COMBINE
@@ -473,8 +480,8 @@ put_combined(struct part *part, int x)
 /* First possibly do the format change and then find out what coordinates
  * to use since sub- or superscript might change them */
 static inline int
-set_hline(struct html_context *html_context, unsigned char *chars, int charslen,
-	  enum link_state link_state)
+set_hline(struct html_context *html_context, const char *chars, int charslen,
+	  link_state_T link_state)
 {
 	struct part *const part = html_context->part;
 	struct screen_char *const schar = get_format_screen_char(html_context,
@@ -527,19 +534,29 @@ set_hline(struct html_context *html_context, unsigned char *chars, int charslen,
 		 * incomplete character in document->buf, then
 		 * the first byte of input can result in a double-cell
 		 * character, so we must reserve one extra element.  */
+		/* But, ascii replacements complicates this because a single
+		   codepoint may be rendered to as much as 20 chars */
 		orig_length = realloc_line(html_context, document,
-					   Y(y), X(x) + charslen);
+					   Y(y), X(x) + charslen * 20);
 		if (orig_length < 0) /* error */
 			return 0;
+
+		if (part->begin) {
+			if (par_elformat.blockquote_level && !html_context->table_level) {
+				draw_blockquote_chars(part, y, html_context);
+			}
+			part->begin = 0;
+		}
+
 		if (utf8) {
-			unsigned char *const end = chars + charslen;
+			const char *const end = chars + charslen;
 			unicode_val_T data;
 
 			if (document->buf_length) {
 				/* previous char was broken in the middle */
 				int length = utf8charlen(document->buf);
 				unsigned char i;
-				unsigned char *buf_ptr = document->buf;
+				char *buf_ptr = document->buf;
 
 				for (i = document->buf_length; i < length && chars < end;) {
 					document->buf[i++] = *chars++;
@@ -573,14 +590,14 @@ set_hline(struct html_context *html_context, unsigned char *chars, int charslen,
 			while (chars < end) {
 				/* ELinks does not use NBSP_CHAR in UTF-8.  */
 
-				data = utf8_to_unicode(&chars, end);
+				data = utf8_to_unicode((char **)&chars, end);
 				if (data == UCS_NO_CHAR) {
 					part->spaces[x] = 0;
 					if (charslen == 1) {
 						/* HR */
 						unsigned char attr = schar->attr;
 
-						schar->data = *chars++;
+						schar->data = (unsigned char)*chars++;
 						schar->attr = SCREEN_ATTR_FRAME;
 						copy_screen_chars(&POS(x, y), schar, 1);
 						schar->attr = attr;
@@ -640,6 +657,18 @@ good_char:
 #endif /* CONFIG_COMBINE */
 				part->spaces[x] = (data == UCS_SPACE);
 
+#ifdef CONFIG_CODEPOINT
+				if (codepoint_replacement(data) != -1) {
+					int i;
+
+					for(i = 0; i < unicode_to_cell(data); i++) {
+						schar->data = encode_utf8(data)[i];
+						part->char_width[x] = 1;
+						copy_screen_chars(&POS(x++, y), schar, 1);
+					}
+					continue;
+				} else
+#endif
 				if (unicode_to_cell(data) == 0)
 					continue;
 				else if (unicode_to_cell(data) == 2) {
@@ -695,12 +724,12 @@ good_char:
 		len = x - x2;
 	} else { /* part->document == NULL */
 		if (utf8) {
-			unsigned char *const end = chars + charslen;
+			const char *const end = chars + charslen;
 
 			while (chars < end) {
 				unicode_val_T data;
 
-				data = utf8_to_unicode(&chars, end);
+				data = utf8_to_unicode((char **)&chars, end);
 #ifdef CONFIG_COMBINE
 				if (data == UCS_SOFT_HYPHEN
 				    || (data != UCS_NO_CHAR && wcwidth((wchar_t)data) == 0))
@@ -745,8 +774,8 @@ good_char:
 /* First possibly do the format change and then find out what coordinates
  * to use since sub- or superscript might change them */
 static inline void
-set_hline(struct html_context *html_context, unsigned char *chars, int charslen,
-	  enum link_state link_state)
+set_hline(struct html_context *html_context, const char *chars, int charslen,
+	  link_state_T link_state)
 {
 	struct part *part = html_context->part;
 	struct screen_char *schar = get_format_screen_char(html_context,
@@ -764,6 +793,13 @@ set_hline(struct html_context *html_context, unsigned char *chars, int charslen,
 		if (realloc_line(html_context, part->document,
 		                 Y(y), X(x) + charslen - 1) < 0)
 			return;
+
+		if (part->begin) {
+			if (par_elformat.blockquote_level && !html_context->table_level) {
+				draw_blockquote_chars(part, y, html_context);
+			}
+			part->begin = 0;
+		}
 
 		for (; charslen > 0; charslen--, x++, chars++) {
 			if (*chars == NBSP_CHAR) {
@@ -937,6 +973,7 @@ move_chars(struct html_context *html_context, int x, int y, int nx, int ny)
 	if_assert_failed return;
 
 	if (LEN(y) - x <= 0) return;
+
 	copy_chars(html_context, nx, ny, LEN(y) - x, &POS(x, y));
 
 	assert_comb_x_y_ok(part->document);
@@ -945,6 +982,10 @@ move_chars(struct html_context *html_context, int x, int y, int nx, int ny)
 	assert_comb_x_y_ok(part->document);
 	if_assert_failed discard_comb_x_y(part->document);
 	move_links(html_context, x, y, nx, ny);
+
+	if (par_elformat.blockquote_level && !html_context->table_level) {
+		draw_blockquote_chars(part, ny, html_context);
+	}
 }
 
 /** Shift the line @a y to the right by @a shift character cells,
@@ -966,7 +1007,7 @@ shift_chars(struct html_context *html_context, int y, int shift)
 
 	len = LEN(y);
 
-	a = fmem_alloc(len * sizeof(*a));
+	a = (struct screen_char *)fmem_alloc(len * sizeof(*a));
 	if (!a) return;
 
 	copy_screen_chars(a, &POS(0, y), len);
@@ -1022,7 +1063,7 @@ split_line_at(struct html_context *html_context, int width)
 {
 	struct part *part;
 	int tmp;
-	int new_width = width + par_format.rightmargin;
+	int new_width = width + par_elformat.rightmargin;
 
 	assert(html_context);
 	if_assert_failed return 0;
@@ -1042,16 +1083,15 @@ split_line_at(struct html_context *html_context, int width)
 #ifdef CONFIG_UTF8
 		if (html_context->options->utf8
 		    && width < part->spaces_len && part->char_width[width] == 2) {
-			move_chars(html_context, width, part->cy, par_format.leftmargin, part->cy + 1);
+			move_chars(html_context, width, part->cy, par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0), part->cy + 1);
 			del_chars(html_context, width, part->cy);
 		} else
 #endif
 		{
 			assertm(POS(width, part->cy).data == ' ',
 					"bad split: %c", POS(width, part->cy).data);
-			move_chars(html_context, width + 1, part->cy, par_format.leftmargin, part->cy + 1);
+			move_chars(html_context, width + 1, part->cy, par_elformat.leftmargin + par_elformat.blockquote_level  * (html_context->table_level == 0), part->cy + 1);
 			del_chars(html_context, width, part->cy);
-
 		}
 	}
 
@@ -1078,13 +1118,13 @@ split_line_at(struct html_context *html_context, int width)
 	memset(part->char_width + tmp, 0, width);
 #endif
 
-	if (par_format.leftmargin > 0) {
-		tmp = part->spaces_len - par_format.leftmargin;
-		assertm(tmp > 0, "part->spaces_len - par_format.leftmargin == %d", tmp);
+	if (par_elformat.leftmargin + par_elformat.blockquote_level  * (html_context->table_level == 0) > 0) {
+		tmp = part->spaces_len - (par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0));
+		assertm(tmp > 0, "part->spaces_len - par_elformat.leftmargin == %d", tmp);
 		/* So tmp is zero, memmove() should survive that. Don't recover. */
-		memmove(part->spaces + par_format.leftmargin, part->spaces, tmp);
+		memmove(part->spaces + par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0), part->spaces, tmp);
 #ifdef CONFIG_UTF8
-		memmove(part->char_width + par_format.leftmargin, part->char_width, tmp);
+		memmove(part->char_width + par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0), part->char_width, tmp);
 #endif
 	}
 
@@ -1095,7 +1135,7 @@ split_line_at(struct html_context *html_context, int width)
 		int_lower_bound(&part->box.height, part->cy);
 		return 2;
 	} else {
-		part->cx -= width - par_format.leftmargin;
+		part->cx -= width - (par_elformat.leftmargin + par_elformat.blockquote_level  * (html_context->table_level == 0));
 		int_lower_bound(&part->box.height, part->cy + 1);
 		return 1;
 	}
@@ -1125,40 +1165,40 @@ split_line(struct html_context *html_context)
 
 #ifdef CONFIG_UTF8
 	if (html_context->options->utf8) {
-		for (x = overlap(par_format); x >= par_format.leftmargin; x--) {
+		for (x = overlap(par_elformat); x >= (par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0)); x--) {
 
 			if (x < part->spaces_len && (part->spaces[x]
 			    || (part->char_width[x] == 2
 				/* Ugly hack. If we haven't place for
 				 * double-width characters we print two
 				 * double-width characters. */
-				&& x != par_format.leftmargin)))
+				&& x != (par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0)))))
 				return split_line_at(html_context, x);
 		}
 
-		for (x = par_format.leftmargin; x < part->cx ; x++) {
+		for (x = par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0); x < part->cx ; x++) {
 			if (x < part->spaces_len && (part->spaces[x]
 			    || (part->char_width[x] == 2
 				/* We want to break line after _second_
 				 * double-width character. */
-				&& x > par_format.leftmargin)))
+				&& x > (par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0)))))
 				return split_line_at(html_context, x);
 		}
 	} else
 #endif
 	{
-		for (x = overlap(par_format); x >= par_format.leftmargin; x--)
+		for (x = overlap(par_elformat); x >= (par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0)); x--)
 			if (x < part->spaces_len && part->spaces[x])
 				return split_line_at(html_context, x);
 
-		for (x = par_format.leftmargin; x < part->cx ; x++)
+		for (x = par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0); x < part->cx ; x++)
 			if (x < part->spaces_len && part->spaces[x])
 				return split_line_at(html_context, x);
 	}
 
 	/* Make sure that we count the right margin to the total
 	 * actual box width. */
-	int_lower_bound(&part->box.width, part->cx + par_format.rightmargin);
+	int_lower_bound(&part->box.width, part->cx + par_elformat.rightmargin);
 
 	return 0;
 }
@@ -1226,13 +1266,13 @@ justify_line(struct html_context *html_context, int y)
 	assert(len > 0);
 	if_assert_failed return;
 
-	line = fmem_alloc(len * sizeof(*line));
+	line = (struct screen_char *)fmem_alloc(len * sizeof(*line));
 	if (!line) return;
 
 	/* It may sometimes happen that the line is only one char long and that
 	 * char is space - then we're going to write to both [0] and [1], but
 	 * we allocated only one field. Thus, we've to do (len + 1). --pasky */
-	space_list = fmem_alloc((len + 1) * sizeof(*space_list));
+	space_list = (int *)fmem_alloc((len + 1) * sizeof(*space_list));
 	if (!space_list) {
 		fmem_free(line);
 		return;
@@ -1264,10 +1304,10 @@ justify_line(struct html_context *html_context, int y)
 
 	/* Diff is the difference between the width of the paragraph
 	 * and the current length of the line. */
-	diff = overlap(par_format) - len;
+	diff = overlap(par_elformat) - len;
 
 	/* We check diff > 0 because diff can be negative (i.e., we have
-	 * an unbroken line of length > overlap(par_format))
+	 * an unbroken line of length > overlap(par_elformat))
 	 * even when spaces > 1 if the line has only non-breaking spaces. */
 	if (spaces > 1 && diff > 0) {
 		int prev_end = 0;
@@ -1278,7 +1318,7 @@ justify_line(struct html_context *html_context, int y)
 		 * line unchanged, rather than halfway there.  The
 		 * following loop assumes the allocation succeeded.  */
 		if (!realloc_line(html_context, html_context->part->document,
-				  Y(y), X(overlap(par_format))))
+				  Y(y), X(overlap(par_elformat))))
 			goto out_of_memory;
 
 		for (word = 0; word < spaces; word++) {
@@ -1364,17 +1404,17 @@ align_line(struct html_context *html_context, int y, int last)
 
 	len = LEN(y);
 
-	if (!len || par_format.align == ALIGN_LEFT)
+	if (!len || par_elformat.align == ALIGN_LEFT)
 		return;
 
-	if (par_format.align == ALIGN_JUSTIFY) {
+	if (par_elformat.align == ALIGN_JUSTIFY) {
 		if (!last)
 			justify_line(html_context, y);
 		return;
 	}
 
-	shift = overlap(par_format) - len;
-	if (par_format.align == ALIGN_CENTER)
+	shift = overlap(par_elformat) - len;
+	if (par_elformat.align == ALIGN_CENTER)
 		shift /= 2;
 	if (shift > 0)
 		shift_chars(html_context, y, shift);
@@ -1383,7 +1423,7 @@ align_line(struct html_context *html_context, int y, int last)
 static inline void
 init_link_event_hooks(struct html_context *html_context, struct link *link)
 {
-	link->event_hooks = mem_calloc(1, sizeof(*link->event_hooks));
+	link->event_hooks = (LIST_OF(struct script_event_hook) *)mem_calloc(1, sizeof(*link->event_hooks));
 	if (!link->event_hooks) return;
 
 #define add_evhook(list_, type_, src_)						\
@@ -1392,7 +1432,7 @@ init_link_event_hooks(struct html_context *html_context, struct link *link)
 										\
 		if (!src_) break;						\
 										\
-		evhook = mem_calloc(1, sizeof(*evhook));			\
+		evhook = (struct script_event_hook *)mem_calloc(1, sizeof(*evhook));			\
 		if (!evhook) break;						\
 										\
 		evhook->type = type_;						\
@@ -1401,19 +1441,21 @@ init_link_event_hooks(struct html_context *html_context, struct link *link)
 	} while (0)
 
 	init_list(*link->event_hooks);
-	add_evhook(link->event_hooks, SEVHOOK_ONCLICK, format.onclick);
-	add_evhook(link->event_hooks, SEVHOOK_ONDBLCLICK, format.ondblclick);
-	add_evhook(link->event_hooks, SEVHOOK_ONMOUSEOVER, format.onmouseover);
-	add_evhook(link->event_hooks, SEVHOOK_ONHOVER, format.onhover);
-	add_evhook(link->event_hooks, SEVHOOK_ONFOCUS, format.onfocus);
-	add_evhook(link->event_hooks, SEVHOOK_ONMOUSEOUT, format.onmouseout);
-	add_evhook(link->event_hooks, SEVHOOK_ONBLUR, format.onblur);
+	add_evhook(link->event_hooks, SEVHOOK_ONCLICK, elformat.onclick);
+	add_evhook(link->event_hooks, SEVHOOK_ONDBLCLICK, elformat.ondblclick);
+	add_evhook(link->event_hooks, SEVHOOK_ONMOUSEOVER, elformat.onmouseover);
+	add_evhook(link->event_hooks, SEVHOOK_ONHOVER, elformat.onhover);
+	add_evhook(link->event_hooks, SEVHOOK_ONFOCUS, elformat.onfocus);
+	add_evhook(link->event_hooks, SEVHOOK_ONMOUSEOUT, elformat.onmouseout);
+	add_evhook(link->event_hooks, SEVHOOK_ONBLUR, elformat.onblur);
+	add_evhook(link->event_hooks, SEVHOOK_ONKEYDOWN, elformat.onkeydown);
+	add_evhook(link->event_hooks, SEVHOOK_ONKEYUP, elformat.onkeyup);
 
 #undef add_evhook
 }
 
 static struct link *
-new_link(struct html_context *html_context, unsigned char *name, int namelen)
+new_link(struct html_context *html_context, const char *name, int namelen)
 {
 	struct document *document;
 	struct part *part;
@@ -1440,30 +1482,30 @@ new_link(struct html_context *html_context, unsigned char *name, int namelen)
 
 	link = &document->links[document->nlinks++];
 	link->number = link_number - 1;
-	if (document->options.use_tabindex) link->number += format.tabindex;
-	link->accesskey = format.accesskey;
-	link->title = null_or_stracpy(format.title);
-	link->where_img = null_or_stracpy(format.image);
+	if (document->options.use_tabindex) link->number += elformat.tabindex;
+	link->accesskey = elformat.accesskey;
+	link->title = null_or_stracpy(elformat.title);
+	link->where_img = null_or_stracpy(elformat.image);
 
-	if (!format.form) {
-		link->target = null_or_stracpy(format.target);
+	if (!elformat.form) {
+		link->target = null_or_stracpy(elformat.target);
 		link->data.name = memacpy(name, namelen);
 		/* if (strlen(url) > 4 && !c_strncasecmp(url, "MAP@", 4)) { */
-		if (format.link
-		    && ((format.link[0]|32) == 'm')
-		    && ((format.link[1]|32) == 'a')
-		    && ((format.link[2]|32) == 'p')
-		    && 	(format.link[3]     == '@')
-		    &&   format.link[4]) {
+		if (elformat.link
+		    && ((elformat.link[0]|32) == 'm')
+		    && ((elformat.link[1]|32) == 'a')
+		    && ((elformat.link[2]|32) == 'p')
+		    && 	(elformat.link[3]     == '@')
+		    &&   elformat.link[4]) {
 			link->type = LINK_MAP;
-			link->where = stracpy(format.link + 4);
+			link->where = stracpy(elformat.link + 4);
 		} else {
 			link->type = LINK_HYPERTEXT;
-			link->where = null_or_stracpy(format.link);
+			link->where = null_or_stracpy(elformat.link);
 		}
 
 	} else {
-		struct el_form_control *fc = format.form;
+		struct el_form_control *fc = elformat.form;
 		struct form *form;
 
 		switch (fc->type) {
@@ -1488,23 +1530,30 @@ new_link(struct html_context *html_context, unsigned char *name, int namelen)
 		case FC_BUTTON:
 		case FC_HIDDEN:
 			link->type = LINK_BUTTON;
+			break;
+		default:
+			break;
 		}
 		link->data.form_control = fc;
-		/* At this point, format.form might already be set but
+		/* At this point, elformat.form might already be set but
 		 * the form_control not registered through SP_CONTROL
 		 * yet, therefore without fc->form set. It is always
 		 * after the "good" last form was already processed,
 		 * though, so we can safely just take that. */
 		form = fc->form;
 		if (!form && !list_empty(document->forms))
-			form = document->forms.next;
+			form = (struct form *)document->forms.next;
 		link->target = null_or_stracpy(form ? form->target : NULL);
 	}
 
-	link->color.background = format.style.color.background;
+	link->color.background = elformat.style.color.background;
 	link->color.foreground = link_is_textinput(link)
-				? format.style.color.foreground
-				: format.color.clink;
+				? elformat.style.color.foreground
+				: elformat.color.clink;
+
+#ifdef CONFIG_ECMASCRIPT
+	link->element_offset = elformat.top_name ? elformat.top_name - document->text : 0;
+#endif
 
 	init_link_event_hooks(html_context, link);
 
@@ -1513,7 +1562,7 @@ new_link(struct html_context *html_context, unsigned char *name, int namelen)
 }
 
 static void
-html_special_tag(struct document *document, unsigned char *t, int x, int y)
+html_special_tag(struct document *document, char *t, int x, int y)
 {
 	struct tag *tag;
 	int tag_len;
@@ -1523,7 +1572,7 @@ html_special_tag(struct document *document, unsigned char *t, int x, int y)
 
 	tag_len = strlen(t);
 	/* One byte is reserved for name in struct tag. */
-	tag = mem_alloc(sizeof(*tag) + tag_len);
+	tag = (struct tag *)mem_alloc(sizeof(*tag) + tag_len);
 	if (!tag) return;
 
 	tag->x = x;
@@ -1535,9 +1584,9 @@ html_special_tag(struct document *document, unsigned char *t, int x, int y)
 }
 
 
-static void
+void
 put_chars_conv(struct html_context *html_context,
-               unsigned char *chars, int charslen)
+               const char *chars, int charslen)
 {
 	assert(html_context);
 	if_assert_failed return;
@@ -1545,15 +1594,15 @@ put_chars_conv(struct html_context *html_context,
 	assert(html_context->part && chars && charslen);
 	if_assert_failed return;
 
-	if (format.style.attr & AT_GRAPHICS) {
+	if (elformat.style.attr & AT_GRAPHICS) {
 		put_chars(html_context, chars, charslen);
 		return;
 	}
 
 	convert_string(renderer_context.convert_table, chars, charslen,
 	               html_context->options->cp,
-	               (format.style.attr & AT_NO_ENTITIES) ? CSM_NONE : CSM_DEFAULT,
-		       NULL, (void (*)(void *, unsigned char *, int)) put_chars, html_context);
+	               (elformat.style.attr & AT_NO_ENTITIES) ? CSM_NONE : CSM_DEFAULT,
+		       NULL, (void (*)(void *, char *, int)) put_chars, html_context);
 }
 
 /*
@@ -1562,7 +1611,7 @@ put_chars_conv(struct html_context *html_context,
  * friendly key="gfdsahjkl;trewqyuiopvcxznm". Returns the length of link_sym.
  */
 int
-dec2qwerty(int num, unsigned char *link_sym, const unsigned char *key, int base)
+dec2qwerty(int num, char *link_sym, const char *key, int base)
 {
 	int newlen, i, pow;
 
@@ -1583,7 +1632,7 @@ dec2qwerty(int num, unsigned char *link_sym, const unsigned char *key, int base)
  * Returns the value of link_sym in decimal according to key.
  */
 int
-qwerty2dec(const unsigned char *link_sym, const unsigned char *key, int base)
+qwerty2dec(const char *link_sym, const char *key, int base)
 {
 	int z = 0;
 	int symlen = strlen(link_sym);
@@ -1603,20 +1652,20 @@ put_link_number(struct html_context *html_context)
 {
 	char *symkey = get_opt_str("document.browse.links.label_key", NULL);
 	struct part *part = html_context->part;
-	unsigned char s[64];
-	unsigned char *fl = format.link;
-	unsigned char *ft = format.target;
-	unsigned char *fi = format.image;
-	struct text_style old_style = format.style;
-	struct el_form_control *ff = format.form;
+	char s[64];
+	char *fl = elformat.link;
+	char *ft = elformat.target;
+	char *fi = elformat.image;
+	struct text_style old_style = elformat.style;
+	struct el_form_control *ff = elformat.form;
 	int slen = 0;
 	int base = strlen(symkey);
 
-	format.link = format.target = format.image = NULL;
-	format.form = NULL;
+	elformat.link = elformat.target = elformat.image = NULL;
+	elformat.form = NULL;
 	if (html_context->options->use_link_number_color) {
-		format.style.attr &= ~AT_BOLD;
-		format.style.color.foreground = format.color.link_number;
+		elformat.style.attr &= ~AT_BOLD;
+		elformat.style.color.foreground = elformat.color.link_number;
 	}
 
 	s[slen++] = '[';
@@ -1632,21 +1681,24 @@ put_link_number(struct html_context *html_context)
 
 	/* We might have ended up on a new line after the line breaking
 	 * or putting the link number chars. */
-	if (part->cx == -1) part->cx = par_format.leftmargin;
+	if (part->cx == -1) {
+		part->cx = par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0);
+		part->begin = 1;
+	}
 
-	format.link = fl;
-	format.target = ft;
-	format.image = fi;
-	format.form = ff;
-	format.style = old_style;
+	elformat.link = fl;
+	elformat.target = ft;
+	elformat.image = fi;
+	elformat.form = ff;
+	elformat.style = old_style;
 }
 
 #define assert_link_variable(old, new) \
 	assertm(!(old), "Old link value [%s]. New value [%s]", old, new);
 
 static inline void
-init_link_state_info(unsigned char *link, unsigned char *target,
-		     unsigned char *image, struct el_form_control *form)
+init_link_state_info(char *link, char *target,
+		     char *image, struct el_form_control *form)
 {
 	assert_link_variable(renderer_context.link_state_info.image, image);
 	assert_link_variable(renderer_context.link_state_info.target, target);
@@ -1670,12 +1722,12 @@ done_link_state_info(void)
 
 #ifdef CONFIG_UTF8
 static inline void
-process_link(struct html_context *html_context, enum link_state link_state,
-	     unsigned char *chars, int charslen, int cells)
+process_link(struct html_context *html_context, link_state_T link_state,
+	     const char *chars, int charslen, int cells)
 #else
 static inline void
-process_link(struct html_context *html_context, enum link_state link_state,
-		   unsigned char *chars, int charslen)
+process_link(struct html_context *html_context, link_state_T link_state,
+		   const char *chars, int charslen)
 #endif /* CONFIG_UTF8 */
 {
 	struct part *part = html_context->part;
@@ -1684,7 +1736,7 @@ process_link(struct html_context *html_context, enum link_state link_state,
 
 	switch (link_state) {
 	case LINK_STATE_SAME: {
-		unsigned char *name;
+		char *name;
 
 		if (!part->document) return;
 
@@ -1695,10 +1747,10 @@ process_link(struct html_context *html_context, enum link_state link_state,
 
 		name = get_link_name(link);
 		if (name) {
-			unsigned char *new_name;
+			char *new_name;
 
 			new_name = straconcat(name, chars,
-					      (unsigned char *) NULL);
+					      (char *) NULL);
 			if (new_name) {
 				mem_free(name);
 				link->data.name = new_name;
@@ -1718,12 +1770,12 @@ process_link(struct html_context *html_context, enum link_state link_state,
 	case LINK_STATE_NEW:
 		part->link_num++;
 
-		init_link_state_info(format.link, format.target,
-				     format.image, format.form);
+		init_link_state_info(elformat.link, elformat.target,
+				     elformat.image, elformat.form);
 		if (!part->document) return;
 
 		/* Trim leading space from the link text */
-		while (x_offset < charslen && chars[x_offset] <= ' ')
+		while (x_offset < charslen && (unsigned char)chars[x_offset] <= ' ')
 			x_offset++;
 
 		if (x_offset) {
@@ -1772,21 +1824,21 @@ process_link(struct html_context *html_context, enum link_state link_state,
 	}
 }
 
-static inline enum link_state
+static inline link_state_T
 get_link_state(struct html_context *html_context)
 {
-	enum link_state state;
+	link_state_T state;
 
-	if (!(format.link || format.image || format.form)) {
+	if (!(elformat.link || elformat.image || elformat.form)) {
 		state = LINK_STATE_NONE;
 
 	} else if ((renderer_context.link_state_info.link
 		    || renderer_context.link_state_info.image
 		    || renderer_context.link_state_info.form)
-		   && !xstrcmp(format.link, renderer_context.link_state_info.link)
-		   && !xstrcmp(format.target, renderer_context.link_state_info.target)
-		   && !xstrcmp(format.image, renderer_context.link_state_info.image)
-		   && format.form == renderer_context.link_state_info.form) {
+		   && !xstrcmp(elformat.link, renderer_context.link_state_info.link)
+		   && !xstrcmp(elformat.target, renderer_context.link_state_info.target)
+		   && !xstrcmp(elformat.image, renderer_context.link_state_info.image)
+		   && elformat.form == renderer_context.link_state_info.form) {
 
 		return LINK_STATE_SAME;
 
@@ -1800,21 +1852,21 @@ get_link_state(struct html_context *html_context)
 }
 
 static inline int
-html_has_non_space_chars(unsigned char *chars, int charslen)
+html_has_non_space_chars(const char *chars, int charslen)
 {
 	int pos = 0;
 
 	while (pos < charslen)
-		if (!isspace(chars[pos++]))
+		if (!isspace((unsigned char)chars[pos++]))
 			return 1;
 
 	return 0;
 }
 
 static void
-put_chars(struct html_context *html_context, unsigned char *chars, int charslen)
+put_chars(struct html_context *html_context, const char *chars, int charslen)
 {
-	enum link_state link_state;
+	link_state_T link_state;
 	struct part *part;
 #ifdef CONFIG_UTF8
 	int cells;
@@ -1845,7 +1897,8 @@ put_chars(struct html_context *html_context, unsigned char *chars, int charslen)
 			if (charslen < 1) return;
 		}
 
-		part->cx = par_format.leftmargin;
+		part->cx = par_elformat.leftmargin + (par_elformat.blockquote_level * (html_context->table_level == 0));
+		part->begin = 1;
 	}
 
 	/* For preformatted html always update 'the last tag' so we never end
@@ -1868,7 +1921,7 @@ put_chars(struct html_context *html_context, unsigned char *chars, int charslen)
 		 * by the parser putting a space char after stuff like
 		 * <img>-tags or comments wrapped in <a>-tags. See bug
 		 * 30 for test case. */
-		while (x_offset < charslen && chars[x_offset] <= ' ')
+		while (x_offset < charslen && (unsigned char)chars[x_offset] <= ' ')
 			x_offset++;
 
 		/* For pure spaces reset the link state */
@@ -1893,13 +1946,13 @@ put_chars(struct html_context *html_context, unsigned char *chars, int charslen)
 
 #ifdef CONFIG_UTF8
 	if (renderer_context.nowrap
-	    && part->cx + cells > overlap(par_format))
+	    && part->cx + cells > overlap(par_elformat))
 		return;
 
 	part->cx += cells;
 #else
 	if (renderer_context.nowrap
-			&& part->cx + charslen > overlap(par_format))
+			&& part->cx + charslen > overlap(par_elformat))
 		return;
 
 	part->cx += charslen;
@@ -1908,8 +1961,8 @@ put_chars(struct html_context *html_context, unsigned char *chars, int charslen)
 	renderer_context.nobreak = 0;
 
 	if (html_context->options->wrap || !html_is_preformatted()) {
-		while (part->cx > overlap(par_format)
-		       && part->cx > par_format.leftmargin) {
+		while (part->cx > overlap(par_elformat)
+		       && part->cx > (par_elformat.leftmargin + par_elformat.blockquote_level  * (html_context->table_level == 0))) {
 			int x = split_line(html_context);
 
 			if (!x) break;
@@ -1926,14 +1979,14 @@ put_chars(struct html_context *html_context, unsigned char *chars, int charslen)
 	part->xa += charslen;
 #endif /* CONFIG_UTF8 */
 	int_lower_bound(&part->max_width, part->xa
-			+ par_format.leftmargin + par_format.rightmargin
+			+ par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0) + par_elformat.rightmargin
 			- (chars[charslen - 1] == ' '
 			   && (html_context->options->wrap || !html_is_preformatted())));
 }
 
 #undef overlap
 
-static void
+void
 line_break(struct html_context *html_context)
 {
 	struct part *part;
@@ -1947,7 +2000,7 @@ line_break(struct html_context *html_context)
 	assert(part);
 	if_assert_failed return;
 
-	int_lower_bound(&part->box.width, part->cx + par_format.rightmargin);
+	int_lower_bound(&part->box.width, part->cx + par_elformat.rightmargin);
 
 	if (renderer_context.nobreak) {
 		renderer_context.nobreak = 0;
@@ -1961,7 +2014,7 @@ line_break(struct html_context *html_context)
 	if (!realloc_lines(part->document, part->box.height + part->cy + 1))
 		return;
 
-	if (part->cx > par_format.leftmargin && LEN(part->cy) > part->cx - 1
+	if (part->cx > (par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0)) && LEN(part->cy) > part->cx - 1
 	    && POS(part->cx - 1, part->cy).data == ' ') {
 		del_chars(html_context, part->cx - 1, part->cy);
 		part->cx--;
@@ -2082,7 +2135,7 @@ html_special_form_control(struct part *part, struct el_form_control *fc)
 		add_to_list(part->document->forms, form);
 	}
 	/* Attach this form control to the last form encountered. */
-	form = part->document->forms.next;
+	form = (struct form *)part->document->forms.next;
 	fc->form = form;
 	add_to_list(form->items, fc);
 }
@@ -2185,9 +2238,9 @@ static inline void
 color_link_lines(struct html_context *html_context)
 {
 	struct document *document = html_context->part->document;
-	struct color_pair colors = INIT_COLOR_PAIR(par_format.color.background, 0x0);
-	enum color_mode color_mode = document->options.color_mode;
-	enum color_flags color_flags = document->options.color_flags;
+	struct color_pair colors = INIT_COLOR_PAIR(par_elformat.color.background, 0x0);
+	color_mode_T color_mode = document->options.color_mode;
+	color_flags_T color_flags = document->options.color_flags;
 	int y;
 
 	for (y = 0; y < document->height; y++) {
@@ -2201,15 +2254,15 @@ color_link_lines(struct html_context *html_context)
 			/* XXX: Entering hack zone! Change to clink color after
 			 * link text has been recolored. */
 			if (schar->data == ':' && colors.foreground == 0x0)
-				colors.foreground = format.color.clink;
+				colors.foreground = elformat.color.clink;
 		}
 
 		colors.foreground = 0x0;
 	}
 }
 
-static void *
-html_special(struct html_context *html_context, enum html_special_type c, ...)
+void *
+html_special(struct html_context *html_context, html_special_type_T c, ...)
 {
 	va_list l;
 	struct part *part;
@@ -2230,7 +2283,7 @@ html_special(struct html_context *html_context, enum html_special_type c, ...)
 	switch (c) {
 		case SP_TAG:
 			if (document) {
-				unsigned char *t = va_arg(l, unsigned char *);
+				char *t = va_arg(l, char *);
 
 				html_special_tag(document, t, X(part->cx), Y(part->cy));
 			}
@@ -2253,7 +2306,7 @@ html_special(struct html_context *html_context, enum html_special_type c, ...)
 			ret_val = renderer_context.convert_table;
 			break;
 		case SP_USED:
-			ret_val = (void *) (long) !!document;
+			ret_val = (void *) (intptr_t) !!document;
 			break;
 		case SP_CACHE_CONTROL:
 		{
@@ -2293,8 +2346,8 @@ html_special(struct html_context *html_context, enum html_special_type c, ...)
 		case SP_FRAME:
 		{
 			struct frameset_desc *parent = va_arg(l, struct frameset_desc *);
-			unsigned char *name = va_arg(l, unsigned char *);
-			unsigned char *url = va_arg(l, unsigned char *);
+			char *name = va_arg(l, char *);
+			char *url = va_arg(l, char *);
 
 			add_frameset_entry(parent, NULL, name, url);
 			break;
@@ -2305,7 +2358,7 @@ html_special(struct html_context *html_context, enum html_special_type c, ...)
 		case SP_REFRESH:
 		{
 			unsigned long seconds = va_arg(l, unsigned long);
-			unsigned char *t = va_arg(l, unsigned char *);
+			char *t = va_arg(l, char *);
 
 			if (document) {
 				if (document->refresh)
@@ -2336,6 +2389,23 @@ html_special(struct html_context *html_context, enum html_special_type c, ...)
 			}
 #endif
 			break;
+
+		case SP_IFRAME:
+		{
+			if (document) {
+				char *url = va_arg(l, char *);
+				char *name = va_arg(l, char *);
+				int y = va_arg(l, int);
+				int width = va_arg(l, int);
+				int height = va_arg(l, int);
+
+				add_iframeset_entry(&document->iframe_desc, url, name, y, width, height);
+			}
+			break;
+		}
+		default:
+			break;
+
 	}
 
 	va_end(l);
@@ -2362,9 +2432,9 @@ free_table_cache(void)
 
 struct part *
 format_html_part(struct html_context *html_context,
-		 unsigned char *start, unsigned char *end,
+		 char *start, char *end,
 		 int align, int margin, int width, struct document *document,
-		 int x, int y, unsigned char *head,
+		 int x, int y, char *head,
 		 int link_num)
 {
 	struct part *part;
@@ -2395,10 +2465,10 @@ format_html_part(struct html_context *html_context,
 		key.link_num = link_num;
 
 		item = get_hash_item(table_cache,
-				     (unsigned char *) &key,
+				     (char *) &key,
 				     sizeof(key));
 		if (item) { /* We found it in cache, so just copy and return. */
-			part = mem_alloc(sizeof(*part));
+			part = (struct part *)mem_alloc(sizeof(*part));
 			if (part)  {
 				copy_struct(part, &((struct table_cache_entry *)
 						    item->value)->part);
@@ -2411,7 +2481,7 @@ format_html_part(struct html_context *html_context,
 	if_assert_failed return NULL;
 
 	if (document) {
-		struct node *node = mem_alloc(sizeof(*node));
+		struct node *node = (struct node *)mem_alloc(sizeof(*node));
 
 		if (node) {
 			int node_width = !html_context->table_level ? INT_MAX : width;
@@ -2435,7 +2505,7 @@ format_html_part(struct html_context *html_context,
 	done_link_state_info();
 	renderer_context.nobreak = 1;
 
-	part = mem_calloc(1, sizeof(*part));
+	part = (struct part *)mem_calloc(1, sizeof(*part));
 	if (!part) goto ret;
 
 	part->document = document;
@@ -2462,7 +2532,7 @@ format_html_part(struct html_context *html_context,
 #endif
 
 	if (document) {
-		struct node *node = document->nodes.next;
+		struct node *node = (struct node *)document->nodes.next;
 
 		node->box.height = y - node->box.y + part->box.height;
 	}
@@ -2480,7 +2550,7 @@ ret:
 		/* Create a new entry. */
 		/* Clear memory to prevent bad key comparaison due to alignment
 		 * of key fields. */
-		struct table_cache_entry *tce = mem_calloc(1, sizeof(*tce));
+		struct table_cache_entry *tce = (struct table_cache_entry *)mem_calloc(1, sizeof(*tce));
 
 		if (tce) {
 			tce->key.start = start;
@@ -2493,7 +2563,7 @@ ret:
 			copy_struct(&tce->part, part);
 
 			if (!add_hash_item(table_cache,
-					   (unsigned char *) &tce->key,
+					   (char *) &tce->key,
 					   sizeof(tce->key), tce)) {
 				mem_free(tce);
 			} else {
@@ -2511,10 +2581,11 @@ render_html_document(struct cache_entry *cached, struct document *document,
 {
 	struct html_context *html_context;
 	struct part *part;
-	unsigned char *start;
-	unsigned char *end;
+	char *start;
+	char *end;
 	struct string title;
 	struct string head;
+	int xml2;
 
 	assert(cached && document);
 	if_assert_failed return;
@@ -2531,15 +2602,19 @@ render_html_document(struct cache_entry *cached, struct document *document,
 	                                put_chars_conv, line_break,
 	                                html_special);
 	if (!html_context) return;
-
+#ifdef CONFIG_ECMASCRIPT
+	xml2 = !!document->dom;
+#else
+	xml2 = 0;
+#endif
 	renderer_context.g_ctrl_num = 0;
 	renderer_context.cached = cached;
 	renderer_context.convert_table = get_convert_table(head.source,
 							   document->options.cp,
-							   document->options.assume_cp,
+							   xml2 ? get_cp_index("utf-8") : document->options.assume_cp,
 							   &document->cp,
 							   &document->cp_status,
-							   document->options.hard_assume);
+							   xml2 ? 1 : document->options.hard_assume);
 #ifdef CONFIG_UTF8
 	html_context->options->utf8 = is_cp_utf8(document->options.cp);
 #endif /* CONFIG_UTF8 */
@@ -2555,8 +2630,8 @@ render_html_document(struct cache_entry *cached, struct document *document,
 	}
 	done_string(&title);
 
-	part = format_html_part(html_context, start, end, par_format.align,
-			        par_format.leftmargin,
+	part = format_html_part(html_context, start, end, par_elformat.align,
+			        par_elformat.leftmargin + par_elformat.blockquote_level * (html_context->table_level == 0),
 				document->options.document_width, document,
 			        0, 0, head.source, 1);
 
@@ -2584,7 +2659,7 @@ render_html_document(struct cache_entry *cached, struct document *document,
 				 >= document->options.width));
 #endif
 
-	document->color.background = par_format.color.background;
+	document->color.background = par_elformat.color.background;
 
 	done_html_parser(html_context);
 
@@ -2613,7 +2688,7 @@ render_html_document(struct cache_entry *cached, struct document *document,
 	{
 		FILE *f = fopen("forms", "ab");
 		struct el_form_control *form;
-		unsigned char *qq;
+		char *qq;
 		fprintf(f,"FORM:\n");
 		foreach (form, document->forms) {
 			fprintf(f, "g=%d f=%d c=%d t:%d\n",

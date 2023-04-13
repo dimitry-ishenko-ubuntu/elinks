@@ -4,13 +4,12 @@
 #include "config.h"
 #endif
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "scripting/python/pythoninc.h"
 
 #include "elinks.h"
 
 #include "cache/cache.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "network/connection.h"
 #include "network/state.h"
 #include "protocol/uri.h"
@@ -32,7 +31,7 @@ struct python_load_uri_callback_hop {
 static void
 invoke_load_uri_callback(struct download *download, void *data)
 {
-	struct python_load_uri_callback_hop *hop = data;
+	struct python_load_uri_callback_hop *hop = (struct python_load_uri_callback_hop *)data;
 	struct session *saved_python_ses = python_ses;
 
 	assert(download);
@@ -96,7 +95,7 @@ callback -- A callable object to be called after the document has\n\
 PyObject *
 python_load(PyObject *self, PyObject *args)
 {
-	unsigned char *uristring;
+	char *uristring;
 	PyObject *callback;
 	struct uri *uri;
 	struct download *download;
@@ -122,10 +121,10 @@ python_load(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	download = mem_alloc(sizeof(*download));
+	download = (struct download *)mem_alloc(sizeof(*download));
 	if (!download) goto mem_error;
 
-	hop = mem_alloc(sizeof(*hop));
+	hop = (struct python_load_uri_callback_hop *)mem_alloc(sizeof(*hop));
 	if (!hop) goto free_download;
 	hop->ses = python_ses;
 	hop->callback = callback;

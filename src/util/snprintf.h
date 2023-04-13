@@ -81,24 +81,24 @@ extern "C" {
 
 int vasprintf(char **ptr, const char *fmt, va_list ap);
 
-static inline unsigned char *
+static inline char *
 vasprintfa(const char *fmt, va_list ap) {
 	char *str1;
-	unsigned char *str2;
+	char *str2;
 	int size;
 
 	if (vasprintf(&str1, fmt, ap) < 0)
 		return NULL;
 
 	size = strlen(str1) + 1;
-	str2 = mem_alloc(size);
+	str2 = (char *)mem_alloc(size);
 	if (str2) memcpy(str2, str1, size);
 	free(str1);
 
 	return str2;
 }
 
-unsigned char *asprintfa(const char *fmt, ...);
+char *asprintfa(const char *fmt, ...);
 
 #ifdef __cplusplus
 }

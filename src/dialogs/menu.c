@@ -20,7 +20,7 @@
 #include "dialogs/info.h"
 #include "dialogs/menu.h"
 #include "dialogs/options.h"
-#include "intl/gettext/libintl.h"
+#include "intl/libintl.h"
 #include "main/event.h"
 #include "main/main.h"
 #include "main/select.h"
@@ -52,9 +52,9 @@
 static void
 menu_url_shortcut(struct terminal *term, void *url_, void *ses_)
 {
-	unsigned char *url = url_;
-	struct session *ses = ses_;
-	struct uri *uri = get_uri(url, 0);
+	char *url = (char *)url_;
+	struct session *ses = (struct session *)ses_;
+	struct uri *uri = get_uri(url, URI_NONE);
 
 	if (!uri) return;
 	goto_uri(ses, uri);
@@ -62,7 +62,7 @@ menu_url_shortcut(struct terminal *term, void *url_, void *ses_)
 }
 
 static void
-save_url(struct session *ses, unsigned char *url)
+save_url(struct session *ses, char *url)
 {
 	struct document_view *doc_view;
 	struct uri *uri;
@@ -97,14 +97,14 @@ save_url_as(struct session *ses)
 		     N_("Save URL"), N_("Enter URL"),
 		     ses, &goto_url_history,
 		     MAX_STR_LEN, "", 0, 0, NULL,
-		     (void (*)(void *, unsigned char *)) save_url,
+		     (void (*)(void *, char *)) save_url,
 		     NULL);
 }
 
 static void
 really_exit_prog(void *ses_)
 {
-	struct session *ses = ses_;
+	struct session *ses = (struct session *)ses_;
 
 	register_bottom_half(destroy_terminal, ses->tab->term);
 }
@@ -112,7 +112,7 @@ really_exit_prog(void *ses_)
 static inline void
 dont_exit_prog(void *ses_)
 {
-	struct session *ses = ses_;
+	struct session *ses = (struct session *)ses_;
 
 	ses->exit_query = 0;
 }
@@ -156,8 +156,8 @@ exit_prog(struct session *ses, int query)
 static void
 go_historywards(struct terminal *term, void *target_, void *ses_)
 {
-	struct location *target = target_;
-	struct session *ses = ses_;
+	struct location *target = (struct location *)target_;
+	struct session *ses = (struct session *)ses_;
 
 	go_history(ses, target);
 }
@@ -180,7 +180,7 @@ history_menu_common(struct terminal *term, struct session *ses, int unhist)
 		for (loc = unhist ? cur_loc(ses)->next : cur_loc(ses)->prev;
 		     loc != (struct location *) &ses->history.history;
 		     loc = unhist ? loc->next : loc->prev) {
-			unsigned char *url;
+			char *url;
 
 			if (!mi) {
 				mi = new_menu(FREE_LIST | FREE_TEXT | NO_INTL);
@@ -205,7 +205,7 @@ history_menu_common(struct terminal *term, struct session *ses, int unhist)
 static void
 history_menu(struct terminal *term, void *xxx, void *ses_)
 {
-	struct session *ses = ses_;
+	struct session *ses = (struct session *)ses_;
 
 	history_menu_common(term, ses, 0);
 }
@@ -213,7 +213,7 @@ history_menu(struct terminal *term, void *xxx, void *ses_)
 static void
 unhistory_menu(struct terminal *term, void *xxx, void *ses_)
 {
-	struct session *ses = ses_;
+	struct session *ses = (struct session *)ses_;
 
 	history_menu_common(term, ses, 1);
 }
@@ -300,7 +300,7 @@ tab_menu(struct session *ses, int x, int y, int place_above_cursor)
 static void
 do_submenu(struct terminal *term, void *menu_, void *ses_)
 {
-	struct menu_item *menu = menu_;
+	struct menu_item *menu = (struct menu_item *)menu_;
 
 	do_menu(term, menu, ses_, 1);
 }
@@ -352,7 +352,7 @@ do_file_menu(struct terminal *term, void *xxx, void *ses_)
 	int anonymous = get_cmd_opt_bool("anonymous");
 	int x, o;
 
-	file_menu = mem_alloc(sizeof(file_menu11) + sizeof(file_menu21)
+	file_menu = (struct menu_item *)mem_alloc(sizeof(file_menu11) + sizeof(file_menu21)
 			      + sizeof(file_menu22) + sizeof(file_menu3)
 			      + 3 * sizeof(struct menu_item));
 	if (!file_menu) return;
@@ -510,7 +510,7 @@ static struct menu_item tools_menu[] = {
 static void
 do_setup_menu(struct terminal *term, void *xxx, void *ses_)
 {
-	struct session *ses = ses_;
+	struct session *ses = (struct session *)ses_;
 
 	if (!get_cmd_opt_bool("anonymous"))
 		do_menu(term, setup_menu, ses, 1);
@@ -537,13 +537,13 @@ activate_bfu_technology(struct session *ses, int item)
 
 
 void
-dialog_goto_url(struct session *ses, unsigned char *url)
+dialog_goto_url(struct session *ses, char *url)
 {
 	input_dialog(ses->tab->term, NULL,
 		     N_("Go to URL"), N_("Enter URL"),
 		     ses, &goto_url_history,
 		     MAX_STR_LEN, url, 0, 0, NULL,
-		     (void (*)(void *, unsigned char *)) goto_url_with_hook,
+		     (void (*)(void *, char *)) goto_url_with_hook,
 		     NULL);
 }
 
@@ -552,7 +552,7 @@ static INIT_INPUT_HISTORY(file_history);
 
 void
 query_file(struct session *ses, struct uri *uri, void *data,
-	   void (*std)(void *, unsigned char *),
+	   void (*std)(void *, char *),
 	   void (*cancel)(void *), int interactive)
 {
 	struct string def;
@@ -601,7 +601,7 @@ query_file(struct session *ses, struct uri *uri, void *data,
 			     N_("Download"), N_("Save to file"),
 			     data, &file_history,
 			     MAX_STR_LEN, def.source, 0, 0, check_nonempty,
-			     (void (*)(void *, unsigned char *)) std,
+			     (void (*)(void *, char *)) std,
 			     (void (*)(void *)) cancel);
 	} else {
 		std(data, def.source);
@@ -621,7 +621,7 @@ free_history_lists(void)
 
 
 static void
-add_cmdline_bool_option(struct string *string, unsigned char *name)
+add_cmdline_bool_option(struct string *string, const char *name)
 {
 	if (!get_cmd_opt_bool(name)) return;
 	add_to_string(string, " -");
@@ -630,7 +630,7 @@ add_cmdline_bool_option(struct string *string, unsigned char *name)
 
 void
 open_uri_in_new_window(struct session *ses, struct uri *uri, struct uri *referrer,
-		       enum term_env_type env, enum cache_mode cache_mode,
+		       term_env_type_T env, cache_mode_T cache_mode,
 		       enum task_type task)
 {
 	int ring = get_cmd_opt_int("session-ring");
@@ -700,8 +700,8 @@ send_open_new_window(struct terminal *term, const struct open_in_new *open,
 void
 open_in_new_window(struct terminal *term, void *func_, void *ses_)
 {
-	menu_func_T func = func_;
-	struct session *ses = ses_;
+	menu_func_T func = (menu_func_T)func_;
+	struct session *ses = (struct session *)ses_;
 	struct menu_item *mi;
 	int posibilities;
 
@@ -736,7 +736,7 @@ open_in_new_window(struct terminal *term, void *func_, void *ses_)
 
 
 void
-add_new_win_to_menu(struct menu_item **mi, unsigned char *text,
+add_new_win_to_menu(struct menu_item **mi, char *text,
 		    struct terminal *term)
 {
 	int c = can_open_in_new(term);
@@ -754,16 +754,17 @@ add_new_win_to_menu(struct menu_item **mi, unsigned char *text,
 
 	add_to_menu(mi, text, NULL, ACT_MAIN_OPEN_LINK_IN_NEW_WINDOW,
 		    open_in_new_window,
-		    send_open_in_new_window, c - 1 ? SUBMENU : 0);
+		    (void *)send_open_in_new_window, c - 1 ? SUBMENU : 0);
 }
 
 
 static void
 do_pass_uri_to_command(struct terminal *term, void *command_, void *xxx)
 {
-	unsigned char *command = command_;
+	char *command = (char *)command_;
+	int block = command[0] == 'b' ? TERM_EXEC_BG : TERM_EXEC_FG;
 
-	exec_on_terminal(term, command, "", TERM_EXEC_BG);
+	exec_on_terminal(term, command + 1, "", block);
 	mem_free(command);
 }
 
@@ -771,8 +772,8 @@ do_pass_uri_to_command(struct terminal *term, void *command_, void *xxx)
  * - Support for passing MIME type
  * - Merge this function with rewrite_uri(), subst_cmd(), subst_file()
  *   and subst_url(). */
-static unsigned char *
-format_command(unsigned char *format, struct uri *uri)
+static char *
+format_command(char *format, struct uri *uri)
 {
 	struct string string;
 
@@ -792,7 +793,7 @@ format_command(unsigned char *format, struct uri *uri)
 		switch (*format) {
 			case 'c':
 			{
-				unsigned char *str = struri(uri);
+				char *str = struri(uri);
 				int length = get_real_uri_length(uri);
 
 				add_shell_quoted_to_string(&string,
@@ -818,9 +819,9 @@ pass_uri_to_command(struct session *ses, struct document_view *doc_view,
 {
 	LIST_OF(struct option) *tree = get_opt_tree("document.uri_passing",
 	                                            NULL);
-	enum pass_uri_type type = which_type;
+	pass_uri_type_T type = which_type;
 	struct menu_item *items;
-	struct option *option;
+	struct option *option, *sub;
 	struct uri *uri;
 	int commands = 0;
 
@@ -856,7 +857,8 @@ pass_uri_to_command(struct session *ses, struct document_view *doc_view,
 	}
 
 	foreach (option, *tree) {
-		unsigned char *text, *data;
+		char *text, *command, *data;
+		int block;
 
 		if (!strcmp(option->name, "_template_"))
 			continue;
@@ -864,11 +866,28 @@ pass_uri_to_command(struct session *ses, struct document_view *doc_view,
 		text = stracpy(option->name);
 		if (!text) continue;
 
-		data = format_command(option->value.string, uri);
+		command = NULL;
+		block = 0;
+
+		foreach (sub, *option->value.tree) {
+			if (!strcmp(sub->name, "command"))
+				command = sub->value.string;
+			if (!strcmp(sub->name, "foreground"))
+				block = sub->value.number;
+		}
+
+		if (!command) {
+			mem_free(text);
+			continue;
+		}
+
+		data = format_command(command, uri);
 		if (!data) {
 			mem_free(text);
 			continue;
 		}
+		insert_in_string(&data, 0, " ", 1);
+		data[0] = block ? 'f' : 'b';
 
 		add_to_menu(&items, text, NULL, ACT_MAIN_NONE,
 			    do_pass_uri_to_command, data, 0);
@@ -894,14 +913,14 @@ pass_uri_to_command(struct session *ses, struct document_view *doc_view,
 /* The caller provides the text of the menu item, so that it can
  * choose an available accelerator key. */
 void
-add_uri_command_to_menu(struct menu_item **mi, enum pass_uri_type type,
-			unsigned char *text)
+add_uri_command_to_menu(struct menu_item **mi, pass_uri_type_T type,
+			char *text)
 {
 	LIST_OF(struct option) *tree = get_opt_tree("document.uri_passing",
 	                                            NULL);
 	struct option *option;
 	int commands = 0;
-	enum menu_item_flags flags = NO_FLAG;
+	menu_item_flags_T flags = NO_FLAG;
 	action_id_T action_id;
 
 	switch (type) {
@@ -949,7 +968,7 @@ static struct menu_item empty_directory_menu[] = {
 static void
 complete_file_menu(struct terminal *term, int no_elevator, void *data,
 		   menu_func_T file_func, menu_func_T dir_func,
-		   unsigned char *dirname, unsigned char *filename)
+		   char *dirname, char *filename)
 {
 	struct menu_item *menu = new_menu(FREE_LIST | NO_INTL);
 	struct directory_entry *entries, *entry;
@@ -965,7 +984,7 @@ complete_file_menu(struct terminal *term, int no_elevator, void *data,
 	}
 
 	for (entry = entries; entry->name; entry++) {
-		unsigned char *text;
+		char *text;
 		int is_dir = (*entry->attrib == 'd');
 		int is_file = (*entry->attrib == '-');
 
@@ -1018,7 +1037,7 @@ complete_file_menu(struct terminal *term, int no_elevator, void *data,
 
 	/* Only one entry */
 	if (direntries + fileentries == 1) {
-		unsigned char *text = menu[FILE_COMPLETION_MENU_OFFSET].data;
+		char *text = (char *)menu[FILE_COMPLETION_MENU_OFFSET].data;
 
 		mem_free(menu);
 
@@ -1047,19 +1066,19 @@ complete_file_menu(struct terminal *term, int no_elevator, void *data,
 /* Prepares the launching of the file completion menu by expanding the @path
  * and splitting it in directory and file name part. */
 void
-auto_complete_file(struct terminal *term, int no_elevator, unsigned char *path,
+auto_complete_file(struct terminal *term, int no_elevator, char *path,
 		   menu_func_T file_func, menu_func_T dir_func, void *data)
 {
 	struct uri *uri;
-	unsigned char *dirname;
-	unsigned char *filename;
+	char *dirname;
+	char *filename;
 
 	assert(term && data && file_func && dir_func && data);
 
 	if (get_cmd_opt_bool("anonymous"))
 		return;
 
-	if (!*path) path = "./";
+	if (!*path) path = (char *)"./";
 
 	/* Use the URI translation to handle ./ and ../ and ~/ expansion */
 	uri = get_translated_uri(path, term->cwd);
@@ -1093,7 +1112,7 @@ auto_complete_file(struct terminal *term, int no_elevator, unsigned char *path,
 
 	/* Make sure the dirname has an ending slash */
 	if (!dir_sep(path[-1])) {
-		unsigned char separator = *dirname;
+		char separator = *dirname;
 		int dirnamelen = path - dirname;
 
 		insert_in_string(&dirname, dirnamelen, &separator, 1);

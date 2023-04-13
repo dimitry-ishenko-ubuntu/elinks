@@ -6,6 +6,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h> /* OS/2 needs this after sys/types.h */
+#endif
 
 #include "elinks.h"
 
@@ -41,7 +45,7 @@
 static void
 set_bittorrent_connection_timer(struct connection *conn)
 {
-	struct bittorrent_connection *bittorrent = conn->info;
+	struct bittorrent_connection *bittorrent = (struct bittorrent_connection *)conn->info;
 	milliseconds_T interval = sec_to_ms(get_opt_int("protocol.bittorrent.choke_interval", NULL));
 
 	install_timer(&bittorrent->timer, interval,
@@ -90,7 +94,7 @@ sort_bittorrent_peer_connections(struct bittorrent_connection *bittorrent)
 void
 update_bittorrent_connection_state(struct connection *conn)
 {
-	struct bittorrent_connection *bittorrent = conn->info;
+	struct bittorrent_connection *bittorrent = (struct bittorrent_connection *)conn->info;
 	struct bittorrent_peer_connection *peer, *next_peer;
 	int peer_conns, max_peer_conns;
 	int min_uploads = get_opt_int("protocol.bittorrent.min_uploads", NULL);
@@ -190,7 +194,7 @@ update_bittorrent_connection_state(struct connection *conn)
 static void
 update_bittorrent_connection_upload(void *data)
 {
-	struct bittorrent_connection *bittorrent = data;
+	struct bittorrent_connection *bittorrent = (struct bittorrent_connection *)data;
 
 	update_progress(&bittorrent->upload_progress,
 			bittorrent->uploaded,
@@ -243,7 +247,7 @@ update_bittorrent_connection_stats(struct bittorrent_connection *bittorrent,
 static void
 done_bittorrent_connection(struct connection *conn)
 {
-	struct bittorrent_connection *bittorrent = conn->info;
+	struct bittorrent_connection *bittorrent = (struct bittorrent_connection *)conn->info;
 	struct bittorrent_peer_connection *peer, *next;
 
 	assert(bittorrent);
@@ -280,7 +284,7 @@ init_bittorrent_connection(struct connection *conn)
 	assert(conn->done == NULL);
 	if_assert_failed return NULL;
 
-	bittorrent = mem_calloc(1, sizeof(*bittorrent));
+	bittorrent = (struct bittorrent_connection *)mem_calloc(1, sizeof(*bittorrent));
 	if (!bittorrent) return NULL;
 
 	init_list(bittorrent->peers);
@@ -323,8 +327,8 @@ static void
 bittorrent_metainfo_callback(void *data, struct connection_state state,
 			     struct bittorrent_const_string *response)
 {
-	struct connection *conn = data;
-	struct bittorrent_connection *bittorrent = conn->info;
+	struct connection *conn = (struct connection *)data;
+	struct bittorrent_connection *bittorrent = (struct bittorrent_connection *)conn->info;
 
 	bittorrent->fetch = NULL;
 
@@ -403,7 +407,7 @@ bittorrent_protocol_handler(struct connection *conn)
 	}
 
 	if (conn->uri->datalen)
-		uri = get_uri(conn->uri->data, 0);
+		uri = get_uri(conn->uri->data, URI_NONE);
 
 	if (!uri) {
 		abort_connection(conn, connection_state(S_BITTORRENT_BAD_URL));

@@ -83,6 +83,8 @@ enum css_selector_type {
 	CST_INVALID, /**< Auxiliary for the parser */
 };
 
+typedef unsigned char css_selector_type_T;
+
 /** The struct css_selector is used for mapping elements (or nodes) in the
  * document structure to properties. See README for some hints about how the
  * trees of these span. */
@@ -95,8 +97,8 @@ struct css_selector {
 	enum css_selector_relation  relation;
 	struct css_selector_set leaves;
 
-	enum css_selector_type type;
-	unsigned char *name;
+	css_selector_type_T type;
+	char *name;
 
 	LIST_OF(struct css_property) properties;
 };
@@ -104,7 +106,7 @@ struct css_selector {
 
 struct css_stylesheet;
 typedef void (*css_stylesheet_importer_T)(struct css_stylesheet *, struct uri *,
-					  const unsigned char *url, int urllen);
+					  const char *url, int urllen);
 
 /** The struct css_stylesheet describes all the useful data that was extracted
  * from the CSS source. Currently we don't cache anything but the default user
@@ -146,9 +148,9 @@ void done_css_stylesheet(struct css_stylesheet *css);
 /** Returns a new freshly made selector adding it to the given selector
  * set, or NULL. */
 struct css_selector *get_css_selector(struct css_selector_set *set,
-                                      enum css_selector_type type,
+                                      css_selector_type_T type,
                                       enum css_selector_relation rel,
-                                      const unsigned char *name, int namelen);
+                                      const char *name, int namelen);
 
 #define get_css_base_selector(stylesheet, type, rel, name, namelen) \
 	get_css_selector((stylesheet) ? &(stylesheet)->selectors : NULL, \
@@ -157,9 +159,9 @@ struct css_selector *get_css_selector(struct css_selector_set *set,
 /** Looks up the selector of the name @a name and length @a namelen in
  * the given set of selectors. */
 struct css_selector *find_css_selector(struct css_selector_set *set,
-                                       enum css_selector_type type,
+                                       css_selector_type_T type,
                                        enum css_selector_relation rel,
-                                       const unsigned char *name, int namelen);
+                                       const char *name, int namelen);
 
 #define find_css_base_selector(stylesheet, type, rel, name, namelen) \
 	find_css_selector(&stylesheet->selectors, rel, type, name, namelen)
@@ -167,9 +169,9 @@ struct css_selector *find_css_selector(struct css_selector_set *set,
 /** Initialize the selector structure. This is a rather low-level
  * function from your POV. */
 struct css_selector *init_css_selector(struct css_selector_set *set,
-                                       enum css_selector_type type,
+                                       css_selector_type_T type,
                                        enum css_selector_relation relation,
-                                       const unsigned char *name, int namelen);
+                                       const char *name, int namelen);
 
 /** Add all properties from the list to the given @a selector. */
 void add_selector_properties(struct css_selector *selector,
