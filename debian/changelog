@@ -1,13 +1,22 @@
-elinks (0.14.0~rc2-1~1.gbpac4359) UNRELEASED; urgency=medium
+elinks (0.16.0-1~3.gbp4122c2) UNRELEASED; urgency=medium
 
-  ** SNAPSHOT build @ac43599e24b0dada1603a2128846d48f9af5ff3a **
+  ** SNAPSHOT build @4122c21cec4fa5ff05a6b160b24331940fc11cfb **
 
+  * New upstream version 0.16.0
   * Updated upstream links
-  * d/watch: addd uversionmangle for pre & RC releases
-  * New upstream version 0.14.0~rc2
-  * Add dblatex to build deps
+  * d/watch: updaten& add uversionmangle for pre & RC releases
+  * Remove watch file in contrib as it confuses uscan
+  * d/u/metadata: remove Homepage field
+  * d/control:
+    + updated standards version to 4.6.2
+    + Add dblatex to build deps
+  * Refreshed patches.
+  * Removed patches:
+    + 16_POST_BUFFER_SIZE.diff patch, applied upstream
+    + 1[01]-reproducible-build.diff patches, replaced by
+      CONFIG_REPRODUCIBLE option
 
- -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Sun, 27 Dec 2020 04:26:27 +0100
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Fri, 14 Apr 2023 04:00:15 +0200
 
 elinks (0.13.2-1) unstable; urgency=medium
 
