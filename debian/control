@@ -13,7 +13,7 @@ Build-Depends: debhelper-compat (= 13), libtre-dev, libgnutls28-dev, libgcrypt20
   ,python3
   ,dblatex
 Build-Conflicts: libgc-dev
-Standards-Version: 4.5.0
+Standards-Version: 4.6.2
 Rules-Requires-Root: no
 Homepage: http://elinks.cz/
 Vcs-Git: https://salsa.debian.org/aelmahmoudy/elinks.git
