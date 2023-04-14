@@ -1,16 +1,16 @@
 Remove CFLAGS from the linker command for dh_strip - comply with Debian
 policy (section 10.1 "Binaries") for #436817
 
-Index: elinks-0.12~pre6/Makefile.lib
+Index: elinks/Makefile.lib
 ===================================================================
---- elinks-0.12~pre6.orig/Makefile.lib	2012-10-28 13:57:15.000000000 +0100
-+++ elinks-0.12~pre6/Makefile.lib	2013-11-20 11:35:53.846208670 +0100
-@@ -62,7 +62,7 @@
+--- elinks.orig/Makefile.lib	2023-04-14 03:40:28.264049745 +0200
++++ elinks/Makefile.lib	2023-04-14 03:41:44.935046117 +0200
+@@ -67,7 +67,7 @@
  			    `test -e $(subdir)/$(LIB_O_NAME) && echo $(subdir)/$(LIB_O_NAME)`)
  
     quiet_cmd_link = '    [$(LINK_COLOR)LINK$(END_COLOR)]   $(RELPATH)$@'
--         cmd_link = $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
-+         cmd_link = $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+-         cmd_link = $(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
++         cmd_link = $(CXX) $(LDFLAGS) -o $@ $^ $(LIBS)
  
   quiet_cmd_sparse = '    [SPARSE]   $(RELPATH)$(2)'
         cmd_sparse = $(SPARSE) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(SPARSE_FLAGS) $(2)

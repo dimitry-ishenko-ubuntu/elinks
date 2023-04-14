@@ -3,9 +3,9 @@
 
 Index: elinks/configure.ac
 ===================================================================
---- elinks.orig/configure.ac	2019-12-29 05:11:07.232350168 +0100
-+++ elinks/configure.ac	2019-12-29 05:11:07.232350168 +0100
-@@ -1751,7 +1751,7 @@
+--- elinks.orig/configure.ac	2023-04-14 03:46:33.839265280 +0200
++++ elinks/configure.ac	2023-04-14 03:46:33.835265331 +0200
+@@ -1910,7 +1910,7 @@
  if test "x$ac_cv_c_compiler_gnu" = "xyes"; then
    if test "$CONFIG_DEBUG" = "yes"; then
      # We want to see all warnings and live with none (in debug mode).
