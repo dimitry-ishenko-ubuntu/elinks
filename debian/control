@@ -2,13 +2,13 @@ Source: elinks
 Section: web
 Priority: optional
 Maintainer: أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>
-Build-Depends: debhelper-compat (= 13), libtre-dev, libgnutls28-dev, libgcrypt20-dev, libidn11-dev,
+Build-Depends: debhelper-compat (= 13), libtre-dev, libgnutls28-dev, libgcrypt20-dev, libidn-dev,
 	libfsplib-dev, libgpm-dev [linux-any],
 	liblua5.1-dev, libbz2-dev, libexpat1-dev,
 	libperl-dev, libkrb5-dev, gettext,
 	xmlto, docbook-utils, pkg-config,
   liblzma-dev,
-  libncurses5-dev
+  libncurses-dev
   ,libev-libevent-dev
   ,python3
   ,dblatex
