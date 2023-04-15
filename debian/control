@@ -12,7 +12,7 @@ Build-Depends: debhelper-compat (= 13), libtre-dev, libgnutls28-dev, libgcrypt20
   ,libev-libevent-dev
   ,python3
   ,dblatex
-  ,libmozjs-102-dev | libquickjs | libmujs-dev, sqlite3, libxml++2.6-dev
+  ,libmozjs-102-dev | libquickjs | libmujs-dev, libsqlite3-dev, libxml++2.6-dev
 Build-Conflicts: libgc-dev
 Standards-Version: 4.6.2
 Rules-Requires-Root: no
