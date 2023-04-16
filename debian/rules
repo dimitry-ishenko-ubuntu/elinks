@@ -36,7 +36,7 @@ override_dh_auto_configure:
 	  --with-brotli \
 	  --enable-gopher \
 	  --enable-gemini \
-	  --with-source-date-epoch=0
+	  --with-source-date-epoch=$(shell dpkg-parsechangelog -S Timestamp)
 
 override_dh_auto_build:
 	make V=1
