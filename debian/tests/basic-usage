@@ -31,6 +31,7 @@ EOF
 
 # Enable the elinks nginx site
 ln -s /etc/nginx/sites-available/elinks /etc/nginx/sites-enabled/elinks
+rm /etc/nginx/sites-enabled/default
 service nginx restart
 
 elinks -dump 1 http://localhost | grep -q "This html page was made to test elinks"
