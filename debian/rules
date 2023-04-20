@@ -3,54 +3,51 @@
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export DEB_LDFLAGS_MAINT_APPEND = -Wl,-z,defs
 
-
-CONF_OPTS= --with-lzma \
-	  --without-openssl \
-	  --without-x \
-	  --enable-finger \
-	  --with-gnutls=/usr \
-	  --enable-nntp \
-	  --enable-88-colors \
-	  --enable-256-colors \
-	  --enable-leds \
-	  --enable-html-highlight \
-	  --enable-fsp \
-	  --disable-smb \
-	  --with-perl \
-	  --without-guile \
-	  --without-python \
-	  --without-ruby \
-	  --with-gssapi \
-	  --enable-cgi \
-	  --enable-exmode \
-	  --enable-bittorrent \
-	  --disable-debug \
-	  --enable-combining \
-	  --with-terminfo \
-	  --with-libev \
-	  --enable-reproducible \
-	  --with-brotli \
-	  --enable-gopher \
-	  --enable-gemini \
-		--enable-gettext \
-	  --with-source-date-epoch=$(SOURCE_DATE_EPOCH)
+CONF_OPTS= -Dtest=true \
+		-Dlzma=true \
+	  -Dopenssl=false \
+	  -Dx=false \
+	  -Dfinger=true \
+	  -Dgnutls=true \
+	  -Dnntp=true \
+	  -D88-colors=true \
+	  -D256-colors=true \
+	  -Dgettext=true \
+	  -Dnls=true \
+	  -Dleds=true \
+	  -Dhtml-highlight=true \
+	  -Dfsp=true \
+	  -Dsmb=false \
+	  -Dperl=true \
+	  -Dguile=false \
+	  -Dpython=false \
+	  -Druby=false \
+	  -Dgssapi=true \
+	  -Dcgi=true \
+	  -Dexmode=true \
+	  -Dbittorrent=true \
+	  -Ddebug=false \
+	  -Dcombining=true \
+	  -Dterminfo=true \
+	  -Dlibev=true \
+	  -Dreproducible=true \
+	  -Dbrotli=true \
+	  -Dgopher=true \
+	  -Dgemini=true \
+	  -Dsource-date-epoch=$(SOURCE_DATE_EPOCH)
 
 ifeq (,$(findstring ~,$(DEB_VERSION_UPSTREM)))
-	CONF_OPTS += --enable-fastmem
+	CONF_OPTS += -Dfastmem=true
 endif
 
 %:
-	dh $@
+	dh $@ --buildsystem=meson
 
 override_dh_auto_configure:
-	dh_auto_configure --  --prefix=/usr --mandir=\$${prefix}/share/man --sysconfdir=/etc/elinks $(CONF_OPTS)
+	dh_auto_configure -- --sysconfdir=/etc/elinks $(CONF_OPTS)
 
 override_dh_auto_build:
-	make V=1
-	# Build docs:
-	dh_auto_build --no-parallel --builddir doc -- all-docs
+	dh_auto_build -- man html pdf txt
 
 override_dh_installexamples:
 	dh_installexamples --exclude=.gitignore
-
-override_dh_auto_test:

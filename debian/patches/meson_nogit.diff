@@ -1,0 +1,145 @@
+Description: Check git availability. Install PDF, txt, html docs
+Origin: https://github.com/rkd77/elinks/commit/44f979ffb674b0108be50c9165750d796f744214
+Origin: https://github.com/rkd77/elinks/commit/3581aa62f125e1b390a72c482bb41ec88953c0c0
+Origin: https://github.com/rkd77/elinks/commit/e890b0758491d84868130be14e0d3b8b08cd3c12
+Index: elinks/meson.build
+===================================================================
+--- elinks.orig/meson.build	2023-04-23 07:38:28.040045410 +0200
++++ elinks/meson.build	2023-04-23 07:38:28.036045466 +0200
+@@ -3,8 +3,15 @@
+ 
+ srcdir = meson.source_root()
+ 
+-txt = run_command('git', '--git-dir=' + srcdir + '/.git', 'rev-parse', 'HEAD', check:false).stdout().strip()
+-dirty = run_command(srcdir + '/git-dirty.sh', check:false).stdout().strip()
++git = find_program('git', required: false)
++
++if git.found()
++    txt = run_command('git', '--git-dir=' + srcdir + '/.git', 'rev-parse', 'HEAD', check:false).stdout().strip()
++    dirty = run_command(srcdir + '/git-dirty.sh', check:false).stdout().strip()
++else
++    txt = ''
++    dirty = ''
++endif
+ add_global_arguments('-DBUILD_ID="' + txt + dirty + '"', language : 'c')
+ 
+ conf_data = configuration_data()
+Index: elinks/doc/meson.build
+===================================================================
+--- elinks.orig/doc/meson.build	2023-04-23 07:38:28.040045410 +0200
++++ elinks/doc/meson.build	2023-04-23 07:38:28.036045466 +0200
+@@ -15,16 +15,21 @@
+ else
+     asciidoc_env = []
+ endif
++doc_dir = join_paths(get_option('prefix'), get_option('datadir'), 'doc', 'elinks')
+ 
+ if pod2html.found()
+     perl_html = custom_target('perl.html',
+               input: ['perl.pod'],
+               output: ['perl.html'],
++              install: true,
++              install_dir: doc_dir,
+               command: [pod2html, '--outfile=@OUTPUT@', '--infile=@INPUT@'])
+ 
+     perl_hooks_html = custom_target('perl-hooks.html',
+               input: ['../contrib/perl/hooks.pl'],
+               output: ['perl-hooks.html'],
++              install: true,
++              install_dir: doc_dir,
+               command: [pod2html, '--outfile=@OUTPUT@', '--infile=@INPUT@'])
+ endif
+ 
+@@ -32,6 +37,8 @@
+                input: ['../features.conf'],
+                output: 'features.txt',
+                capture: true,
++               install: true,
++               install_dir: doc_dir,
+                command: [meson.current_source_dir() + '/tools/conf2doc', '@INPUT@'])
+ 
+ keymap_actions_txt = custom_target('keymap-actions.txt',
+@@ -44,6 +51,8 @@
+                input: ['../src/config/kbdbind.c'],
+                output: 'keymap-defaults.txt',
+                capture: true,
++               install: true,
++               install_dir: doc_dir,
+                command: [meson.current_source_dir() + '/tools/keys2doc', '@INPUT@', 'keymap-defaults.txt'])
+ 
+ option_command_frag_xml = custom_target('option-command.frag.xml',
+@@ -62,6 +71,8 @@
+                input: [],
+                output: 'option-command.frag.xhtml',
+                env: ['LC_ALL=C', 'LANGUAGE=en'],
++               install: true,
++               install_dir: doc_dir,
+                command: [meson.current_source_dir() + '/tools/help2xml', elinks, '@OUTPUT@'])
+ 
+ option_config_frag_xhtml = custom_target('option-config.frag.xhtml',
+@@ -75,6 +86,8 @@
+                 output: 'elinks.1.html',
+                 depends: option_command_frag_xhtml,
+                 env: asciidoc_env,
++                install: true,
++                install_dir: doc_dir,
+                 command: [meson.current_source_dir() + '/tools/asciidoc/asciidoc.py',
+                 '--no-conf', '-f', meson.current_source_dir() + '/tools/asciidoc/asciidoc.conf',
+                 '-f', meson.current_source_dir() + '/tools/asciidoc/xhtml11.conf',
+@@ -103,6 +116,8 @@
+                 output: 'elinkskeys.5.html',
+                 depends: [keymap_actions_txt, keymap_defaults_txt],
+                 env: asciidoc_env,
++                install: true,
++                install_dir: doc_dir,
+                 command: [meson.current_source_dir() + '/tools/asciidoc/asciidoc.py',
+                 '--no-conf', '-f', meson.current_source_dir() + '/tools/asciidoc/asciidoc.conf',
+                 '-f', meson.current_source_dir() + '/tools/asciidoc/xhtml11.conf',
+@@ -130,6 +145,8 @@
+                 output: 'manual.html',
+                 depends: features_txt,
+                 env: asciidoc_env,
++                install: true,
++                install_dir: doc_dir,
+                 command: [meson.current_source_dir() + '/tools/asciidoc/asciidoc.py',
+                 '--no-conf', '-f', meson.current_source_dir() + '/tools/asciidoc/asciidoc.conf',
+                 '-f', meson.current_source_dir() + '/tools/asciidoc/xhtml11.conf',
+@@ -248,6 +265,8 @@
+                 input: [],
+                 output: 'manual.html-chunked',
+                 depends: manual_xml,
++                install: true,
++                install_dir: doc_dir,
+                 command: [xmlto, '-o', meson.current_build_dir() + '/manual.html-chunked', 'html', meson.current_build_dir()+'/manual.xml'])
+ endif
+ 
+@@ -258,6 +277,8 @@
+                 input: [],
+                 output: 'manual.pdf',
+                 depends: manual_xml,
++                install: true,
++                install_dir: doc_dir,
+                 command: [dblatex, meson.current_build_dir() + '/manual.xml'])
+ endif
+ 
+@@ -267,6 +288,8 @@
+                 input: [],
+                 output: 'api',
+                 env: ['OUTPUT_DIRECTORY='+meson.current_build_dir()+'/'],
++                install: true,
++                install_dir: doc_dir,
+                 command: [doxygen, meson.current_build_dir()+'/Doxyfile'])
+ endif
+ 
+Index: elinks/src/dom/test/meson.build
+===================================================================
+--- elinks.orig/src/dom/test/meson.build	2023-04-23 07:00:12.042263404 +0200
++++ elinks/src/dom/test/meson.build	2023-04-23 07:39:59.846831754 +0200
+@@ -28,7 +28,6 @@
+ testdeps,
+ c_args:['-DHAVE_CONFIG_H'], cpp_args:['-DHAVE_CONFIG_H'], include_directories:['.', '../..', '../../..'],
+ build_by_default:false)
+-endif
+ 
+ test_lib = environment({'TEST_LIB': meson.source_root()+'/test/libtest.sh'})
+ 

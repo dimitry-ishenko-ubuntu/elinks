@@ -14,6 +14,7 @@ Build-Depends: debhelper-compat (= 13), libtre-dev, libgnutls28-dev, libgcrypt20
   ,dblatex
   ,zlib1g-dev
   ,libbrotli-dev
+  ,meson
 Build-Conflicts: libgc-dev
 Standards-Version: 4.6.2
 Rules-Requires-Root: no
