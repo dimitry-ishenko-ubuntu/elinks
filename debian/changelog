@@ -1,8 +1,8 @@
-elinks (0.16.0-1~3.gbp4122c2) UNRELEASED; urgency=medium
+elinks (0.16.0-1) experimental; urgency=medium
 
-  ** SNAPSHOT build @4122c21cec4fa5ff05a6b160b24331940fc11cfb **
-
+  [ أحمد المحمودي (Ahmed El-Mahmoudy) ]
   * New upstream version 0.16.0
+    + Confgurable Accept headers (Closes: #382174)
   * Updated upstream links
   * d/watch: updaten& add uversionmangle for pre & RC releases
   * Remove watch file in contrib as it confuses uscan
@@ -15,8 +15,31 @@ elinks (0.16.0-1~3.gbp4122c2) UNRELEASED; urgency=medium
     + 16_POST_BUFFER_SIZE.diff patch, applied upstream
     + 1[01]-reproducible-build.diff patches, replaced by
       CONFIG_REPRODUCIBLE option
+  * Update changelog for 0.16.02-1~3.gbp4122c2 release
+  * d/elinks-data.examples: update filename of w3m2links.awk script
+  * d/control: update build-deps
+    libidn11-dev -> libidn-dev, libncurses5-dev -> libncurses-dev
+  * Remove d/elinks.lintian-overrides, no longer needed
+  * d/source.lintian-overrides: add overrides for HTML files reported to be 
+    without source.
+    See: #1019980
+  * Enable Spidermonkey javascript support
+  * d/rules:
+    + Enable reproducible builds, set source-date-epoch to latest changelog 
+      entry epoch.
+    + Split each configure option in a separate line
+    + Set source epoch to timestamp of last changelog entry
+    + Enable Gopher protocol
+    + Enable Gemini protocol
+    + Use system gettext
+    + Disable dh_auto_test till upstream fixes it.
+  * Build with zlib support (Closes: #1023831)
+  * Enable Brotli compression
 
- -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Fri, 14 Apr 2023 04:00:15 +0200
+  [ Lucas Kanashiro ]
+  * debian/tests/{control,basic-usage}: add basic test case
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Fri, 21 Apr 2023 23:39:09 +0200
 
 elinks (0.13.2-1) unstable; urgency=medium
 
