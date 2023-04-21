@@ -16,7 +16,6 @@ override_dh_auto_configure:
 	  --enable-nntp \
 	  --enable-88-colors \
 	  --enable-256-colors \
-		--enable-true-color \
 	  --enable-leds \
 	  --enable-html-highlight \
 	  --enable-fsp \
