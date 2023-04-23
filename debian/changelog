@@ -20,12 +20,12 @@ elinks (0.16.0-1) experimental; urgency=medium
   * d/control: update build-deps
     libidn11-dev -> libidn-dev, libncurses5-dev -> libncurses-dev
   * Remove d/elinks.lintian-overrides, no longer needed
-  * d/source.lintian-overrides: add overrides for HTML files reported to be 
+  * d/source.lintian-overrides: add overrides for HTML files reported to be
     without source.
     See: #1019980
   * Enable Spidermonkey javascript support
   * d/rules:
-    + Enable reproducible builds, set source-date-epoch to latest changelog 
+    + Enable reproducible builds, set source-date-epoch to latest changelog
       entry epoch.
     + Split each configure option in a separate line
     + Set source epoch to timestamp of last changelog entry
