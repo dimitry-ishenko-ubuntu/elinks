@@ -37,6 +37,7 @@ override_dh_auto_configure:
 	  --enable-gopher \
 	  --enable-gemini \
 		--enable-gettext \
+		--enable-fastmem \
 	  --with-source-date-epoch=$(SOURCE_DATE_EPOCH)
 
 override_dh_auto_build:
