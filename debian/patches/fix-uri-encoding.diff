@@ -1,0 +1,135 @@
+Description: Fix encoding for URIs with non-ASCII characters
+Bug: https://github.com/rkd77/elinks/issues/221
+Bug-Debian: https://bugs.debian.org/561751
+Origin: https://github.com/rkd77/elinks/commit/4a3fa85ee7ad7428349421b2bace9b9a2aa7928d
+Origin: https://github.com/rkd77/elinks/commit/7a665d8de49236bf946efb25277bcd3612fc6242
+Origin: https://github.com/rkd77/elinks/commit/dc37be3b605287be6f997a945bfc31da4ffc1e73
+
+    [link] Convert href for anchor to terminal codepage, usually utf-8. Refs #221
+
+diff --git a/src/document/html/parser/link.c b/src/document/html/parser/link.c
+index 6e0051ce..fbce1578 100644
+--- a/src/document/html/parser/link.c
++++ b/src/document/html/parser/link.c
+@@ -54,13 +54,17 @@ html_a(struct html_context *html_context, char *a,
+ 	char *href;
+ 
+ 	href = get_url_val(a, "href", html_context->doc_cp);
++
+ 	if (href) {
+ 		char *target;
++		char *href_converted = convert_string(renderer_context.convert_table, href, strlen(href),
++			html_context->options->cp, CSM_NONE, NULL, NULL, NULL);
+ 
+-		mem_free_set(&elformat.link,
+-			     join_urls(html_context->base_href,
+-				       trim_chars(href, ' ', 0)));
+-
++		if (href_converted) {
++			mem_free_set(&elformat.link,
++				join_urls(html_context->base_href, trim_chars(href_converted, ' ', 0)));
++			mem_free(href_converted);
++		}
+ 		mem_free(href);
+ 
+ 		target = get_target(html_context->options, a);
+
+
+    [uri] Introduced function encode_uri_string_percent. Refs #221
+    
+    This function is similar to encode_uri_string, but does not
+    encode percents.
+
+    [uri] Encode only bytes with highest bit set. Refs #226
+    
+    It is not good, but before it was worse.
+    Characters like ? and = were encoded.
+
+
+diff --git a/src/protocol/http/http.c b/src/protocol/http/http.c
+index 9f42b21a..7461c736 100644
+--- a/src/protocol/http/http.c
++++ b/src/protocol/http/http.c
+@@ -350,10 +350,22 @@ add_url_to_http_string(struct string *header, struct uri *uri, uri_component_T c
+ 	 * before. We should probably encode all URLs as early as
+ 	 * possible, and possibly decode them back in protocol
+ 	 * backends. --pasky */
+-	char *string = get_uri_string(uri, components);
+-	char *data = string;
++	struct string encoded;
++	char *string;
++	char *data;
+ 
+-	if (!string) return;
++	if (!init_string(&encoded)) {
++		return;
++	}
++	string = get_uri_string(uri, components);
++
++	if (!string) {
++		done_string(&encoded);
++		return;
++	}
++	encode_uri_string_percent(&encoded, string, -1);
++	mem_free(string);
++	data = encoded.source;
+ 
+ 	while (*data) {
+ 		int len = strcspn(data, " \t\r\n\\");
+@@ -369,8 +381,7 @@ add_url_to_http_string(struct string *header, struct uri *uri, uri_component_T c
+ 
+ 		data	+= len;
+ 	}
+-
+-	mem_free(string);
++	done_string(&encoded);
+ }
+ 
+ /* Parse from @end - 1 to @start and set *@value to integer found.
+diff --git a/src/protocol/uri.c b/src/protocol/uri.c
+index 90d9df14..1e9c08c6 100644
+--- a/src/protocol/uri.c
++++ b/src/protocol/uri.c
+@@ -1422,6 +1422,29 @@ encode_uri_string(struct string *string, const char *name, int namelen,
+ 	}
+ }
+ 
++void
++encode_uri_string_percent(struct string *string, const char *name, int namelen)
++{
++	char n[4];
++	const char *end;
++
++	n[0] = '%';
++	n[3] = '\0';
++
++	if (namelen < 0) namelen = strlen(name);
++
++	for (end = name + namelen; name < end; name++) {
++		if ((unsigned char)(*name) < 128) {
++			add_char_to_string(string, *name);
++		} else {
++			/* Hex it. */
++			n[1] = Hx((((int) *name) & 0xF0) >> 4);
++			n[2] = Hx(((int) *name) & 0xF);
++			add_bytes_to_string(string, n, sizeof(n) - 1);
++		}
++	}
++}
++
+ void
+ encode_win32_uri_string(struct string *string, char *name, int namelen)
+ {
+diff --git a/src/protocol/uri.h b/src/protocol/uri.h
+index 837cd697..0337ae50 100644
+--- a/src/protocol/uri.h
++++ b/src/protocol/uri.h
+@@ -321,6 +321,8 @@ int get_uri_port(const struct uri *uri);
+ void encode_uri_string(struct string *string, const char *name, int namelen,
+ 		       int convert_slashes);
+ 
++void encode_uri_string_percent(struct string *string, const char *name, int namelen);
++
+ /* special version for Windows directory listing */
+ void encode_win32_uri_string(struct string *string, char *name, int namelen);
+ 

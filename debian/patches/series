@@ -2,3 +2,4 @@
 04_436817_nostrip.diff
 07_617713_cache_control.diff
 14_debug_disable_Werror.diff
+fix-uri-encoding.diff
