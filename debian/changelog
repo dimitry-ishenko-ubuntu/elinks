@@ -1,3 +1,14 @@
+elinks (0.16.0-2) experimental; urgency=medium
+
+  * d/rules: no need to configure info dir
+  * d/changelog: remove trailing whitespaces
+  * Remove ascii-replacement-utf8-console.diff patch, applied upstream
+  * Add fix-uri-encoding.diff to fix encoding of URIs with non-ASCII characters
+    (Closes: #561751)
+  * Enable fast mode only for stable releases (Closes: #774159)
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Sat, 29 Apr 2023 05:49:08 +0200
+
 elinks (0.16.0-1) experimental; urgency=medium
 
   [ أحمد المحمودي (Ahmed El-Mahmoudy) ]
