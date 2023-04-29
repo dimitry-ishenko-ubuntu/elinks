@@ -3,12 +3,8 @@
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export DEB_LDFLAGS_MAINT_APPEND = -Wl,-z,defs
 
-%:
-	dh $@
 
-override_dh_auto_configure:
-	dh_auto_configure --  --prefix=/usr --mandir=\$${prefix}/share/man --sysconfdir=/etc/elinks \
-	  --with-lzma \
+CONF_OPTS= --with-lzma \
 	  --without-openssl \
 	  --without-x \
 	  --enable-finger \
@@ -37,8 +33,17 @@ override_dh_auto_configure:
 	  --enable-gopher \
 	  --enable-gemini \
 		--enable-gettext \
-		--enable-fastmem \
 	  --with-source-date-epoch=$(SOURCE_DATE_EPOCH)
+
+ifeq (,$(findstring ~,$(DEB_VERSION_UPSTREM)))
+	CONF_OPTS += --enable-fastmem
+endif
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	dh_auto_configure --  --prefix=/usr --mandir=\$${prefix}/share/man --sysconfdir=/etc/elinks $(CONF_OPTS)
 
 override_dh_auto_build:
 	make V=1
