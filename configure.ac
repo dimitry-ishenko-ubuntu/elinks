@@ -16,7 +16,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([config/m4])
 
 PACKAGE=elinks
-VERSION=0.16.0
+VERSION=0.16.1.1
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Package version])
@@ -390,7 +390,7 @@ void foo(const char *format, ...) {
 
        exit(0);
 }
-main() { foo("hello\n"); }
+int main() { foo("hello\n"); }
 ]])],[el_cv_HAVE_C99_VSNPRINTF=yes],[el_cv_HAVE_C99_VSNPRINTF=no],[el_cv_HAVE_C99_VSNPRINTF=cross])])
 if test x"$el_cv_HAVE_C99_VSNPRINTF" = x"yes"; then
 	EL_DEFINE(HAVE_C99_VSNPRINTF, [C99 compliant vsnprintf()])

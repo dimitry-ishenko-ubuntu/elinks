@@ -1,10 +1,17 @@
-project('elinks', ['c','cpp'], version:'0.16.0', license:'GPLv2', default_options:['cpp_std=gnu++17'])
+project('elinks', ['c','cpp'], version:'0.16.1.1', license:'GPLv2', default_options:['cpp_std=gnu++17'])
 srcs=[]
 
 srcdir = meson.source_root()
 
-txt = run_command('git', '--git-dir=' + srcdir + '/.git', 'rev-parse', 'HEAD', check:false).stdout().strip()
-dirty = run_command(srcdir + '/git-dirty.sh', check:false).stdout().strip()
+git = find_program('git', required: false)
+
+if git.found()
+    txt = run_command('git', '--git-dir=' + srcdir + '/.git', 'rev-parse', 'HEAD', check:false).stdout().strip()
+    dirty = run_command(srcdir + '/git-dirty.sh', check:false).stdout().strip()
+else
+    txt = ''
+    dirty = ''
+endif
 add_global_arguments('-DBUILD_ID="' + txt + dirty + '"', language : 'c')
 
 conf_data = configuration_data()
