@@ -1,3 +1,15 @@
+elinks (0.16.1.1-1~1.gbp8fa75d) UNRELEASED; urgency=medium
+
+  ** SNAPSHOT build @8fa75ddcacb5aa2f3bf1fd7302f324970b1fc66b **
+
+  * New upstream version 0.16.1.1
+  * Switch to meson build system.
+    Replace d/elinks-doc.docs with elinks-doc.install
+  * d/watch: change downloadurlmangle to get xz tarball
+  * Removed fix-uri-encoding.diff, meson_nogit.diff patches, applied upstream
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Mon, 01 May 2023 22:10:47 +0200
+
 elinks (0.16.0-2) experimental; urgency=medium
 
   * d/rules: no need to configure info dir
