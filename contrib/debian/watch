@@ -1,0 +1,5 @@
+version=3
+
+opts=dversionmangle=s/[~](pre\d+|rc\d+)\.dfsg\d+$/$1/,\
+filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/elinks-$1\.tar\.gz/ \
+  https://github.com/rkd77/felinks/releases /rkd77/felinks/archive/v(.*)\.tar\.gz
