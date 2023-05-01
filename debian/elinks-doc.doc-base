@@ -1,0 +1,13 @@
+Document: elinks
+Title: ELinks Manual
+Author: Sergey Poznyakoff <gray@gnu.org.ua>
+Abstract: This manual describes what ELinks is and how it can be used on Debian
+ systems.
+Section: Network/Web Browsing
+
+Format: text
+Files: /usr/share/doc/elinks/*.txt.gz
+
+Format: HTML
+Index: /usr/share/doc/elinks/manual.html-chunked/index.html
+Files: /usr/share/doc/elinks/manual.html-chunked/*.html
