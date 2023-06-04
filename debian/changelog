@@ -1,3 +1,11 @@
+elinks (0.16.1.1-2) unstable; urgency=medium
+
+  * Upload to unstable
+  * d/control, d/copyright: update homepage URL (Closes: #1036632, #1003791)
+  * d/copyright: update upstream contact
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Sun, 04 Jun 2023 22:22:36 +0200
+
 elinks (0.16.1.1-1) experimental; urgency=medium
 
   * New upstream version 0.16.1.1
