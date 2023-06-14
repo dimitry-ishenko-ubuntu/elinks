@@ -22,6 +22,7 @@ CONF_OPTS= -Dtest=true \
 	  -Dguile=false \
 	  -Dpython=false \
 	  -Druby=false \
+	  -Dluapkg=lua5.3 \
 	  -Dgssapi=true \
 	  -Dcgi=true \
 	  -Dexmode=true \
