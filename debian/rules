@@ -6,6 +6,7 @@ export FORCE_SOURCE_DATE = 1
 
 CONF_OPTS= -Dtest=true \
 		-Dlzma=true \
+		-Dbzlib=true \
 	  -Dopenssl=false \
 	  -Dx=false \
 	  -Dfinger=true \
