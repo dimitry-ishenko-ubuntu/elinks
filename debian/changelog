@@ -1,3 +1,14 @@
+elinks (0.16.1.1-3) unstable; urgency=medium
+
+  * d/control: bump Lua build-dep to 5.3
+  * d/rules: pass -Dluapkg=lua5.3 to meson to re-enable Lua support
+    (Closes: #1037130)
+  * d/rules: export FORCE_SOURCE_DATE to makke PDF manual build reproducible.
+    Thanks to Chris Lamb <lamby@debian.org> (Closes: #1037159)
+  * Re-enable bzip2 compression
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Wed, 14 Jun 2023 22:52:28 +0200
+
 elinks (0.16.1.1-2) unstable; urgency=medium
 
   * Upload to unstable
