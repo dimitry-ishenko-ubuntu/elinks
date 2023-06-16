@@ -1,5 +1,7 @@
 #!/usr/bin/make -f
 
+include /usr/share/dpkg/architecture.mk
+
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export DEB_LDFLAGS_MAINT_APPEND = -Wl,-z,defs
 export FORCE_SOURCE_DATE = 1
@@ -41,6 +43,10 @@ CONF_OPTS= -Dtest=true \
 
 ifeq (,$(findstring ~,$(DEB_VERSION_UPSTREM)))
 	CONF_OPTS += -Dfastmem=true
+endif
+
+ifneq (linux,$(DEB_HOST_ARCH_OS))
+	CONF_OPTS += -Dgpm=false
 endif
 
 %:
