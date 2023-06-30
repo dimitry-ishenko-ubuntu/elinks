@@ -1,3 +1,14 @@
+elinks (0.16.1.1-4) unstable; urgency=medium
+
+  [ Pino Toscano ]
+  * d/rules: disable gpm on non-Linux architectures
+
+  [ أحمد المحمودي (Ahmed El-Mahmoudy) ]
+  * Add fix-mailcap-test.diff patch to fix mailcap-cache test that fails on
+    s390x arch
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Fri, 30 Jun 2023 03:01:41 +0200
+
 elinks (0.16.1.1-3) unstable; urgency=medium
 
   * d/control: bump Lua build-dep to 5.3
