@@ -1,3 +1,26 @@
+elinks (0.17.0-1~5.gbp43e7e4) UNRELEASED; urgency=medium
+
+  ** SNAPSHOT build @43e7e48f62b05b10ea108d42df5a8ad181d549a4 **
+
+  * New upstream version 0.17.0
+  * Dropped patches applied upstream: fix-mailcap-test.diff & perl_5.38.patch
+  * Refresh patches: 07_617713_cache_control.diff,
+    14_debug_disable_Werror.diff
+  * Added fix-protocol-test.patch to fix path for protocol.c test
+  * d/rules:
+    + remove sysconfdir setting (Closes: #1040656)
+    + disable libcss support
+  * Update copyright years
+  * d/control:
+    + update build deps libidn-dev -> libidn2-dev
+    + add libcurl4-gnutls-dev to build deps
+    + update build-dep: pkg-config -> pkgconf
+  * d/elinks-data.docs: README -> README.md
+  * d/source.lintian-overrides: add an override for test/data.html
+  * d/t/dump: add -no-home when invoking ELinks
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Thu, 11 Jul 2024 04:17:10 +0200
+
 elinks (0.16.1.1-4.1) unstable; urgency=medium
 
   * Non-maintainer upload.
