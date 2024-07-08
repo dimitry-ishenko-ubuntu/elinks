@@ -90,6 +90,7 @@ static int loaded = 0;
 int
 load_formhist_from_file(void)
 {
+	char *xdg_config_home = get_xdg_config_home();
 	struct formhist_data *form;
 	char tmp[MAX_STR_LEN];
 	char *file;
@@ -97,9 +98,9 @@ load_formhist_from_file(void)
 
 	if (loaded) return 1;
 
-	if (!elinks_home) return 0;
+	if (!xdg_config_home) return 0;
 
-	file = straconcat(elinks_home, FORMS_HISTORY_FILENAME,
+	file = straconcat(xdg_config_home, FORMS_HISTORY_FILENAME,
 			  (char *) NULL);
 	if (!file) return 0;
 
@@ -215,15 +216,16 @@ fail:
 int
 save_formhist_to_file(void)
 {
+	char *xdg_config_home = get_xdg_config_home();
 	struct secure_save_info *ssi;
 	char *file;
 	struct formhist_data *form;
 	int r;
 
-	if (!elinks_home || get_cmd_opt_bool("anonymous"))
+	if (!xdg_config_home || get_cmd_opt_bool("anonymous"))
 		return 0;
 
-	file = straconcat(elinks_home, FORMS_HISTORY_FILENAME,
+	file = straconcat(xdg_config_home, FORMS_HISTORY_FILENAME,
 			  (char *) NULL);
 	if (!file) return 0;
 
@@ -248,7 +250,7 @@ save_formhist_to_file(void)
 
 			if (sv->value && *sv->value) {
 				/* Obfuscate the value. If we do
-				 * $ cat ~/.elinks/formhist
+				 * $ cat ~/.config/elinks/formhist
 				 * we don't want someone behind our back to read our
 				 * password (androids don't count). */
 				encvalue = base64_encode(sv->value);

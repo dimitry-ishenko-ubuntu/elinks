@@ -51,6 +51,8 @@
 #include "viewer/text/link.h"
 #include "viewer/text/vs.h"
 
+#include <curl/curl.h>
+
 #include <iostream>
 #include <list>
 #include <map>
@@ -107,7 +109,7 @@ enum {
 };
 
 struct listener {
-	LIST_HEAD(struct listener);
+	LIST_HEAD_EL(struct listener);
 	char *typ;
 	JS::RootedValue fun;
 };
@@ -151,6 +153,7 @@ struct xhr {
 	int status;
 	int timeout;
 	unsigned short readyState;
+	size_t responseLength;
 };
 
 static void onload_run(void *data);
@@ -373,7 +376,6 @@ xhr_abort(JSContext *ctx, unsigned int argc, JS::Value *rval)
 #endif
 		return false;
 	}
-	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
 	struct xhr *xhr = JS::GetMaybePtrFromReservedSlot<struct xhr>(hobj, 0);
 
 	if (xhr && xhr->download.conn) {
@@ -400,7 +402,6 @@ xhr_addEventListener(JSContext *ctx, unsigned int argc, JS::Value *rval)
 #endif
 		return false;
 	}
-	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
 	struct xhr *xhr = JS::GetMaybePtrFromReservedSlot<struct xhr>(hobj, 0);
 
 	if (argc < 2) {
@@ -449,7 +450,6 @@ xhr_removeEventListener(JSContext *ctx, unsigned int argc, JS::Value *rval)
 #endif
 		return false;
 	}
-	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
 	struct xhr *xhr = JS::GetMaybePtrFromReservedSlot<struct xhr>(hobj, 0);
 
 	if (argc < 2) {
@@ -499,9 +499,7 @@ xhr_getAllResponseHeaders(JSContext *ctx, unsigned int argc, JS::Value *rval)
 #endif
 		return false;
 	}
-	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
 	struct xhr *xhr = JS::GetMaybePtrFromReservedSlot<struct xhr>(hobj, 0);
-	struct view_state *vs = interpreter->vs;
 
 	if (!xhr) {
 		return false;
@@ -531,9 +529,7 @@ xhr_getResponseHeader(JSContext *ctx, unsigned int argc, JS::Value *rval)
 #endif
 		return false;
 	}
-	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
 	struct xhr *xhr = JS::GetMaybePtrFromReservedSlot<struct xhr>(hobj, 0);
-	struct view_state *vs = interpreter->vs;
 
 	if (!xhr || argc == 0) {
 		return false;
@@ -683,6 +679,7 @@ xhr_open(JSContext *ctx, unsigned int argc, JS::Value *rval)
 	xhr->responseHeaders.clear();
 	mem_free_set(&xhr->response, NULL);
 	mem_free_set(&xhr->responseText, NULL);
+	xhr->responseLength = 0;
 
 	if (xhr->readyState != OPENED) {
 		xhr->readyState = OPENED;
@@ -716,7 +713,7 @@ onload_run(void *data)
 	if (xhr) {
 		struct ecmascript_interpreter *interpreter = xhr->interpreter;
 		JSContext *ctx = (JSContext *)interpreter->backend_data;
-		JS::Realm *comp = JS::EnterRealm(ctx, (JSObject *)interpreter->ac);
+		JSAutoRealm ar(ctx, (JSObject *)interpreter->ac->get());
 		JS::RootedValue r_val(ctx);
 		interpreter->heartbeat = add_heartbeat(interpreter);
 
@@ -730,7 +727,6 @@ onload_run(void *data)
 		}
 		JS_CallFunctionValue(ctx, xhr->thisval, xhr->onload, JS::HandleValueArray::empty(), &r_val);
 		done_heartbeat(interpreter->heartbeat);
-		JS::LeaveRealm(ctx, comp);
 
 		check_for_rerender(interpreter, "xhr_onload");
 	}
@@ -744,7 +740,7 @@ onloadend_run(void *data)
 	if (xhr) {
 		struct ecmascript_interpreter *interpreter = xhr->interpreter;
 		JSContext *ctx = (JSContext *)interpreter->backend_data;
-		JS::Realm *comp = JS::EnterRealm(ctx, (JSObject *)interpreter->ac);
+		JSAutoRealm ar(ctx, (JSObject *)interpreter->ac->get());
 		JS::RootedValue r_val(ctx);
 		interpreter->heartbeat = add_heartbeat(interpreter);
 
@@ -758,7 +754,6 @@ onloadend_run(void *data)
 		}
 		JS_CallFunctionValue(ctx, xhr->thisval, xhr->onloadend, JS::HandleValueArray::empty(), &r_val);
 		done_heartbeat(interpreter->heartbeat);
-		JS::LeaveRealm(ctx, comp);
 
 		check_for_rerender(interpreter, "xhr_onloadend");
 	}
@@ -772,7 +767,7 @@ onreadystatechange_run(void *data)
 	if (xhr) {
 		struct ecmascript_interpreter *interpreter = xhr->interpreter;
 		JSContext *ctx = (JSContext *)interpreter->backend_data;
-		JS::Realm *comp = JS::EnterRealm(ctx, (JSObject *)interpreter->ac);
+		JSAutoRealm ar(ctx, (JSObject *)interpreter->ac->get());
 		JS::RootedValue r_val(ctx);
 		interpreter->heartbeat = add_heartbeat(interpreter);
 
@@ -786,7 +781,6 @@ onreadystatechange_run(void *data)
 		}
 		JS_CallFunctionValue(ctx, xhr->thisval, xhr->onreadystatechange, JS::HandleValueArray::empty(), &r_val);
 		done_heartbeat(interpreter->heartbeat);
-		JS::LeaveRealm(ctx, comp);
 
 		check_for_rerender(interpreter, "xhr_onreadystatechange");
 	}
@@ -800,7 +794,7 @@ ontimeout_run(void *data)
 	if (xhr) {
 		struct ecmascript_interpreter *interpreter = xhr->interpreter;
 		JSContext *ctx = (JSContext *)interpreter->backend_data;
-		JS::Realm *comp = JS::EnterRealm(ctx, (JSObject *)interpreter->ac);
+		JSAutoRealm ar(ctx, (JSObject *)interpreter->ac->get());
 		JS::RootedValue r_val(ctx);
 		interpreter->heartbeat = add_heartbeat(interpreter);
 
@@ -814,7 +808,6 @@ ontimeout_run(void *data)
 		}
 		JS_CallFunctionValue(ctx, xhr->thisval, xhr->ontimeout, JS::HandleValueArray::empty(), &r_val);
 		done_heartbeat(interpreter->heartbeat);
-		JS::LeaveRealm(ctx, comp);
 
 		check_for_rerender(interpreter, "xhr_ontimeout");
 	}
@@ -823,7 +816,7 @@ ontimeout_run(void *data)
 static const std::vector<std::string>
 explode(const std::string& s, const char& c)
 {
-	std::string buff{""};
+	std::string buff("");
 	std::vector<std::string> v;
 
 	bool found = false;
@@ -939,6 +932,25 @@ xhr_loading_callback(struct download *download, struct xhr *xhr)
 	}
 }
 
+static size_t
+write_data(void *ptr, size_t size, size_t nmemb, void *stream)
+{
+	struct xhr *xhr = (struct xhr *)stream;
+	size_t length = xhr->responseLength;
+	char *n = (char *)mem_realloc(xhr->responseText, length + size * nmemb + 1);
+
+	if (n) {
+		xhr->responseText = n;
+	} else {
+		return 0;
+	}
+	memcpy(xhr->responseText + length, ptr, (size * nmemb));
+	xhr->responseText[length + size * nmemb] = '\0';
+	xhr->responseLength += size * nmemb;
+
+	return nmemb;
+}
+
 static bool
 xhr_send(JSContext *ctx, unsigned int argc, JS::Value *rval)
 {
@@ -976,7 +988,7 @@ xhr_send(JSContext *ctx, unsigned int argc, JS::Value *rval)
 
 	char *body = NULL;
 
-	if (xhr->method == POST && argc == 1) {
+	if (xhr->async && xhr->method == POST && argc == 1) {
 		body = jsval_to_string(ctx, args[0]);
 
 		if (body) {
@@ -1010,6 +1022,44 @@ xhr_send(JSContext *ctx, unsigned int argc, JS::Value *rval)
 
 	if (xhr->uri) {
 		if (xhr->uri->protocol == PROTOCOL_FILE && !get_opt_bool("ecmascript.allow_xhr_file", NULL)) {
+			args.rval().setUndefined();
+			return true;
+		}
+
+		if (!xhr->async) {
+			char *url = get_uri_string(xhr->uri, URI_DIR_LOCATION | URI_PATH | URI_USER | URI_PASSWORD);
+
+			if (!url) {
+				args.rval().setUndefined();
+				return true;
+			}
+
+			xhr->isSend = true;
+			CURL *curl_handle = curl_easy_init();
+			curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+			curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0L);
+			curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L);
+			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data);
+			curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, xhr);
+
+			if (argc > 0) {
+				char *body = jsval_to_string(ctx, args[0]);
+
+				if (body) {
+					size_t size = strlen(body);
+
+					curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, (long) size);
+					curl_easy_setopt(curl_handle, CURLOPT_COPYPOSTFIELDS, body);
+
+					mem_free(body);
+				}
+			}
+			curl_easy_perform(curl_handle);
+			curl_easy_cleanup(curl_handle);
+			xhr->readyState = DONE;
+			xhr->status = 200;
+			mem_free(url);
+
 			args.rval().setUndefined();
 			return true;
 		}
@@ -1126,12 +1176,7 @@ xhr_setRequestHeader(JSContext *ctx, unsigned int argc, JS::Value *rval)
 #endif
 		return false;
 	}
-	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
 	struct xhr *xhr = JS::GetMaybePtrFromReservedSlot<struct xhr>(hobj, 0);
-	struct view_state *vs;
-	struct document_view *doc_view;
-	vs = interpreter->vs;
-	doc_view = vs->doc_view;
 
 	if (!xhr) {
 		return false;
@@ -1529,11 +1574,7 @@ xhr_get_property_responseText(JSContext *ctx, unsigned int argc, JS::Value *vp)
 	JS::RootedObject hobj(ctx, &args.thisv().toObject());
 	struct xhr *xhr = JS::GetMaybePtrFromReservedSlot<struct xhr>(hobj, 0);
 
-	if (!xhr || !xhr->responseType) {
-		return false;
-	}
-
-	if (!(strlen(xhr->responseType) == 0 || !strcasecmp(xhr->responseType, "text"))) {
+	if (!xhr) {
 		return false;
 	}
 

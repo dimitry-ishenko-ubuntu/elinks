@@ -52,7 +52,7 @@ typedef unsigned char download_flags_T;
 struct download {
 	/* XXX: order matters there, there's some hard initialization in
 	 * src/session/session.c and src/viewer/text/view.c */
-	LIST_HEAD(struct download);
+	LIST_HEAD_EL(struct download);
 
 	struct connection *conn;
 	struct cache_entry *cached;
@@ -75,7 +75,7 @@ struct download {
  * These structures are kept in the session.type_queries list, and
  * destroy_session() calls done_type_query() to destroy them too.  */
 struct type_query {
-	LIST_HEAD(struct type_query);
+	LIST_HEAD_EL(struct type_query);
 
 	/** After ELinks has downloaded enough of the resource to see
 	 * that a type query is needed, it moves the download here and
@@ -255,6 +255,8 @@ void tp_display(struct type_query *type_query);
 void tp_save(struct type_query *type_query);
 void tp_cancel(void *data);
 struct file_download *init_file_download(struct uri *uri, struct session *ses, char *file, int fd);
+
+void clear_uri_tempfiles(void);
 
 #ifdef __cplusplus
 }

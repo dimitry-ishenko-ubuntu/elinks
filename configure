@@ -741,11 +741,18 @@ PERL_CFLAGS
 PERL_LIBS
 GUILE_CFLAGS
 GUILE_CONFIG
+CONFIG_LIBSIXEL
+CONFIG_LIBDOM
+LIBDOM_LIBS
+LIBDOM_CFLAGS
+CONFIG_LIBCSS
+LIBCSS_LIBS
+LIBCSS_CFLAGS
 CONFIG_QUICKJS
 CONFIG_MUJS
 MUJS_CFLAGS
 MUJS_LIBS
-CONFIG_XML
+CONFIG_LIBCURL
 CONFIG_SPIDERMONKEY
 SPIDERMONKEY_CFLAGS
 SPIDERMONKEY_LIBS
@@ -755,7 +762,7 @@ CONFIG_ECMASCRIPT
 CONFIG_XBEL_BOOKMARKS
 CONFIG_BOOKMARKS
 CONFIG_GSSAPI
-CONFIG_IDN
+CONFIG_IDN2
 CONFIG_LZMA
 CONFIG_BROTLI
 BROTLI_LIBS
@@ -878,7 +885,7 @@ with_bzlib
 with_zstd
 with_brotli
 with_lzma
-with_idn
+with_idn2
 with_gssapi
 enable_bookmarks
 enable_xbel
@@ -886,6 +893,8 @@ with_mujs
 with_quickjs
 with_spidermonkey
 enable_sm_scripting
+with_libcurl
+with_libsixel
 with_guile
 with_perl
 with_python
@@ -1642,11 +1651,13 @@ Optional Packages:
   --with-zstd             enable experimental zstd support
   --with-brotli           enable brotli
   --with-lzma             enable lzma encoding support
-  --without-idn           disable international domain names support
+  --without-idn2          disable international domain names support
   --with-gssapi           enable GSSAPI support
   --with-mujs             enable MuJS engine
   --with-quickjs          enable Quickjs engine
   --with-spidermonkey     enable SpiderMonkey Mozilla Javascript engine
+  --with-libcurl          enable curl
+  --with-libsixel         enable sixel graphics
   --with-guile            enable Guile support
   --with-perl             enable Perl support
   --with-python[=DIR]     enable Python support
@@ -3316,7 +3327,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 PACKAGE=elinks
-VERSION=0.16.1.1
+VERSION=0.17.0
 
 
 
@@ -11186,24 +11197,24 @@ printf "%s\n" "disabled" >&6; }
 
 
 
-	if test "x$CONFIG_IDN" != xno; then CONFIG_IDN=yes; fi
-	WITHVAL_CONFIG_IDN=
+	if test "x$CONFIG_IDN2" != xno; then CONFIG_IDN2=yes; fi
+	WITHVAL_CONFIG_IDN2=
 
 
-# Check whether --with-idn was given.
-if test ${with_idn+y}
+# Check whether --with-idn2 was given.
+if test ${with_idn2+y}
 then :
-  withval=$with_idn; WITHVAL_CONFIG_IDN="$withval"
+  withval=$with_idn2; WITHVAL_CONFIG_IDN2="$withval"
 fi
 
-	if test "x$WITHVAL_CONFIG_IDN" = xno; then CONFIG_IDN=no; fi
-	if test "x$WITHVAL_CONFIG_IDN" = xyes; then CONFIG_IDN=yes; fi
+	if test "x$WITHVAL_CONFIG_IDN2" = xno; then CONFIG_IDN2=no; fi
+	if test "x$WITHVAL_CONFIG_IDN2" = xyes; then CONFIG_IDN2=yes; fi
 
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for idn support" >&5
-printf %s "checking for idn support... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for idn2 support" >&5
+printf %s "checking for idn2 support... " >&6; }
 
-	if test "$CONFIG_IDN" != no; then
+	if test "$CONFIG_IDN2" != no; then
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
@@ -11231,75 +11242,75 @@ printf "%s\n" "yes" >&6; }
 			fi
 		fi
 
-		       for ac_header in idna.h
+		       for ac_header in idn2.h
 do :
-  ac_fn_c_check_header_compile "$LINENO" "idna.h" "ac_cv_header_idna_h" "$ac_includes_default"
-if test "x$ac_cv_header_idna_h" = xyes
+  ac_fn_c_check_header_compile "$LINENO" "idn2.h" "ac_cv_header_idn2_h" "$ac_includes_default"
+if test "x$ac_cv_header_idn2_h" = xyes
 then :
-  printf "%s\n" "#define HAVE_IDNA_H 1" >>confdefs.h
- CONFIG_IDN=yes
+  printf "%s\n" "#define HAVE_IDN2_H 1" >>confdefs.h
+ CONFIG_IDN2=yes
 else $as_nop
-  CONFIG_IDN=no; break;
+  CONFIG_IDN2=no; break;
 fi
 
 done
-		if test "$CONFIG_IDN" = yes; then
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stringprep_check_version in -lidn" >&5
-printf %s "checking for stringprep_check_version in -lidn... " >&6; }
-if test ${ac_cv_lib_idn_stringprep_check_version+y}
+		if test "$CONFIG_IDN2" = yes; then
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for idn2_lookup_ul in -lidn2" >&5
+printf %s "checking for idn2_lookup_ul in -lidn2... " >&6; }
+if test ${ac_cv_lib_idn2_idn2_lookup_ul+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lidn  $LIBS"
+LIBS="-lidn2  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
    Use char because int might match the return type of a GCC
    builtin and then its argument prototype would still apply.  */
-char stringprep_check_version ();
+char idn2_lookup_ul ();
 int
 main (void)
 {
-return stringprep_check_version ();
+return idn2_lookup_ul ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_idn_stringprep_check_version=yes
+  ac_cv_lib_idn2_idn2_lookup_ul=yes
 else $as_nop
-  ac_cv_lib_idn_stringprep_check_version=no
+  ac_cv_lib_idn2_idn2_lookup_ul=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_idn_stringprep_check_version" >&5
-printf "%s\n" "$ac_cv_lib_idn_stringprep_check_version" >&6; }
-if test "x$ac_cv_lib_idn_stringprep_check_version" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_idn2_idn2_lookup_ul" >&5
+printf "%s\n" "$ac_cv_lib_idn2_idn2_lookup_ul" >&6; }
+if test "x$ac_cv_lib_idn2_idn2_lookup_ul" = xyes
 then :
-  CONFIG_IDN=yes
+  CONFIG_IDN2=yes
 else $as_nop
-  CONFIG_IDN=no
+  CONFIG_IDN2=no
 fi
 
 		fi
 
-		if test "$CONFIG_IDN" = yes; then
+		if test "$CONFIG_IDN2" = yes; then
 
-	  CONFIG_IDN=yes
-	  ABOUT_CONFIG_IDN="idn"
+	  CONFIG_IDN2=yes
+	  ABOUT_CONFIG_IDN2="idn2"
 
-printf "%s\n" "#define CONFIG_IDN 1" >>confdefs.h
+printf "%s\n" "#define CONFIG_IDN2 1" >>confdefs.h
 
-			LIBS="-lidn $LIBS"
+			LIBS="-lidn2 $LIBS"
 		else
-			if test -n "$WITHVAL_CONFIG_IDN" &&
-			   test "x$WITHVAL_CONFIG_IDN" != xno; then
-				as_fn_error $? "idn not found" "$LINENO" 5
+			if test -n "$WITHVAL_CONFIG_IDN2" &&
+			   test "x$WITHVAL_CONFIG_IDN2" != xno; then
+				as_fn_error $? "idn2 not found" "$LINENO" 5
 			fi
 
 	CFLAGS="$CFLAGS_X";
@@ -11315,7 +11326,7 @@ printf "%s\n" "disabled" >&6; }
 
 
 
-	about="idn"
+	about="idn2"
 	value=""
 	msgdots2="`echo $about | sed 's/[0-9]/./g'`"
 	msgdots1="`echo $msgdots2 | sed 's/[a-z]/./g'`"
@@ -11330,7 +11341,7 @@ printf "%s\n" "disabled" >&6; }
 	fi
 
 	if test -z "$value"; then
-		value="$CONFIG_IDN"
+		value="$CONFIG_IDN2"
 	fi
 
 	echo "$about $dots $value" >> features.log
@@ -11818,6 +11829,7 @@ fi
 
 
 CONFIG_MUJS=
+CONFIG_LIBCURL=
 
 case "$with_mujs" in
 	"" | no)
@@ -11839,16 +11851,17 @@ if test "x$CONFIG_MUJS" = x; then
 printf %s "checking for MuJS in pkg-config... " >&6; }
 	if $PKG_CONFIG $pkg_config_static --cflags --libs mujs > /dev/null 2>&5; then
 		DB_LOCALSTORAGE_LIBS="$($PKG_CONFIG $pkg_config_static --libs sqlite3)"
-		XMLPLUSPLUS_LIBS="$($PKG_CONFIG $pkg_config_static --libs libxml++-5.0)"
-		MUJS_LIBS="$($PKG_CONFIG $pkg_config_static --libs mujs) $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS"
+		CURL_LIBS="$($PKG_CONFIG $pkg_config_static --libs libcurl)"
+		MUJS_LIBS="$($PKG_CONFIG $pkg_config_static --libs mujs) $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS $CURL_LIBS"
 		DB_LOCALSTORAGE_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags sqlite3)"
-		XMLPLUSPLUS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libxml++-5.0)"
-		MUJS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags mujs) $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS"
+		CURL_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libcurl)"
+		MUJS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags mujs) $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS $CURL_CFLAGS"
 
-		LIBS="$LIBS $MUJS_LIBS $LIBS_X"
+		LIBS="$LIBS $MUJS_LIBS"
 		CPPFLAGS="$CPPFLAGS_X $MUJS_CFLAGS"
 		CFLAGS="$CFLAGS $MUJS_CFLAGS"
 		CONFIG_MUJS=yes
+		CONFIG_LIBCURL=yes
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 	else
@@ -11918,24 +11931,21 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 
 	if test "x$CONFIG_QUICKJS" = xyes; then
 		DB_LOCALSTORAGE_LIBS="$($PKG_CONFIG $pkg_config_static --libs sqlite3)"
-		XMLPLUSPLUS_LIBS="$($PKG_CONFIG $pkg_config_static --libs libxml++-5.0)"
+		CURL_LIBS="$($PKG_CONFIG $pkg_config_static --libs libcurl)"
 		DB_LOCALSTORAGE_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags sqlite3)"
-		XMLPLUSPLUS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libxml++-5.0)"
+		CURL_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libcurl)"
 
-		CFLAGS="$CFLAGS $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS"
+		CFLAGS="$CFLAGS $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS $CURL_CFLAGS"
 		QUICKJS_LIB="/usr/local/lib/quickjs/libquickjs.a"
 
-		TMPIFS="$IFS"
-		IFS=:
-		for p in "$LIBRARY_PATH"; do
-			if test -f "$p/quickjs/libquickjs.a"; then
+		for p in $(tr ':' '\n' <<< "$LIBRARY_PATH"); do
+			if test -f "$p/quickjs/libquickjs.a" ; then
 				QUICKJS_LIB="$p/quickjs/libquickjs.a"
 				break
 			fi
 		done
-		IFS="$TMPIFS"
-
-		LIBS="$LIBS $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS $QUICKJS_LIB"
+		LIBS="$LIBS $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS $QUICKJS_LIB $CURL_LIBS"
+		CONFIG_LIBCURL=yes
 	else
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
@@ -11960,7 +11970,7 @@ fi
 # when we know for sure whether we're going to use SpiderMonkey or not.
 # (features.conf is not supposed to define it.)
 CONFIG_SPIDERMONKEY=
-CONFIG_XML=
+CONFIG_LIBDOM=
 CONFIG_SCRIPTING_SPIDERMONKEY=
 
 	CFLAGS_X="$CFLAGS";
@@ -12009,15 +12019,16 @@ if test "x$CONFIG_SPIDERMONKEY" = xyes ||
 printf %s "checking for SpiderMonkey (mozjs-102) in pkg-config $package... " >&6; }
 	if $PKG_CONFIG $pkg_config_static --cflags --libs $package > /dev/null 2>&5; then
 		DB_LOCALSTORAGE_LIBS="$($PKG_CONFIG $pkg_config_static --libs sqlite3)"
-		XMLPLUSPLUS_LIBS="$($PKG_CONFIG $pkg_config_static --libs libxml++-5.0)"
-		SPIDERMONKEY_LIBS="$($PKG_CONFIG $pkg_config_static --libs $package) $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS"
+		CURL_LIBS="$($PKG_CONFIG $pkg_config_static --libs libcurl)"
+		SPIDERMONKEY_LIBS="$($PKG_CONFIG $pkg_config_static --libs $package) $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS $CURL_LIBS"
 		DB_LOCALSTORAGE_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags sqlite3)"
-		XMLPLUSPLUS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libxml++-5.0)"
-		SPIDERMONKEY_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags $package) $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS"
+		CURL_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libcurl)"
+		SPIDERMONKEY_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags $package) $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS $CURL_CFLAGS"
 
 		LIBS="$SPIDERMONKEY_LIBS $LIBS_X"
 		CPPFLAGS="$CPPFLAGS_X $SPIDERMONKEY_CFLAGS"
 		SPIDERMONKEY_FOUND=yes
+		CONFIG_LIBCURL=yes
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 	else
@@ -12040,7 +12051,7 @@ fi
 
 
 if test "x$CONFIG_SPIDERMONKEY" = xyes; then
-	CONFIG_XML=yes
+	CONFIG_LIBDOM=yes
 
 	  CONFIG_ECMASCRIPT_SMJS=yes
 	  ABOUT_CONFIG_ECMASCRIPT_SMJS="SpiderMonkey document scripting"
@@ -12130,11 +12141,17 @@ else
 	CONFIG_SCRIPTING_SPIDERMONKEY=no
 fi
 
-CXXFLAGS="$CXXFLAGS -fpermissive -Wno-sign-compare -std=gnu++17"
+CXXFLAGS="$CXXFLAGS -fpermissive -Wno-sign-compare"
 
 if test "x$CONFIG_ECMASCRIPT_SMJS" = xyes ||
    test "x$CONFIG_SCRIPTING_SPIDERMONKEY" = xyes; then
 	LIBS="$LIBS $SPIDERMONKEY_LIBS"
+
+	  CONFIG_LIBCURL=yes
+	  ABOUT_CONFIG_LIBCURL="libcurl"
+
+printf "%s\n" "#define CONFIG_LIBCURL 1" >>confdefs.h
+
 
 
 
@@ -12143,17 +12160,18 @@ if test "x$CONFIG_ECMASCRIPT_SMJS" = xyes ||
 fi
 
 if test "x$CONFIG_MUJS" = xyes; then
-
-	  CONFIG_XML=yes
-	  ABOUT_CONFIG_XML="libxml++5.0"
-
-printf "%s\n" "#define CONFIG_XML 1" >>confdefs.h
-
+	CONFIG_LIBDOM=yes
 
 	  CONFIG_MUJS=yes
 	  ABOUT_CONFIG_MUJS="mujs"
 
 printf "%s\n" "#define CONFIG_MUJS 1" >>confdefs.h
+
+
+	  CONFIG_LIBCURL=yes
+	  ABOUT_CONFIG_LIBCURL="libcurl"
+
+printf "%s\n" "#define CONFIG_LIBCURL 1" >>confdefs.h
 
 
 
@@ -12162,12 +12180,7 @@ printf "%s\n" "#define CONFIG_MUJS 1" >>confdefs.h
 fi
 
 if test "x$CONFIG_QUICKJS" = xyes; then
-
-	  CONFIG_XML=yes
-	  ABOUT_CONFIG_XML="libxml++5.0"
-
-printf "%s\n" "#define CONFIG_XML 1" >>confdefs.h
-
+	CONFIG_LIBDOM=yes
 
 	  CONFIG_QUICKJS=yes
 	  ABOUT_CONFIG_QUICKJS="quickjs"
@@ -12175,8 +12188,146 @@ printf "%s\n" "#define CONFIG_XML 1" >>confdefs.h
 printf "%s\n" "#define CONFIG_QUICKJS 1" >>confdefs.h
 
 
+	  CONFIG_LIBCURL=yes
+	  ABOUT_CONFIG_LIBCURL="libcurl"
+
+printf "%s\n" "#define CONFIG_LIBCURL 1" >>confdefs.h
+
+
 
 fi
+
+# ===================================================================
+# Check for libcurl
+# ===================================================================
+
+
+# Check whether --with-libcurl was given.
+if test ${with_libcurl+y}
+then :
+  withval=$with_libcurl;
+fi
+
+
+if test "x$CONFIG_LIBCURL" = x; then
+	case "$with_libcurl" in
+		"" | no)
+			# The user specified --without-libcurl.
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libcurl" >&5
+printf %s "checking for libcurl... " >&6; }
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+printf "%s\n" "disabled" >&6; }
+			CONFIG_LIBCURL="no"
+			;;
+		yes | *)
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libcurl" >&5
+printf %s "checking for libcurl... " >&6; }
+			CURL_LIBS="$($PKG_CONFIG $pkg_config_static --libs libcurl)"
+			CURL_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libcurl)"
+			CONFIG_LIBCURL=yes
+			LIBS="$LIBS $CURL_LIBS"
+			CFLAGS="$CFLAGS $CURL_CFLAGS"
+
+	  CONFIG_LIBCURL=yes
+	  ABOUT_CONFIG_LIBCURL="libcurl"
+
+printf "%s\n" "#define CONFIG_LIBCURL 1" >>confdefs.h
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+			;;
+	esac
+
+fi
+
+# ===================================================================
+# Check for libcss
+# ===================================================================
+
+CONFIG_LIBCSS=
+
+if test "x$CONFIG_LIBDOM" = xyes; then
+	LIBCSS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libcss)"
+	LIBCSS_LIBS="$($PKG_CONFIG $pkg_config_static --libs libcss)"
+	LIBS="$LIBCSS_LIBS $LIBS"
+	CFLAGS="$CFLAGS $LIBCSS_CFLAGS"
+	CONFIG_LIBCSS=yes
+
+	  CONFIG_LIBCSS=yes
+	  ABOUT_CONFIG_LIBCSS="libcss"
+
+printf "%s\n" "#define CONFIG_LIBCSS 1" >>confdefs.h
+
+
+
+
+fi
+
+# ===================================================================
+# Check for libdom
+# ===================================================================
+
+if test "x$CONFIG_LIBDOM" = xyes; then
+	LIBDOM_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libdom)"
+	LIBDOM_LIBS="$($PKG_CONFIG $pkg_config_static --libs libdom)"
+	LIBS="$LIBDOM_LIBS $LIBS"
+	CFLAGS="$CFLAGS $LIBDOM_CFLAGS"
+	CONFIG_LIBDOM=yes
+
+	  CONFIG_LIBDOM=yes
+	  ABOUT_CONFIG_LIBDOM="libdom"
+
+printf "%s\n" "#define CONFIG_LIBDOM 1" >>confdefs.h
+
+
+
+
+fi
+
+# ===================================================================
+# Check for libsixel
+# ===================================================================
+
+
+# Check whether --with-libsixel was given.
+if test ${with_libsixel+y}
+then :
+  withval=$with_libsixel;
+fi
+
+
+CONFIG_LIBSIXEL=
+
+case "$with_libsixel" in
+	"" | no)
+		# The user specified --without-libsixel.
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libsixel" >&5
+printf %s "checking for libsixel... " >&6; }
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+printf "%s\n" "disabled" >&6; }
+		CONFIG_LIBSIXEL="no"
+		;;
+	yes)
+		;;
+	*)
+		;;
+esac
+
+if test "x$CONFIG_LIBSIXEL" = x; then
+	LIBSIXEL_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libsixel)"
+	LIBSIXEL_LIBS="$($PKG_CONFIG $pkg_config_static --libs libsixel)"
+	LIBS="$LIBSIXEL_LIBS $LIBS"
+	CFLAGS="$CFLAGS $LIBSIXEL_CFLAGS"
+	CONFIG_LIBSIXEL=yes
+
+	  CONFIG_LIBSIXEL=yes
+	  ABOUT_CONFIG_LIBSIXEL="libsixel"
+
+printf "%s\n" "#define CONFIG_LIBSIXEL 1" >>confdefs.h
+
+
+fi
+
 # ===================================================================
 # Check for Guile, optional even if installed.
 # ===================================================================

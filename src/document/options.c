@@ -75,6 +75,9 @@ init_document_options(struct session *ses, struct document_options *doo)
 
 	/* Boolean options. */
 #ifdef CONFIG_CSS
+#ifdef CONFIG_LIBCSS
+	doo->libcss_enable = get_opt_bool("document.css.libcss", ses);
+#endif
 	doo->css_enable = get_opt_bool("document.css.enable", ses);
 	doo->css_ignore_display_none = get_opt_bool("document.css.ignore_display_none", ses);
 	doo->css_import = get_opt_bool("document.css.import", ses);
@@ -111,6 +114,14 @@ init_document_options(struct session *ses, struct document_options *doo)
 	doo->image_link.display_style = get_opt_int("document.browse.images.display_style", ses);
 	doo->image_link.tagging = get_opt_int("document.browse.images.image_link_tagging", ses);
 	doo->image_link.show_any_as_links = get_opt_bool("document.browse.images.show_any_as_links", ses);
+#ifdef CONFIG_LIBSIXEL
+	doo->sixel = get_opt_bool("document.plain.sixel", ses);
+	if (ses && ses->tab->term) {
+		doo->cell_width = ses->tab->term->cell_width;
+		doo->cell_height = ses->tab->term->cell_height;
+	}
+#endif
+
 }
 
 int

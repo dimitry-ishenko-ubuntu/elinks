@@ -152,6 +152,10 @@ render_gemini_document(struct cache_entry *cached, struct document *document,
 			if (buffer->source[i] == 13 || buffer->source[i] == 10) break;
 		}
 
+		if (begin == i) {
+			add_to_string(&html, "</p><p>");
+		}
+
 		if (begin < i) {
 			int len = i - begin;
 
@@ -164,7 +168,10 @@ render_gemini_document(struct cache_entry *cached, struct document *document,
 				|| !strncmp(line.source + len - 3, "```", 3))) {
 				preformat = !preformat;
 				repl = preformat ? &pre_start : &pre_end;
-				string_replace(&html, &line, &gem_pre, repl);
+				el_string_replace(&html, &line, &gem_pre, repl);
+				if (preformat) {
+					add_char_to_string(&html, '\n');
+				}
 			} else if (preformat) {
 				add_string_to_string(&html, &line);
 				add_char_to_string(&html, '\n');
@@ -179,6 +186,8 @@ render_gemini_document(struct cache_entry *cached, struct document *document,
 						if (!in_list) {
 							in_list = 1;
 							add_to_string(&html, "<ul>\n");
+							add_string_to_string(&html, &html_line);
+						} else {
 							add_string_to_string(&html, &html_line);
 						}
 					} else if (in_list) {

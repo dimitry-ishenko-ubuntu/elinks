@@ -475,6 +475,9 @@ dialog_func(struct window *win, struct term_event *ev)
 		case EVENT_RESIZE:
 		case EVENT_REDRAW:
 			redraw_dialog(dlg_data, 1);
+#ifdef  CONFIG_LIBSIXEL                       
+			win->term->sixel = 0;
+#endif
 			break;
 
 		case EVENT_MOUSE:
@@ -489,6 +492,9 @@ dialog_func(struct window *win, struct term_event *ev)
 
 		case EVENT_ABORT:
 			dialog_ev_abort(dlg_data);
+#ifdef  CONFIG_LIBSIXEL                       
+			win->term->sixel = 1;
+#endif
 			break;
 	}
 }

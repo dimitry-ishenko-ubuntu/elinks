@@ -95,7 +95,16 @@ static int
 ssl_set_private_paths(SSL_CTX *ctx)
 {
 	char *path, *c;
+	char *bundle = getenv("CURL_CA_BUNDLE");
 	int r;
+
+	if (bundle) {
+		r = SSL_CTX_load_verify_locations(ctx, bundle, NULL);
+
+		if (r) {
+			return 0;
+		}
+	}
 	path = stracpy(program.path);
 
 	if (!path) {
@@ -334,7 +343,7 @@ static union option_info gnutls_options[] = {
 	 * change the file name via the option manager.  Distributors
 	 * of binary packages should of course change the default to
 	 * suit their systems.
-	 * TODO: If the file name is relative, look in elinks_home?  */
+	 * TODO: If the file name is relative, look in xdg_config_home?  */
 	INIT_OPT_STRING("connection.ssl", N_("Trusted CA file"),
 		"trusted_ca_file", OPT_ZERO,
 #ifdef HAVE_GNUTLS_CERTIFICATE_SET_X509_SYSTEM_TRUST

@@ -2,17 +2,19 @@ top_builddir=../..
 include $(top_builddir)/Makefile.config
 INCLUDES += $(SPIDERMONKEY_CFLAGS) $(MUJS_CFLAGS)
 
-SUBDIRS-$(CONFIG_ECMASCRIPT_SMJS)	+= spidermonkey
+SUBDIRS-$(CONFIG_LIBDOM)	+= libdom
 
 SUBDIRS-$(CONFIG_MUJS)	+= mujs
 
 SUBDIRS-$(CONFIG_QUICKJS)	+= quickjs
 
-OBJS-$(CONFIG_ECMASCRIPT_SMJS)		+= css2xpath.obj ecmascript.obj localstorage-db.obj spidermonkey.obj
+SUBDIRS-$(CONFIG_ECMASCRIPT_SMJS)	+= spidermonkey
 
-OBJS-$(CONFIG_MUJS)		+= css2xpath.obj ecmascript.obj localstorage-db.obj mujs.obj
+OBJS-$(CONFIG_ECMASCRIPT_SMJS)		+= ecmascript.obj ecmascript-c.obj localstorage-db.obj spidermonkey.obj timer.obj
 
-OBJS-$(CONFIG_QUICKJS)		+= css2xpath.obj ecmascript.obj localstorage-db.obj quickjs.obj
+OBJS-$(CONFIG_MUJS)		+= ecmascript.obj ecmascript-c.obj localstorage-db.obj mujs.obj timer.obj
+
+OBJS-$(CONFIG_QUICKJS)		+= ecmascript.obj ecmascript-c.obj localstorage-db.obj quickjs.obj timer.obj
 
 ifeq ($(CONFIG_ECMASCRIPT_SMJS), yes)
 CONFIG_ANY_SPIDERMONKEY = yes

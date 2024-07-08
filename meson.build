@@ -1,4 +1,4 @@
-project('elinks', ['c','cpp'], version:'0.16.1.1', license:'GPLv2', default_options:['cpp_std=gnu++17'])
+project('elinks', ['c','cpp'], version:'0.17.0', license:'GPLv2', default_options:['cpp_std=gnu++17'])
 srcs=[]
 
 srcdir = meson.source_root()
@@ -17,7 +17,7 @@ add_global_arguments('-DBUILD_ID="' + txt + dirty + '"', language : 'c')
 conf_data = configuration_data()
 conf_data.set('VERSION', meson.project_version())
 conf_data.set('PACKAGE', meson.project_name())
-
+conf_data.set('DATE', run_command('date', '%Y-%m-%d', check:false).stdout().strip())
 
 conf_data.set('CONFIG_LARGEFILE', get_option('largefile'))
 conf_data.set('CONFIG_BOOKMARKS', get_option('bookmarks'))
@@ -41,6 +41,7 @@ conf_data.set('CONFIG_CGI', get_option('cgi'))
 conf_data.set('CONFIG_DGI', get_option('dgi'))
 conf_data.set('CONFIG_FINGER', get_option('finger'))
 conf_data.set('CONFIG_FSP', get_option('fsp'))
+conf_data.set('CONFIG_FSP2', get_option('fsp2'))
 conf_data.set('CONFIG_FTP', get_option('ftp'))
 conf_data.set('CONFIG_GOPHER', get_option('gopher'))
 conf_data.set('CONFIG_NNTP', get_option('nntp'))
@@ -74,13 +75,15 @@ conf_data.set('CONFIG_BZIP2', get_option('bzlib'))
 conf_data.set('CONFIG_BROTLI', get_option('brotli'))
 
 conf_data.set('CONFIG_ZSTD', get_option('zstd'))
-conf_data.set('CONFIG_IDN', get_option('idn'))
+conf_data.set('CONFIG_IDN2', get_option('idn'))
 conf_data.set('CONFIG_LZMA', get_option('lzma'))
 conf_data.set('CONFIG_GSSAPI', get_option('gssapi'))
 conf_data.set('CONFIG_ECMASCRIPT_SMJS', get_option('spidermonkey'))
 conf_data.set('CONFIG_SCRIPTING_GUILE', get_option('guile'))
 conf_data.set('CONFIG_SCRIPTING_PERL', get_option('perl'))
 conf_data.set('CONFIG_SCRIPTING_PYTHON', get_option('python'))
+
+conf_data.set('CONFIG_LIBSIXEL', get_option('libsixel'))
 
 conf_data.set('CONFIG_REPRODUCIBLE', get_option('reproducible'))
 conf_data.set('SOURCE_DATE_EPOCH', get_option('source-date-epoch'))
@@ -99,7 +102,6 @@ conf_data.set('CONFIG_OPENSSL', get_option('openssl'))
 conf_data.set('CONFIG_LIBEV', get_option('libev'))
 conf_data.set('CONFIG_LIBEVENT', get_option('libevent'))
 conf_data.set('CONFIG_X', get_option('x'))
-conf_data.set('CONFIG_XML', get_option('xml'))
 conf_data.set('CONFIG_QUICKJS', get_option('quickjs'))
 conf_data.set('CONFIG_MUJS', get_option('mujs'))
 conf_data.set('CONFIG_CODEPOINT', get_option('codepoint'))
@@ -109,6 +111,35 @@ if conf_data.get('CONFIG_SCRIPTING_SPIDERMONKEY') or conf_data.get('CONFIG_ECMAS
 else
     conf_data.set('CONFIG_ECMASCRIPT', false)
 endif
+
+if conf_data.get('CONFIG_SCRIPTING_SPIDERMONKEY') and conf_data.get('CONFIG_QUICKJS')
+    error('quickjs and sm-scripting cannot be both enabled')
+endif
+
+if conf_data.get('CONFIG_SCRIPTING_SPIDERMONKEY') and conf_data.get('CONFIG_MUJS')
+    error('mujs and sm-scripting cannot be both enabled')
+endif
+
+if conf_data.get('CONFIG_ECMASCRIPT_SMJS') and conf_data.get('CONFIG_QUICKJS')
+    error('quickjs and spidermonkey cannot be both enabled')
+endif
+
+if conf_data.get('CONFIG_ECMASCRIPT_SMJS') and conf_data.get('CONFIG_MUJS')
+    error('mujs and spidermonkey cannot be both enabled')
+endif
+
+if conf_data.get('CONFIG_QUICKJS') and conf_data.get('CONFIG_MUJS')
+    error('mujs and quickjs cannot be both enabled')
+endif
+
+if conf_data.get('CONFIG_LIBEV') and conf_data.get('CONFIG_LIBEVENT')
+    error('libev and libevent cannot be both enabled')
+endif
+
+if conf_data.get('CONFIG_FSP') and conf_data.get('CONFIG_FSP2')
+    error('fsp and fsp2 cannot be both enabled')
+endif
+
 conf_data.set('CONFIG_ECMASCRIPT_SMJS_HEARTBEAT', true)
 
 conf_data.set('CONFIG_SCRIPTING', true)
@@ -150,8 +181,8 @@ conf_data.set('CONFIG_OS_RISCOS', false)
 
 # AC_HEADER_DIRENT
 conf_data.set('HAVE_DIRENT_H', 1)
-# AC_HEADER_SYS_WAIT
-conf_data.set('HAVE_SYS_WAIT_H', 1)
+
+
 # AC_HEADER_TIME
 conf_data.set('HAVE_SYS_TIME_H', 1)
 
@@ -162,8 +193,10 @@ extracppflags = []
 
 if conf_data.get('CONFIG_ECMASCRIPT')
     extracppflags += ['-fpermissive', '-Wno-sign-compare']
-else
-    extracflags += ['-Wc++-compat']
+endif
+
+if compiler.has_header('sys/wait.h')
+    conf_data.set('HAVE_SYS_WAIT_H', 1)
 endif
 
 if compiler.has_header('wchar.h')
@@ -290,8 +323,8 @@ if compiler.has_header('gpm.h')
     conf_data.set('HAVE_GPM_H', 1)
 endif
 
-if compiler.has_header('idna.h')
-    conf_data.set('HAVE_IDNA_H', 1)
+if compiler.has_header('idn2.h')
+    conf_data.set('HAVE_IDN2_H', 1)
 endif
 
 if compiler.has_header('event.h')
@@ -310,12 +343,29 @@ if compiler.has_header('term.h')
     conf_data.set('HAVE_TERM_H', 1)
 endif
 
+if compiler.has_header('windows.h')
+    conf_data.set('HAVE_WINDOWS_H', 1)
+endif
+
+if compiler.has_header('winsock2.h')
+    conf_data.set('HAVE_WINSOCK2_H', 1)
+endif
+
+if compiler.has_header('ws2tcpip.h')
+    conf_data.set('HAVE_WS2TCPIP_H', 1)
+endif
+
 st = get_option('static')
 
 deps = []
 if conf_data.get('CONFIG_GZIP')
-    zdeps = dependency('zlib', static: st)
-    deps += zdeps
+    zdeps = dependency('zlib', static: st, required: false)
+    if not zdeps.found()
+        zdeps = compiler.find_library('z', static: st, dirs: [get_option('prefix')+'/lib', '/usr/local/lib'])
+    endif
+    if zdeps.found()
+        deps += zdeps
+    endif
 endif
 
 if conf_data.get('CONFIG_TRE')
@@ -344,7 +394,10 @@ gnutlsdeps = []
 ssldeps = []
 
 if conf_data.get('CONFIG_OPENSSL')
-    ssldeps = dependency('openssl', static: st)
+    ssldeps = dependency('openssl', static: st, required: false)
+    if not ssldeps.found()
+        ssldeps = compiler.find_library('ssl', static: st, dirs: [get_option('prefix')+'/lib', '/usr/local/lib'])
+    endif
     deps += ssldeps
     conf_data.set('USE_OPENSSL', true)
     conf_data.set('CONFIG_GNUTLS', false)
@@ -366,7 +419,11 @@ if conf_data.get('CONFIG_BROTLI')
 endif
 
 if conf_data.get('CONFIG_ZSTD')
-    zstddeps = dependency('libzstd', static: st)
+    zstatic = st
+    if conf_data.get('CONFIG_DEBUG')
+        zstatic = true
+    endif
+    zstddeps = dependency('libzstd', static: zstatic)
     deps += zstddeps
 endif
 
@@ -375,8 +432,8 @@ if conf_data.get('CONFIG_LZMA')
     deps += lzmadeps
 endif
 
-if conf_data.get('CONFIG_IDN')
-    idndeps = dependency('libidn', static: st)
+if conf_data.get('CONFIG_IDN2')
+    idndeps = dependency('libidn2', static: st)
     deps += idndeps
 endif
 
@@ -391,7 +448,7 @@ endif
 if conf_data.get('CONFIG_BZIP2')
     bz2deps = dependency('bzip2', static: st, required: false)
     if not bz2deps.found()
-        bz2deps = compiler.find_library('bz2', static: st, dirs: ['/usr/local/lib'])
+        bz2deps = compiler.find_library('bz2', static: st, dirs: [get_option('prefix')+'/lib', '/usr/local/lib'])
     endif
     deps += bz2deps
 endif
@@ -405,18 +462,73 @@ endif
 if conf_data.get('CONFIG_ECMASCRIPT_SMJS') or conf_data.get('CONFIG_QUICKJS') or conf_data.get('CONFIG_MUJS')
     sqlite3deps = dependency('sqlite3', static: st)
     deps += sqlite3deps
-    conf_data.set('CONFIG_XML', true)
+endif
+
+conf_data.set('CONFIG_LIBCURL', false)
+curldeps = false
+if conf_data.get('CONFIG_ECMASCRIPT_SMJS') or conf_data.get('CONFIG_QUICKJS') or conf_data.get('CONFIG_MUJS')
+    curldeps = dependency('libcurl', static: st, required: false)
+    if not curldeps.found()
+        curldeps = compiler.find_library('curl', static: st, dirs: [get_option('prefix')+'/lib', '/usr/local/lib'])
+    endif
+    if curldeps.found()
+        deps += curldeps
+        conf_data.set('CONFIG_LIBCURL', true)
+    endif
+endif
+
+if not conf_data.get('CONFIG_LIBCURL') and get_option('libcurl')
+    curldeps = dependency('libcurl', static: st, required: false)
+    if not curldeps.found()
+        curldeps = compiler.find_library('curl', static: st, dirs: [get_option('prefix')+'/lib', '/usr/local/lib'])
+    endif
+    if curldeps.found()
+        deps += curldeps
+        conf_data.set('CONFIG_LIBCURL', true)
+    endif
+endif
+
+conf_data.set('CONFIG_LIBCSS', false)
+cssdeps = false
+
+if conf_data.get('CONFIG_ECMASCRIPT_SMJS') or conf_data.get('CONFIG_QUICKJS') or conf_data.get('CONFIG_MUJS')
+    cssdeps = dependency('libcss', static: st, version: '>=0.9.1')
+    deps += cssdeps
+    conf_data.set('CONFIG_LIBCSS', true)
+endif
+
+conf_data.set('CONFIG_LIBDOM', false)
+libdomdeps = false
+
+if conf_data.get('CONFIG_ECMASCRIPT_SMJS') or conf_data.get('CONFIG_QUICKJS') or conf_data.get('CONFIG_MUJS')
+    libdomdeps = dependency('libdom', static: st, version: '>=0.4.1')
+    deps += libdomdeps
+    conf_data.set('CONFIG_LIBDOM', true)
+endif
+
+if not conf_data.get('CONFIG_LIBCSS') and get_option('libcss')
+    cssdeps = dependency('libcss', static: st, version: '>=0.9.1')
+    deps += cssdeps
+    conf_data.set('CONFIG_LIBCSS', true)
+    if not conf_data.get('CONFIG_LIBDOM')
+        libdomdeps = dependency('libdom', static: st, version: '>=0.4.1')
+        deps += libdomdeps
+        conf_data.set('CONFIG_LIBDOM', true)
+    endif
 endif
 
 if conf_data.get('CONFIG_SCRIPTING_LUA')
-    luadeps = dependency(luapkg, static: st)
+    luadeps = dependency(luapkg, static: st, required: false)
+    if not luadeps.found()
+        luadeps = compiler.find_library(luapkg, static: st, dirs: [get_option('prefix')+'/lib','/usr/local/lib'])
+    endif
     deps += luadeps
 endif
 
 if conf_data.get('CONFIG_XBEL_BOOKMARKS')
     expatdeps = dependency('expat', static: st, required: false)
     if not expatdeps.found()
-        expatdeps = compiler.find_library('expat', static: st, dirs: ['/usr/local/lib'])
+        expatdeps = compiler.find_library('expat', static: st, dirs: [get_option('prefix')+'/lib','/usr/local/lib'])
     endif
     deps += expatdeps
 endif
@@ -424,11 +536,6 @@ endif
 if conf_data.get('CONFIG_GPM')
     libgpmdeps = compiler.find_library('gpm', static: st)
     deps += libgpmdeps
-endif
-
-if conf_data.get('CONFIG_XML')
-    xmlplusplusdeps = dependency('libxml++-5.0', static: st)
-    deps += xmlplusplusdeps
 endif
 
 if conf_data.get('CONFIG_SCRIPTING_PYTHON')
@@ -486,11 +593,11 @@ if not compiler.links('''#include <stdint.h>
         return (int)__atomic_load_n(x.v, __ATOMIC_ACQUIRE) & (int)__atomic_add_fetch(x.v, (uint64_t)1, __ATOMIC_ACQ_REL);
     }''',
     name: 'GCC atomic builtins required -latomic')
-        dep_atomic = compiler.find_library('atomic', static: st)
+    dep_atomic = compiler.find_library('atomic', static: st, required: false)
 endif
 
 if conf_data.get('CONFIG_QUICKJS')
-    quickjsdeps = compiler.find_library('quickjs/libquickjs', static: true, dirs: ['/usr/local/lib'])
+    quickjsdeps = compiler.find_library('quickjs/libquickjs', static: true, dirs: [get_option('prefix')+'/lib','/usr/local/lib'])
     deps += quickjsdeps
     deps += dep_atomic
 endif
@@ -512,8 +619,13 @@ if conf_data.get('CONFIG_TERMINFO')
     deps += terminfodeps
 endif
 
+if conf_data.get('CONFIG_LIBSIXEL')
+    sixeldeps = dependency('libsixel', static: st)
+    deps += sixeldeps
+endif
+
 if conf_data.get('CONFIG_OS_DOS')
-    wattdeps = compiler.find_library('watt', static: st, dirs: ['/usr/local/lib'])
+    wattdeps = compiler.find_library('watt', static: st, dirs: [get_option('prefix')+'/lib','/usr/local/lib'])
     deps += wattdeps
 else
     wattdeps = []
@@ -684,6 +796,8 @@ endif
 
 if compiler.has_function('inet_ntop', prefix : '#include <arpa/inet.h>', dependencies: wattdeps)
     conf_data.set('HAVE_INET_NTOP', 1)
+elif compiler.has_function('inet_ntop', prefix : '#include <ws2tcpip.h>')
+    conf_data.set('HAVE_INET_NTOP', 1)
 endif
 
 if compiler.has_function('fflush', prefix : '#include <stdio.h>')
@@ -832,7 +946,7 @@ if compiler.has_function('ASN1_STRING_get0_data', prefix: '#include <openssl/asn
     conf_data.set('HAVE_ASN1_STRING_GET0_DATA', 1)
 endif
 
-iconvdeps = compiler.find_library('iconv', static: st, dirs: ['/usr/local/lib'], required: false)
+iconvdeps = compiler.find_library('iconv', static: st, dirs: [get_option('prefix')+'/lib','/usr/local/lib'], required: false)
 if iconvdeps.found()
     deps += iconvdeps
 endif
@@ -914,7 +1028,12 @@ if not conf_data.get('CONFIG_SMALL')
     testdeps += files('src/util/fastfind.c')
 endif
 
-subdir('po')
+if conf_data.get('CONFIG_NLS')
+    subdir('po')
+endif
 subdir('src')
 subdir('contrib')
-subdir('doc')
+
+if get_option('doc')
+    subdir('doc')
+endif

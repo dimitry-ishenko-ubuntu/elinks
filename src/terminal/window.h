@@ -36,7 +36,7 @@ typedef void (window_handler_T)(struct window *, struct term_event *);
  * systems; they get mouse events in the coordinate system of the
  * terminal.  */
 struct window {
-	LIST_HEAD(struct window); /*!< terminal.windows is the sentinel.  */
+	LIST_HEAD_EL(struct window); /*!< terminal.windows is the sentinel.  */
 
 	/** Whether this is a normal window or a tab window.  */
 	enum window_type type;
@@ -98,7 +98,7 @@ void get_parent_ptr(struct window *, int *, int *);
 
 void add_empty_window(struct terminal *, void (*)(void *), void *);
 
-#if CONFIG_DEBUG
+#ifdef CONFIG_DEBUG
 void assert_window_stacking(struct terminal *);
 #else
 #define assert_window_stacking(t) ((void) (t))

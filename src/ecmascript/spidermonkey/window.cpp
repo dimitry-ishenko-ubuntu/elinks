@@ -24,6 +24,10 @@
 #include "document/forms.h"
 #include "document/view.h"
 #include "ecmascript/ecmascript.h"
+#include "ecmascript/spidermonkey/heartbeat.h"
+#include "ecmascript/spidermonkey/keyboard.h"
+#include "ecmascript/spidermonkey/location.h"
+#include "ecmascript/spidermonkey/message.h"
 #include "ecmascript/spidermonkey/window.h"
 #include "ecmascript/timer.h"
 #include "intl/libintl.h"
@@ -49,11 +53,34 @@
 
 
 static bool window_get_property_closed(JSContext *cx, unsigned int argc, JS::Value *vp);
+static bool window_get_property_event(JSContext *cx, unsigned int argc, JS::Value *vp);
+static bool window_get_property_location(JSContext *cx, unsigned int argc, JS::Value *vp);
+static bool window_set_property_location(JSContext *cx, unsigned int argc, JS::Value *vp);
 static bool window_get_property_parent(JSContext *ctx, unsigned int argc, JS::Value *vp);
 static bool window_get_property_self(JSContext *ctx, unsigned int argc, JS::Value *vp);
 static bool window_get_property_status(JSContext *ctx, unsigned int argc, JS::Value *vp);
 static bool window_set_property_status(JSContext *ctx, unsigned int argc, JS::Value *vp);
 static bool window_get_property_top(JSContext *ctx, unsigned int argc, JS::Value *vp);
+
+extern struct term_event last_event;
+
+struct listener {
+	LIST_HEAD_EL(struct listener);
+	char *typ;
+	JS::RootedValue fun;
+};
+
+struct el_window {
+	struct ecmascript_interpreter *interpreter;
+	JS::RootedObject thisval;
+	LIST_OF(struct listener) listeners;
+	JS::RootedValue onmessage;
+};
+
+struct el_message {
+	JS::RootedObject messageObject;
+	struct el_window *elwin;
+};
 
 static void
 window_finalize(JS::GCContext *op, JSObject *obj)
@@ -61,8 +88,18 @@ window_finalize(JS::GCContext *op, JSObject *obj)
 #ifdef ECMASCRIPT_DEBUG
 	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
 #endif
-}
+	struct el_window *elwin = JS::GetMaybePtrFromReservedSlot<struct el_window>(obj, 0);
 
+	if (elwin) {
+		struct listener *l;
+
+		foreach(l, elwin->listeners) {
+			mem_free_set(&l->typ, NULL);
+		}
+		free_list(elwin->listeners);
+		mem_free(elwin);
+	}
+}
 
 JSClassOps window_ops = {
 	nullptr,  // addProperty
@@ -83,18 +120,6 @@ JSClass window_class = {
 	&window_ops
 };
 
-
-/* Tinyids of properties.  Use negative values to distinguish these
- * from array indexes (even though this object has no array elements).
- * ECMAScript code should not use these directly as in window[-1];
- * future versions of ELinks may change the numbers.  */
-enum window_prop {
-	JSP_WIN_CLOSED = -1,
-	JSP_WIN_PARENT = -2,
-	JSP_WIN_SELF   = -3,
-	JSP_WIN_STATUS = -4,
-	JSP_WIN_TOP    = -5,
-};
 /* "location" is special because we need to simulate "location.href"
  * when the code is asking directly for "location". We do not register
  * it as a "known" property since that was yielding strange bugs
@@ -103,6 +128,8 @@ enum window_prop {
  * comparing. */
 JSPropertySpec window_props[] = {
 	JS_PSG("closed",	window_get_property_closed, JSPROP_ENUMERATE),
+	JS_PSG("event",		window_get_property_event, JSPROP_ENUMERATE),
+	JS_PSGS("location",	window_get_property_location, window_set_property_location, JSPROP_ENUMERATE),
 	JS_PSG("parent",	window_get_property_parent, JSPROP_ENUMERATE),
 	JS_PSG("self",	window_get_property_self, JSPROP_ENUMERATE),
 	JS_PSGS("status",	window_get_property_status, window_set_property_status, 0),
@@ -139,18 +166,222 @@ find_child_frame(struct document_view *doc_view, struct frame_desc *tframe)
 
 void location_goto(struct document_view *doc_view, char *url);
 
+static bool window_addEventListener(JSContext *ctx, unsigned int argc, JS::Value *rval);
 static bool window_alert(JSContext *ctx, unsigned int argc, JS::Value *rval);
 static bool window_clearTimeout(JSContext *ctx, unsigned int argc, JS::Value *rval);
 static bool window_open(JSContext *ctx, unsigned int argc, JS::Value *rval);
+static bool window_postMessage(JSContext *ctx, unsigned int argc, JS::Value *rval);
+static bool window_removeEventListener(JSContext *ctx, unsigned int argc, JS::Value *rval);
 static bool window_setTimeout(JSContext *ctx, unsigned int argc, JS::Value *rval);
 
 const spidermonkeyFunctionSpec window_funcs[] = {
+	{ "addEventListener", window_addEventListener, 3 },
 	{ "alert",	window_alert,		1 },
 	{ "clearTimeout",	window_clearTimeout,	1 },
 	{ "open",	window_open,		3 },
+	{ "postMessage",	window_postMessage,	3 },
+	{ "removeEventListener", window_removeEventListener, 3 },
 	{ "setTimeout",	window_setTimeout,	2 },
 	{ NULL }
 };
+
+static void
+onmessage_run(void *data)
+{
+	struct el_message *mess = (struct el_message *)data;
+
+	if (mess) {
+		struct el_window *elwin = mess->elwin;
+
+		if (!elwin) {
+			mem_free(mess);
+			return;
+		}
+
+		struct ecmascript_interpreter *interpreter = elwin->interpreter;
+		JSContext *ctx = (JSContext *)interpreter->backend_data;
+		JSAutoRealm ar(ctx, (JSObject *)interpreter->ac->get());
+		JS::RootedValue r_val(ctx);
+		interpreter->heartbeat = add_heartbeat(interpreter);
+
+		JS::RootedValueVector argv(ctx);
+		if (!argv.resize(1)) {
+			return;
+		}
+		argv[0].setObject(*(mess->messageObject));
+
+		struct listener *l;
+
+		foreach(l, elwin->listeners) {
+			if (strcmp(l->typ, "message")) {
+				continue;
+			}
+			JS_CallFunctionValue(ctx, elwin->thisval, l->fun, argv, &r_val);
+		}
+		JS_CallFunctionValue(ctx, elwin->thisval, elwin->onmessage, argv, &r_val);
+		done_heartbeat(interpreter->heartbeat);
+		mem_free(mess);
+		check_for_rerender(interpreter, "window_onmessage");
+	}
+}
+
+static bool
+window_addEventListener(JSContext *ctx, unsigned int argc, JS::Value *rval)
+{
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
+#endif
+	JS::CallArgs args = JS::CallArgsFromVp(argc, rval);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
+	JS::Realm *comp = js::GetContextRealm(ctx);
+
+	if (!comp) {
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s %d\n", __FILE__, __FUNCTION__, __LINE__);
+#endif
+		return false;
+	}
+	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
+	struct el_window *elwin = JS::GetMaybePtrFromReservedSlot<struct el_window>(hobj, 0);
+
+	if (!elwin) {
+		elwin = (struct el_window *)mem_calloc(1, sizeof(*elwin));
+
+		if (!elwin) {
+			return false;
+		}
+		init_list(elwin->listeners);
+		elwin->interpreter = interpreter;
+		elwin->thisval = hobj;
+		JS::SetReservedSlot(hobj, 0, JS::PrivateValue(elwin));
+	}
+
+	if (argc < 2) {
+		args.rval().setUndefined();
+		return true;
+	}
+	char *method = jsval_to_string(ctx, args[0]);
+	JS::RootedValue fun(ctx, args[1]);
+
+	struct listener *l;
+
+	foreach(l, elwin->listeners) {
+		if (strcmp(l->typ, method)) {
+			continue;
+		}
+		if (l->fun == fun) {
+			args.rval().setUndefined();
+			mem_free(method);
+			return true;
+		}
+	}
+	struct listener *n = (struct listener *)mem_calloc(1, sizeof(*n));
+
+	if (n) {
+		n->typ = method;
+		n->fun = fun;
+		add_to_list_end(elwin->listeners, n);
+	}
+	args.rval().setUndefined();
+	return true;
+}
+
+static bool
+window_removeEventListener(JSContext *ctx, unsigned int argc, JS::Value *rval)
+{
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
+#endif
+	JS::CallArgs args = JS::CallArgsFromVp(argc, rval);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
+	JS::Realm *comp = js::GetContextRealm(ctx);
+
+	if (!comp) {
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s %d\n", __FILE__, __FUNCTION__, __LINE__);
+#endif
+		return false;
+	}
+	struct el_window *elwin = JS::GetMaybePtrFromReservedSlot<struct el_window>(hobj, 0);
+
+	if (argc < 2) {
+		args.rval().setUndefined();
+		return true;
+	}
+	char *method = jsval_to_string(ctx, args[0]);
+
+	if (!method) {
+		return false;
+	}
+	JS::RootedValue fun(ctx, args[1]);
+
+	struct listener *l;
+
+	foreach(l, elwin->listeners) {
+		if (strcmp(l->typ, method)) {
+			continue;
+		}
+		if (l->fun == fun) {
+			del_from_list(l);
+			mem_free_set(&l->typ, NULL);
+			mem_free(l);
+			mem_free(method);
+			args.rval().setUndefined();
+			return true;
+		}
+	}
+	mem_free(method);
+	args.rval().setUndefined();
+	return true;
+}
+
+static bool
+window_postMessage(JSContext *ctx, unsigned int argc, JS::Value *rval)
+{
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
+#endif
+	JS::CallArgs args = JS::CallArgsFromVp(argc, rval);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
+	JS::Realm *comp = js::GetContextRealm(ctx);
+
+	if (!comp) {
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s %d\n", __FILE__, __FUNCTION__, __LINE__);
+#endif
+		return false;
+	}
+	struct el_window *elwin = JS::GetMaybePtrFromReservedSlot<struct el_window>(hobj, 0);
+
+	if (argc < 2) {
+		args.rval().setUndefined();
+		return true;
+	}
+	char *data = jsval_to_string(ctx, args[0]);
+	char *targetOrigin = jsval_to_string(ctx, args[1]);
+	char *source = stracpy("TODO");
+
+	JSObject *val = get_messageEvent(ctx, data, targetOrigin, source);
+
+	mem_free_if(data);
+	mem_free_if(targetOrigin);
+	mem_free_if(source);
+
+	if (!val || !elwin) {
+		args.rval().setUndefined();
+		return true;
+	}
+	struct el_message *mess = (struct el_message *)mem_calloc(1, sizeof(*mess));
+	if (!mess) {
+		return false;
+	}
+	JS::RootedObject messageObject(ctx, val);
+	mess->messageObject = messageObject;
+	mess->elwin = elwin;
+	register_bottom_half(onmessage_run, mess);
+	args.rval().setUndefined();
+	return true;
+}
 
 /* @window_funcs{"alert"} */
 static bool
@@ -395,8 +626,6 @@ window_clearTimeout(JSContext *ctx, unsigned int argc, JS::Value *rval)
 #endif
 		return false;
 	}
-	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
-
 	JS::CallArgs args = JS::CallArgsFromVp(argc, rval);
 
 	if (argc != 1) {
@@ -449,6 +678,86 @@ window_get_property_closed(JSContext *ctx, unsigned int argc, JS::Value *vp)
 #endif
 	JS::CallArgs args = CallArgsFromVp(argc, vp);
 	args.rval().setBoolean(false);
+
+	return true;
+}
+
+static bool
+window_get_property_event(JSContext *ctx, unsigned int argc, JS::Value *vp)
+{
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
+#endif
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JSObject *event = get_keyboardEvent(ctx, &last_event);
+	args.rval().setObject(*event);
+
+	return true;
+}
+
+static bool
+window_get_property_location(JSContext *ctx, unsigned int argc, JS::Value *vp)
+{
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
+#endif
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
+	JS::Realm *comp = js::GetContextRealm(ctx);
+
+	if (!comp) {
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s %d\n", __FILE__, __FUNCTION__, __LINE__);
+#endif
+		return false;
+	}
+	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
+
+	if (!interpreter->location_obj) {
+		interpreter->location_obj = getLocation(ctx);
+	}
+	args.rval().setObject(*(JSObject *)(interpreter->location_obj));
+	return true;
+}
+
+static bool
+window_set_property_location(JSContext *ctx, unsigned int argc, JS::Value *vp)
+{
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
+#endif
+	JS::CallArgs args = CallArgsFromVp(argc, vp);
+	JS::RootedObject hobj(ctx, &args.thisv().toObject());
+
+	JS::Realm *comp = js::GetContextRealm(ctx);
+
+	if (!comp) {
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s %d\n", __FILE__, __FUNCTION__, __LINE__);
+#endif
+		return false;
+	}
+
+	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
+
+	struct view_state *vs;
+	struct document_view *doc_view;
+
+	vs = interpreter->vs;
+
+	if (!vs) {
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s %d\n", __FILE__, __FUNCTION__, __LINE__);
+#endif
+		return false;
+	}
+	doc_view = vs->doc_view;
+	char *url = jsval_to_string(ctx, args[0]);
+
+	if (url) {
+		location_goto(doc_view, url);
+		mem_free(url);
+	}
 
 	return true;
 }

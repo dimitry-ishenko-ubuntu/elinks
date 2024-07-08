@@ -37,6 +37,7 @@ struct delayed_rel {
 	struct cache_entry *cached;
 	struct document *document;
 	struct session *ses;
+	int was_write;
 };
 
 enum remote_session_flags {
@@ -55,7 +56,7 @@ typedef unsigned int remote_session_flags_T;
 
 /** This is generic frame descriptor, meaningful mainly for ses_*_frame*(). */
 struct frame {
-	LIST_HEAD(struct frame);
+	LIST_HEAD_EL(struct frame);
 
 	char *name;
 	int redirect_cnt;
@@ -64,7 +65,7 @@ struct frame {
 };
 
 struct iframe {
-	LIST_HEAD(struct frame);
+	LIST_HEAD_EL(struct frame);
 
 	char *name;
 	int redirect_cnt;
@@ -158,7 +159,7 @@ enum navigate_mode {
  * viewed document through the browsing history of this session to the status
  * bar information. */
 struct session {
-	LIST_HEAD(struct session);
+	LIST_HEAD_EL(struct session);
 
 
 #ifdef CONFIG_SCRIPTING_SPIDERMONKEY
@@ -234,6 +235,7 @@ struct session {
 	struct kbdprefix kbdprefix;
 	int exit_query;
 	timer_id_T display_timer;
+	timer_id_T status_redraw_timer;
 
 	/** The text input form insert mode. It is a tristate controlled by the
 	 * boolean document.browse.forms.insert_mode option. When disabled we
@@ -311,6 +313,8 @@ struct frame *ses_find_iframe(struct session *, char *);
 
 void free_files(struct session *);
 void display_timer(struct session *ses);
+void load_common(struct session *ses);
+
 
 /** session_is_loading() is like !!get_current_download() but doesn't take
  * session.req_sent into account.

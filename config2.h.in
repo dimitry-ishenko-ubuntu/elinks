@@ -85,6 +85,9 @@
 /* Define if you want: FSP protocol support */
 #mesondefine CONFIG_FSP
 
+/* Define if you want: FSP protocol support without fork calls */
+#mesondefine CONFIG_FSP2
+
 /* Define if you want: FTP protocol support */
 #mesondefine CONFIG_FTP
 
@@ -117,7 +120,7 @@
 #mesondefine CONFIG_HTML_HIGHLIGHT
 
 /* Define if you want: idn support */
-#mesondefine CONFIG_IDN
+#mesondefine CONFIG_IDN2
 
 /* Define if you want: interlinking support */
 #mesondefine CONFIG_INTERLINK
@@ -131,6 +134,12 @@
 /* Define if you want: LEDs support */
 #mesondefine CONFIG_LEDS
 
+/* Define as 1 to use the libcss library */
+#mesondefine CONFIG_LIBCSS
+
+/* Define as 1 to use the libcurl library */
+#mesondefine CONFIG_LIBCURL
+
 /* Define as 1 to use the libdom library. */
 #mesondefine CONFIG_LIBDOM
 
@@ -139,6 +148,9 @@
 
 /* Define if you want: libevent support */
 #mesondefine CONFIG_LIBEVENT
+
+/* Define if you want: libsixel support */
+#mesondefine CONFIG_LIBSIXEL
 
 /* Define if you want: lzma support */
 #mesondefine CONFIG_LZMA
@@ -461,8 +473,8 @@
 /* Define if you have the iconv() function. */
 #mesondefine HAVE_ICONV
 
-/* Define to 1 if you have the <idna.h> header file. */
-#mesondefine HAVE_IDNA_H
+/* Define to 1 if you have the <idn2.h> header file. */
+#mesondefine HAVE_IDN2_H
 
 /* Define to 1 if you have the <ifaddrs.h> header file. */
 #mesondefine HAVE_IFADDRS_H
@@ -818,6 +830,9 @@
 
 /* Define to 1 if you have the <windows.h> header file. */
 #mesondefine HAVE_WINDOWS_H
+
+/* Define to 1 if you have the <winsock2.h> header file. */
+#mesondefine HAVE_WINSOCK2_H
 
 /* Define to 1 if you have the <ws2tcpip.h> header file. */
 #mesondefine HAVE_WS2TCPIP_H

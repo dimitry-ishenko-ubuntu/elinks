@@ -124,6 +124,10 @@ char * c_strcasestr(const char *haystack, const char *needle);
 
 /** @} */
 
+int elinks_isspace(int c);
+
+#undef isspace
+#define isspace elinks_isspace
 
 #define skip_space(S) \
 	do { while (isspace((unsigned char)*(S))) (S)++; } while (0)
@@ -187,10 +191,10 @@ struct string {
  * @relates string */
 #ifdef __cplusplus
 #ifdef DEBUG_MEMLEAK
-[[nodiscard]] struct string *init_string__(const char *file, int line, struct string *string);
+struct string *init_string__(const char *file, int line, struct string *string);
 #define init_string(string) init_string__(__FILE__, __LINE__, string)
 #else
-[[nodiscard]] struct string *init_string(struct string *string);
+struct string *init_string(struct string *string);
 #endif
 
 #else
@@ -294,7 +298,7 @@ add_bytes_to_string__(
 
 
 struct string_list_item {
-	LIST_HEAD(struct string_list_item);
+	LIST_HEAD_EL(struct string_list_item);
 
 	struct string string;
 };
@@ -308,7 +312,16 @@ add_to_string_list(LIST_OF(struct string_list_item) *list,
 
 void free_string_list(LIST_OF(struct string_list_item) *list);
 
-void string_replace(struct string *res, struct string *inp, struct string *what, struct string *repl);
+struct ecmascript_string_list_item {
+	LIST_HEAD_EL(struct ecmascript_string_list_item);
+	struct string string;
+	int element_offset;
+};
+struct string *add_to_ecmascript_string_list(LIST_OF(struct ecmascript_string_list_item) *list, const char *string, int length, int element_offset);
+
+void free_ecmascript_string_list(LIST_OF(struct ecmascript_string_list_item) *list);
+
+void el_string_replace(struct string *res, struct string *inp, struct string *what, struct string *repl);
 
 
 /** Returns an empty C string or @a str if different from NULL. */

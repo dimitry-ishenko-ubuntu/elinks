@@ -19,8 +19,8 @@
 #include "dialogs/menu.h"
 #include "dialogs/status.h"
 #include "document/html/frames.h"
-#include "document/xml/renderer.h"
-#include "document/xml/renderer2.h"
+#include "document/libdom/renderer.h"
+#include "document/libdom/renderer2.h"
 #include "document/document.h"
 #include "document/forms.h"
 #include "document/renderer.h"
@@ -63,8 +63,6 @@
 #include <js/Printf.h>
 #include <js/SourceText.h>
 #include <js/Warnings.h>
-
-#include <libxml++/libxml++.h>
 
 /*** Global methods */
 
@@ -146,7 +144,7 @@ void *
 spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 {
 	JSContext *ctx;
-	JSObject *console_obj, *document_obj, /* *forms_obj,*/ *history_obj, *location_obj,
+	JSObject *console_obj, *document_obj, /* *forms_obj,*/ *history_obj,
 	         *statusbar_obj, *menubar_obj, *navigator_obj, *localstorage_obj, *screen_obj,
 	         *xhr_obj;
 
@@ -167,30 +165,33 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 
 	JS_AddInterruptCallback(ctx, heartbeat_callback);
 	JS::RealmOptions options;
+	JS::RootedObject global(ctx);
 
-	JS::RootedObject window_obj(ctx, JS_NewGlobalObject(ctx, &window_class, NULL, JS::FireOnNewGlobalHook, options));
+	JS::Heap<JSObject*> *window_obj = new JS::Heap<JSObject*>(JS_NewGlobalObject(ctx, &window_class, NULL, JS::FireOnNewGlobalHook, options));
 
-	if (window_obj) {
-		interpreter->ac = window_obj;
-		interpreter->ac2 = new JSAutoRealm(ctx, window_obj);
-	} else {
+	global = window_obj->get();
+	interpreter->ar = new JSAutoRealm(ctx, global);
+
+	if (!global) {
 		goto release_and_fail;
 	}
+
+	interpreter->ac = window_obj;
 
 	if (!JS::InitRealmStandardClasses(ctx)) {
 		goto release_and_fail;
 	}
 
-	if (!JS_DefineProperties(ctx, window_obj, window_props)) {
+	if (!JS_DefineProperties(ctx, global, window_props)) {
 		goto release_and_fail;
 	}
 
-	if (!spidermonkey_DefineFunctions(ctx, window_obj, window_funcs)) {
+	if (!spidermonkey_DefineFunctions(ctx, global, window_funcs)) {
 		goto release_and_fail;
 	}
 	//JS_SetPrivate(window_obj, interpreter); /* to @window_class */
 
-	document_obj = spidermonkey_InitClass(ctx, window_obj, NULL,
+	document_obj = spidermonkey_InitClass(ctx, global, NULL,
 					      &document_class, NULL, 0,
 					      document_props,
 					      document_funcs,
@@ -212,7 +213,7 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 	}
 */
 
-	history_obj = spidermonkey_InitClass(ctx, window_obj, NULL,
+	history_obj = spidermonkey_InitClass(ctx, global, NULL,
 					     &history_class, NULL, 0,
 					     (JSPropertySpec *) NULL,
 					     history_funcs,
@@ -220,19 +221,7 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 	if (!history_obj) {
 		goto release_and_fail;
 	}
-
-	location_obj = spidermonkey_InitClass(ctx, window_obj, NULL,
-					      &location_class, NULL, 0,
-					      location_props,
-					      location_funcs,
-					      NULL, NULL);
-	if (!location_obj) {
-		goto release_and_fail;
-	}
-
-	interpreter->location_obj = location_obj;
-
-	screen_obj = spidermonkey_InitClass(ctx, window_obj, NULL,
+	screen_obj = spidermonkey_InitClass(ctx, global, NULL,
 					      &screen_class, NULL, 0,
 					      screen_props,
 					      NULL,
@@ -242,7 +231,7 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 		goto release_and_fail;
 	}
 
-	menubar_obj = JS_InitClass(ctx, window_obj, nullptr,
+	menubar_obj = JS_InitClass(ctx, global, nullptr,
 				   &menubar_class, NULL, 0,
 				   unibar_props, NULL,
 				   NULL, NULL);
@@ -251,7 +240,7 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 	}
 	JS::SetReservedSlot(menubar_obj, 0, JS::PrivateValue((char *)"t")); /* to @menubar_class */
 
-	statusbar_obj = JS_InitClass(ctx, window_obj, nullptr,
+	statusbar_obj = JS_InitClass(ctx, global, nullptr,
 				     &statusbar_class, NULL, 0,
 				     unibar_props, NULL,
 				     NULL, NULL);
@@ -260,7 +249,7 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 	}
 	JS::SetReservedSlot(statusbar_obj, 0, JS::PrivateValue((char *)"s")); /* to @statusbar_class */
 
-	navigator_obj = JS_InitClass(ctx, window_obj, nullptr,
+	navigator_obj = JS_InitClass(ctx, global, nullptr,
 				     &navigator_class, NULL, 0,
 				     navigator_props, NULL,
 				     NULL, NULL);
@@ -268,7 +257,7 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 		goto release_and_fail;
 	}
 
-	console_obj = spidermonkey_InitClass(ctx, window_obj, NULL,
+	console_obj = spidermonkey_InitClass(ctx, global, NULL,
 					      &console_class, NULL, 0,
 					      nullptr,
 					      console_funcs,
@@ -277,7 +266,7 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 		goto release_and_fail;
 	}
 
-	localstorage_obj = spidermonkey_InitClass(ctx, window_obj, NULL,
+	localstorage_obj = spidermonkey_InitClass(ctx, global, NULL,
 					      &localstorage_class, NULL, 0,
 					      nullptr,
 					      localstorage_funcs,
@@ -286,7 +275,7 @@ spidermonkey_get_interpreter(struct ecmascript_interpreter *interpreter)
 		goto release_and_fail;
 	}
 
-	xhr_obj = spidermonkey_InitClass(ctx, window_obj, NULL,
+	xhr_obj = spidermonkey_InitClass(ctx, global, NULL,
 					&xhr_class, xhr_constructor, 0,
 					xhr_props,
 					xhr_funcs,
@@ -311,13 +300,13 @@ spidermonkey_put_interpreter(struct ecmascript_interpreter *interpreter)
 	assert(interpreter);
 	if (!js_module_init_ok) return;
 
-	if (interpreter->ac2) {
-		delete (JSAutoRealm *)interpreter->ac2;
-	}
-//	JS_DestroyContext(ctx);
+	delete interpreter->ar;
+	delete interpreter->ac;
+
 	interpreter->backend_data = NULL;
 	interpreter->ac = nullptr;
-	interpreter->ac2 = nullptr;
+	interpreter->ar = nullptr;
+	done_heartbeat(interpreter->heartbeat);
 }
 
 void
@@ -366,7 +355,7 @@ spidermonkey_eval(struct ecmascript_interpreter *interpreter,
 		return;
 	}
 	ctx = (JSContext *)interpreter->backend_data;
-	JS::Realm *comp = JS::EnterRealm(ctx, (JSObject *)interpreter->ac);
+	JSAutoRealm ar(ctx, (JSObject *)interpreter->ac->get());
 
 	interpreter->heartbeat = add_heartbeat(interpreter);
 	interpreter->ret = ret;
@@ -384,7 +373,6 @@ spidermonkey_eval(struct ecmascript_interpreter *interpreter,
 	spidermonkey_check_for_exception(ctx);
 
 	done_heartbeat(interpreter->heartbeat);
-	JS::LeaveRealm(ctx, comp);
 }
 
 void
@@ -399,7 +387,7 @@ spidermonkey_call_function(struct ecmascript_interpreter *interpreter,
 		return;
 	}
 	ctx = (JSContext *)interpreter->backend_data;
-	JS::Realm *comp = JS::EnterRealm(ctx, (JSObject *)interpreter->ac);
+	JSAutoRealm ar(ctx, (JSObject *)interpreter->ac->get());
 
 	interpreter->heartbeat = add_heartbeat(interpreter);
 	interpreter->ret = ret;
@@ -408,7 +396,6 @@ spidermonkey_call_function(struct ecmascript_interpreter *interpreter,
 	JS::RootedObject cg(ctx, JS::CurrentGlobalOrNull(ctx));
 	JS_CallFunctionValue(ctx, cg, fun, JS::HandleValueArray::empty(), &r_val);
 	done_heartbeat(interpreter->heartbeat);
-	JS::LeaveRealm(ctx, comp);
 }
 
 
@@ -427,7 +414,7 @@ spidermonkey_eval_stringback(struct ecmascript_interpreter *interpreter,
 	interpreter->ret = NULL;
 	interpreter->heartbeat = add_heartbeat(interpreter);
 
-	JS::Realm *comp = JS::EnterRealm(ctx, (JSObject *)interpreter->ac);
+	JSAutoRealm ar(ctx, (JSObject *)interpreter->ac->get());
 
 	JS::RootedObject cg(ctx, JS::CurrentGlobalOrNull(ctx));
 	JS::RootedValue r_rval(ctx, rval);
@@ -454,7 +441,6 @@ spidermonkey_eval_stringback(struct ecmascript_interpreter *interpreter,
 	} else {
 		result = jsval_to_string(ctx, r_rval);
 	}
-	JS::LeaveRealm(ctx, comp);
 
 	return result;
 }
@@ -473,7 +459,7 @@ spidermonkey_eval_boolback(struct ecmascript_interpreter *interpreter,
 	ctx = (JSContext *)interpreter->backend_data;
 	interpreter->ret = NULL;
 
-	JS::Realm *comp = JS::EnterRealm(ctx, (JSObject *)interpreter->ac);
+	JSAutoRealm ar(ctx, (JSObject *)interpreter->ac->get());
 
 	JS::CompileOptions options(ctx);
 	JS::RootedObjectVector ag(ctx);
@@ -507,8 +493,6 @@ spidermonkey_eval_boolback(struct ecmascript_interpreter *interpreter,
 	} else {
 		result = r_val.toBoolean();
 	}
-
-	JS::LeaveRealm(ctx, comp);
 
 	return result;
 }

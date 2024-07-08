@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ELinks 0.5pre0.CVS\n"
 "Report-Msgid-Bugs-To: elinks-users@linuxfromscratch.org\n"
-"POT-Creation-Date: 2022-12-02 15:26+0100\n"
+"POT-Creation-Date: 2023-12-02 09:04+0100\n"
 "PO-Revision-Date: 2004-02-13 19:07+0100\n"
 "Last-Translator: Peter Samek <samek@upc.uniba.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
@@ -16,87 +16,87 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: KBabel 1.0.2\n"
 
-#: src/bfu/hierbox.c:332
+#: src/bfu/hierbox.c:333
 msgid "Close"
 msgstr "Zavri"
 
 #. | MSGBOX_SCROLLABLE
 #.
-#: src/bfu/hierbox.c:429 src/bfu/hierbox.c:438 src/dialogs/document.c:40
+#: src/bfu/hierbox.c:430 src/bfu/hierbox.c:439 src/dialogs/document.c:40
 #: src/dialogs/document.c:132 src/dialogs/document.c:266
 #: src/scripting/python/dialogs.c:44
 msgid "Info"
 msgstr "Informácie"
 
-#: src/bfu/hierbox.c:430
+#: src/bfu/hierbox.c:431
 msgid "Press space to expand this folder."
 msgstr "Na rozbalenie tejto zložky stlač medzeru."
 
 #. accelerator_context(do_auth_dialog, do_edit_dialog, generic_external_protocol_handler, info_box, input_dialog, menu_add_ext, menu_keys, push_hierbox_info_button, python_info_box, refreshed_msg_box, resize_terminal_dialog, setup_first_session, src/config/dialogs.c:build_edit_dialog, src/cookies/dialogs.c:build_edit_dialog, src/cookies/dialogs.c:push_add_server_button, src/scripting/lua/core.c:l_edit_bookmark_dialog, src/scripting/lua/core.c:l_xdialog, src/viewer/text/search.c:search_dlg_do, terminal_options, write_config_dialog)
-#: src/bfu/hierbox.c:441 src/bfu/inpfield.c:257 src/bfu/msgbox.c:173
+#: src/bfu/hierbox.c:442 src/bfu/inpfield.c:257 src/bfu/msgbox.c:173
 #: src/bfu/msgbox.c:194 src/config/dialogs.c:57 src/config/dialogs.c:365
 #: src/cookies/dialogs.c:423 src/cookies/dialogs.c:521 src/dialogs/edit.c:98
-#: src/dialogs/info.cpp:139 src/dialogs/options.c:245 src/dialogs/options.c:326
+#: src/dialogs/info.c:142 src/dialogs/options.c:255 src/dialogs/options.c:336
 #: src/mime/dialogs.c:132 src/protocol/auth/dialogs.c:159
-#: src/protocol/protocol.cpp:252 src/scripting/lua/core.c:425
-#: src/scripting/lua/core.c:506 src/scripting/python/dialogs.c:91
-#: src/session/session.cpp:969 src/viewer/text/search.c:1971
+#: src/protocol/protocol.c:261 src/scripting/lua/core.c:429
+#: src/scripting/lua/core.c:510 src/scripting/python/dialogs.c:91
+#: src/session/session.c:975 src/viewer/text/search.c:1971
 #, fuzzy
 msgid "~OK"
 msgstr "OK"
 
 #. cant_delete_item
-#: src/bfu/hierbox.c:552
+#: src/bfu/hierbox.c:569
 #, c-format
 msgid "Sorry, but the item \"%s\" cannot be deleted."
 msgstr "Smola, ale položka \"%s\" nemôže byť vymazaná."
 
 #. cant_delete_used_item
-#: src/bfu/hierbox.c:555
+#: src/bfu/hierbox.c:572
 #, c-format
 msgid "Sorry, but the item \"%s\" is being used by something else."
 msgstr "Smola, ale položku \"%s\" práve používa niečo iné."
 
 #. cant_delete_folder
-#: src/bfu/hierbox.c:558 src/bookmarks/dialogs.c:169
+#: src/bfu/hierbox.c:575 src/bookmarks/dialogs.c:169
 #, c-format
 msgid "Sorry, but the folder \"%s\" cannot be deleted."
 msgstr "Smola, ale zložka \"%s\" nemôže byť vymazaná."
 
 #. cant_delete_used_folder
-#: src/bfu/hierbox.c:561 src/bookmarks/dialogs.c:171
+#: src/bfu/hierbox.c:578 src/bookmarks/dialogs.c:171
 #, c-format
 msgid "Sorry, but the folder \"%s\" is being used by something else."
 msgstr "Smola, ale zložku \"%s\" práve používa niečo iné."
 
 #. delete_marked_items_title
-#: src/bfu/hierbox.c:564
+#: src/bfu/hierbox.c:581
 msgid "Delete marked items"
 msgstr "Zmazať označené položky"
 
 #. delete_marked_items
-#: src/bfu/hierbox.c:567
+#: src/bfu/hierbox.c:584
 msgid "Delete marked items?"
 msgstr "Zmazať označené položky?"
 
 #. delete_folder_title
-#: src/bfu/hierbox.c:570 src/bookmarks/dialogs.c:177
+#: src/bfu/hierbox.c:587 src/bookmarks/dialogs.c:177
 msgid "Delete folder"
 msgstr "Zmazať zložku"
 
 #. delete_folder
-#: src/bfu/hierbox.c:573
+#: src/bfu/hierbox.c:590
 #, c-format
 msgid "Delete the folder \"%s\" and its content?"
 msgstr "Zmazať zložku \"%s\" a jej obsah?"
 
 #. delete_item_title
-#: src/bfu/hierbox.c:576
+#: src/bfu/hierbox.c:593
 msgid "Delete item"
 msgstr "Zmazať položku"
 
 #. delete_item
-#: src/bfu/hierbox.c:579
+#: src/bfu/hierbox.c:596
 #, c-format
 msgid ""
 "Delete \"%s\"?\n"
@@ -108,54 +108,52 @@ msgstr ""
 "%s"
 
 #. clear_all_items_title
-#: src/bfu/hierbox.c:582
+#: src/bfu/hierbox.c:599
 msgid "Clear all items"
 msgstr "Vymazať všetky položky"
 
 #. clear_all_items
-#: src/bfu/hierbox.c:585
+#: src/bfu/hierbox.c:602
 msgid "Do you really want to remove all items?"
 msgstr "Naozaj chceš odstrániť všetky položky?"
 
-#: src/bfu/hierbox.c:642
+#: src/bfu/hierbox.c:659
 msgid "Delete error"
 msgstr "Chyba pri mazaní"
 
 #. accelerator_context(close_all_tabs_but_current, close_tab, memorize_form, menu_del_ext, push_hierbox_clear_button, push_hierbox_delete_button, query_delete_selected_item, query_exit, ses_goto, src/config/dialogs.c:really_add_keybinding.yn)
-#: src/bfu/hierbox.c:754 src/bfu/hierbox.c:766 src/bfu/hierbox.c:814
-#: src/bfu/hierbox.c:876 src/config/dialogs.c:824 src/dialogs/menu.c:132
-#: src/formhist/formhist.c:432 src/mime/dialogs.c:70
-#: src/session/session.cpp:340 src/session/task.c:295 src/terminal/tab.c:219
-#: src/terminal/tab.c:263
+#: src/bfu/hierbox.c:771 src/bfu/hierbox.c:783 src/bfu/hierbox.c:831
+#: src/bfu/hierbox.c:893 src/config/dialogs.c:824 src/dialogs/menu.c:132
+#: src/formhist/formhist.c:434 src/mime/dialogs.c:70 src/session/session.c:340
+#: src/session/task.c:295 src/terminal/tab.c:219 src/terminal/tab.c:263
 #, fuzzy
 msgid "~Yes"
 msgstr "Áno"
 
 #. accelerator_context(close_all_tabs_but_current, close_tab, memorize_form, menu_del_ext, push_hierbox_clear_button, push_hierbox_delete_button, query_delete_selected_item, query_exit, ses_goto, src/config/dialogs.c:really_add_keybinding.yn)
-#: src/bfu/hierbox.c:755 src/bfu/hierbox.c:767 src/bfu/hierbox.c:815
-#: src/bfu/hierbox.c:877 src/config/dialogs.c:825 src/dialogs/menu.c:133
-#: src/formhist/formhist.c:433 src/mime/dialogs.c:71
-#: src/session/session.cpp:341 src/session/task.c:296 src/terminal/tab.c:220
-#: src/terminal/tab.c:264
+#: src/bfu/hierbox.c:772 src/bfu/hierbox.c:784 src/bfu/hierbox.c:832
+#: src/bfu/hierbox.c:894 src/config/dialogs.c:825 src/dialogs/menu.c:133
+#: src/formhist/formhist.c:435 src/mime/dialogs.c:71 src/session/session.c:341
+#: src/session/task.c:296 src/terminal/tab.c:220 src/terminal/tab.c:264
 #, fuzzy
 msgid "~No"
 msgstr "Nie"
 
-#: src/bfu/hierbox.c:946 src/bfu/hierbox.c:977 src/viewer/text/search.c:1255
+#: src/bfu/hierbox.c:963 src/bfu/hierbox.c:994 src/viewer/text/search.c:1255
 #: src/viewer/text/search.c:1263 src/viewer/text/search.c:1279
 #: src/viewer/text/search.c:1990
 msgid "Search"
 msgstr "Hľadať"
 
-#: src/bfu/hierbox.c:948 src/viewer/text/search.c:1256
+#: src/bfu/hierbox.c:965 src/viewer/text/search.c:1256
 #, c-format
 msgid "Search string '%s' not found"
 msgstr "Hľadaný reťazec '%s' nabol nájdený"
 
-#: src/bfu/hierbox.c:977 src/config/dialogs.c:140 src/config/dialogs.c:329
+#: src/bfu/hierbox.c:994 src/config/dialogs.c:140 src/config/dialogs.c:329
 #: src/config/dialogs.c:477 src/cookies/dialogs.c:41 src/cookies/dialogs.c:416
-#: src/dialogs/edit.c:92 src/dialogs/edit.c:94 src/scripting/lua/core.c:421
-#: src/scripting/lua/core.c:422 src/scripting/lua/core.c:503
+#: src/dialogs/edit.c:92 src/dialogs/edit.c:94 src/scripting/lua/core.c:425
+#: src/scripting/lua/core.c:426 src/scripting/lua/core.c:507
 msgid "Name"
 msgstr "Názov"
 
@@ -183,10 +181,10 @@ msgstr "Prázdny reťazec je neprípustný!"
 #. accelerator_context(do_auth_dialog, do_edit_dialog, input_dialog, menu_add_ext, resize_terminal_dialog, src/config/dialogs.c:build_edit_dialog, src/cookies/dialogs.c:build_edit_dialog, src/cookies/dialogs.c:push_add_server_button, src/protocol/bittorrent/dialogs.c:bittorrent_query_callback, src/scripting/lua/core.c:l_edit_bookmark_dialog, src/scripting/lua/core.c:l_xdialog, src/session/download.c:do_type_query, src/session/download.c:lookup_unique_name, src/viewer/text/search.c:search_dlg_do, terminal_options)
 #: src/bfu/inpfield.c:257 src/config/dialogs.c:366 src/cookies/dialogs.c:424
 #: src/cookies/dialogs.c:522 src/dialogs/edit.c:102 src/dialogs/edit.c:105
-#: src/dialogs/options.c:248 src/dialogs/options.c:327 src/mime/dialogs.c:133
+#: src/dialogs/options.c:258 src/dialogs/options.c:337 src/mime/dialogs.c:133
 #: src/protocol/auth/dialogs.c:160 src/protocol/bittorrent/dialogs.c:826
-#: src/scripting/lua/core.c:426 src/scripting/lua/core.c:507
-#: src/session/download.c:913 src/session/download.c:1789
+#: src/scripting/lua/core.c:430 src/scripting/lua/core.c:511
+#: src/session/download.c:973 src/session/download.c:1877
 #: src/viewer/text/search.c:1972
 #, fuzzy
 msgid "~Cancel"
@@ -203,11 +201,11 @@ msgid "Digital clock in the status bar."
 msgstr "Farba titulku dialógového okna."
 
 #: src/bfu/leds.c:82 src/bfu/leds.c:102 src/bfu/leds.c:115
-#: src/config/options.inc:1428 src/config/options.inc:1435
-#: src/ecmascript/ecmascript.cpp:69 src/globhist/globhist.c:62
+#: src/config/options.inc:1450 src/config/options.inc:1457
+#: src/ecmascript/ecmascript.cpp:71 src/globhist/globhist.c:62
 #: src/mime/backend/dgi.c:61 src/mime/backend/mailcap.c:93
-#: src/mime/backend/mimetypes.c:52 src/network/ssl/ssl.c:194
-#: src/network/ssl/ssl.c:357
+#: src/mime/backend/mimetypes.c:52 src/network/ssl/ssl.c:203
+#: src/network/ssl/ssl.c:366
 msgid "Enable"
 msgstr "Zapnúť"
 
@@ -389,7 +387,7 @@ msgid ""
 "This feature requires bookmark support."
 msgstr ""
 
-#: src/bookmarks/dialogs.c:113 src/config/options.inc:1264
+#: src/bookmarks/dialogs.c:113 src/config/options.inc:1286
 #: src/dialogs/document.c:163 src/globhist/dialogs.c:68
 msgid "Title"
 msgstr "Titulok"
@@ -397,7 +395,7 @@ msgstr "Titulok"
 #: src/bookmarks/dialogs.c:117 src/cache/dialogs.c:65
 #: src/dialogs/document.c:154 src/dialogs/edit.c:96 src/formhist/dialogs.c:63
 #: src/globhist/dialogs.c:69 src/protocol/auth/dialogs.c:207
-#: src/scripting/lua/core.c:423
+#: src/scripting/lua/core.c:427
 msgid "URL"
 msgstr "URL"
 
@@ -462,7 +460,7 @@ msgstr "Pridať zložku"
 msgid "Folder name"
 msgstr "Názov zložky"
 
-#: src/bookmarks/dialogs.c:426 src/scripting/lua/core.c:417
+#: src/bookmarks/dialogs.c:426 src/scripting/lua/core.c:421
 msgid "Edit bookmark"
 msgstr "Edituj záložku"
 
@@ -505,22 +503,22 @@ msgstr "Editovať"
 
 #. accelerator_context(src/bookmarks/dialogs.c:bookmark_buttons, src/cache/dialogs.c:cache_buttons, src/config/dialogs.c:keybinding_buttons, src/config/dialogs.c:option_buttons, src/cookies/dialogs.c:cookie_buttons, src/dialogs/menu.c:ext_menu, src/formhist/dialogs.c:formhist_buttons, src/globhist/dialogs.c:globhist_buttons, src/protocol/auth/dialogs.c:auth_buttons)
 #: src/bookmarks/dialogs.c:619 src/cache/dialogs.c:318 src/config/dialogs.c:503
-#: src/config/dialogs.c:931 src/cookies/dialogs.c:544 src/dialogs/menu.c:463
+#: src/config/dialogs.c:931 src/cookies/dialogs.c:544 src/dialogs/menu.c:464
 #: src/formhist/dialogs.c:211 src/globhist/dialogs.c:233
 #: src/protocol/auth/dialogs.c:307
 msgid "~Delete"
 msgstr "Zmazať"
 
 #. accelerator_context(menu_keys, src/bookmarks/dialogs.c:bookmark_buttons, src/config/dialogs.c:keybinding_buttons, src/globhist/dialogs.c:globhist_buttons)
-#: src/bookmarks/dialogs.c:620 src/config/dialogs.c:932
-#: src/dialogs/info.cpp:140 src/globhist/dialogs.c:235
+#: src/bookmarks/dialogs.c:620 src/config/dialogs.c:932 src/dialogs/info.c:143
+#: src/globhist/dialogs.c:235
 #, fuzzy
 msgid "~Toggle display"
 msgstr "Prepnúť URL/názov"
 
 #. accelerator_context(src/bookmarks/dialogs.c:bookmark_buttons, src/config/dialogs.c:keybinding_buttons, src/config/dialogs.c:option_buttons, src/cookies/dialogs.c:cookie_buttons, src/dialogs/menu.c:ext_menu)
 #: src/bookmarks/dialogs.c:621 src/config/dialogs.c:502
-#: src/config/dialogs.c:930 src/cookies/dialogs.c:541 src/dialogs/menu.c:461
+#: src/config/dialogs.c:930 src/cookies/dialogs.c:541 src/dialogs/menu.c:462
 msgid "~Add"
 msgstr "Prid~ať"
 
@@ -544,7 +542,7 @@ msgstr "Presunúť"
 
 #. accelerator_context(src/bookmarks/dialogs.c:bookmark_buttons, src/cache/dialogs.c:cache_buttons, src/config/dialogs.c:keybinding_buttons, src/config/dialogs.c:option_buttons, src/dialogs/menu.c:view_menu, src/globhist/dialogs.c:globhist_buttons)
 #: src/bookmarks/dialogs.c:625 src/cache/dialogs.c:319 src/config/dialogs.c:504
-#: src/config/dialogs.c:933 src/dialogs/menu.c:413 src/globhist/dialogs.c:234
+#: src/config/dialogs.c:933 src/dialogs/menu.c:414 src/globhist/dialogs.c:234
 msgid "~Search"
 msgstr "~Hľadaj"
 
@@ -606,7 +604,7 @@ msgstr "Žiadne URL"
 msgid "Redirect"
 msgstr "Presmerovanie"
 
-#: src/cache/dialogs.c:85 src/config/options.inc:609 src/dialogs/document.c:174
+#: src/cache/dialogs.c:85 src/config/options.inc:617 src/dialogs/document.c:174
 #: src/protocol/bittorrent/dialogs.c:132
 msgid "Size"
 msgstr "Veľkosť"
@@ -668,7 +666,7 @@ msgstr "Uvoľniť nepoužívané položky keše"
 msgid "ID"
 msgstr ""
 
-#: src/cache/dialogs.c:152 src/config/options.inc:772
+#: src/cache/dialogs.c:152 src/config/options.inc:780
 msgid "Header"
 msgstr "Hlavička"
 
@@ -717,7 +715,7 @@ msgstr ""
 
 #. accelerator_context(display_download, src/cache/dialogs.c:cache_buttons, src/config/dialogs.c:option_buttons, src/cookies/dialogs.c:cookie_buttons, src/dialogs/download.c:download_buttons, src/formhist/dialogs.c:formhist_buttons, src/globhist/dialogs.c:globhist_buttons, src/protocol/auth/dialogs.c:auth_buttons)
 #: src/cache/dialogs.c:316 src/config/dialogs.c:500 src/cookies/dialogs.c:540
-#: src/dialogs/download.c:267 src/dialogs/download.c:504
+#: src/dialogs/download.c:275 src/dialogs/download.c:509
 #: src/formhist/dialogs.c:210 src/globhist/dialogs.c:229
 #: src/protocol/auth/dialogs.c:306
 #, fuzzy
@@ -773,7 +771,7 @@ msgstr "Ísť na prvý riadok buffra"
 msgid "Cancel current state"
 msgstr "Zrušiť aktuálny stav"
 
-#: src/config/actions-edit.inc:13 src/config/actions-main.inc:19
+#: src/config/actions-edit.inc:13 src/config/actions-main.inc:20
 msgid "Copy text to clipboard"
 msgstr "Kopírovať text do schránky"
 
@@ -798,7 +796,7 @@ msgstr "Ísť na koniec stránky/riadku"
 msgid "Go to the last line of the buffer"
 msgstr "Ísť na posledný riadok buffra"
 
-#: src/config/actions-edit.inc:19 src/config/actions-main.inc:48
+#: src/config/actions-edit.inc:19 src/config/actions-main.inc:49
 #: src/config/actions-menu.inc:12
 msgid "Follow the current link"
 msgstr "Otvoriť aktuálny odkaz"
@@ -850,7 +848,7 @@ msgstr "Vložiť text zo schránky"
 msgid "Move to the previous item"
 msgstr "Presunúť sa so predchádzajúceho rámca"
 
-#: src/config/actions-edit.inc:31 src/config/actions-main.inc:100
+#: src/config/actions-edit.inc:31 src/config/actions-main.inc:101
 #: src/config/actions-menu.inc:21
 msgid "Redraw the terminal"
 msgstr "Prekresliť terminál"
@@ -905,531 +903,535 @@ msgid "Free unused cache entries"
 msgstr "Uvoľniť nepoužívané položky keše"
 
 #: src/config/actions-main.inc:17
+msgid "Remove temporary files"
+msgstr ""
+
+#: src/config/actions-main.inc:18
 msgid "Open cookie manager"
 msgstr "Otvoriť správcu cookies"
 
-#: src/config/actions-main.inc:18
+#: src/config/actions-main.inc:19
 msgid "Reload cookies file"
 msgstr "Znovu nahrať súbor s cookies"
 
-#: src/config/actions-main.inc:20
+#: src/config/actions-main.inc:21
 msgid "Show information about the current page"
 msgstr "Zobraziť informácie o aktuálnej stránke"
 
-#: src/config/actions-main.inc:21
+#: src/config/actions-main.inc:22
 msgid "Open download manager"
 msgstr "Otvoriť správcu sťahovania"
 
-#: src/config/actions-main.inc:22
+#: src/config/actions-main.inc:23
 msgid "Enter ex-mode (command line)"
 msgstr ""
 
-#: src/config/actions-main.inc:23
+#: src/config/actions-main.inc:24
 msgid "Open the File menu"
 msgstr "Otvoriť menu Súbor"
 
-#: src/config/actions-main.inc:24
+#: src/config/actions-main.inc:25
 msgid "Find the next occurrence of the current search text"
 msgstr "Nájsť ďalší výskyt práve hľadaného textu"
 
-#: src/config/actions-main.inc:25
+#: src/config/actions-main.inc:26
 msgid "Find the previous occurrence of the current search text"
 msgstr "Nájsť predchádzajúci výskyt práve hľadaného textu"
 
-#: src/config/actions-main.inc:26
+#: src/config/actions-main.inc:27
 msgid "Forget authentication credentials"
 msgstr "Vymazať z pamäti prihlasovacie informácie HTTP Autentizácie"
 
-#: src/config/actions-main.inc:27
+#: src/config/actions-main.inc:28
 msgid "Open form history manager"
 msgstr "Otvoriť správcu histórie formulárov"
 
-#: src/config/actions-main.inc:28
+#: src/config/actions-main.inc:29
 msgid "Pass URI of current frame to external command"
 msgstr ""
 
-#: src/config/actions-main.inc:29
+#: src/config/actions-main.inc:30
 msgid "Maximize the current frame"
 msgstr "Maximalizovať aktuálny rámec"
 
-#: src/config/actions-main.inc:30
+#: src/config/actions-main.inc:31
 msgid "Move to the next frame"
 msgstr "Presunúť sa do ďalšieho rámca"
 
-#: src/config/actions-main.inc:31
+#: src/config/actions-main.inc:32
 msgid "Move to the previous frame"
 msgstr "Presunúť sa so predchádzajúceho rámca"
 
-#: src/config/actions-main.inc:32
+#: src/config/actions-main.inc:33
 msgid "Open \"Go to URL\" dialog box"
 msgstr "Otvorť dialógové okno \"Choď na URL\""
 
-#: src/config/actions-main.inc:33
+#: src/config/actions-main.inc:34
 msgid "Open \"Go to URL\" dialog box containing the current URL"
 msgstr "Otvoriť dialóg \"Choď na URL\" obsahujúci aktuálne URL"
 
-#: src/config/actions-main.inc:34
+#: src/config/actions-main.inc:35
 msgid "Open \"Go to URL\" dialog box containing the current link URL"
 msgstr "Otvoriť dialóg \"Choď na URL\" obsahujúci URL aktuálneho odkazu"
 
-#: src/config/actions-main.inc:35
+#: src/config/actions-main.inc:36
 msgid "Go to the homepage"
 msgstr "Ísť na domovskú stránku"
 
-#: src/config/actions-main.inc:36
+#: src/config/actions-main.inc:37
 #, fuzzy
 msgid "Show information about the current page protocol headers"
 msgstr "Zobraziť informácie o HTTP hlavičkách aktuálnej stránky"
 
-#: src/config/actions-main.inc:37
+#: src/config/actions-main.inc:38
 msgid "Open history manager"
 msgstr "Otvoriť správcu histórie"
 
-#: src/config/actions-main.inc:38
+#: src/config/actions-main.inc:39
 msgid "Return to the previous document in history"
 msgstr "Návrat k predchádzajúcemu dokumentu v histórii"
 
-#: src/config/actions-main.inc:39
+#: src/config/actions-main.inc:40
 #, fuzzy
 msgid "Go forward in history"
 msgstr "Ísť dopredu v spätnej histórii"
 
-#: src/config/actions-main.inc:40
+#: src/config/actions-main.inc:41
 msgid "Jump to link"
 msgstr "Skoč na odkaz"
 
-#: src/config/actions-main.inc:41
+#: src/config/actions-main.inc:42
 msgid "Open keybinding manager"
 msgstr "Otvoriť správcu klávesových skratiek"
 
-#: src/config/actions-main.inc:42
+#: src/config/actions-main.inc:43
 msgid "Kill all backgrounded connections"
 msgstr "Ukončiť všetky spojenia na pozadí"
 
-#: src/config/actions-main.inc:43
+#: src/config/actions-main.inc:44
 #, fuzzy
 msgid "Open link selection dialog"
 msgstr "Otvoriť dialóg potvrdzujúci skončenie Elinksu"
 
-#: src/config/actions-main.inc:44
+#: src/config/actions-main.inc:45
 msgid "Download the current link"
 msgstr "Stiahnuť cieľ aktuálneho odkazu"
 
-#: src/config/actions-main.inc:45
+#: src/config/actions-main.inc:46
 msgid "Download the current image"
 msgstr "Stiahnuť aktuálny obrázok"
 
-#: src/config/actions-main.inc:46
+#: src/config/actions-main.inc:47
 msgid "Attempt to resume download of the current link"
 msgstr "Pokúsiť sa obnoviť sťahovanie aktuálneho odkazu"
 
-#: src/config/actions-main.inc:47
+#: src/config/actions-main.inc:48
 msgid "Pass URI of current link to external command"
 msgstr ""
 
-#: src/config/actions-main.inc:49
+#: src/config/actions-main.inc:50
 msgid "Follow the current link, forcing reload of the target"
 msgstr "Otvoriť aktuálny odkaz, (cieľ stiahnutý znovu)"
 
-#: src/config/actions-main.inc:50
+#: src/config/actions-main.inc:51
 #, fuzzy
 msgid "Show information about current link"
 msgstr "Zobraziť informácie o aktuálnej stránke"
 
-#: src/config/actions-main.inc:51
+#: src/config/actions-main.inc:52
 msgid "Open the link context menu"
 msgstr "Otvoriť kontextové menu k odkazu"
 
-#: src/config/actions-main.inc:52
+#: src/config/actions-main.inc:53
 #, fuzzy
 msgid "Open the form fields menu"
 msgstr "Otvoriť menu Súbor"
 
-#: src/config/actions-main.inc:53
+#: src/config/actions-main.inc:54
 msgid "Open a Lua console"
 msgstr "Otvoriť Lua konzolu"
 
-#: src/config/actions-main.inc:54 src/config/options.inc:946
+#: src/config/actions-main.inc:55 src/config/options.inc:960
 msgid "Macro 0"
 msgstr ""
 
-#: src/config/actions-main.inc:55 src/config/options.inc:950
+#: src/config/actions-main.inc:56 src/config/options.inc:964
 msgid "Macro 1"
 msgstr ""
 
-#: src/config/actions-main.inc:56 src/config/options.inc:954
+#: src/config/actions-main.inc:57 src/config/options.inc:968
 msgid "Macro 2"
 msgstr ""
 
-#: src/config/actions-main.inc:57 src/config/options.inc:958
+#: src/config/actions-main.inc:58 src/config/options.inc:972
 msgid "Macro 3"
 msgstr ""
 
-#: src/config/actions-main.inc:58 src/config/options.inc:962
+#: src/config/actions-main.inc:59 src/config/options.inc:976
 msgid "Macro 4"
 msgstr ""
 
-#: src/config/actions-main.inc:59 src/config/options.inc:966
+#: src/config/actions-main.inc:60 src/config/options.inc:980
 msgid "Macro 5"
 msgstr ""
 
-#: src/config/actions-main.inc:60 src/config/options.inc:970
+#: src/config/actions-main.inc:61 src/config/options.inc:984
 msgid "Macro 6"
 msgstr ""
 
-#: src/config/actions-main.inc:61 src/config/options.inc:974
+#: src/config/actions-main.inc:62 src/config/options.inc:988
 msgid "Macro 7"
 msgstr ""
 
-#: src/config/actions-main.inc:62 src/config/options.inc:978
+#: src/config/actions-main.inc:63 src/config/options.inc:992
 msgid "Macro 8"
 msgstr ""
 
-#: src/config/actions-main.inc:63 src/config/options.inc:982
+#: src/config/actions-main.inc:64 src/config/options.inc:996
 msgid "Macro 9"
 msgstr ""
 
-#: src/config/actions-main.inc:64
+#: src/config/actions-main.inc:65
 #, fuzzy
 msgid "Mark a corner of the clipboard rectangle"
 msgstr "Vložiť text zo schránky"
 
-#: src/config/actions-main.inc:65
+#: src/config/actions-main.inc:66
 msgid "Go at a specified mark"
 msgstr "Prejsť na zadanú značku"
 
-#: src/config/actions-main.inc:66
+#: src/config/actions-main.inc:67
 msgid "Set a mark"
 msgstr "Nastaviť značku"
 
-#: src/config/actions-main.inc:67
+#: src/config/actions-main.inc:68
 msgid "Activate the menu"
 msgstr "Aktivovať menu"
 
-#: src/config/actions-main.inc:68
+#: src/config/actions-main.inc:69
 #, fuzzy
 msgid "Move downwards to put the current line at the top"
 msgstr "Otvoriť aktuálny odkaz v novom tabe"
 
-#: src/config/actions-main.inc:69
+#: src/config/actions-main.inc:70
 #, fuzzy
 msgid "Move cursor down"
 msgstr "Posunúť kurzor smerom dole"
 
-#: src/config/actions-main.inc:70
+#: src/config/actions-main.inc:71
 #, fuzzy
 msgid "Move cursor left"
 msgstr "Posunúť kurzor vľavo"
 
-#: src/config/actions-main.inc:71
+#: src/config/actions-main.inc:72
 #, fuzzy
 msgid "Move cursor to the start of the line"
 msgstr "Ísť na začiatok stránky alebo riadku"
 
-#: src/config/actions-main.inc:72
+#: src/config/actions-main.inc:73
 #, fuzzy
 msgid "Move cursor right"
 msgstr "Posunúť kurzor doprava"
 
-#: src/config/actions-main.inc:73
+#: src/config/actions-main.inc:74
 #, fuzzy
 msgid "Move cursor up"
 msgstr "Posunúť kurzor smerom hore"
 
-#: src/config/actions-main.inc:74
+#: src/config/actions-main.inc:75
 #, fuzzy
 msgid "Move to the end of the document"
 msgstr "Ísť na koniec stránky/riadku"
 
-#: src/config/actions-main.inc:75
+#: src/config/actions-main.inc:76
 #, fuzzy
 msgid "Move to the start of the document"
 msgstr "Ísť na začiatok stránky alebo riadku"
 
-#: src/config/actions-main.inc:76
+#: src/config/actions-main.inc:77
 #, fuzzy
 msgid "Move downwards by half a page"
 msgstr "Posunúť sa o stranu nižšie"
 
-#: src/config/actions-main.inc:77
+#: src/config/actions-main.inc:78
 #, fuzzy
 msgid "Move upwards by half a page"
 msgstr "Posunúť sa o stranu vyššie"
 
-#: src/config/actions-main.inc:78
+#: src/config/actions-main.inc:79
 #, fuzzy
 msgid "Move one link down"
 msgstr "Posunúť sa o stranu vyššie"
 
-#: src/config/actions-main.inc:79
+#: src/config/actions-main.inc:80
 #, fuzzy
 msgid "Move to the next line with a link"
 msgstr "Presunúť sa na ďalšiu položku"
 
-#: src/config/actions-main.inc:80
+#: src/config/actions-main.inc:81
 #, fuzzy
 msgid "Move one link left"
 msgstr "Posunúť sa o stranu vyššie"
 
-#: src/config/actions-main.inc:81
+#: src/config/actions-main.inc:82
 #, fuzzy
 msgid "Move one link left or to the previous link"
 msgstr "Presunúť sa so predchádzajúceho rámca"
 
-#: src/config/actions-main.inc:82
+#: src/config/actions-main.inc:83
 #, fuzzy
 msgid "Move to the next link"
 msgstr "Presunúť sa na ďalšiu položku"
 
-#: src/config/actions-main.inc:83
+#: src/config/actions-main.inc:84
 #, fuzzy
 msgid "Move to the previous link"
 msgstr "Presunúť sa so predchádzajúceho rámca"
 
-#: src/config/actions-main.inc:84
+#: src/config/actions-main.inc:85
 #, fuzzy
 msgid "Move one link right"
 msgstr "Posunúť kurzor doprava"
 
-#: src/config/actions-main.inc:85
+#: src/config/actions-main.inc:86
 #, fuzzy
 msgid "Move one link right or to the next link"
 msgstr "Presunúť sa na ďalšiu položku"
 
-#: src/config/actions-main.inc:86
+#: src/config/actions-main.inc:87
 #, fuzzy
 msgid "Move one link up"
 msgstr "Posunúť sa o stranu vyššie"
 
-#: src/config/actions-main.inc:87
+#: src/config/actions-main.inc:88
 #, fuzzy
 msgid "Move to the previous line with a link"
 msgstr "Presunúť sa so predchádzajúceho rámca"
 
-#: src/config/actions-main.inc:88 src/config/actions-menu.inc:18
+#: src/config/actions-main.inc:89 src/config/actions-menu.inc:18
 msgid "Move downwards by a page"
 msgstr "Posunúť sa o stranu nižšie"
 
-#: src/config/actions-main.inc:89 src/config/actions-menu.inc:19
+#: src/config/actions-main.inc:90 src/config/actions-menu.inc:19
 msgid "Move upwards by a page"
 msgstr "Posunúť sa o stranu vyššie"
 
-#: src/config/actions-main.inc:90
+#: src/config/actions-main.inc:91
 msgid "Open the current link in a new tab"
 msgstr "Otvoriť aktuálny odkaz v novom tabe"
 
-#: src/config/actions-main.inc:91
+#: src/config/actions-main.inc:92
 #, fuzzy
 msgid "Open the current link in a new tab in the background"
 msgstr "Otvoriť aktuálny odkaz v novom tabe na pozadí"
 
-#: src/config/actions-main.inc:92
+#: src/config/actions-main.inc:93
 msgid "Open the current link in a new window"
 msgstr "Otvoriť aktuálny odkaz v novom okne"
 
-#: src/config/actions-main.inc:93
+#: src/config/actions-main.inc:94
 msgid "Open a new tab"
 msgstr "Otvoriť nový tab"
 
-#: src/config/actions-main.inc:94
+#: src/config/actions-main.inc:95
 #, fuzzy
 msgid "Open a new tab in the background"
 msgstr "Otvoriť nový tab na pozadí"
 
-#: src/config/actions-main.inc:95
+#: src/config/actions-main.inc:96
 msgid "Open a new window"
 msgstr "Otvoriť nové okno"
 
-#: src/config/actions-main.inc:96
+#: src/config/actions-main.inc:97
 msgid "Open an OS shell"
 msgstr "Otvoriť OS shell"
 
-#: src/config/actions-main.inc:97
+#: src/config/actions-main.inc:98
 msgid "Open options manager"
 msgstr "Otvoriť správcu nastavení"
 
-#: src/config/actions-main.inc:98
+#: src/config/actions-main.inc:99
 msgid "Open a quit confirmation dialog box"
 msgstr "Otvoriť dialóg potvrdzujúci skončenie Elinksu"
 
-#: src/config/actions-main.inc:99
+#: src/config/actions-main.inc:100
 msgid "Quit without confirmation"
 msgstr "Skončiť bez reptania"
 
-#: src/config/actions-main.inc:101
+#: src/config/actions-main.inc:102
 msgid "Reload the current page"
 msgstr "Znovu natiahnuť súčasnú stránku"
 
-#: src/config/actions-main.inc:102
+#: src/config/actions-main.inc:103
 #, fuzzy
 msgid "Re-render the current page"
 msgstr "Znovu natiahnuť súčasnú stránku"
 
-#: src/config/actions-main.inc:103
+#: src/config/actions-main.inc:104
 msgid "Reset form items to their initial values"
 msgstr "Resetovať formulár na začiatočné hodnoty"
 
-#: src/config/actions-main.inc:104
+#: src/config/actions-main.inc:105
 msgid "Show information about the currently used resources"
 msgstr "Zobraziť informácie o práve používaných zdrojoch"
 
-#: src/config/actions-main.inc:105
+#: src/config/actions-main.inc:106
 #, fuzzy
 msgid "Save the current document in source form"
 msgstr "Vypísať daný HTML dokument v zdrojovej podobe na štandardný výstup."
 
-#: src/config/actions-main.inc:106
+#: src/config/actions-main.inc:107
 msgid "Save the current document in formatted form"
 msgstr ""
 
-#: src/config/actions-main.inc:107
+#: src/config/actions-main.inc:108
 msgid "Save options"
 msgstr "Uložiť nastavenia"
 
-#: src/config/actions-main.inc:108
+#: src/config/actions-main.inc:109
 msgid "Save URL as"
 msgstr "Uložiť URL ako"
 
-#: src/config/actions-main.inc:109
+#: src/config/actions-main.inc:110
 msgid "Scroll down"
 msgstr "Posun v texte smerom dole"
 
-#: src/config/actions-main.inc:110
+#: src/config/actions-main.inc:111
 msgid "Scroll left"
 msgstr "Posun v texte smerom vľavo"
 
-#: src/config/actions-main.inc:111
+#: src/config/actions-main.inc:112
 msgid "Scroll right"
 msgstr "Posun v texte smerom vpravo"
 
-#: src/config/actions-main.inc:112
+#: src/config/actions-main.inc:113
 msgid "Scroll up"
 msgstr "Posun v texte smerom hore"
 
-#: src/config/actions-main.inc:113 src/config/actions-menu.inc:23
+#: src/config/actions-main.inc:114 src/config/actions-menu.inc:23
 msgid "Search for a text pattern"
 msgstr "Hľadať vzorku textu"
 
-#: src/config/actions-main.inc:114
+#: src/config/actions-main.inc:115
 msgid "Search backwards for a text pattern"
 msgstr "Hľadať spätne vzorku textu"
 
-#: src/config/actions-main.inc:115 src/config/actions-main.inc:116
+#: src/config/actions-main.inc:116 src/config/actions-main.inc:117
 msgid "Search link text by typing ahead"
-msgstr "Interaktívne hľadanie v texte odkazov"
-
-#: src/config/actions-main.inc:117
-#, fuzzy
-msgid "Search document text by typing ahead"
 msgstr "Interaktívne hľadanie v texte odkazov"
 
 #: src/config/actions-main.inc:118
 #, fuzzy
-msgid "Search document text backwards by typing ahead"
+msgid "Search document text by typing ahead"
 msgstr "Interaktívne hľadanie v texte odkazov"
 
 #: src/config/actions-main.inc:119
+#, fuzzy
+msgid "Search document text backwards by typing ahead"
+msgstr "Interaktívne hľadanie v texte odkazov"
+
+#: src/config/actions-main.inc:120
 msgid "Show terminal options dialog"
 msgstr "Nastavenie terminálu"
 
-#: src/config/actions-main.inc:120
+#: src/config/actions-main.inc:121
 msgid "Submit form"
 msgstr "Odoslať formulár"
 
-#: src/config/actions-main.inc:121
+#: src/config/actions-main.inc:122
 msgid "Submit form and reload"
 msgstr "Odoslať formulár a obnoviť stránku"
 
-#: src/config/actions-main.inc:122 src/terminal/tab.c:216
+#: src/config/actions-main.inc:123 src/terminal/tab.c:216
 #: src/terminal/tab.c:260
 msgid "Close tab"
 msgstr "Zavrieť tab"
 
-#: src/config/actions-main.inc:123
+#: src/config/actions-main.inc:124
 msgid "Close all tabs but the current one"
 msgstr "Zavrieť všetky taby okrem aktuálneho"
 
-#: src/config/actions-main.inc:124
+#: src/config/actions-main.inc:125
 msgid "Pass URI of current tab to external command"
 msgstr ""
 
-#: src/config/actions-main.inc:125
+#: src/config/actions-main.inc:126
 msgid "Open the tab menu"
 msgstr "Otvoriť menu tabov"
 
-#: src/config/actions-main.inc:126
+#: src/config/actions-main.inc:127
 #, fuzzy
 msgid "Move the current tab to the left"
 msgstr "Otvoriť aktuálny odkaz v novom tabe"
 
-#: src/config/actions-main.inc:127
+#: src/config/actions-main.inc:128
 #, fuzzy
 msgid "Move the current tab to the right"
 msgstr "Otvoriť aktuálny odkaz v novom tabe"
 
-#: src/config/actions-main.inc:128
+#: src/config/actions-main.inc:129
 msgid "Next tab"
 msgstr "Ďalší tab"
 
-#: src/config/actions-main.inc:129
+#: src/config/actions-main.inc:130
 msgid "Previous tab"
 msgstr "Predchádzajúci tab"
 
-#: src/config/actions-main.inc:130
+#: src/config/actions-main.inc:131
 #, fuzzy
 msgid "Open the terminal resize dialog"
 msgstr "Nastavenie terminálu"
 
-#: src/config/actions-main.inc:131
+#: src/config/actions-main.inc:132
 #, fuzzy
 msgid "Toggle rendering of page using CSS"
 msgstr "Prepnúť zobrazovanie tabuliek"
 
-#: src/config/actions-main.inc:132
+#: src/config/actions-main.inc:133
 msgid "Toggle displaying of links to images"
 msgstr "Prepnúť zobrazovanie odkazov na obrázky"
 
-#: src/config/actions-main.inc:133
+#: src/config/actions-main.inc:134
 msgid "Toggle rendering of tables"
 msgstr "Prepnúť zobrazovanie tabuliek"
 
-#: src/config/actions-main.inc:134
-msgid "Toggle usage of document specific colors"
-msgstr "Prepnúť používanie farieb nastavených v dokumente"
-
 #: src/config/actions-main.inc:135
-#, fuzzy
-msgid "Toggle use of document width"
+msgid "Toggle usage of document specific colors"
 msgstr "Prepnúť používanie farieb nastavených v dokumente"
 
 #: src/config/actions-main.inc:136
 #, fuzzy
+msgid "Toggle use of document width"
+msgstr "Prepnúť používanie farieb nastavených v dokumente"
+
+#: src/config/actions-main.inc:137
+#, fuzzy
 msgid "Toggle Ecmascript handling"
 msgstr "Prepnúť ukladanie"
 
-#: src/config/actions-main.inc:137
+#: src/config/actions-main.inc:138
 msgid "Toggle rendering page as HTML / plain text"
 msgstr "Prepnúť zobrazovanie stránky ako HTML / čistý text"
 
-#: src/config/actions-main.inc:138
+#: src/config/actions-main.inc:139
 #, fuzzy
 msgid "Toggle mouse handling"
 msgstr "Prepnúť ukladanie"
 
-#: src/config/actions-main.inc:139
+#: src/config/actions-main.inc:140
 msgid "Toggle displaying of links numbers"
 msgstr "Prepnúť číslovanie odkazov"
 
-#: src/config/actions-main.inc:140
+#: src/config/actions-main.inc:141
 msgid "Toggle plain renderer compression of empty lines"
 msgstr "Prepnúť zlučovanie prázdnych riadkov"
 
-#: src/config/actions-main.inc:141
+#: src/config/actions-main.inc:142
 #, fuzzy
 msgid "Toggle wrapping of text"
 msgstr "Prepnúť zobrazovanie tabuliek"
 
-#: src/config/actions-main.inc:142
+#: src/config/actions-main.inc:143
 msgid "View the current image"
 msgstr "Zobraziť aktuálny obrázok"
 
@@ -1449,126 +1451,131 @@ msgstr "Vybrať práve zvýraznenú položku"
 msgid "Collapse item"
 msgstr "Zvinúť položku"
 
-#: src/config/cmdline.c:96
+#: src/config/cmdline.c:104
 #, c-format
 msgid "Cannot parse option %s: %s"
 msgstr "Nemôžem rozpoznať voľbu %s: %s"
 
-#: src/config/cmdline.c:119
+#: src/config/cmdline.c:127
 #, c-format
 msgid "Unknown option %s"
 msgstr "Neznáma voľba %s"
 
-#: src/config/cmdline.c:138 src/config/cmdline.c:164 src/config/cmdline.c:263
+#: src/config/cmdline.c:146 src/config/cmdline.c:172 src/config/cmdline.c:271
 #: src/config/opttypes.c:38
 msgid "Parameter expected"
 msgstr "Bol očakávaný parameter"
 
-#: src/config/cmdline.c:165
+#: src/config/cmdline.c:173
 msgid "Too many parameters"
 msgstr "Príliš veľa parametrov"
 
-#: src/config/cmdline.c:184
+#: src/config/cmdline.c:192
 msgid "error"
 msgstr "chyba"
 
-#: src/config/cmdline.c:186 src/network/state.c:48
+#: src/config/cmdline.c:194 src/network/state.c:52
 #, c-format
 msgid "Host not found"
 msgstr "Nenašiel som server"
 
-#: src/config/cmdline.c:203
+#: src/config/cmdline.c:211
 #, c-format
 msgid "Resolver error"
 msgstr "Chyba pri zisťovaní IP adresy"
 
-#: src/config/cmdline.c:292 src/cookies/cookies.c:855 src/network/state.c:47
+#: src/config/cmdline.c:300 src/cookies/cookies.c:857 src/network/state.c:51
 #: src/util/secsave.c:379
 msgid "Out of memory"
 msgstr "Došla pamäť"
 
-#: src/config/cmdline.c:300
+#: src/config/cmdline.c:308
 #, fuzzy
 msgid "Too many arguments"
 msgstr "Príliš veľa parametrov"
 
-#: src/config/cmdline.c:318
+#: src/config/cmdline.c:326
 #, fuzzy
 msgid "Mismatched ending argument quoting"
 msgstr "Rámček menu"
 
-#: src/config/cmdline.c:323
+#: src/config/cmdline.c:331
 msgid "Garbage after quoted argument"
 msgstr ""
 
-#: src/config/cmdline.c:447
+#: src/config/cmdline.c:459
 msgid "Remote method not supported"
 msgstr ""
 
-#: src/config/cmdline.c:490
+#: src/config/cmdline.c:502
 msgid "Out of memory formatting option documentation"
 msgstr ""
 
-#: src/config/cmdline.c:527
+#: src/config/cmdline.c:539
 msgid "Template option folder"
 msgstr "Šablónová zložka"
 
-#: src/config/cmdline.c:550
+#: src/config/cmdline.c:561
 #, c-format
 msgid "(default: %ld)"
 msgstr "(štandardne: %ld)"
 
-#: src/config/cmdline.c:557 src/config/cmdline.c:586 src/config/cmdline.c:589
+#: src/config/cmdline.c:565
+#, fuzzy, c-format
+msgid "(default: %<PRIdPTR>)"
+msgstr "(štandardne: %ld)"
+
+#: src/config/cmdline.c:569 src/config/cmdline.c:598 src/config/cmdline.c:601
 #, c-format
 msgid "(default: \"%s\")"
 msgstr "(štandardne: \"%s\")"
 
-#: src/config/cmdline.c:562
+#: src/config/cmdline.c:574
 #, c-format
 msgid "(alias for %s)"
 msgstr "(alias pre %s)"
 
-#: src/config/cmdline.c:567 src/config/cmdline.c:576
+#: src/config/cmdline.c:579 src/config/cmdline.c:588
 #, c-format
 msgid "(default: %s)"
 msgstr "(štandardne: %s)"
 
-#: src/config/cmdline.c:710
+#: src/config/cmdline.c:722
 #, fuzzy
 msgid "Configuration options"
 msgstr "Konfiguračné voľby:\n"
 
-#: src/config/cmdline.c:714
+#: src/config/cmdline.c:726
 #, fuzzy
 msgid "Usage: elinks [OPTION]... [URL]..."
 msgstr ""
 "Použitie: elinks [voľby]... [URL]\n"
 "\n"
 
-#: src/config/cmdline.c:715
+#: src/config/cmdline.c:727
 #, fuzzy
 msgid "Options"
 msgstr "Nastavenie:\n"
 
-#: src/config/cmdline.c:757
+#: src/config/cmdline.c:769
 #, fuzzy
 msgid "Internal consistency error"
 msgstr "Vnútorná chyba"
 
 #.
-#: src/config/cmdline.c:793
+#: src/config/cmdline.c:805
 msgid "Load config also for slave instances"
 msgstr ""
 
-#: src/config/cmdline.c:795
+#: src/config/cmdline.c:807
 msgid "Load config also for slave instances. Slower, but more robust."
 msgstr ""
 
-#: src/config/cmdline.c:797
+#: src/config/cmdline.c:809
 msgid "Restrict to anonymous mode"
 msgstr "Obmedzenie na anonymný režim"
 
-#: src/config/cmdline.c:799
+#: src/config/cmdline.c:811
 #, fuzzy
 msgid ""
 "Restricts ELinks so it can run on an anonymous account. Local file browsing, "
@@ -1581,67 +1588,67 @@ msgstr ""
 "spúšťenie ext. prezeračov je povolené, ale nedajú sa meniť ich\n"
 "nastavenia."
 
-#: src/config/cmdline.c:805
+#: src/config/cmdline.c:817
 msgid "Autosubmit first form"
 msgstr "Automatické odoslanie prvého formulára"
 
-#: src/config/cmdline.c:807
+#: src/config/cmdline.c:819
 #, fuzzy
 msgid "Automatically submit the first form in the given URLs."
 msgstr "Choď a odošli prvý formulár, na ktorý narazíš."
 
-#: src/config/cmdline.c:809
+#: src/config/cmdline.c:821
 #, fuzzy
 msgid "Clone internal session with given ID"
 msgstr "Naklonovanie sedenia s daným ID"
 
-#: src/config/cmdline.c:811
+#: src/config/cmdline.c:823
 msgid ""
 "Used internally when opening ELinks instances in new windows. The ID maps to "
 "information that will be used when creating the new instance. You don't want "
 "to use it."
 msgstr ""
 
-#: src/config/cmdline.c:815 src/config/cmdline.c:817
+#: src/config/cmdline.c:827 src/config/cmdline.c:829
 msgid "Use a specific local IP address"
 msgstr ""
 
-#: src/config/cmdline.c:819 src/config/cmdline.c:821
+#: src/config/cmdline.c:831 src/config/cmdline.c:833
 msgid "Use a specific local IPv6 address"
 msgstr ""
 
-#: src/config/cmdline.c:825
+#: src/config/cmdline.c:837
 msgid "Name of directory with configuration file"
 msgstr "Názov adresára s konfiguračným súborom"
 
-#: src/config/cmdline.c:827
+#: src/config/cmdline.c:839
 #, fuzzy
 msgid ""
 "Path of the directory ELinks will read and write its config and runtime "
-"state files to instead of ~/.elinks. If the path does not begin with a '/' "
-"it is assumed to be relative to your HOME directory."
+"state files to instead of ~/.config/elinks. If the path does not begin with "
+"a '/' it is assumed to be relative to your HOME directory."
 msgstr ""
 "ELinks bude čítať a zapisovať konfiguračné súbory v danom\n"
 "adresári namiesto ~/.elinks. Cesta začínajúca lomítkom '/' je\n"
 "považovaná za absolútnu cestu. Inak sa predpokladá, že je\n"
 "relatívna k domovskému adresáru."
 
-#: src/config/cmdline.c:832
+#: src/config/cmdline.c:844
 #, fuzzy
 msgid "Print default configuration file to stdout"
 msgstr "Zobraziť nápovedu pre konfiguračné voľby"
 
-#: src/config/cmdline.c:834
+#: src/config/cmdline.c:846
 msgid ""
 "Print a configuration file with options set to the built-in defaults to "
 "stdout."
 msgstr ""
 
-#: src/config/cmdline.c:839
+#: src/config/cmdline.c:851
 msgid "Name of configuration file"
 msgstr "Názov konfiguračného súboru"
 
-#: src/config/cmdline.c:841
+#: src/config/cmdline.c:853
 #, fuzzy
 msgid ""
 "Name of the configuration file that all configuration options will be read "
@@ -1651,78 +1658,78 @@ msgstr ""
 "zapisovať všetky nastavenia. Meno by malo byt relatívne k\n"
 "parametru confdir."
 
-#: src/config/cmdline.c:845
+#: src/config/cmdline.c:857
 msgid "Print help for configuration options"
 msgstr "Zobraziť nápovedu pre konfiguračné voľby"
 
-#: src/config/cmdline.c:847
+#: src/config/cmdline.c:859
 #, fuzzy
 msgid "Print help for configuration options and exit."
 msgstr "Zobraziť nápovedu pre konfiguračné voľby a skončiť."
 
-#: src/config/cmdline.c:849
+#: src/config/cmdline.c:861
 #, fuzzy
 msgid "MIME type assumed for unknown document types"
 msgstr "Predpokadaný MIME typ dokumentov"
 
-#: src/config/cmdline.c:851
+#: src/config/cmdline.c:863
 #, fuzzy
 msgid "The default MIME type used for documents of unknown type."
 msgstr "Štandardný MIME typ, ktorý predpokladať pri neznámych dokumentoch."
 
-#: src/config/cmdline.c:854
+#: src/config/cmdline.c:866
 msgid "Ignore user-defined keybindings"
 msgstr ""
 
-#: src/config/cmdline.c:856
+#: src/config/cmdline.c:868
 msgid ""
 "When set, all keybindings from configuration files will be ignored. It "
 "forces use of default keybindings and will reset user-defined ones on save."
 msgstr ""
 
-#: src/config/cmdline.c:860
+#: src/config/cmdline.c:872
 #, fuzzy
 msgid "Print formatted versions of given URLs to stdout"
 msgstr "Vypísať formátovanú verziu daného URL na štandardný výstup"
 
-#: src/config/cmdline.c:862
+#: src/config/cmdline.c:874
 #, fuzzy
 msgid "Print formatted plain-text versions of given URLs to stdout."
 msgstr "Vypísať formátovanú verziu daného URL na štandardný výstup"
 
-#: src/config/cmdline.c:865
+#: src/config/cmdline.c:877
 msgid "Codepage to use with -dump"
 msgstr "Kódová stránka, ktorá má byť použitá na -dump výstup"
 
-#: src/config/cmdline.c:867
+#: src/config/cmdline.c:879
 #, fuzzy
 msgid "Codepage used when formatting dump output."
 msgstr "Kódová stránka použitá v dump výstupe."
 
-#: src/config/cmdline.c:869
+#: src/config/cmdline.c:881
 #, fuzzy
 msgid "Color mode used with -dump"
 msgstr "Kódová stránka, ktorá má byť použitá na -dump výstup"
 
-#: src/config/cmdline.c:871
+#: src/config/cmdline.c:883
 #, fuzzy
 msgid "Color mode used with -dump."
 msgstr "Kódová stránka, ktorá má byť použitá na -dump výstup"
 
-#: src/config/cmdline.c:873
+#: src/config/cmdline.c:885
 msgid "Width of document formatted with -dump"
 msgstr "Šírka dokumenty formátovaného pomocou -dump"
 
-#: src/config/cmdline.c:875
+#: src/config/cmdline.c:887
 msgid "Width of the dump output."
 msgstr "Šírka dump výstupu."
 
-#: src/config/cmdline.c:877
+#: src/config/cmdline.c:889
 #, fuzzy
 msgid "Evaluate configuration file directive"
 msgstr "Vyhodnotiť danú konfiguračnú voľbu"
 
-#: src/config/cmdline.c:879
+#: src/config/cmdline.c:891
 #, fuzzy
 msgid ""
 "Specify configuration file directives on the command-line which will be "
@@ -1733,12 +1740,12 @@ msgstr ""
 "  -eval 'set protocol.file.allow_special_files = 1'"
 
 #. lynx compatibility
-#: src/config/cmdline.c:885
+#: src/config/cmdline.c:897
 #, fuzzy
 msgid "Interpret documents of unknown types as HTML"
 msgstr "Štandardný MIME typ, ktorý predpokladať pri neznámych dokumentoch."
 
-#: src/config/cmdline.c:887
+#: src/config/cmdline.c:899
 #, fuzzy
 msgid ""
 "Makes ELinks assume documents of unknown types are HTML. Useful when using "
@@ -1748,46 +1755,46 @@ msgstr ""
 "Voľba prinúti ELinks predpokladať, že súbory, ktoré vidí sú v HTML.Je to "
 "ekvivalentné voľbe -default-mime-type text/html ."
 
-#: src/config/cmdline.c:897
+#: src/config/cmdline.c:909
 msgid "Print usage help and exit"
 msgstr "Zobraziť nápovedu a skončiť"
 
-#: src/config/cmdline.c:899
+#: src/config/cmdline.c:911
 msgid "Print usage help and exit."
 msgstr "Zobraziť nápovedu a skončiť."
 
-#: src/config/cmdline.c:901
+#: src/config/cmdline.c:913
 msgid "Only permit local connections"
 msgstr ""
 
-#: src/config/cmdline.c:903
+#: src/config/cmdline.c:915
 msgid ""
 "Restricts ELinks to work offline and only connect to servers with local "
 "addresses (ie. 127.0.0.1). No connections to remote servers will be "
 "permitted."
 msgstr ""
 
-#: src/config/cmdline.c:907
+#: src/config/cmdline.c:919
 msgid "Print detailed usage help and exit"
 msgstr "Zobraziť detailnú nápovedu a skončiť"
 
-#: src/config/cmdline.c:909
+#: src/config/cmdline.c:921
 msgid "Print detailed usage help and exit."
 msgstr "Zobraziť detailnú nápovedu a skončiť."
 
-#: src/config/cmdline.c:911
+#: src/config/cmdline.c:923
 msgid "Look up specified host"
 msgstr "Vyhľadať zadaného hostiteľa"
 
-#: src/config/cmdline.c:913
+#: src/config/cmdline.c:925
 msgid "Look up specified host and print all DNS resolved IP addresses."
 msgstr ""
 
-#: src/config/cmdline.c:916
+#: src/config/cmdline.c:928
 msgid "Run as separate instance"
 msgstr "Spustenie oddelenej inštancie programu"
 
-#: src/config/cmdline.c:918
+#: src/config/cmdline.c:930
 #, fuzzy
 msgid ""
 "Run ELinks as a separate instance instead of connecting to an existing "
@@ -1800,32 +1807,32 @@ msgstr ""
 "na disk žiadne konfiguračné súbory (ani záložky, história a pod.)\n"
 "Viď tiež parameter -touch-files."
 
-#: src/config/cmdline.c:923
+#: src/config/cmdline.c:935
 #, fuzzy
-msgid "Disable use of files in ~/.elinks"
+msgid "Disable use of files in ~/.config/elinks"
 msgstr "Nepoužívať súbory v ~/.elinks"
 
-#: src/config/cmdline.c:925
+#: src/config/cmdline.c:937
 msgid ""
 "Disables creation and use of files in the user specific home configuration "
-"directory (~/.elinks). It forces default configuration values to be used and "
-"disables saving of runtime state files."
+"directory (~/.config/elinks). It forces default configuration values to be "
+"used and disables saving of runtime state files."
 msgstr ""
 
-#: src/config/cmdline.c:930
+#: src/config/cmdline.c:942
 msgid "Disable libevent"
 msgstr ""
 
-#: src/config/cmdline.c:932
+#: src/config/cmdline.c:944
 msgid "Disables libevent."
 msgstr ""
 
-#: src/config/cmdline.c:934
+#: src/config/cmdline.c:946
 #, fuzzy
 msgid "Disable link numbering in dump output"
 msgstr "Nečíslovať odkazy v dump výstupe."
 
-#: src/config/cmdline.c:936
+#: src/config/cmdline.c:948
 #, fuzzy
 msgid ""
 "Prevents printing of link number in dump output.\n"
@@ -1837,12 +1844,12 @@ msgstr ""
 "ale\n"
 "že sa to týka iba parametra --dump a ničoho iného."
 
-#: src/config/cmdline.c:940
+#: src/config/cmdline.c:952
 #, fuzzy
 msgid "Disable printing of link references in dump output"
 msgstr "Nečíslovať odkazy v dump výstupe."
 
-#: src/config/cmdline.c:942
+#: src/config/cmdline.c:954
 #, fuzzy
 msgid ""
 "Prevents printing of references (URIs) of document links in dump output.\n"
@@ -1854,11 +1861,11 @@ msgstr ""
 "ale\n"
 "že sa to týka iba parametra --dump a ničoho iného."
 
-#: src/config/cmdline.c:947
+#: src/config/cmdline.c:959
 msgid "Control an already running ELinks"
 msgstr ""
 
-#: src/config/cmdline.c:949
+#: src/config/cmdline.c:961
 msgid ""
 "Control a remote ELinks instance by passing commands to it. The option takes "
 "an additional argument containing the method which should be invoked and any "
@@ -1872,18 +1879,18 @@ msgid ""
 "\topenURL(URL)              : open URL in current tab\n"
 "\topenURL(URL, new-tab)     : open URL in new tab\n"
 "\topenURL(URL, new-window)  : open URL in new window\n"
-"\taddBookmark(URL)          : bookmark URL\n"
+"\taddBookmark(URL, title)   : bookmark URL with title\n"
 "\tinfoBox(text)             : show text in a message box\n"
 "\treload()                  : reload the document in the current tab\n"
 "\tsearch(string)            : search in the current tab\n"
 "\txfeDoCommand(openBrowser) : open new window"
 msgstr ""
 
-#: src/config/cmdline.c:969
+#: src/config/cmdline.c:981
 msgid "Connect to session ring with given ID"
 msgstr "Pripojiť sa do skupiny sedení s daným ID"
 
-#: src/config/cmdline.c:971
+#: src/config/cmdline.c:983
 msgid ""
 "ID of session ring this ELinks session should connect to. ELinks works in so-"
 "called session rings, whereby all instances of ELinks are interconnected and "
@@ -1901,32 +1908,34 @@ msgid ""
 "used. See also -touch-files."
 msgstr ""
 
-#: src/config/cmdline.c:989
+#: src/config/cmdline.c:1001
 #, fuzzy
 msgid "Print the source of given URLs to stdout"
 msgstr "Vypísať dané URL v zdrojovej podobe na štandardný výstup"
 
-#: src/config/cmdline.c:991
+#: src/config/cmdline.c:1003
 #, fuzzy
 msgid "Print given URLs in source form to stdout."
 msgstr "Vypísať daný HTML dokument v zdrojovej podobe na štandardný výstup."
 
-#: src/config/cmdline.c:995
+#: src/config/cmdline.c:1007
 msgid "Whether to use terminfo"
 msgstr ""
 
-#: src/config/cmdline.c:997
+#: src/config/cmdline.c:1009
 msgid ""
 "When enabled, terminfo ncurses functions will be used instead of hardcoded "
 "sequences."
 msgstr ""
 
-#: src/config/cmdline.c:1000
-msgid "Touch files in ~/.elinks when running with -no-connect/-session-ring"
+#: src/config/cmdline.c:1012
+#, fuzzy
+msgid ""
+"Touch files in ~/.config/elinks when running with -no-connect/-session-ring"
 msgstr ""
 "Používať súbory v ~/.elinks aj pri spustení s -no-connect/-session-ring"
 
-#: src/config/cmdline.c:1002
+#: src/config/cmdline.c:1014
 #, fuzzy
 msgid ""
 "When enabled, runtime state files (bookmarks, history, etc.) are written to "
@@ -1937,11 +1946,11 @@ msgstr ""
 "na disk aj v prípade, že bol použitý parameter -no-connect alebo\n"
 "-session-ring; inak nemá tento parameter žiadny význam,"
 
-#: src/config/cmdline.c:1007
+#: src/config/cmdline.c:1019
 msgid "Verbose level"
 msgstr ""
 
-#: src/config/cmdline.c:1009
+#: src/config/cmdline.c:1021
 msgid ""
 "The verbose level controls what messages are shown at start up and while "
 "running:\n"
@@ -1950,15 +1959,15 @@ msgid ""
 "\t2 means show all messages"
 msgstr ""
 
-#: src/config/cmdline.c:1015
+#: src/config/cmdline.c:1027
 msgid "Print version information and exit"
 msgstr "Vypísať informáciu o verzii a skončiť"
 
-#: src/config/cmdline.c:1017
+#: src/config/cmdline.c:1029
 msgid "Print ELinks version information and exit."
 msgstr "Vypísať informáciu o verzii ELinksu a skončiť"
 
-#: src/config/conf.c:1181
+#: src/config/conf.c:1182
 msgid ""
 "## This is ELinks configuration file. You can edit it manually,\n"
 "## if you wish so; this file is edited by ELinks when you save\n"
@@ -1971,7 +1980,7 @@ msgstr ""
 "## volieb a všetko vaše formátovanie, vlastné komentáre a pod. zostane\n"
 "## tak ako je.\n"
 
-#: src/config/conf.c:1189
+#: src/config/conf.c:1190
 msgid ""
 "## This is ELinks configuration file. You can edit it manually,\n"
 "## if you wish so; this file is edited by ELinks when you save\n"
@@ -1989,7 +1998,7 @@ msgstr ""
 "## Všetko vaše formátovanie, vlastné komentáre a pod. zostane zachované.\n"
 "## \n"
 
-#: src/config/conf.c:1199
+#: src/config/conf.c:1200
 msgid ""
 "## This is ELinks configuration file. You can edit it manually,\n"
 "## if you wish so, but keep in mind that this file is overwritten\n"
@@ -2001,7 +2010,7 @@ msgstr ""
 "## zakaždým keď uložíte nsatavenia cez užívateľské rozhranie. A s vaším\n"
 "## formátovaním a poznámkami je amen.\n"
 
-#: src/config/conf.c:1210
+#: src/config/conf.c:1211
 msgid ""
 "## Obviously, if you don't like what ELinks is going to do with\n"
 "## this file, you can change it by altering the config.saving_style\n"
@@ -2011,11 +2020,11 @@ msgstr ""
 "## môžete to ovplyvniť zmenou voľby config.saving_style. Nie sme až\n"
 "## takí zlí, nie? ;-)\n"
 
-#: src/config/conf.c:1223
+#: src/config/conf.c:1224
 msgid "Automatically saved options\n"
 msgstr "Automaticky uložené nastavenie\n"
 
-#: src/config/conf.c:1250
+#: src/config/conf.c:1251
 msgid "Automatically saved keybindings\n"
 msgstr "Automaticky uložené klávesové skratky\n"
 
@@ -2079,7 +2088,7 @@ msgstr "(rozbaliť stlačením medzery)"
 #. * switch charsets.  So, it will work in any terminal that
 #. * understands UTF-8 and has the characters in its font.
 #: src/config/dialogs.c:149 src/config/dialogs.c:330
-#: src/config/options.inc:1019
+#: src/config/options.inc:1033
 msgid "Type"
 msgstr "Typ"
 
@@ -2104,8 +2113,8 @@ msgid "Description"
 msgstr "Popis"
 
 #: src/config/dialogs.c:291 src/protocol/bittorrent/dialogs.c:606
-#: src/protocol/protocol.cpp:246 src/session/session.cpp:324
-#: src/session/session.cpp:337 src/session/session.cpp:1156
+#: src/protocol/protocol.c:255 src/session/session.c:324
+#: src/session/session.c:337 src/session/session.c:1172
 #: src/viewer/text/textarea.c:629
 msgid "Error"
 msgstr "Chyba"
@@ -2142,8 +2151,8 @@ msgstr "Do tejto zložky nemôžem pridať novú voľbu."
 
 #. accelerator_context(src/config/dialogs.c:keybinding_buttons, src/config/dialogs.c:option_buttons, src/cookies/dialogs.c:cookie_buttons, src/formhist/dialogs.c:formhist_buttons, src/protocol/bittorrent/dialogs.c:bittorrent_query_callback, src/session/download.c:do_type_query, terminal_options)
 #: src/config/dialogs.c:505 src/config/dialogs.c:934 src/cookies/dialogs.c:546
-#: src/dialogs/options.c:247 src/formhist/dialogs.c:214
-#: src/protocol/bittorrent/dialogs.c:813 src/session/download.c:1773
+#: src/dialogs/options.c:257 src/formhist/dialogs.c:214
+#: src/protocol/bittorrent/dialogs.c:813 src/session/download.c:1861
 #, fuzzy
 msgid "Sa~ve"
 msgstr "Uložiť"
@@ -2156,7 +2165,7 @@ msgstr "Správca nastavenia"
 msgid "Keystroke"
 msgstr "Kombinácia kláves"
 
-#: src/config/dialogs.c:677 src/config/options.inc:1448
+#: src/config/dialogs.c:677 src/config/options.inc:1470
 msgid "Action"
 msgstr "Akcia"
 
@@ -2209,18 +2218,18 @@ msgstr ""
 msgid "Keybinding manager"
 msgstr "Správca klávesových skratiek"
 
-#: src/config/home.c:128
+#: src/config/home.c:119 src/config/home.c:144 src/config/home.c:204
 #, c-format
 msgid ""
 "Commandline options -config-dir set to %s, but could not create directory %s."
 msgstr ""
 
-#: src/config/home.c:133
+#: src/config/home.c:209
 #, c-format
 msgid "ELINKS_CONFDIR set to %s, but could not create directory %s."
 msgstr ""
 
-#: src/config/home.c:156
+#: src/config/home.c:233
 #, c-format
 msgid ""
 "Unable to find or create ELinks config directory. Please check if you have "
@@ -2367,7 +2376,7 @@ msgstr ""
 "(šablóny) a ukladať ich do konfiguračného súboru."
 
 #. Keep options in alphabetical order.
-#: src/config/options.inc:74 src/dialogs/info.cpp:185
+#: src/config/options.inc:74 src/dialogs/info.c:188
 msgid "Connections"
 msgstr "Spojenia"
 
@@ -2411,7 +2420,7 @@ msgstr ""
 "Počet pokusov na vytvorenie spojenia.\n"
 "Nula znamená neobmedzený počet."
 
-#: src/config/options.inc:97 src/network/state.c:53
+#: src/config/options.inc:97 src/network/state.c:57
 msgid "Receive timeout"
 msgstr "Čas vypršal"
 
@@ -2740,13 +2749,13 @@ msgstr "Farby"
 msgid "Active link colors."
 msgstr "Farby aktívneho odkazu."
 
-#: src/config/options.inc:289 src/config/options.inc:639
-#: src/config/options.inc:1158
+#: src/config/options.inc:289 src/config/options.inc:647
+#: src/config/options.inc:1180
 msgid "Background color"
 msgstr "Farba pozadia"
 
-#: src/config/options.inc:291 src/config/options.inc:641
-#: src/config/options.inc:1159
+#: src/config/options.inc:291 src/config/options.inc:649
+#: src/config/options.inc:1181
 msgid "Default background color."
 msgstr "Štandardná farba pozadia."
 
@@ -2758,13 +2767,13 @@ msgstr "Štandardná farba pozadia."
 #. *	on it.
 #. The colors and mono tree should be similar but with different default
 #. * values of course so always use the macros below.
-#: src/config/options.inc:293 src/config/options.inc:635
-#: src/config/options.inc:1156
+#: src/config/options.inc:293 src/config/options.inc:643
+#: src/config/options.inc:1178
 msgid "Text color"
 msgstr "Farba textu"
 
-#: src/config/options.inc:295 src/config/options.inc:637
-#: src/config/options.inc:1157
+#: src/config/options.inc:295 src/config/options.inc:645
+#: src/config/options.inc:1179
 msgid "Default text color."
 msgstr "Štandardná farba textu."
 
@@ -2819,8 +2828,8 @@ msgstr "Inverzné farby"
 msgid "Invert the fore- and background color so the link stands out."
 msgstr "Inverzná farba popredia a pozadia, takze odkaz vystupuje z textu."
 
-#: src/config/options.inc:323 src/config/options.inc:1119
-#: src/dialogs/options.c:239
+#: src/config/options.inc:323 src/config/options.inc:1142
+#: src/dialogs/options.c:246
 msgid "Underline"
 msgstr "Podčiarknutie"
 
@@ -2837,27 +2846,41 @@ msgid "Highlight links to directories in FTP and local directory listing."
 msgstr "Zvýrazniť odkazy na adresára vo výpisoch FTP a lokálneho disku."
 
 #: src/config/options.inc:333
+msgid "Handling of hierbox's \"Go to\" button"
+msgstr ""
+
+#: src/config/options.inc:335
+msgid ""
+"Define how to handle hierbox's \"Go to\" button (for example in bookmarks "
+"manager):\n"
+"0 means open link in current tab\n"
+"1 means open link in new tab in foreground\n"
+"2 means open link in new tab in background\n"
+"3 means open link in new window"
+msgstr ""
+
+#: src/config/options.inc:341
 msgid "Number links"
 msgstr "Číslovať odkazy"
 
-#: src/config/options.inc:335
+#: src/config/options.inc:343
 msgid "Display numbers next to the links."
 msgstr "Zobrazovať čísla pri odkazoch."
 
-#: src/config/options.inc:337
+#: src/config/options.inc:345
 #, fuzzy
 msgid "Show go to link number dialog"
 msgstr "Zobraziť dialóg na zapamätanie formulárov"
 
-#: src/config/options.inc:339
+#: src/config/options.inc:347
 msgid "Display go to link number dialog, when links numbering is enabled."
 msgstr ""
 
-#: src/config/options.inc:341
+#: src/config/options.inc:349
 msgid "Handling of target=_blank"
 msgstr ""
 
-#: src/config/options.inc:343
+#: src/config/options.inc:351
 msgid ""
 "Define how to handle links having target=_blank set:\n"
 "0 means open link in current tab\n"
@@ -2866,41 +2889,41 @@ msgid ""
 "3 means open link in new window"
 msgstr ""
 
-#: src/config/options.inc:356
+#: src/config/options.inc:364
 msgid "Use tabindex"
 msgstr "Používať tabindex"
 
-#: src/config/options.inc:358
+#: src/config/options.inc:366
 msgid ""
 "Whether to navigate links using tabindex specified ordering. The TABINDEX "
 "attribute in HTML elements specifies the order in which links should receive "
 "focus when using the keyboard to navigate the document."
 msgstr ""
 
-#: src/config/options.inc:363
+#: src/config/options.inc:371
 msgid "Specify link label key"
 msgstr ""
 
-#: src/config/options.inc:365
+#: src/config/options.inc:373
 msgid ""
 "Default is 0123456789, which is standard numeric labeling. Ascii based "
 "strings like gfdsahjkl;trewqyuiopvcxznm can also be used."
 msgstr ""
 
-#: src/config/options.inc:369
+#: src/config/options.inc:377
 #, fuzzy
 msgid "Missing fragment reporting"
 msgstr "Rámček menu"
 
-#: src/config/options.inc:371
+#: src/config/options.inc:379
 msgid "Open a message box when document has no tag with given id."
 msgstr ""
 
-#: src/config/options.inc:374
+#: src/config/options.inc:382
 msgid "Number keys select links"
 msgstr "Numerické klávesy vyberajú odkazy"
 
-#: src/config/options.inc:376
+#: src/config/options.inc:384
 #, fuzzy
 msgid ""
 "Number keys select links rather than specify command prefixes. This is a "
@@ -2915,11 +2938,11 @@ msgstr ""
 "1 = iba ak document.browse.links.numbering = 1\n"
 "2 = vždy"
 
-#: src/config/options.inc:382
+#: src/config/options.inc:390
 msgid "Warn about maliciously crafted URIs"
 msgstr ""
 
-#: src/config/options.inc:384
+#: src/config/options.inc:392
 msgid ""
 "When following a link the user ID part of the URI is checked and if a "
 "maliciously crafted URI is detected a warning dialog will ask before "
@@ -2928,12 +2951,12 @@ msgstr ""
 
 #. TODO - this is somehow implemented by ff, but disabled
 #. * for now as it doesn't work.
-#: src/config/options.inc:390
+#: src/config/options.inc:398
 msgid "Wrap-around links cycling"
 msgstr "Zacyklené prechádzanie medzi odkazmi"
 
 #. 0
-#: src/config/options.inc:392
+#: src/config/options.inc:400
 #, fuzzy
 msgid ""
 "When pressing 'down' on the last link, jump to the first one, and vice versa."
@@ -2941,22 +2964,22 @@ msgstr ""
 "Pri stlačení klávesy 'dole' na poslednom odkaze sa presuň na prvý odkaz\n"
 "a naopak."
 
-#: src/config/options.inc:396
+#: src/config/options.inc:404
 #, fuzzy
 msgid "Scrolling"
 msgstr "Posun v texte smerom vpravo"
 
-#: src/config/options.inc:398
+#: src/config/options.inc:406
 #, fuzzy
 msgid "Scrolling options."
 msgstr "Nastavenie terminálu."
 
-#: src/config/options.inc:400
+#: src/config/options.inc:408
 #, fuzzy
 msgid "Horizontal step"
 msgstr "Horizontálny okraj textu"
 
-#: src/config/options.inc:402
+#: src/config/options.inc:410
 #, fuzzy
 msgid ""
 "Number of columns to scroll when a key bound to scroll-left or scroll-right "
@@ -2966,22 +2989,22 @@ msgstr ""
 "zodpovedajúcej akcii scroll-up/scroll-down (hore/dolu) a nebol daný žiadny\n"
 "číselný prefix."
 
-#: src/config/options.inc:406
+#: src/config/options.inc:414
 msgid "Extended horizontal scrolling"
 msgstr ""
 
-#: src/config/options.inc:408
+#: src/config/options.inc:416
 msgid ""
 "Whether to allow horizontal scrolling when the document does not extend off "
 "the screen. Useful for copy/paste operations."
 msgstr ""
 
-#: src/config/options.inc:412
+#: src/config/options.inc:420
 #, fuzzy
 msgid "Margin"
 msgstr "Upozornenie"
 
-#: src/config/options.inc:414
+#: src/config/options.inc:422
 #, fuzzy
 msgid ""
 "Size of the virtual margin - when you click inside of that margin, document "
@@ -2990,11 +3013,11 @@ msgstr ""
 "Veľkosť virtuálneho okraja - po kliknutí do tohto citlivého okraja,\n"
 "dokument odskroluje v danom smere."
 
-#: src/config/options.inc:417
+#: src/config/options.inc:425
 msgid "Vertical step"
 msgstr ""
 
-#: src/config/options.inc:419
+#: src/config/options.inc:427
 #, fuzzy
 msgid ""
 "Number of lines to scroll when a key bound to scroll-up or scroll-down is "
@@ -3004,59 +3027,59 @@ msgstr ""
 "zodpovedajúcej akcii scroll-up/scroll-down (hore/dolu) a nebol daný žiadny\n"
 "číselný prefix."
 
-#: src/config/options.inc:422
+#: src/config/options.inc:430
 msgid "Vertical overlap"
 msgstr ""
 
-#: src/config/options.inc:424
+#: src/config/options.inc:432
 msgid ""
 "Number of overlapping lines between the new page displayed and the previous "
 "one when scrolling one page up or down."
 msgstr ""
 
-#: src/config/options.inc:428
+#: src/config/options.inc:436
 msgid "Searching"
 msgstr "Hľadať"
 
-#: src/config/options.inc:430
+#: src/config/options.inc:438
 msgid "Options for searching."
 msgstr "Nastavenie vyhľadávania."
 
-#: src/config/options.inc:432
+#: src/config/options.inc:440
 msgid "Match beginning only"
 msgstr ""
 
-#: src/config/options.inc:434
+#: src/config/options.inc:442
 #, fuzzy
 msgid "Whether the search should match only the beginning of a link."
 msgstr "Určuje, či sa má pri hľadaní brať ohľad na veľkosť písma."
 
-#: src/config/options.inc:436
+#: src/config/options.inc:444
 msgid "Case sensitivity"
 msgstr "Rozlišovanie veľkosti písma"
 
-#: src/config/options.inc:438
+#: src/config/options.inc:446
 #, fuzzy
 msgid ""
 "Whether the search should match the document text while maintaining case "
 "sensitivity."
 msgstr "Určuje, či sa má pri hľadaní brať ohľad na veľkosť písma."
 
-#: src/config/options.inc:441
+#: src/config/options.inc:449
 msgid "Ignore history in typeahead"
 msgstr ""
 
-#: src/config/options.inc:443
+#: src/config/options.inc:451
 msgid ""
 "Whether to ignore searching history in the typeahead mode. Cursor up and "
 "cursor down will only show latest search results."
 msgstr ""
 
-#: src/config/options.inc:447
+#: src/config/options.inc:455
 msgid "Regular expressions"
 msgstr "Regulárne výrazy"
 
-#: src/config/options.inc:449
+#: src/config/options.inc:457
 #, fuzzy
 msgid ""
 "Enable searching with regular expressions:\n"
@@ -3069,21 +3092,21 @@ msgstr ""
 "1 = vyhľadávanie základných regulárnych výrazov.\n"
 "2 = vyhľadávanie rozšírených regulárnych výrazov."
 
-#: src/config/options.inc:455
+#: src/config/options.inc:463
 msgid "Reset searching on new pages"
 msgstr ""
 
-#: src/config/options.inc:457
+#: src/config/options.inc:465
 msgid ""
 "Whether to clear search, when visiting new pages, or going back in history. "
 "If you set it to 0, you can search once and see results on every page."
 msgstr ""
 
-#: src/config/options.inc:461
+#: src/config/options.inc:469
 msgid "Show search hit top or bottom dialogs"
 msgstr "Zobrazovať upozornenie o vyhľadávaní, ktoré dosiahlo koniec dokumentu"
 
-#: src/config/options.inc:463
+#: src/config/options.inc:471
 #, fuzzy
 msgid ""
 "Whether to show a dialog when the search hits the top or bottom of the "
@@ -3092,21 +3115,21 @@ msgstr ""
 "Povoliť zobrazovanie upozornenia keď vyhľadávanie dosiahne koniec alebo\n"
 "začiatok dokumentu."
 
-#: src/config/options.inc:466
+#: src/config/options.inc:474
 msgid "Wraparound"
 msgstr "Cykliť"
 
-#: src/config/options.inc:468
+#: src/config/options.inc:476
 msgid "Wrap around when searching. Currently only used for typeahead."
 msgstr ""
 "Ak vyhľadávanie dosiahne koniec dokumentu, pokračovať od začiatku.\n"
 "Zatiaľ používané iba pre interaktívne vyhľadávanie."
 
-#: src/config/options.inc:471
+#: src/config/options.inc:479
 msgid "Show not found"
 msgstr "Akcia pri nenájdení výskytu"
 
-#: src/config/options.inc:473
+#: src/config/options.inc:481
 #, fuzzy
 msgid ""
 "How to inform the user when nothing is matched:\n"
@@ -3120,12 +3143,12 @@ msgstr ""
 "1 = pípni na temináli\n"
 "2 = zobraz chybovú správu"
 
-#: src/config/options.inc:478
+#: src/config/options.inc:486
 #, fuzzy
 msgid "Typeahead searching"
 msgstr "Interaktívne vyhľadávanie"
 
-#: src/config/options.inc:480
+#: src/config/options.inc:488
 msgid ""
 "Start typeahead searching when an unbound key is pressed without any "
 "modifiers. Note that most keys have default bindings, so this feature will "
@@ -3139,39 +3162,39 @@ msgid ""
 "  text"
 msgstr ""
 
-#: src/config/options.inc:493
+#: src/config/options.inc:501
 msgid "Horizontal text margin"
 msgstr "Horizontálny okraj textu"
 
-#: src/config/options.inc:495
+#: src/config/options.inc:503
 msgid "Horizontal text margin."
 msgstr "Horizontálny okraj textu."
 
-#: src/config/options.inc:497
+#: src/config/options.inc:505
 #, fuzzy
 msgid "Preferred document width"
 msgstr "Uložiť formátovaný dokument"
 
-#: src/config/options.inc:499
+#: src/config/options.inc:507
 msgid ""
 "Try to fit the document within this width.  If set to zero,use screen width."
 msgstr ""
 
-#: src/config/options.inc:502
+#: src/config/options.inc:510
 msgid "Whether to use preferred document width"
 msgstr ""
 
-#: src/config/options.inc:504
+#: src/config/options.inc:512
 msgid ""
 "Whether to use preferred document width.  If set to zero,\n"
 "use screen width.  If set to one, use preferred_document_width."
 msgstr ""
 
-#: src/config/options.inc:507
+#: src/config/options.inc:515
 msgid "Document meta refresh"
 msgstr "Automatické obnovovanie dokumentov"
 
-#: src/config/options.inc:509
+#: src/config/options.inc:517
 #, fuzzy
 msgid ""
 "Automatically follow document-specified refresh directives ('<meta> refresh' "
@@ -3191,11 +3214,11 @@ msgstr ""
 "obmedziť minimálny interval pre obnovovanie dokumentu, použite voľbu\n"
 "document.browse.minimum_refresh_time."
 
-#: src/config/options.inc:518
+#: src/config/options.inc:526
 msgid "Document meta refresh minimum time"
 msgstr "Minimálna prestávka pre automatické obnovovanie"
 
-#: src/config/options.inc:520
+#: src/config/options.inc:528
 #, fuzzy
 msgid ""
 "The minimum number of milliseconds that should pass before refreshing. If "
@@ -3207,38 +3230,38 @@ msgstr ""
 "dokumente. Táto voľba môže pomôcť pri pohybe späť v histórii pre niektoré\n"
 "stránky používajúce obnovovanie s nulovým časom."
 
-#: src/config/options.inc:525
+#: src/config/options.inc:533
 #, fuzzy
 msgid "Show meta refresh link"
 msgstr "Automatické obnovovanie dokumentov"
 
-#: src/config/options.inc:527
+#: src/config/options.inc:535
 #, fuzzy
 msgid "Whether to show meta refresh link."
 msgstr "Zobraziť skryté súbory vo výpisoch adresárov"
 
-#: src/config/options.inc:529
+#: src/config/options.inc:537
 msgid "Tables navigation order"
 msgstr "Poradie navigácie v tabuľkách"
 
-#: src/config/options.inc:531
+#: src/config/options.inc:539
 msgid "Move by columns in table, instead of rows."
 msgstr "Presun po odkazoch pôjde po stĺpcoch namiesto po riadkoch."
 
 #. Keep options in alphabetical order.
-#: src/config/options.inc:537
+#: src/config/options.inc:545
 msgid "Cache"
 msgstr "Keš (dočasná pamäť)"
 
-#: src/config/options.inc:539
+#: src/config/options.inc:547
 msgid "Cache options."
 msgstr "Nastavenie keše."
 
-#: src/config/options.inc:541
+#: src/config/options.inc:549
 msgid "Cache information about redirects"
 msgstr "Kešovať informáciu o presmerovaniach"
 
-#: src/config/options.inc:543
+#: src/config/options.inc:551
 msgid ""
 "Cache even redirects sent by server (usually thru HTTP by a 302 HTTP code "
 "and a Location header). This was the original behaviour for quite some time, "
@@ -3258,11 +3281,11 @@ msgid ""
 "will be taken from cache instead of asking the server."
 msgstr ""
 
-#: src/config/options.inc:564
+#: src/config/options.inc:572
 msgid "Ignore cache-control info from server"
 msgstr "Ignorovať informáciu o kešovaní od servera"
 
-#: src/config/options.inc:566
+#: src/config/options.inc:574
 #, fuzzy
 msgid ""
 "Ignore Cache-Control and Pragma server headers. When set, the document is "
@@ -3272,19 +3295,19 @@ msgstr ""
 "Ak nastavené, dokument je kešovaný aj keď hlavička obsahuje\n"
 "'Cache-Control: no-cache'."
 
-#: src/config/options.inc:570
+#: src/config/options.inc:578
 msgid "Formatted documents"
 msgstr "Sformátované dokumenty"
 
-#: src/config/options.inc:572
+#: src/config/options.inc:580
 msgid "Format cache options."
 msgstr "Nastavenie cache formátovaných dokumentov."
 
-#: src/config/options.inc:574
+#: src/config/options.inc:582
 msgid "Number"
 msgstr "Číslo"
 
-#: src/config/options.inc:576
+#: src/config/options.inc:584
 msgid ""
 "Number of cached formatted pages. Do not get too generous here, 'formatted' "
 "means that all the accompanying structures are kept in memory so that you "
@@ -3302,12 +3325,12 @@ msgid ""
 msgstr ""
 
 #. FIXME: Write more.
-#: src/config/options.inc:594
+#: src/config/options.inc:602
 #, fuzzy
 msgid "Revalidation interval"
 msgstr "Interval automatického ukladania"
 
-#: src/config/options.inc:596
+#: src/config/options.inc:604
 msgid ""
 "Period in seconds that a cache entry is considered to be up-to-date. When a "
 "document is loaded and this interval has elapsed since the document was "
@@ -3317,94 +3340,94 @@ msgid ""
 "A value of -1 disables automatic revalidation."
 msgstr ""
 
-#: src/config/options.inc:605 src/dialogs/info.cpp:204
+#: src/config/options.inc:613 src/dialogs/info.c:207
 msgid "Memory cache"
 msgstr "Pamäťová cache"
 
-#: src/config/options.inc:607
+#: src/config/options.inc:615
 msgid "Memory cache options."
 msgstr "Nastavenie pamäťovej cache."
 
-#: src/config/options.inc:611
+#: src/config/options.inc:619
 msgid "Memory cache size (in bytes)."
 msgstr "Veľkosť pamäťovej cache (v bajtoch)"
 
-#: src/config/options.inc:615
+#: src/config/options.inc:623
 msgid "Charset"
 msgstr "Znaková sada"
 
-#: src/config/options.inc:617
+#: src/config/options.inc:625
 msgid "Charset options."
 msgstr "Nastavenie znakovej sady."
 
-#: src/config/options.inc:619
+#: src/config/options.inc:627
 msgid "Default codepage"
 msgstr "Štandardná kódová stránka"
 
-#: src/config/options.inc:621
+#: src/config/options.inc:629
 #, fuzzy
 msgid ""
 "Default document codepage. 'System' stands for a codepage determined by a "
 "selected locale."
 msgstr "Kódová stránka znakovej sady použitej na zobrazovanie na terminále."
 
-#: src/config/options.inc:624
+#: src/config/options.inc:632
 msgid "Ignore charset info from server"
 msgstr "Ignorovať informáciu o kódovej stránke od servera"
 
-#: src/config/options.inc:626
+#: src/config/options.inc:634
 msgid "Ignore charset info sent by server."
 msgstr "Ignorovať informáciu o kódovej stránke poslanej serverom."
 
-#: src/config/options.inc:630
+#: src/config/options.inc:638
 msgid "Default color settings"
 msgstr "Štandardné nastavenie farieb"
 
-#: src/config/options.inc:632
+#: src/config/options.inc:640
 msgid "Default document color settings."
 msgstr "Štandardné nastavenie farieb dokumentu"
 
-#: src/config/options.inc:643
+#: src/config/options.inc:651
 msgid "Link color"
 msgstr "Farba odkazu"
 
-#: src/config/options.inc:645
+#: src/config/options.inc:653
 msgid "Default link color."
 msgstr "Štandardná farba odkazu"
 
-#: src/config/options.inc:647
+#: src/config/options.inc:655
 msgid "Visited-link color"
 msgstr "Farba navštíveného odkazu"
 
-#: src/config/options.inc:649
+#: src/config/options.inc:657
 msgid "Default visited link color."
 msgstr "Štandardná farba navštíveného odkazu"
 
-#: src/config/options.inc:651
+#: src/config/options.inc:659
 #, fuzzy
 msgid "Image-link color"
 msgstr "Farba navštíveného odkazu"
 
-#: src/config/options.inc:653
+#: src/config/options.inc:661
 #, fuzzy
 msgid "Default image link color."
 msgstr "Štandardná farba odkazu"
 
-#: src/config/options.inc:655
+#: src/config/options.inc:663
 #, fuzzy
 msgid "Bookmarked-link color"
 msgstr "Farba navštíveného odkazu"
 
-#: src/config/options.inc:657
+#: src/config/options.inc:665
 #, fuzzy
 msgid "Default bookmarked link color."
 msgstr "Štandardná farba odkazu"
 
-#: src/config/options.inc:659
+#: src/config/options.inc:667
 msgid "Directory color"
 msgstr "Farba adresára"
 
-#: src/config/options.inc:661
+#: src/config/options.inc:669
 #, fuzzy
 msgid ""
 "Default directory color.\n"
@@ -3414,33 +3437,33 @@ msgstr ""
 "Štandardná farba adresára.\n"
 "Viď. voľbu document.browse.links.color_dirs."
 
-#: src/config/options.inc:665
+#: src/config/options.inc:673
 #, fuzzy
 msgid "Use link number color"
 msgstr "Zadaj číslo linku"
 
-#: src/config/options.inc:667
+#: src/config/options.inc:675
 msgid ""
 "Whether to use link number color even when colors specified by the document "
 "are used."
 msgstr ""
 
-#: src/config/options.inc:670
+#: src/config/options.inc:678
 #, fuzzy
 msgid "Link number color"
 msgstr "Farba odkazu"
 
-#: src/config/options.inc:672
+#: src/config/options.inc:680
 #, fuzzy
 msgid "Default link number color."
 msgstr "Štandardná farba odkazu"
 
-#: src/config/options.inc:678
+#: src/config/options.inc:686
 #, fuzzy
 msgid "Increase contrast"
 msgstr "Zabezpečiť kontrast"
 
-#: src/config/options.inc:680
+#: src/config/options.inc:688
 msgid ""
 "Increase the contrast between the foreground and background colors to ensure "
 "readability. For example it disallows dark colors on a black background. "
@@ -3448,22 +3471,22 @@ msgid ""
 "option."
 msgstr ""
 
-#: src/config/options.inc:686
+#: src/config/options.inc:694
 msgid "Ensure contrast"
 msgstr "Zabezpečiť kontrast"
 
-#: src/config/options.inc:688
+#: src/config/options.inc:696
 #, fuzzy
 msgid "Makes sure that the back- and foreground colors are never equal."
 msgstr "Zabezpečiť aby farby pozadia a textu neboli rovnaké."
 
 #. If you change this please also change ACT_MAIN_DOCUMENT_COLORS action
 #. * handling.
-#: src/config/options.inc:693
+#: src/config/options.inc:701
 msgid "Use document-specified colors"
 msgstr "Používať farby nastavené v dokumente"
 
-#: src/config/options.inc:695
+#: src/config/options.inc:703
 #, fuzzy
 msgid ""
 "Use colors specified in document:\n"
@@ -3486,27 +3509,27 @@ msgstr ""
 "   termináli nastavenú."
 
 #. Keep options in alphabetical order.
-#: src/config/options.inc:708
+#: src/config/options.inc:716
 msgid "Downloading"
 msgstr "Sťahovanie"
 
-#: src/config/options.inc:710
+#: src/config/options.inc:718
 msgid "Options regarding files downloading and handling."
 msgstr "Nastavenie sťahovania súborov a ich obsluhy."
 
-#: src/config/options.inc:712
+#: src/config/options.inc:720
 msgid "Default download directory"
 msgstr "Štandardný adresár pre sťahované súbory"
 
-#: src/config/options.inc:714
+#: src/config/options.inc:722
 msgid "Default download directory."
 msgstr "Štandardný adresár pre sťahované súbory."
 
-#: src/config/options.inc:716
+#: src/config/options.inc:724
 msgid "Set original time"
 msgstr "Nastaviť pôvodný čas"
 
-#: src/config/options.inc:718
+#: src/config/options.inc:726
 #, fuzzy
 msgid ""
 "Set the timestamp of each downloaded file to the timestamp stored on the "
@@ -3516,11 +3539,11 @@ msgstr ""
 "aký je uložený na serveri."
 
 #. Does automatic resuming make sense as an option?
-#: src/config/options.inc:722
+#: src/config/options.inc:730
 msgid "Prevent overwriting"
 msgstr "Zabrániť prepísaniu"
 
-#: src/config/options.inc:724
+#: src/config/options.inc:732
 #, fuzzy
 msgid ""
 "Prevent overwriting the local files:\n"
@@ -3533,11 +3556,11 @@ msgstr ""
 "1 = pridať príponu .<číslo> (napr. '.1'), ak také meno existuje\n"
 "2 = opýtať sa užívateľa."
 
-#: src/config/options.inc:729
+#: src/config/options.inc:737
 msgid "Notify download completion by bell"
 msgstr "Upozorniť na ukončenie sťahovania pípnutím"
 
-#: src/config/options.inc:731
+#: src/config/options.inc:739
 #, fuzzy
 msgid ""
 "Audio notification when download is completed:\n"
@@ -3550,28 +3573,28 @@ msgstr ""
 "1 = ak je nastavené upozorňovanie na skončenie sťahovania\n"
 "2 = vždy"
 
-#: src/config/options.inc:737
+#: src/config/options.inc:745
 msgid "Dump output"
 msgstr "Dump výstup"
 
-#: src/config/options.inc:739
+#: src/config/options.inc:747
 msgid "Dump output options."
 msgstr "Nastavenie dump výstupu."
 
 #. OPT_CODEPAGE
-#: src/config/options.inc:741 src/config/options.inc:1124
+#: src/config/options.inc:749 src/config/options.inc:1146
 #: src/config/opttypes.c:489 src/dialogs/document.c:182
 msgid "Codepage"
 msgstr "Kódová stránka"
 
-#: src/config/options.inc:743
+#: src/config/options.inc:751
 #, fuzzy
 msgid ""
 "Codepage used in dump output. 'System' stands for a codepage determined by a "
 "selected locale."
 msgstr "Kódová stránka znakovej sady použitej na zobrazovanie na terminále."
 
-#: src/config/options.inc:746 src/config/options.inc:1081
+#: src/config/options.inc:754 src/config/options.inc:1095
 msgid "Color mode"
 msgstr "Farebný režim"
 
@@ -3580,7 +3603,7 @@ msgstr "Farebný režim"
 #. * an outer list entry after an inner list.
 #. * TRANSLATORS: This restriction applies only to the
 #. * "en" (English) translation.  (See doc/Makefile.)
-#: src/config/options.inc:753
+#: src/config/options.inc:761
 #, fuzzy
 msgid ""
 "Color mode for dumps.\n"
@@ -3603,36 +3626,36 @@ msgstr ""
 "1 = 16 farieb; využíva farby podľa ANSI špecifikácie\n"
 "2 = 256 farieb; vyžaduje terminál xterm-256color\n"
 
-#: src/config/options.inc:768
+#: src/config/options.inc:776
 msgid "Footer"
 msgstr ""
 
-#: src/config/options.inc:770
+#: src/config/options.inc:778
 #, c-format
 msgid "Footer string used in dumps. %u is substituted by URL."
 msgstr ""
 
-#: src/config/options.inc:774
+#: src/config/options.inc:782
 #, c-format
 msgid "Header string used in dumps. %u is substituted by URL."
 msgstr ""
 
-#: src/config/options.inc:776
+#: src/config/options.inc:784
 #, fuzzy
 msgid "Numbering"
 msgstr "Číslo"
 
-#: src/config/options.inc:778
+#: src/config/options.inc:786
 #, fuzzy
 msgid "Whether to print link numbers in dump output."
 msgstr "Nečíslovať odkazy v dump výstupe."
 
-#: src/config/options.inc:780
+#: src/config/options.inc:788
 #, fuzzy
 msgid "References"
 msgstr "Zdroje"
 
-#: src/config/options.inc:782
+#: src/config/options.inc:790
 #, fuzzy
 msgid "Whether to print references (URIs) of document links in dump output."
 msgstr ""
@@ -3641,107 +3664,107 @@ msgstr ""
 "ale\n"
 "že sa to týka iba parametra --dump a ničoho iného."
 
-#: src/config/options.inc:785
+#: src/config/options.inc:793
 #, fuzzy
 msgid "Terminal hyperlinks"
 msgstr "Nastavenie terminálu"
 
-#: src/config/options.inc:787
+#: src/config/options.inc:795
 msgid "Whether to add terminal hyperlinks to dump output. See #198 in github."
 msgstr ""
 
-#: src/config/options.inc:789
+#: src/config/options.inc:797
 #, fuzzy
 msgid "Separator"
 msgstr "Oddeľovač v lište s tabmi"
 
-#: src/config/options.inc:791
+#: src/config/options.inc:799
 msgid "String which separates two dumps."
 msgstr ""
 
-#: src/config/options.inc:793
+#: src/config/options.inc:801
 msgid "Width"
 msgstr "Šírka"
 
-#: src/config/options.inc:795
+#: src/config/options.inc:803
 #, fuzzy
 msgid "Width of screen in characters when dumping documents."
 msgstr "Šírka obrazovky v znakoch pri dumpovaní HTML dokumentu."
 
-#: src/config/options.inc:799
+#: src/config/options.inc:807
 msgid "History"
 msgstr "História"
 
-#: src/config/options.inc:801
+#: src/config/options.inc:809
 msgid "History options."
 msgstr "Nastavenie histórie."
 
-#: src/config/options.inc:803
+#: src/config/options.inc:811
 msgid "Keep unhistory"
 msgstr "Udržovať antihistóriu"
 
-#: src/config/options.inc:805
+#: src/config/options.inc:813
 #, fuzzy
 msgid "Keep unhistory (\"forward history\")."
 msgstr "Udržovať antihistóriu (\"doprednú históriu\")?"
 
-#: src/config/options.inc:808
+#: src/config/options.inc:816
 msgid "HTML rendering"
 msgstr "HTML zobrazenie"
 
-#: src/config/options.inc:810
+#: src/config/options.inc:818
 msgid "Options concerning the display of HTML pages."
 msgstr "Voľby týkajúce sa zobrazovania HTML stránok."
 
-#: src/config/options.inc:812
+#: src/config/options.inc:820
 msgid "Display frames"
 msgstr "Zobraziť rámce"
 
-#: src/config/options.inc:814
+#: src/config/options.inc:822
 msgid "Display frames."
 msgstr "Zobraziť rámce."
 
-#: src/config/options.inc:816
+#: src/config/options.inc:824
 #, fuzzy
 msgid "Display iframes"
 msgstr "Zobraziť rámce"
 
-#: src/config/options.inc:818
+#: src/config/options.inc:826
 msgid ""
 "Display iframes. Iframe code is not finished. This option is disabled by "
 "default."
 msgstr ""
 
-#: src/config/options.inc:820
+#: src/config/options.inc:828
 msgid "Display tables"
 msgstr "Zobraziť tabuľky"
 
-#: src/config/options.inc:822
+#: src/config/options.inc:830
 msgid "Display tables."
 msgstr "Zobraziť tabuľky."
 
-#: src/config/options.inc:824
+#: src/config/options.inc:832
 msgid "Display subscripts"
 msgstr "Zobraziť dolné indexy"
 
-#: src/config/options.inc:826
+#: src/config/options.inc:834
 msgid "Display subscripts (as [thing])."
 msgstr "Zobraziť dolné indexy (ako [index])"
 
-#: src/config/options.inc:828
+#: src/config/options.inc:836
 msgid "Display superscripts"
 msgstr "Zobraziť horné indexy"
 
-#: src/config/options.inc:830
+#: src/config/options.inc:838
 msgid "Display superscripts (as ^thing)."
 msgstr "Zobraziť horné indexy (ako ^index)"
 
-#: src/config/options.inc:832
+#: src/config/options.inc:840
 #, fuzzy
 msgid "Rendering of HTML link element"
 msgstr "Zobrazovanie HTML elementu 'link' (špeciálnych odkazov)"
 
-#: src/config/options.inc:834
+#: src/config/options.inc:842
 #, fuzzy
 msgid ""
 "How to render <link> tags from the HTML header:\n"
@@ -3760,19 +3783,19 @@ msgstr ""
 "4 ešte zobraziť typ\n"
 "5 všetko"
 
-#: src/config/options.inc:842
+#: src/config/options.inc:850
 msgid "Underline links"
 msgstr "Podčiarkovať odkazy"
 
-#: src/config/options.inc:844
+#: src/config/options.inc:852
 msgid "Underline links."
 msgstr "Podčiarkovať odkazy."
 
-#: src/config/options.inc:846
+#: src/config/options.inc:854
 msgid "Wrap non breaking space"
 msgstr "Rozdeľovať nedeliteľné medzery"
 
-#: src/config/options.inc:848
+#: src/config/options.inc:856
 #, fuzzy
 msgid ""
 "If set do not honour non breaking space (the nbsp entity) but allows one to "
@@ -3784,45 +3807,55 @@ msgstr ""
 "To môže pomôcť proti veľmi širokým dokumentom, aby nebolo nutné\n"
 "horizontálne skrolovať pri ich pozeraní."
 
-#: src/config/options.inc:853
+#: src/config/options.inc:861
 msgid "Plain rendering"
 msgstr "Zobrazovanie textových dokumentov"
 
-#: src/config/options.inc:855
+#: src/config/options.inc:863
 msgid "Options concerning the display of plain text pages."
 msgstr "Nastavenia týkajúce sa zobrazovania stránok s čistým textom."
 
-#: src/config/options.inc:857
+#: src/config/options.inc:865
 msgid "Display URIs"
 msgstr "Zobraziť URI"
 
-#: src/config/options.inc:859
+#: src/config/options.inc:867
 msgid "Display URIs in the document as links."
 msgstr "Zobraziť URI v dokumente ako odkazy."
 
-#: src/config/options.inc:861
+#: src/config/options.inc:869
 msgid "Compress empty lines"
 msgstr "Zlúčiť prázdne riadky"
 
-#: src/config/options.inc:863
+#: src/config/options.inc:871
 msgid "Compress successive empty lines to only one in displayed text."
 msgstr "Zlúčiť niekoľko za sebou idúcich prázdnych riadkov do jedného."
 
-#: src/config/options.inc:866
+#: src/config/options.inc:874
 msgid "Fixup frame borders of tables"
 msgstr ""
 
-#: src/config/options.inc:868
+#: src/config/options.inc:876
 msgid ""
 "Change ascii border characters to frame borders. Usage example: mysql --"
 "pager=elinks"
 msgstr ""
 
-#: src/config/options.inc:871
+#: src/config/options.inc:880 src/config/options.inc:1134
+#: src/dialogs/options.c:253
+msgid "Sixel"
+msgstr ""
+
+#: src/config/options.inc:882
+#, fuzzy
+msgid "Whether to display sixel images in plain text documents."
+msgstr "Farba titulku dialógového okna."
+
+#: src/config/options.inc:885
 msgid "URI passing"
 msgstr ""
 
-#: src/config/options.inc:873
+#: src/config/options.inc:887
 msgid ""
 "Rules for passing URIs to external commands. When one rule is defined the "
 "link and tab menu will have a menu item that makes it possible to pass the "
@@ -3835,14 +3868,14 @@ msgid ""
 "\n"
 "Commands run in the background by default: elinks is still active, and they "
 "do not receive standard input. The \"foreground\" suboption reverses this "
-"behaviour: the command receives standard input and elinks is blocked.\n"
+"behaviour: the command receives standard input and elinks is blocked."
 msgstr ""
 
-#: src/config/options.inc:892
+#: src/config/options.inc:906
 msgid "A rule for passing URI to an external command."
 msgstr ""
 
-#: src/config/options.inc:896
+#: src/config/options.inc:910
 msgid ""
 "The external command. The format is:\n"
 "%c in the string means the current URL\n"
@@ -3850,37 +3883,37 @@ msgid ""
 "Do _not_ put single- or double-quotes around %c."
 msgstr ""
 
-#: src/config/options.inc:904
+#: src/config/options.inc:918
 msgid "Run command in the foreground."
 msgstr ""
 
 #. Keep options in alphabetical order.
-#: src/config/options.inc:910
+#: src/config/options.inc:924
 #, fuzzy
 msgid "Information files"
 msgstr "Názov konfiguračného súboru"
 
-#: src/config/options.inc:912
+#: src/config/options.inc:926
 #, fuzzy
-msgid "Options for information files in ~/.elinks."
+msgid "Options for information files in ~/.config/elinks."
 msgstr "Nastavenia aktívneho odkazu."
 
-#: src/config/options.inc:914
+#: src/config/options.inc:928
 #, fuzzy
 msgid "Save interval"
 msgstr "Interval automatického ukladania"
 
-#: src/config/options.inc:916
+#: src/config/options.inc:930
 msgid ""
-"Interval at which to trigger information files in ~/.elinks to be saved to "
-"disk if they have changed (seconds; 0 to disable)"
+"Interval at which to trigger information files in ~/.config/elinks to be "
+"saved to disk if they have changed (seconds; 0 to disable)"
 msgstr ""
 
-#: src/config/options.inc:920
+#: src/config/options.inc:934
 msgid "Use secure file saving"
 msgstr ""
 
-#: src/config/options.inc:922
+#: src/config/options.inc:936
 msgid ""
 "First write data to unique temporary file, then rename this file upon "
 "successfully finishing this. Note that this relates only to config files, "
@@ -3893,79 +3926,79 @@ msgid ""
 "reliability of this feature."
 msgstr ""
 
-#: src/config/options.inc:934
+#: src/config/options.inc:948
 msgid "Use fsync(3) with secure file saving"
 msgstr ""
 
-#: src/config/options.inc:936
+#: src/config/options.inc:950
 msgid ""
 "When using secure file saving, call fsync(3), if the OS supports it, to "
 "force the OS immediately to write the data to permanent storage. This is "
 "optional for those who wish to avoid excessive disk I/O."
 msgstr ""
 
-#: src/config/options.inc:942
+#: src/config/options.inc:956
 msgid "Macros"
 msgstr ""
 
-#: src/config/options.inc:944
+#: src/config/options.inc:958
 msgid "Macros for exmode."
 msgstr ""
 
-#: src/config/options.inc:948
+#: src/config/options.inc:962
 msgid "Macro 0 for exmode."
 msgstr ""
 
-#: src/config/options.inc:952
+#: src/config/options.inc:966
 msgid "Macro 1 for exmode."
 msgstr ""
 
-#: src/config/options.inc:956
+#: src/config/options.inc:970
 msgid "Macro 2 for exmode."
 msgstr ""
 
-#: src/config/options.inc:960
+#: src/config/options.inc:974
 msgid "Macro 3 for exmode."
 msgstr ""
 
-#: src/config/options.inc:964
+#: src/config/options.inc:978
 msgid "Macro 4 for exmode."
 msgstr ""
 
-#: src/config/options.inc:968
+#: src/config/options.inc:982
 msgid "Macro 5 for exmode."
 msgstr ""
 
-#: src/config/options.inc:972
+#: src/config/options.inc:986
 msgid "Macro 6 for exmode."
 msgstr ""
 
-#: src/config/options.inc:976
+#: src/config/options.inc:990
 msgid "Macro 7 for exmode."
 msgstr ""
 
-#: src/config/options.inc:980
+#: src/config/options.inc:994
 msgid "Macro 8 for exmode."
 msgstr ""
 
-#: src/config/options.inc:984
+#: src/config/options.inc:998
 msgid "Macro 9 for exmode."
 msgstr ""
 
 #. Keep options in alphabetical order.
-#: src/config/options.inc:988
+#: src/config/options.inc:1002
 msgid "Terminals"
 msgstr "Terminály"
 
-#: src/config/options.inc:990
+#: src/config/options.inc:1004
 msgid "Terminal options."
 msgstr "Nastavenie terminálu."
 
-#: src/config/options.inc:994
+#: src/config/options.inc:1008
 msgid "Options specific to this terminal type (according to $TERM value)."
 msgstr "Voľby specifické pre tento typ terminálu (podľa hodnoty $TERM)."
 
-#: src/config/options.inc:1021
+#: src/config/options.inc:1035
 #, fuzzy
 msgid ""
 "Terminal type; matters mostly only when drawing frames and dialog box "
@@ -3985,11 +4018,11 @@ msgstr ""
 "3 = KOI-8\n"
 "4 = FreeBSD terminál"
 
-#: src/config/options.inc:1030
+#: src/config/options.inc:1044
 msgid "Always encode xterm title in ISO-8859-1"
 msgstr ""
 
-#: src/config/options.inc:1032
+#: src/config/options.inc:1046
 msgid ""
 "When updating the window title of xterm or a similar terminal emulator, "
 "encode the title in ISO-8859-1 (Latin-1), rather than in the charset used "
@@ -4001,11 +4034,11 @@ msgid ""
 "different page so that ELinks notices it needs to update the title."
 msgstr ""
 
-#: src/config/options.inc:1043 src/dialogs/options.c:234
+#: src/config/options.inc:1057 src/dialogs/options.c:241
 msgid "Switch fonts for line drawing"
 msgstr "Prepínať fonty pri kreslení čiar"
 
-#: src/config/options.inc:1045
+#: src/config/options.inc:1059
 #, fuzzy
 msgid ""
 "Switch fonts when drawing lines, enabling both local characters and lines "
@@ -4021,11 +4054,11 @@ msgstr ""
 #. * and if so, behave as if "utf_8_io" were 1.  (When CONFIG_UTF8 is
 #. * not defined, it should not be possible to set UTF-8 as "codepage";
 #. * please report any such possibilities as bugs.)
-#: src/config/options.inc:1055 src/dialogs/options.c:240
+#: src/config/options.inc:1069 src/dialogs/options.c:248
 msgid "UTF-8 I/O"
 msgstr "UTF-8 vstup/výstup"
 
-#: src/config/options.inc:1057
+#: src/config/options.inc:1071
 #, fuzzy
 msgid ""
 "Enable I/O in UTF-8 for Unicode terminals. Note that currently, only the "
@@ -4036,20 +4069,20 @@ msgstr ""
 "si ale uvedomiť, že v súčasnosti je podporovaná iba podmnožina UTF8 v\n"
 "závislosti na aktuálne zvolenom kódovaní terminálu."
 
-#: src/config/options.inc:1063 src/dialogs/options.c:242 src/main/version.c:185
+#: src/config/options.inc:1077 src/dialogs/options.c:250 src/main/version.c:185
 msgid "Combining characters"
 msgstr ""
 
-#: src/config/options.inc:1065
+#: src/config/options.inc:1079
 msgid ""
 "Enable combining characters. It works only with the xterm in UTF-8 mode."
 msgstr ""
 
-#: src/config/options.inc:1069 src/dialogs/options.c:235
+#: src/config/options.inc:1083 src/dialogs/options.c:242
 msgid "Restrict frames in cp850/852"
 msgstr "Ohraničené rámčeky v cp850/852"
 
-#: src/config/options.inc:1071
+#: src/config/options.inc:1085
 #, fuzzy
 msgid ""
 "Restrict the characters used when drawing lines. Makes sense only with linux "
@@ -4058,11 +4091,11 @@ msgstr ""
 "Obmedziť znaky používané na kreslenie čiar. Má význam používať iba\n"
 "pre linuxové terminály používajúce kódovanie cp850 alebo cp852."
 
-#: src/config/options.inc:1075 src/dialogs/options.c:236
+#: src/config/options.inc:1089 src/dialogs/options.c:243
 msgid "Block cursor"
 msgstr "Blokovať kurzor"
 
-#: src/config/options.inc:1077
+#: src/config/options.inc:1091
 #, fuzzy
 msgid ""
 "Move cursor to bottom right corner when done drawing. This is particularly "
@@ -4079,7 +4112,7 @@ msgstr ""
 #. * an outer list entry after an inner list.
 #. * TRANSLATORS: This restriction applies only to the
 #. * "en" (English) translation.  (See doc/Makefile.)
-#: src/config/options.inc:1088
+#: src/config/options.inc:1102
 #, fuzzy
 msgid ""
 "The color mode controls what colors are used and how they are output to the "
@@ -4102,11 +4135,11 @@ msgstr ""
 "1 = 16 farieb; využíva farby podľa ANSI špecifikácie\n"
 "2 = 256 farieb; vyžaduje terminál xterm-256color\n"
 
-#: src/config/options.inc:1103 src/dialogs/options.c:238
+#: src/config/options.inc:1117 src/dialogs/options.c:245
 msgid "Transparency"
 msgstr "Transparentnosť"
 
-#: src/config/options.inc:1105
+#: src/config/options.inc:1119
 #, fuzzy
 msgid ""
 "If we should not set the background to black. This is particularly useful "
@@ -4121,20 +4154,32 @@ msgstr ""
 "s obrázkom ako pozadie alebo s priehľadným pozadím - bude viditeľné aj\n"
 "v ELinkse. Samozrejme táto voľba má zmysel iba ak je zapnutá podpora farieb."
 
-#: src/config/options.inc:1115 src/dialogs/options.c:237
+#: src/config/options.inc:1129 src/dialogs/options.c:244
 #, fuzzy
 msgid "Italic"
 msgstr "taliančina"
 
-#: src/config/options.inc:1117
+#: src/config/options.inc:1131
 msgid "If we should use italics."
 msgstr ""
 
-#: src/config/options.inc:1121
+#: src/config/options.inc:1136
+msgid "Whether terminal supports sixel graphics."
+msgstr ""
+
+#: src/config/options.inc:1138 src/dialogs/options.c:247
+msgid "Strikethrough"
+msgstr ""
+
+#: src/config/options.inc:1140
+msgid "If we should use strikethrough."
+msgstr ""
+
+#: src/config/options.inc:1144
 msgid "If we should use underline or enhance the color instead."
 msgstr "Používať buď podčiarkovanie alebo zvýraznenie použitej farby."
 
-#: src/config/options.inc:1126
+#: src/config/options.inc:1148
 #, fuzzy
 msgid ""
 "Codepage of charset used for displaying content on terminal. 'System' stands "
@@ -4142,346 +4187,346 @@ msgid ""
 msgstr "Kódová stránka znakovej sady použitej na zobrazovanie na terminále."
 
 #. Keep options in alphabetical order.
-#: src/config/options.inc:1134
+#: src/config/options.inc:1156
 msgid "User interface"
 msgstr "Užívateľské rozhranie"
 
-#: src/config/options.inc:1136
+#: src/config/options.inc:1158
 msgid "User interface options."
 msgstr "Nastavenie užívateľského rozhrania."
 
-#: src/config/options.inc:1140
+#: src/config/options.inc:1162
 msgid "Color settings"
 msgstr "Nastavenie farieb"
 
-#: src/config/options.inc:1142
+#: src/config/options.inc:1164
 msgid "Default user interface color settings."
 msgstr "Štandardné nastavenie farieb užívateľského rozhrania."
 
-#: src/config/options.inc:1169
+#: src/config/options.inc:1191
 msgid "Color terminals"
 msgstr "Farebné terminály"
 
-#: src/config/options.inc:1171
+#: src/config/options.inc:1193
 msgid "Color settings for color terminal."
 msgstr "Nastavenie farieb pre farebné terminály."
 
-#: src/config/options.inc:1173
+#: src/config/options.inc:1195
 msgid "Non-color terminals"
 msgstr "Nefarebné terminály."
 
-#: src/config/options.inc:1175
+#: src/config/options.inc:1197
 msgid "Color settings for non-color terminal."
 msgstr "Nastavenie farieb pre nefarebné terminály."
 
 #. FIXME: obsolete, how to alias them correctly ? --Zas
-#: src/config/options.inc:1178
+#: src/config/options.inc:1200
 msgid "Main menu bar"
 msgstr "Lišta s hlavným menu"
 
-#: src/config/options.inc:1180
+#: src/config/options.inc:1202
 msgid "Main menu bar colors."
 msgstr "Farby lišty s hlavným menu."
 
-#: src/config/options.inc:1182
+#: src/config/options.inc:1204
 msgid "Unselected main menu bar item"
 msgstr "Nevybratá položka hlavného menu"
 
-#: src/config/options.inc:1184
+#: src/config/options.inc:1206
 msgid "Unselected main menu bar item colors."
 msgstr "Farba nevybratej položky hlavného menu."
 
-#: src/config/options.inc:1186
+#: src/config/options.inc:1208
 msgid "Selected main menu bar item"
 msgstr "Vybratá položka hlavného menu"
 
-#: src/config/options.inc:1188
+#: src/config/options.inc:1210
 msgid "Selected main menu bar item colors."
 msgstr "Farba vybratej položky hlavného menu."
 
-#: src/config/options.inc:1190 src/config/options.inc:1219
+#: src/config/options.inc:1212 src/config/options.inc:1241
 msgid "Hotkey"
 msgstr ""
 
-#: src/config/options.inc:1192
+#: src/config/options.inc:1214
 msgid "Main menu hotkey colors."
 msgstr ""
 
-#: src/config/options.inc:1194 src/config/options.inc:1223
+#: src/config/options.inc:1216 src/config/options.inc:1245
 msgid "Unselected hotkey"
 msgstr ""
 
-#: src/config/options.inc:1196
+#: src/config/options.inc:1218
 msgid "Main menu unselected hotkey colors."
 msgstr ""
 
-#: src/config/options.inc:1198 src/config/options.inc:1227
+#: src/config/options.inc:1220 src/config/options.inc:1249
 msgid "Selected hotkey"
 msgstr ""
 
-#: src/config/options.inc:1200
+#: src/config/options.inc:1222
 msgid "Main menu selected hotkey colors."
 msgstr ""
 
-#: src/config/options.inc:1203
+#: src/config/options.inc:1225
 msgid "Menu bar"
 msgstr "Lišta s menu"
 
-#: src/config/options.inc:1205
+#: src/config/options.inc:1227
 msgid "Menu bar colors."
 msgstr "Farby lišty s menu."
 
-#: src/config/options.inc:1207
+#: src/config/options.inc:1229
 msgid "Unselected menu item"
 msgstr "Nevybratá položka menu"
 
-#: src/config/options.inc:1209
+#: src/config/options.inc:1231
 msgid "Unselected menu item colors."
 msgstr "Farby nevybratej položky menu."
 
-#: src/config/options.inc:1211
+#: src/config/options.inc:1233
 msgid "Selected menu item"
 msgstr "Vybratá položka menu"
 
-#: src/config/options.inc:1213
+#: src/config/options.inc:1235
 msgid "Selected menu item colors."
 msgstr "Farby vybratej položky menu."
 
-#: src/config/options.inc:1215
+#: src/config/options.inc:1237
 msgid "Marked menu item"
 msgstr "Označená položka menu"
 
-#: src/config/options.inc:1217
+#: src/config/options.inc:1239
 msgid "Marked menu item colors."
 msgstr "Farby označenej položky menu."
 
-#: src/config/options.inc:1221
+#: src/config/options.inc:1243
 msgid "Menu item hotkey colors."
 msgstr ""
 
-#: src/config/options.inc:1225
+#: src/config/options.inc:1247
 msgid "Menu item unselected hotkey colors."
 msgstr ""
 
-#: src/config/options.inc:1229
+#: src/config/options.inc:1251
 msgid "Menu item selected hotkey colors."
 msgstr ""
 
-#: src/config/options.inc:1231
+#: src/config/options.inc:1253
 msgid "Menu frame"
 msgstr "Rámček menu"
 
-#: src/config/options.inc:1233
+#: src/config/options.inc:1255
 msgid "Menu frame colors."
 msgstr "Farby rámčeka menu."
 
-#: src/config/options.inc:1236
+#: src/config/options.inc:1258
 msgid "Dialog"
 msgstr "Dialóg"
 
-#: src/config/options.inc:1238
+#: src/config/options.inc:1260
 msgid "Dialog colors."
 msgstr "Farby dialógového okna."
 
-#: src/config/options.inc:1248
+#: src/config/options.inc:1270
 msgid "Generic"
 msgstr "Obecné"
 
-#: src/config/options.inc:1250
+#: src/config/options.inc:1272
 msgid "Generic dialog colors."
 msgstr "Obecná farba dialógu. "
 
-#: src/config/options.inc:1252
+#: src/config/options.inc:1274
 msgid "Frame"
 msgstr "Rámček"
 
-#: src/config/options.inc:1254
+#: src/config/options.inc:1276
 msgid "Dialog frame colors."
 msgstr "Farba rámčeku dialógového okna."
 
-#: src/config/options.inc:1256
+#: src/config/options.inc:1278
 msgid "Scrollbar"
 msgstr "Skrolovadlo"
 
-#: src/config/options.inc:1258
+#: src/config/options.inc:1280
 msgid "Scrollbar colors."
 msgstr "Farby skrolovadla."
 
-#: src/config/options.inc:1260
+#: src/config/options.inc:1282
 #, fuzzy
 msgid "Selected scrollbar"
 msgstr "Farby vybratého tabu."
 
-#: src/config/options.inc:1262
+#: src/config/options.inc:1284
 msgid "Scrollbar selected colors."
 msgstr "Farby vybranáho skrolovadla."
 
-#: src/config/options.inc:1266
+#: src/config/options.inc:1288
 msgid "Dialog title colors."
 msgstr "Farba titulku dialógového okna."
 
-#: src/config/options.inc:1268
+#: src/config/options.inc:1290
 msgid "Text"
 msgstr "Text"
 
-#: src/config/options.inc:1270
+#: src/config/options.inc:1292
 msgid "Dialog text colors."
 msgstr "Farby textu dialógového okna."
 
-#: src/config/options.inc:1272 src/viewer/text/form.cpp:1936
+#: src/config/options.inc:1294 src/viewer/text/form.c:1940
 msgid "Checkbox"
 msgstr "Zaškrtávací štvorček"
 
-#: src/config/options.inc:1274
+#: src/config/options.inc:1296
 msgid "Dialog checkbox colors."
 msgstr "Farby zaškrtávacieho štvorčeka."
 
-#: src/config/options.inc:1276
+#: src/config/options.inc:1298
 #, fuzzy
 msgid "Selected checkbox"
 msgstr "Vybratý tab"
 
-#: src/config/options.inc:1278
+#: src/config/options.inc:1300
 #, fuzzy
 msgid "Dialog selected checkbox colors."
 msgstr "Farby vybraté tlačidla."
 
-#: src/config/options.inc:1280
+#: src/config/options.inc:1302
 msgid "Checkbox label"
 msgstr "Popis zaškrtávacieho štvorčeka"
 
-#: src/config/options.inc:1282
+#: src/config/options.inc:1304
 msgid "Dialog checkbox label colors."
 msgstr "Farby popisu zaškrtávacieho štvorčeka."
 
-#: src/config/options.inc:1284
+#: src/config/options.inc:1306
 msgid "Button"
 msgstr "Tlačidlo"
 
-#: src/config/options.inc:1286 src/config/options.inc:1294
+#: src/config/options.inc:1308 src/config/options.inc:1316
 msgid "Dialog button colors."
 msgstr "Farby tlačidla."
 
-#: src/config/options.inc:1288
+#: src/config/options.inc:1310
 msgid "Selected button"
 msgstr "Vybraté tlačidlo."
 
-#: src/config/options.inc:1290 src/config/options.inc:1298
+#: src/config/options.inc:1312 src/config/options.inc:1320
 msgid "Dialog selected button colors."
 msgstr "Farby vybraté tlačidla."
 
-#: src/config/options.inc:1292
+#: src/config/options.inc:1314
 msgid "Button shortcut"
 msgstr ""
 
-#: src/config/options.inc:1296
+#: src/config/options.inc:1318
 #, fuzzy
 msgid "Selected button shortcut"
 msgstr "Vybraté tlačidlo."
 
-#: src/config/options.inc:1300 src/viewer/text/form.cpp:1940
+#: src/config/options.inc:1322 src/viewer/text/form.c:1944
 msgid "Text field"
 msgstr "Textové pole"
 
-#: src/config/options.inc:1302
+#: src/config/options.inc:1324
 msgid "Dialog text field colors."
 msgstr "Farby textového poľa."
 
-#: src/config/options.inc:1304
+#: src/config/options.inc:1326
 msgid "Text field text"
 msgstr "Text v textovom poli"
 
-#: src/config/options.inc:1306
+#: src/config/options.inc:1328
 msgid "Dialog field text colors."
 msgstr "Farby textu textového poľa."
 
-#: src/config/options.inc:1308
+#: src/config/options.inc:1330
 msgid "Meter"
 msgstr "Teplomer"
 
-#: src/config/options.inc:1310
+#: src/config/options.inc:1332
 msgid "Dialog meter colors."
 msgstr "Farby teplomeru dialógového okna."
 
-#: src/config/options.inc:1312
+#: src/config/options.inc:1334
 msgid "Shadow"
 msgstr "Tieň"
 
-#: src/config/options.inc:1314
+#: src/config/options.inc:1336
 msgid "Dialog shadow colors (see ui.shadows option)."
 msgstr "Farby tieňa dialógového okna."
 
-#: src/config/options.inc:1316
+#: src/config/options.inc:1338
 msgid "Title bar"
 msgstr "Lišta s titulkom"
 
-#: src/config/options.inc:1318
+#: src/config/options.inc:1340
 msgid "Title bar colors."
 msgstr "Farby lišty s titulkom."
 
-#: src/config/options.inc:1320
+#: src/config/options.inc:1342
 msgid "Generic title bar"
 msgstr "Obecná lišta s titulkom"
 
-#: src/config/options.inc:1322
+#: src/config/options.inc:1344
 msgid "Generic title bar colors."
 msgstr "Farby obecnej lišty s titulkom."
 
-#: src/config/options.inc:1324
+#: src/config/options.inc:1346
 msgid "Title bar text"
 msgstr "Text titulku"
 
-#: src/config/options.inc:1326
+#: src/config/options.inc:1348
 msgid "Title bar text colors."
 msgstr "Farby textu lišty s titulkom."
 
-#: src/config/options.inc:1329
+#: src/config/options.inc:1351
 msgid "Status bar"
 msgstr "Stavová lišta"
 
-#: src/config/options.inc:1331
+#: src/config/options.inc:1353
 msgid "Status bar colors."
 msgstr "Farby stavovej lišty."
 
-#: src/config/options.inc:1333
+#: src/config/options.inc:1355
 #, fuzzy
 msgid "Status bar show ip"
 msgstr "Stavová lišta"
 
-#: src/config/options.inc:1335
+#: src/config/options.inc:1357
 #, fuzzy
 msgid "Status bar show ip text colors."
 msgstr "Farby textu stavovej lišty."
 
-#: src/config/options.inc:1337
+#: src/config/options.inc:1359
 msgid "Generic status bar"
 msgstr "Obecná stavová lišta"
 
-#: src/config/options.inc:1339
+#: src/config/options.inc:1361
 msgid "Generic status bar colors."
 msgstr "Farby obecnej stavovej lišty."
 
-#: src/config/options.inc:1342
+#: src/config/options.inc:1364
 msgid "Status bar text"
 msgstr "Text stavovej lišty"
 
-#: src/config/options.inc:1344
+#: src/config/options.inc:1366
 msgid "Status bar text colors."
 msgstr "Farby textu stavovej lišty."
 
-#: src/config/options.inc:1347
+#: src/config/options.inc:1369
 msgid "Tabs bar"
 msgstr "Lišta s tabmi"
 
-#: src/config/options.inc:1349
+#: src/config/options.inc:1371
 msgid "Tabs bar colors."
 msgstr "Farby lišty s tabmi."
 
-#: src/config/options.inc:1351
+#: src/config/options.inc:1373
 msgid "Unvisited tab"
 msgstr "Nenavštívený tab"
 
-#: src/config/options.inc:1353
+#: src/config/options.inc:1375
 #, fuzzy
 msgid ""
 "Tab colors for tabs that have not been selected since they completed loading."
@@ -4489,62 +4534,62 @@ msgstr ""
 "Farby tabu, ktorý ešte nebol navštívený, ale už je\n"
 "kompletne natiahnutý."
 
-#: src/config/options.inc:1356
+#: src/config/options.inc:1378
 msgid "Unselected tab"
 msgstr "Nevybratý tab"
 
-#: src/config/options.inc:1358
+#: src/config/options.inc:1380
 msgid "Unselected tab colors."
 msgstr "Farby nevybratého tabu."
 
-#: src/config/options.inc:1360
+#: src/config/options.inc:1382
 msgid "Loading tab"
 msgstr "Nahrávam tab"
 
-#: src/config/options.inc:1362
+#: src/config/options.inc:1384
 msgid "Tab colors for tabs that are loading in the background."
 msgstr "Farby tabu, ktorý sa práve nahráva na pozadí."
 
-#: src/config/options.inc:1364
+#: src/config/options.inc:1386
 msgid "Selected tab"
 msgstr "Vybratý tab"
 
-#: src/config/options.inc:1366
+#: src/config/options.inc:1388
 msgid "Selected tab colors."
 msgstr "Farby vybratého tabu."
 
-#: src/config/options.inc:1368
+#: src/config/options.inc:1390
 msgid "Tab separator"
 msgstr "Oddeľovač v lište s tabmi"
 
-#: src/config/options.inc:1370
+#: src/config/options.inc:1392
 msgid "Tab separator colors."
 msgstr "Farby oddeľovačov lišty s tabmi."
 
-#: src/config/options.inc:1372
+#: src/config/options.inc:1394
 #, fuzzy
 msgid "Clipboard"
 msgstr "súborov"
 
-#: src/config/options.inc:1374
+#: src/config/options.inc:1396
 #, fuzzy
 msgid "Clipboard highlight colors."
 msgstr "Farba zvýraznenia vyhľadaných reťazcov."
 
-#: src/config/options.inc:1376
+#: src/config/options.inc:1398
 msgid "Desktop"
 msgstr ""
 
-#: src/config/options.inc:1378
+#: src/config/options.inc:1400
 #, fuzzy
 msgid "Desktop background."
 msgstr "Štandardná farba pozadia."
 
-#: src/config/options.inc:1380
+#: src/config/options.inc:1402
 msgid "Searched strings"
 msgstr "Hľadaný reťazec"
 
-#: src/config/options.inc:1382
+#: src/config/options.inc:1404
 msgid "Searched string highlight colors."
 msgstr "Farba zvýraznenia vyhľadaných reťazcov."
 
@@ -4552,19 +4597,19 @@ msgstr "Farba zvýraznenia vyhľadaných reťazcov."
 #. ============= BORING PART (colors) END ===================
 #. ==========================================================
 #. Keep options in alphabetical order.
-#: src/config/options.inc:1391
+#: src/config/options.inc:1413
 msgid "Dialog settings"
 msgstr "Dialógové okná"
 
-#: src/config/options.inc:1393
+#: src/config/options.inc:1415
 msgid "Dialogs-specific appearance and behaviour settings."
 msgstr "Nastavenie vzhľadu a správania dialógových okien."
 
-#: src/config/options.inc:1396
+#: src/config/options.inc:1418
 msgid "Minimal height of listbox widget"
 msgstr "Minimálna výška listboxu"
 
-#: src/config/options.inc:1398
+#: src/config/options.inc:1420
 #, fuzzy
 msgid ""
 "Minimal height of the listbox widget (used e.g. for bookmarks or global "
@@ -4573,11 +4618,11 @@ msgstr ""
 "Minimálna výška listboxu (používa sa napr. na záložky alebo globálnu\n"
 "históriu)."
 
-#: src/config/options.inc:1401
+#: src/config/options.inc:1423
 msgid "Drop shadows"
 msgstr "Tiene"
 
-#: src/config/options.inc:1403
+#: src/config/options.inc:1425
 #, fuzzy
 msgid ""
 "Make dialogs drop shadows (the shadows are solid, you can adjust their color "
@@ -4588,12 +4633,12 @@ msgstr ""
 "možné upraviť voľbami ui.colors.*.dialog.shadow). Možno budete chcieť zúžiť\n"
 "okraje dialógových okien upravením setup.h."
 
-#: src/config/options.inc:1408
+#: src/config/options.inc:1430
 #, fuzzy
 msgid "Underline menu hotkeys"
 msgstr "Podčiarkovať horúce klávesy"
 
-#: src/config/options.inc:1410
+#: src/config/options.inc:1432
 #, fuzzy
 msgid ""
 "Whether to underline hotkeys in menus to make them more visible. Requires "
@@ -4602,12 +4647,12 @@ msgstr ""
 "Zapnúť podčiarkovanie horúcich kláves v menu aby boli viac viditeľné.\n"
 "Funguje to ale iba ak terminál podčiarkovanie podporuje."
 
-#: src/config/options.inc:1414
+#: src/config/options.inc:1436
 #, fuzzy
 msgid "Underline button shortcuts"
 msgstr "Podčiarkovať horúce klávesy"
 
-#: src/config/options.inc:1416
+#: src/config/options.inc:1438
 #, fuzzy
 msgid ""
 "Whether to underline button shortcuts to make them more visible. Requires "
@@ -4616,11 +4661,11 @@ msgstr ""
 "Zapnúť podčiarkovanie horúcich kláves v menu aby boli viac viditeľné.\n"
 "Funguje to ale iba ak terminál podčiarkovanie podporuje."
 
-#: src/config/options.inc:1421
+#: src/config/options.inc:1443
 msgid "Timer options"
 msgstr "Nastavenie časovačov"
 
-#: src/config/options.inc:1423
+#: src/config/options.inc:1445
 #, fuzzy
 msgid ""
 "Timed action after certain interval of user inactivity. Someone can even "
@@ -4629,7 +4674,7 @@ msgstr ""
 "Načasovaná akcia, ktorá sa spustí po určitom čase nečinnosti užívateľa.\n"
 "Niekomu sa to môže hodiť, aj keď tomu nemusíte veriť."
 
-#: src/config/options.inc:1430
+#: src/config/options.inc:1452
 msgid ""
 "Whether to enable the timer or not:\n"
 "0 is don't count down anything\n"
@@ -4641,7 +4686,7 @@ msgstr ""
 "1 = odpočítavať, ale potichu (nič neukazovať)\n"
 "2 = odpočítavať a ukazovať zostávajúci čas pri LED indikátoroch"
 
-#: src/config/options.inc:1437
+#: src/config/options.inc:1459
 msgid ""
 "Whether to enable the timer or not:\n"
 "0 is don't count down anything\n"
@@ -4653,34 +4698,34 @@ msgstr ""
 "1 = odpočítavať, ale potichu (nič neukazovať)\n"
 "2 = odpočítavať a ukazovať zostávajúci čas pri LED indikátoroch (VYPNUTÉ)"
 
-#: src/config/options.inc:1443
+#: src/config/options.inc:1465
 msgid "Duration"
 msgstr "Dĺžka trvania"
 
-#: src/config/options.inc:1445
+#: src/config/options.inc:1467
 #, fuzzy
 msgid ""
 "Inactivity timeout in seconds. The maximum of one day should be enough for "
 "just everyone (TM)."
 msgstr "Čas nečinnosti užívateľa. Jeden deň by mal každému stačiť (TM)."
 
-#: src/config/options.inc:1450
+#: src/config/options.inc:1472
 msgid "Keybinding action to be triggered when timer reaches zero."
 msgstr ""
 
-#: src/config/options.inc:1454
+#: src/config/options.inc:1476
 msgid "Window tabs"
 msgstr "Taby"
 
-#: src/config/options.inc:1456
+#: src/config/options.inc:1478
 msgid "Window tabs settings."
 msgstr "Nastavenie tabov."
 
-#: src/config/options.inc:1458
+#: src/config/options.inc:1480
 msgid "Display tabs bar"
 msgstr "Zobraziť lištu s tabmi"
 
-#: src/config/options.inc:1460
+#: src/config/options.inc:1482
 #, fuzzy
 msgid ""
 "Show tabs bar on the screen:\n"
@@ -4693,49 +4738,49 @@ msgstr ""
 "1 znamená iba ak je otvorených 2 a viac tabov\n"
 "2 znamená vždy"
 
-#: src/config/options.inc:1465
+#: src/config/options.inc:1487
 #, fuzzy
 msgid "Tab bar at top"
 msgstr "Oddeľovač v lište s tabmi"
 
-#: src/config/options.inc:1467
+#: src/config/options.inc:1489
 msgid "Whether display tab bar at top like other browsers do."
 msgstr ""
 
-#: src/config/options.inc:1469
+#: src/config/options.inc:1491
 msgid "Wrap-around tabs cycling"
 msgstr "Cyklické prechádzanie medzi tabmi"
 
-#: src/config/options.inc:1471
+#: src/config/options.inc:1493
 #, fuzzy
 msgid ""
 "When moving right from the last tab, jump to the first one, and vice versa."
 msgstr ""
 "Pri presune z posledného tabu ďalej doprava preskočiť na prvý tab a naopak."
 
-#: src/config/options.inc:1474
+#: src/config/options.inc:1496
 msgid "Confirm tab closing"
 msgstr "Potvrdzovať zatváranie tabov"
 
-#: src/config/options.inc:1476
+#: src/config/options.inc:1498
 msgid "When closing a tab show confirmation dialog."
 msgstr "Pri zatváraní tabu zobraziť potvrdzovací dialóg."
 
-#: src/config/options.inc:1478
+#: src/config/options.inc:1500
 #, fuzzy
 msgid "Disallow writing to terminal"
 msgstr "Chyba pri zápise do súboru"
 
-#: src/config/options.inc:1480
+#: src/config/options.inc:1502
 msgid "Whether to disallow writing to terminal by background processes."
 msgstr ""
 
 #. OPT_LANGUAGE
-#: src/config/options.inc:1482 src/config/opttypes.c:491
+#: src/config/options.inc:1504 src/config/opttypes.c:491
 msgid "Language"
 msgstr "Jazyk"
 
-#: src/config/options.inc:1484
+#: src/config/options.inc:1506
 #, fuzzy
 msgid ""
 "Language of user interface. 'System' means that the language will be "
@@ -4744,89 +4789,89 @@ msgstr ""
 "Jazyk používateľského rozhrania. \"System\" znamená, že jazyk bude\n"
 "pri každom spustení zisťovaný z premenných prostredia."
 
-#: src/config/options.inc:1488
+#: src/config/options.inc:1510
 #, fuzzy
 msgid "Display menu bar always"
 msgstr "Zobraziť riadok s titulkom"
 
-#: src/config/options.inc:1490
+#: src/config/options.inc:1512
 #, fuzzy
 msgid "Always show menu bar on the screen."
 msgstr "Zobraziť na obrazovke riadok s titulkom."
 
-#: src/config/options.inc:1492
+#: src/config/options.inc:1514
 msgid "Display status bar"
 msgstr "Zobraziť stavový riadok"
 
-#: src/config/options.inc:1494
+#: src/config/options.inc:1516
 msgid "Show status bar on the screen."
 msgstr "Zobraziť na obrazovke stavový riadok."
 
-#: src/config/options.inc:1496
+#: src/config/options.inc:1518
 msgid "Display title bar"
 msgstr "Zobraziť riadok s titulkom"
 
-#: src/config/options.inc:1498
+#: src/config/options.inc:1520
 msgid "Show title bar on the screen."
 msgstr "Zobraziť na obrazovke riadok s titulkom."
 
-#: src/config/options.inc:1500
+#: src/config/options.inc:1522
 #, fuzzy
 msgid "Display goto dialog in new tabs"
 msgstr "Pri štarte zobraziť dialóg \"Choď na\""
 
-#: src/config/options.inc:1502
+#: src/config/options.inc:1524
 msgid ""
 "Pop up goto dialog in newly created tabs when there's no homepage set. This "
 "means also showing goto dialog on startup."
 msgstr ""
 
-#: src/config/options.inc:1506
+#: src/config/options.inc:1528
 #, fuzzy
 msgid "Show a message box when file is saved successfully"
 msgstr "Zobraz dialógové okienko keď bol súbor úspešne uložený"
 
-#: src/config/options.inc:1508
+#: src/config/options.inc:1530
 msgid ""
 "When you pressed a [ Save ] button in some manager, this option will make "
 "sure that a box confirming success of the operation will pop up."
 msgstr ""
 
-#: src/config/options.inc:1513
+#: src/config/options.inc:1535
 msgid "Sessions"
 msgstr "Sedenia"
 
-#: src/config/options.inc:1515
+#: src/config/options.inc:1537
 msgid "Sessions settings."
 msgstr "Nastavenie sedení"
 
-#: src/config/options.inc:1517
+#: src/config/options.inc:1539
 msgid "Auto restore session"
 msgstr ""
 
-#: src/config/options.inc:1519
+#: src/config/options.inc:1541
 msgid ""
 "Automatically restore the session at start.\n"
 "\n"
 "This feature requires bookmark support."
 msgstr ""
 
-#: src/config/options.inc:1523
+#: src/config/options.inc:1545
 msgid "Auto save session"
 msgstr ""
 
-#: src/config/options.inc:1525
+#: src/config/options.inc:1547
 msgid ""
 "Automatically save the session when quitting.\n"
 "\n"
 "This feature requires bookmark support."
 msgstr ""
 
-#: src/config/options.inc:1529
+#: src/config/options.inc:1551
 msgid "Auto save and restore session folder name"
 msgstr ""
 
-#: src/config/options.inc:1531
+#: src/config/options.inc:1553
 msgid ""
 "Name of the bookmarks folder used for auto saving and restoring session. The "
 "name has to be unique. Any folders with the same name will be deleted.\n"
@@ -4834,42 +4879,52 @@ msgid ""
 "This only makes sense with bookmark support."
 msgstr ""
 
-#: src/config/options.inc:1537
+#: src/config/options.inc:1559
 msgid "Fork on start"
 msgstr ""
 
-#: src/config/options.inc:1539
+#: src/config/options.inc:1561
 msgid ""
 "Fork on start to let other terminals function even if the first terminal "
 "exits."
 msgstr ""
 
-#: src/config/options.inc:1542
+#: src/config/options.inc:1564
 msgid "Homepage URI"
 msgstr ""
 
-#: src/config/options.inc:1544
+#: src/config/options.inc:1566
 msgid ""
 "The URI to load either at startup time when no URI was given on the command "
 "line or when requested by the goto-url-home action. Set to \"\" if the "
 "environment variable WWW_HOME should be used as homepage URI instead."
 msgstr ""
 
-#: src/config/options.inc:1549
+#: src/config/options.inc:1571
 #, fuzzy
 msgid "Keep session active"
 msgstr "Rozlišovať veľkosť písmen"
 
-#: src/config/options.inc:1551
+#: src/config/options.inc:1573
 msgid "Keep the session active even if the last terminal exits."
 msgstr ""
 
-#: src/config/options.inc:1554
+#: src/config/options.inc:1576
+msgid "Postpone unlink temporary files"
+msgstr ""
+
+#: src/config/options.inc:1578
+msgid ""
+"Clean temporary files (created for example while viewing images) at exit of "
+"ELinks not immediately after preview."
+msgstr ""
+
+#: src/config/options.inc:1581
 #, fuzzy
 msgid "Clipboard filename"
 msgstr "súborov"
 
-#: src/config/options.inc:1556
+#: src/config/options.inc:1583
 msgid ""
 "The filename of the clipboard. The 'copy-clipboard' action will append to "
 "it. This file can be also a named pipe. See contrib/clipboard/clip.sh for "
@@ -4877,54 +4932,54 @@ msgid ""
 "clipboard."
 msgstr ""
 
-#: src/config/options.inc:1561
+#: src/config/options.inc:1588
 #, fuzzy
 msgid "Date format"
 msgstr "Formát súboru"
 
-#: src/config/options.inc:1563
+#: src/config/options.inc:1590
 msgid "Date format to use in dialogs. See strftime(3)."
 msgstr ""
 
 #. date added
-#: src/config/options.inc:1568
+#: src/config/options.inc:1595
 msgid "Disable mouse"
 msgstr ""
 
-#: src/config/options.inc:1570
+#: src/config/options.inc:1597
 msgid "Disable mouse. Changes take effect at the next elinks restart."
 msgstr ""
 
-#: src/config/options.inc:1574
+#: src/config/options.inc:1601
 #, fuzzy
 msgid "Background character"
 msgstr "Farba pozadia"
 
-#: src/config/options.inc:1576
+#: src/config/options.inc:1603
 msgid "Integer value of background character."
 msgstr ""
 
-#: src/config/options.inc:1578
+#: src/config/options.inc:1605
 msgid "Back to exit"
 msgstr ""
 
-#: src/config/options.inc:1580
+#: src/config/options.inc:1607
 msgid "Going back from initial page exits tab or elinks."
 msgstr ""
 
-#: src/config/options.inc:1582
+#: src/config/options.inc:1609
 msgid "Double ESC"
 msgstr ""
 
-#: src/config/options.inc:1584
+#: src/config/options.inc:1611
 msgid "Back to 0.12pre5 handling of ESC key."
 msgstr ""
 
-#: src/config/options.inc:1586
+#: src/config/options.inc:1613
 msgid "Set window title"
 msgstr "Nastaviť titulok okna"
 
-#: src/config/options.inc:1588
+#: src/config/options.inc:1615
 msgid ""
 "Set the window title when running in a windowing environment in an xterm-"
 "like terminal. This way the document's title is shown on the window titlebar."
@@ -5011,7 +5066,7 @@ msgid "Goto URL History"
 msgstr "Globálna história"
 
 #. name:
-#: src/cookies/cookies.c:87 src/cookies/cookies.c:925
+#: src/cookies/cookies.c:87 src/cookies/cookies.c:927
 msgid "Cookies"
 msgstr ""
 
@@ -5076,16 +5131,16 @@ msgid ""
 "(cookies.save) is off."
 msgstr ""
 
-#: src/cookies/cookies.c:831
+#: src/cookies/cookies.c:833
 #, fuzzy
 msgid "Cannot save cookies"
 msgstr "Vymazať všetky položky"
 
-#: src/cookies/cookies.c:842
+#: src/cookies/cookies.c:844
 msgid "ELinks was started without a home directory."
 msgstr ""
 
-#: src/cookies/cookies.c:848
+#: src/cookies/cookies.c:850
 msgid "ELinks was started with the -anonymous option."
 msgstr ""
 
@@ -5232,7 +5287,7 @@ msgid "Add ~server"
 msgstr "Oddeľovač v lište s tabmi"
 
 #. accelerator_context(do_edit_dialog, src/cookies/dialogs.c:cookie_buttons, src/dialogs/download.c:download_buttons, src/globhist/dialogs.c:globhist_buttons, src/protocol/auth/dialogs.c:auth_buttons)
-#: src/cookies/dialogs.c:545 src/dialogs/download.c:510 src/dialogs/edit.c:99
+#: src/cookies/dialogs.c:545 src/dialogs/download.c:515 src/dialogs/edit.c:99
 #: src/globhist/dialogs.c:236 src/protocol/auth/dialogs.c:308
 #, fuzzy
 msgid "C~lear"
@@ -5304,85 +5359,85 @@ msgstr "Informácie o hlavičke"
 msgid "No header info."
 msgstr ""
 
-#: src/dialogs/download.c:255 src/dialogs/menu.c:601
-#: src/protocol/bittorrent/dialogs.c:234 src/session/download.c:560
+#: src/dialogs/download.c:263 src/dialogs/menu.c:602
+#: src/protocol/bittorrent/dialogs.c:234 src/session/download.c:623
 msgid "Download"
 msgstr "Sťahovanie"
 
 #. accelerator_context(display_download)
-#: src/dialogs/download.c:262
+#: src/dialogs/download.c:270
 #, fuzzy
 msgid "~Background"
 msgstr "Na pozadí"
 
 #. accelerator_context(display_download)
-#: src/dialogs/download.c:263
+#: src/dialogs/download.c:271
 #, fuzzy
 msgid "Background with ~notify"
 msgstr "Na pozadí s upozornením"
 
 #. accelerator_context(display_download, src/dialogs/download.c:download_buttons)
-#: src/dialogs/download.c:270 src/dialogs/download.c:505
+#: src/dialogs/download.c:278 src/dialogs/download.c:510
 #, fuzzy
 msgid "~Abort"
 msgstr "Ukončiť"
 
 #. accelerator_context(display_download)
-#: src/dialogs/download.c:275
+#: src/dialogs/download.c:283
 #, fuzzy
 msgid "Abort and ~delete file"
 msgstr "Prerušiť činnosť a zmazať súbor"
 
 #. cant_delete_item
-#: src/dialogs/download.c:435
+#: src/dialogs/download.c:440
 #, fuzzy, c-format
 msgid "Sorry, but download \"%s\" cannot be interrupted."
 msgstr "Smola, ale zložka \"%s\" nemôže byť vymazaná."
 
 #. cant_delete_used_item
-#: src/dialogs/download.c:437
+#: src/dialogs/download.c:442
 #, fuzzy, c-format
 msgid "Sorry, but download \"%s\" is being used by something else."
 msgstr "Smola, ale zložku \"%s\" práve používa niečo iné."
 
 #. delete_marked_items_title
-#: src/dialogs/download.c:443
+#: src/dialogs/download.c:448
 msgid "Interrupt marked downloads"
 msgstr ""
 
 #. delete_marked_items
-#: src/dialogs/download.c:445
+#: src/dialogs/download.c:450
 msgid "Interrupt marked downloads?"
 msgstr ""
 
 #. delete_item_title
-#: src/dialogs/download.c:451
+#: src/dialogs/download.c:456
 #, fuzzy
 msgid "Interrupt download"
 msgstr "Prerušené"
 
-#: src/dialogs/download.c:453
+#: src/dialogs/download.c:458
 #, c-format
 msgid "Interrupt this download?"
 msgstr ""
 
 #. clear_all_items_title
-#: src/dialogs/download.c:455
+#: src/dialogs/download.c:460
 msgid "Interrupt all downloads"
 msgstr ""
 
 #. clear_all_items_title
-#: src/dialogs/download.c:457
+#: src/dialogs/download.c:462
 #, fuzzy
 msgid "Do you really want to interrupt all downloads?"
 msgstr "Chceš skutočne ukončiť ELinks (a zrušiť všetky downloandy)?"
 
 #. This requires more work to make locking work and query the user
-#: src/dialogs/download.c:508
+#: src/dialogs/download.c:513
 msgid "Abort and delete file"
 msgstr "Prerušiť činnosť a zmazať súbor"
 
-#: src/dialogs/download.c:515
+#: src/dialogs/download.c:520
 msgid "Download manager"
 msgstr ""
 
@@ -5391,19 +5446,19 @@ msgstr ""
 msgid "Exmode"
 msgstr ""
 
-#: src/dialogs/info.cpp:46
+#: src/dialogs/info.c:49
 msgid "About"
 msgstr "O programe"
 
-#: src/dialogs/info.cpp:136
+#: src/dialogs/info.c:139
 msgid "Keys"
 msgstr "Klávesy"
 
-#: src/dialogs/info.cpp:147
+#: src/dialogs/info.c:150
 msgid "Copying"
 msgstr "Kopírovanie"
 
-#: src/dialogs/info.cpp:148
+#: src/dialogs/info.c:151
 #, fuzzy, c-format
 msgid ""
 "ELinks %s\n"
@@ -5424,93 +5479,93 @@ msgstr ""
 "(Free Software Foundation); a to buď verzie 2 alebo (podľa vašej voľby) "
 "hociktorej neskoršej verzie."
 
-#: src/dialogs/info.cpp:174 src/dialogs/info.cpp:288
+#: src/dialogs/info.c:177 src/dialogs/info.c:319
 msgid "Resources"
 msgstr "Zdroje"
 
-#: src/dialogs/info.cpp:178
+#: src/dialogs/info.c:181
 #, fuzzy, c-format
 msgid "%ld handle"
 msgid_plural "%ld handles"
 msgstr[0] "handle"
 msgstr[1] "handle"
 
-#: src/dialogs/info.cpp:182
+#: src/dialogs/info.c:185
 #, fuzzy, c-format
 msgid "%ld timer"
 msgid_plural "%ld timers"
 msgstr[0] "časovačov"
 msgstr[1] "časovačov"
 
-#: src/dialogs/info.cpp:189
+#: src/dialogs/info.c:192
 #, fuzzy, c-format
 msgid "%ld connection"
 msgid_plural "%ld connections"
 msgstr[0] "spojenie"
 msgstr[1] "spojenie"
 
-#: src/dialogs/info.cpp:193
+#: src/dialogs/info.c:196
 #, fuzzy, c-format
 msgid "%ld connecting"
 msgid_plural "%ld connecting"
 msgstr[0] "pripájam"
 msgstr[1] "pripájam"
 
-#: src/dialogs/info.cpp:197
+#: src/dialogs/info.c:200
 #, fuzzy, c-format
 msgid "%ld transferring"
 msgid_plural "%ld transferring"
 msgstr[0] "prenášam"
 msgstr[1] "prenášam"
 
-#: src/dialogs/info.cpp:201
+#: src/dialogs/info.c:204
 #, fuzzy, c-format
 msgid "%ld keepalive"
 msgid_plural "%ld keepalive"
 msgstr[0] "živých"
 msgstr[1] "živých"
 
-#: src/dialogs/info.cpp:209 src/dialogs/info.cpp:270
+#: src/dialogs/info.c:212 src/dialogs/info.c:301
 #, fuzzy, c-format
 msgid "%ld byte"
 msgid_plural "%ld bytes"
 msgstr[0] "časovačov"
 msgstr[1] "časovačov"
 
-#: src/dialogs/info.cpp:213
+#: src/dialogs/info.c:216
 #, fuzzy, c-format
 msgid "%ld file"
 msgid_plural "%ld files"
 msgstr[0] "súborov"
 msgstr[1] "súborov"
 
-#: src/dialogs/info.cpp:217 src/dialogs/info.cpp:232
+#: src/dialogs/info.c:220 src/dialogs/info.c:235
 #, c-format
 msgid "%ld in use"
 msgid_plural "%ld in use"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/dialogs/info.cpp:221
+#: src/dialogs/info.c:224
 #, fuzzy, c-format
 msgid "%ld loading"
 msgid_plural "%ld loading"
 msgstr[0] "Sťahovanie"
 msgstr[1] "Sťahovanie"
 
-#: src/dialogs/info.cpp:224
+#: src/dialogs/info.c:227
 #, fuzzy
 msgid "Document cache"
 msgstr "Dokument"
 
-#: src/dialogs/info.cpp:228
+#: src/dialogs/info.c:231
 #, fuzzy, c-format
 msgid "%ld formatted"
 msgid_plural "%ld formatted"
 msgstr[0] "Formát súboru"
 msgstr[1] "Formát súboru"
 
-#: src/dialogs/info.cpp:236
+#: src/dialogs/info.c:239
 #, fuzzy, c-format
 msgid "%ld refreshing"
 msgid_plural "%ld refreshing"
@@ -5518,53 +5573,57 @@ msgstr[0] "prenášam"
 msgstr[1] "prenášam"
 
 #. name:
-#: src/dialogs/info.cpp:240 src/ecmascript/ecmascript.cpp:65
-#: src/ecmascript/ecmascript.cpp:966
+#: src/dialogs/info.c:243 src/ecmascript/ecmascript.cpp:67
+#: src/ecmascript/ecmascript.cpp:707
 msgid "ECMAScript"
 msgstr ""
 
-#: src/dialogs/info.cpp:244
+#: src/dialogs/info.c:247
 #, c-format
 msgid "%ld interpreter"
 msgid_plural "%ld interpreters"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/dialogs/info.cpp:248
+#: src/dialogs/info.c:251
 #, fuzzy
 msgid "Interlinking"
 msgstr "Zadaj číslo linku"
 
-#: src/dialogs/info.cpp:251
+#: src/dialogs/info.c:254
 #, fuzzy
 msgid "master terminal"
 msgstr "Zmeniť veľkosť terminálu"
 
-#: src/dialogs/info.cpp:253
+#: src/dialogs/info.c:256
 #, fuzzy
 msgid "slave terminal"
 msgstr "Zmeniť veľkosť terminálu"
 
-#: src/dialogs/info.cpp:257
+#: src/dialogs/info.c:260
 #, fuzzy, c-format
 msgid "%ld terminal"
 msgid_plural "%ld terminals"
 msgstr[0] "~BeOS terminál"
 msgstr[1] "~BeOS terminál"
 
-#: src/dialogs/info.cpp:261
+#: src/dialogs/info.c:264
 #, fuzzy, c-format
 msgid "%ld session"
 msgid_plural "%ld sessions"
 msgstr[0] "Uložené sedenie"
 msgstr[1] "Uložené sedenie"
 
-#: src/dialogs/info.cpp:266
+#: src/dialogs/info.c:267
+msgid "Number of temporary files"
+msgstr ""
+
+#: src/dialogs/info.c:297
 #, fuzzy
 msgid "Memory allocated"
 msgstr "Pamäťová cache"
 
-#: src/dialogs/info.cpp:274
+#: src/dialogs/info.c:305
 #, c-format
 msgid "%ld byte overhead"
 msgid_plural "%ld bytes overhead"
@@ -5575,7 +5634,7 @@ msgstr[1] ""
 msgid "Save URL"
 msgstr "Ulož URL"
 
-#: src/dialogs/menu.c:97 src/dialogs/menu.c:543
+#: src/dialogs/menu.c:97 src/dialogs/menu.c:544
 msgid "Enter URL"
 msgstr "Zadaj URL"
 
@@ -5611,7 +5670,7 @@ msgid "Bookm~ark document"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:view_menu, tab_menu)
-#: src/dialogs/menu.c:250 src/dialogs/menu.c:419
+#: src/dialogs/menu.c:250 src/dialogs/menu.c:420
 #, fuzzy
 msgid "Toggle ~HTML/plain"
 msgstr "Prepnúť htm~l/zdroják"
@@ -5622,7 +5681,7 @@ msgid "~Reload"
 msgstr "Nahrať znovu"
 
 #. accelerator_context(src/dialogs/menu.c:view_menu, tab_menu)
-#: src/dialogs/menu.c:254 src/dialogs/menu.c:429
+#: src/dialogs/menu.c:254 src/dialogs/menu.c:430
 msgid "Frame at ~full-screen"
 msgstr "~Rám cez celú obrazovku"
 
@@ -5632,17 +5691,17 @@ msgid "~Pass frame URI to external command"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:view_menu, tab_menu)
-#: src/dialogs/menu.c:264 src/dialogs/menu.c:431
+#: src/dialogs/menu.c:264 src/dialogs/menu.c:432
 msgid "Nex~t tab"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:view_menu, tab_menu)
-#: src/dialogs/menu.c:265 src/dialogs/menu.c:432
+#: src/dialogs/menu.c:265 src/dialogs/menu.c:433
 msgid "Pre~v tab"
 msgstr "Predchádzajúci tab"
 
 #. accelerator_context(src/dialogs/menu.c:view_menu, tab_menu)
-#: src/dialogs/menu.c:268 src/dialogs/menu.c:433
+#: src/dialogs/menu.c:268 src/dialogs/menu.c:434
 msgid "~Close tab"
 msgstr "Zavrieť tab"
 
@@ -5725,271 +5784,276 @@ msgstr "~Vyprázdni všetky cache"
 
 #. accelerator_context(src/dialogs/menu.c:file_menu)
 #: src/dialogs/menu.c:336
+msgid "Re~move temporary files"
+msgstr ""
+
+#. accelerator_context(src/dialogs/menu.c:file_menu)
+#: src/dialogs/menu.c:337
 #, fuzzy
 msgid "Resource ~info"
 msgstr "~Informácie o zdrojoch"
 
 #. accelerator_context(src/dialogs/menu.c:file_menu)
-#: src/dialogs/menu.c:343
+#: src/dialogs/menu.c:344
 msgid "E~xit"
 msgstr "Koni~ec"
 
 #. accelerator_context(src/dialogs/menu.c:file_menu)
-#: src/dialogs/menu.c:370
+#: src/dialogs/menu.c:371
 #, fuzzy
 msgid "Open ~new window"
 msgstr "Otvoriť nové okno"
 
 #. accelerator_context(src/dialogs/menu.c:file_menu)
-#: src/dialogs/menu.c:389
+#: src/dialogs/menu.c:390
 msgid "~OS shell"
 msgstr "~Odskoč do shell-u"
 
 #. accelerator_context(src/dialogs/menu.c:file_menu)
-#: src/dialogs/menu.c:396
+#: src/dialogs/menu.c:397
 msgid "Resize t~erminal"
 msgstr "Zmeniť veľkosť ~terminálu"
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:414
+#: src/dialogs/menu.c:415
 msgid "Search ~backward"
 msgstr "Hľadaj do~zadu"
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:415
+#: src/dialogs/menu.c:416
 msgid "Find ~next"
 msgstr "~Nájdi ďalší"
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:416
+#: src/dialogs/menu.c:417
 msgid "Find ~previous"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:417
+#: src/dialogs/menu.c:418
 #, fuzzy
 msgid "T~ypeahead search"
 msgstr "Interaktívne vyhľadávanie"
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:420
+#: src/dialogs/menu.c:421
 msgid "Toggle i~mages"
 msgstr "Prepnúť obrázky"
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:421
+#: src/dialogs/menu.c:422
 msgid "Toggle ~link numbering"
 msgstr "Prepnúť číslovanie odkazov"
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:422
+#: src/dialogs/menu.c:423
 msgid "Toggle ~document colors"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:423
+#: src/dialogs/menu.c:424
 msgid "~Wrap text on/off"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:425
+#: src/dialogs/menu.c:426
 msgid "Document ~info"
 msgstr "~Informácie o dokumente"
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:426
+#: src/dialogs/menu.c:427
 msgid "H~eader info"
 msgstr "Informácie o hlavičke"
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:427
+#: src/dialogs/menu.c:428
 #, fuzzy
 msgid "Rel~oad document"
 msgstr "Žiadny dokument"
 
 #. accelerator_context(src/dialogs/menu.c:view_menu)
-#: src/dialogs/menu.c:428
+#: src/dialogs/menu.c:429
 #, fuzzy
 msgid "~Rerender document"
 msgstr "Uložiť formátovaný dokument"
 
 #. accelerator_context(src/dialogs/menu.c:help_menu)
-#: src/dialogs/menu.c:440
+#: src/dialogs/menu.c:441
 msgid "~ELinks homepage"
 msgstr "Domovská stránka ~ELinks"
 
 #. accelerator_context(src/dialogs/menu.c:help_menu)
-#: src/dialogs/menu.c:441
+#: src/dialogs/menu.c:442
 msgid "~Documentation"
 msgstr "~Dokumentácia"
 
 #. accelerator_context(src/dialogs/menu.c:help_menu)
-#: src/dialogs/menu.c:442
+#: src/dialogs/menu.c:443
 msgid "~Keys"
 msgstr "~Klávesy"
 
 #. accelerator_context(src/dialogs/menu.c:help_menu)
-#: src/dialogs/menu.c:444
+#: src/dialogs/menu.c:445
 #, fuzzy
 msgid "LED ~indicators"
 msgstr "LED indikátory"
 
 #. accelerator_context(src/dialogs/menu.c:help_menu)
-#: src/dialogs/menu.c:447
+#: src/dialogs/menu.c:448
 msgid "~Bugs information"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:help_menu)
-#: src/dialogs/menu.c:449
+#: src/dialogs/menu.c:450
 #, fuzzy
 msgid "ELinks ~GITWeb"
 msgstr "~ELinks CvsWeb"
 
 #. accelerator_context(src/dialogs/menu.c:help_menu)
-#: src/dialogs/menu.c:452
+#: src/dialogs/menu.c:453
 msgid "~Copying"
 msgstr "Ko~pírovanie"
 
 #. accelerator_context(src/dialogs/menu.c:help_menu)
-#: src/dialogs/menu.c:453
+#: src/dialogs/menu.c:454
 msgid "Autho~rs"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:help_menu)
-#: src/dialogs/menu.c:454
+#: src/dialogs/menu.c:455
 msgid "~About"
 msgstr "~O programe"
 
 #. accelerator_context(src/dialogs/menu.c:ext_menu)
-#: src/dialogs/menu.c:462
+#: src/dialogs/menu.c:463
 msgid "~Modify"
 msgstr "Z~meniť"
 
 #. accelerator_context(src/dialogs/menu.c:setup_menu)
-#: src/dialogs/menu.c:470 src/dialogs/menu.c:484
+#: src/dialogs/menu.c:471 src/dialogs/menu.c:485
 msgid "~Language"
 msgstr "~Jazyk"
 
 #. accelerator_context(src/dialogs/menu.c:setup_menu)
-#: src/dialogs/menu.c:472 src/dialogs/menu.c:485
+#: src/dialogs/menu.c:473 src/dialogs/menu.c:486
 msgid "C~haracter set"
 msgstr "~Znaková sada"
 
 #. accelerator_context(src/dialogs/menu.c:setup_menu)
-#: src/dialogs/menu.c:473 src/dialogs/menu.c:486
+#: src/dialogs/menu.c:474 src/dialogs/menu.c:487
 msgid "~Terminal options"
 msgstr "Nastavenie ~terminálu"
 
 #. accelerator_context(src/dialogs/menu.c:setup_menu)
-#: src/dialogs/menu.c:474
+#: src/dialogs/menu.c:475
 msgid "File ~extensions"
 msgstr "~Prípony súborov"
 
 #. accelerator_context(src/dialogs/menu.c:setup_menu)
-#: src/dialogs/menu.c:476
+#: src/dialogs/menu.c:477
 msgid "~Options manager"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:setup_menu)
-#: src/dialogs/menu.c:477
+#: src/dialogs/menu.c:478
 msgid "~Keybinding manager"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:setup_menu)
-#: src/dialogs/menu.c:478
+#: src/dialogs/menu.c:479
 msgid "~Save options"
 msgstr "Ulož na~stavenia"
 
 #. accelerator_context(src/dialogs/menu.c:tools_menu)
-#: src/dialogs/menu.c:493
+#: src/dialogs/menu.c:494
 #, fuzzy
 msgid "Global ~history"
 msgstr "Globálna história"
 
 #. accelerator_context(src/dialogs/menu.c:tools_menu)
-#: src/dialogs/menu.c:496
+#: src/dialogs/menu.c:497
 msgid "~Bookmarks"
 msgstr "Záložky"
 
 #. accelerator_context(src/dialogs/menu.c:tools_menu)
-#: src/dialogs/menu.c:498
+#: src/dialogs/menu.c:499
 msgid "~Cache"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:tools_menu)
-#: src/dialogs/menu.c:499
+#: src/dialogs/menu.c:500
 msgid "~Downloads"
 msgstr "Sť~ahovanie"
 
 #. accelerator_context(src/dialogs/menu.c:tools_menu)
-#: src/dialogs/menu.c:501
+#: src/dialogs/menu.c:502
 msgid "Coo~kies"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:tools_menu)
-#: src/dialogs/menu.c:504
+#: src/dialogs/menu.c:505
 msgid "~Form history"
 msgstr "História formulárov"
 
 #. accelerator_context(src/dialogs/menu.c:tools_menu)
-#: src/dialogs/menu.c:506
+#: src/dialogs/menu.c:507
 #, fuzzy
 msgid "~Authentication"
 msgstr "HTTP Autentizácia"
 
 #. accelerator_context(src/dialogs/menu.c:main_menu)
-#: src/dialogs/menu.c:523
+#: src/dialogs/menu.c:524
 msgid "~File"
 msgstr "~Súbor"
 
 #. accelerator_context(src/dialogs/menu.c:main_menu)
-#: src/dialogs/menu.c:524
+#: src/dialogs/menu.c:525
 msgid "~View"
 msgstr "~Zobrazenie"
 
 #. accelerator_context(src/dialogs/menu.c:main_menu)
-#: src/dialogs/menu.c:525
+#: src/dialogs/menu.c:526
 msgid "~Link"
 msgstr "~Link"
 
 #. accelerator_context(src/dialogs/menu.c:main_menu)
-#: src/dialogs/menu.c:526
+#: src/dialogs/menu.c:527
 msgid "~Tools"
 msgstr ""
 
 #. accelerator_context(src/dialogs/menu.c:main_menu)
-#: src/dialogs/menu.c:527
+#: src/dialogs/menu.c:528
 msgid "~Setup"
 msgstr "~Nastavenie"
 
 #. accelerator_context(src/dialogs/menu.c:main_menu)
-#: src/dialogs/menu.c:528
+#: src/dialogs/menu.c:529
 msgid "~Help"
 msgstr "~Pomoc"
 
-#: src/dialogs/menu.c:543
+#: src/dialogs/menu.c:544
 msgid "Go to URL"
 msgstr "Choď na URL"
 
-#: src/dialogs/menu.c:601
+#: src/dialogs/menu.c:602
 msgid "Save to file"
 msgstr "Ulož do súboru"
 
-#: src/dialogs/menu.c:962
+#: src/dialogs/menu.c:963
 msgid "Empty directory"
 msgstr ""
 
-#: src/dialogs/menu.c:1006
+#: src/dialogs/menu.c:1007
 msgid "Directories:"
 msgstr ""
 
-#: src/dialogs/menu.c:1019
+#: src/dialogs/menu.c:1020
 #, fuzzy
 msgid "Files:"
 msgstr "~Súbor"
 
 #. 2 '\n' + 1 '\0'
-#: src/dialogs/options.c:180
+#: src/dialogs/options.c:187
 #, c-format
 msgid ""
 "The environmental variable TERM is set to '%s'.\n"
@@ -6000,76 +6064,76 @@ msgid ""
 "each terminal in which you run ELinks."
 msgstr ""
 
-#: src/dialogs/options.c:205
+#: src/dialogs/options.c:212
 msgid "Terminal options"
 msgstr "Nastavenie terminálu"
 
-#: src/dialogs/options.c:214
+#: src/dialogs/options.c:221
 msgid "Frame handling:"
 msgstr ""
 
-#: src/dialogs/options.c:215
+#: src/dialogs/options.c:222
 msgid "No frames"
 msgstr "Vypnúť rámčeky"
 
-#: src/dialogs/options.c:216
+#: src/dialogs/options.c:223
 msgid "VT 100 frames"
 msgstr "Rámčeky VT100"
 
-#: src/dialogs/options.c:217
+#: src/dialogs/options.c:224
 msgid "Linux or OS/2 frames"
 msgstr "Rámčeky typu Linux alebo OS/2"
 
-#: src/dialogs/options.c:218
+#: src/dialogs/options.c:225
 #, fuzzy
 msgid "Linux frames with fbterm colors"
 msgstr "Farby rámčeka menu."
 
-#: src/dialogs/options.c:219
+#: src/dialogs/options.c:226
 #, fuzzy
 msgid "FreeBSD frames"
 msgstr "Vypnúť rámčeky"
 
-#: src/dialogs/options.c:220
+#: src/dialogs/options.c:227
 msgid "KOI8-R frames"
 msgstr "Rámčeky KOI8-R"
 
-#: src/dialogs/options.c:222
+#: src/dialogs/options.c:229
 msgid "Color mode:"
 msgstr "Farebný mód:"
 
-#: src/dialogs/options.c:223
+#: src/dialogs/options.c:230
 msgid "No colors (mono)"
 msgstr ""
 
-#: src/dialogs/options.c:224
+#: src/dialogs/options.c:231
 msgid "16 colors"
 msgstr "16 farieb"
 
-#: src/dialogs/options.c:226
+#: src/dialogs/options.c:233
 #, fuzzy
 msgid "88 colors"
 msgstr "16 farieb"
 
-#: src/dialogs/options.c:229
+#: src/dialogs/options.c:236
 msgid "256 colors"
 msgstr "256 farieb"
 
-#: src/dialogs/options.c:232
+#: src/dialogs/options.c:239
 #, fuzzy
 msgid "true color"
 msgstr "Farba textu"
 
-#: src/dialogs/options.c:320
+#: src/dialogs/options.c:330
 msgid "Resize terminal"
 msgstr "Zmeniť veľkosť terminálu"
 
-#: src/dialogs/options.c:323
+#: src/dialogs/options.c:333
 #, fuzzy
 msgid "Width="
 msgstr "Šírka"
 
-#: src/dialogs/options.c:324
+#: src/dialogs/options.c:334
 msgid "Height="
 msgstr ""
 
@@ -6162,7 +6226,7 @@ msgid "No document"
 msgstr "Žiadny dokument"
 
 #. name:
-#: src/document/css/css.c:30 src/document/css/css.c:240
+#: src/document/css/css.c:30 src/document/css/css.c:245
 msgid "Cascading Style Sheets"
 msgstr ""
 
@@ -6181,34 +6245,44 @@ msgid "Enable adding of CSS style info to documents."
 msgstr ""
 
 #: src/document/css/css.c:39
+msgid "Prefer libcss"
+msgstr ""
+
+#: src/document/css/css.c:41
+msgid ""
+"Enable experimental code using the libcss library instead of builtin "
+"implementation."
+msgstr ""
+
+#: src/document/css/css.c:43
 #, fuzzy
 msgid "Ignore \"display: none\""
 msgstr "uložiť nebo zobraziť?"
 
-#: src/document/css/css.c:41
+#: src/document/css/css.c:45
 msgid ""
 "When enabled, elements are rendered, even when their display property has "
 "the value \"none\". Because ELinks's CSS support is still very incomplete, "
 "this setting can improve the way that some documents are rendered."
 msgstr ""
 
-#: src/document/css/css.c:46
+#: src/document/css/css.c:50
 msgid "Import external style sheets"
 msgstr ""
 
-#: src/document/css/css.c:48
+#: src/document/css/css.c:52
 msgid ""
 "When enabled any external style sheets that are imported from either CSS "
 "itself using the @import keyword or from the HTML using <link> tags in the "
 "document header will also be downloaded."
 msgstr ""
 
-#: src/document/css/css.c:53
+#: src/document/css/css.c:57
 #, fuzzy
 msgid "Default style sheet"
 msgstr "Štandardné nastavenie farieb"
 
-#: src/document/css/css.c:55
+#: src/document/css/css.c:59
 msgid ""
 "The path to the file containing the default user defined Cascading Style "
 "Sheet. It can be used to control the basic layout of HTML documents. The "
@@ -6217,11 +6291,11 @@ msgid ""
 "Leave as \"\" to use built-in document styling."
 msgstr ""
 
-#: src/document/css/css.c:62
+#: src/document/css/css.c:66
 msgid "Media types"
 msgstr ""
 
-#: src/document/css/css.c:64
+#: src/document/css/css.c:68
 msgid ""
 "CSS media types that ELinks claims to support, separated with commas. The "
 "\"all\" type is implied. Currently, only ASCII characters work reliably "
@@ -6229,81 +6303,81 @@ msgid ""
 "html"
 msgstr ""
 
-#: src/ecmascript/ecmascript.cpp:67
+#: src/ecmascript/ecmascript-c.cpp:53
+msgid "Ecmascript enabled"
+msgstr ""
+
+#: src/ecmascript/ecmascript-c.cpp:55
+msgid "Ecmascript disabled"
+msgstr ""
+
+#: src/ecmascript/ecmascript.cpp:69
 #, fuzzy
 msgid "ECMAScript options."
 msgstr "Nastavenie terminálu."
 
-#: src/ecmascript/ecmascript.cpp:71
+#: src/ecmascript/ecmascript.cpp:73
 msgid "Whether to run those scripts inside of documents."
 msgstr ""
 
-#: src/ecmascript/ecmascript.cpp:73
+#: src/ecmascript/ecmascript.cpp:75
 #, fuzzy
 msgid "Console log"
 msgstr "Lua konzola"
 
-#: src/ecmascript/ecmascript.cpp:75
-msgid "When enabled logs will be appended to ~/.elinks/console.log."
-msgstr ""
-
 #: src/ecmascript/ecmascript.cpp:77
-msgid "Script error reporting"
+msgid "When enabled logs will be appended to ~/.config/elinks/console.log."
 msgstr ""
 
 #: src/ecmascript/ecmascript.cpp:79
-msgid "Open a message box when a script reports an error."
+msgid "Script error reporting"
 msgstr ""
 
 #: src/ecmascript/ecmascript.cpp:81
-msgid "Ignore <noscript> content"
+msgid "Open a message box when a script reports an error."
 msgstr ""
 
 #: src/ecmascript/ecmascript.cpp:83
+msgid "Ignore <noscript> content"
+msgstr ""
+
+#: src/ecmascript/ecmascript.cpp:85
 msgid ""
 "Whether to ignore content enclosed by the <noscript> tag when ECMAScript is "
 "enabled."
 msgstr ""
 
-#: src/ecmascript/ecmascript.cpp:86
+#: src/ecmascript/ecmascript.cpp:88
 #, fuzzy
 msgid "Maximum execution time"
 msgstr "Maximum spojení"
 
-#: src/ecmascript/ecmascript.cpp:88
+#: src/ecmascript/ecmascript.cpp:90
 msgid "Maximum execution time in seconds for a script."
 msgstr ""
 
-#: src/ecmascript/ecmascript.cpp:90
+#: src/ecmascript/ecmascript.cpp:92
 msgid "Pop-up window blocking"
 msgstr ""
 
-#: src/ecmascript/ecmascript.cpp:92
+#: src/ecmascript/ecmascript.cpp:94
 msgid "Whether to disallow scripts to open new windows or tabs."
 msgstr ""
 
-#: src/ecmascript/ecmascript.cpp:94
+#: src/ecmascript/ecmascript.cpp:96
 #, fuzzy
 msgid "Allow XHR requests to local files"
 msgstr "Povoliť čítanie špeciálnych súborov"
 
-#: src/ecmascript/ecmascript.cpp:96
+#: src/ecmascript/ecmascript.cpp:98
 msgid "Whether to allow XHR requests to local files."
 msgstr ""
 
-#: src/ecmascript/ecmascript.cpp:213
-msgid "Ecmascript enabled"
-msgstr ""
-
-#: src/ecmascript/ecmascript.cpp:215
-msgid "Ecmascript disabled"
-msgstr ""
-
-#: src/ecmascript/ecmascript.cpp:630
+#: src/ecmascript/ecmascript.cpp:402
 msgid "JavaScript Emergency"
 msgstr ""
 
-#: src/ecmascript/ecmascript.cpp:632
+#: src/ecmascript/ecmascript.cpp:404
 #, c-format
 msgid ""
 "A script embedded in the current document was running\n"
@@ -6312,33 +6386,33 @@ msgid ""
 "ELinks, so the script execution was interrupted."
 msgstr ""
 
-#: src/ecmascript/mujs.cpp:204 src/ecmascript/quickjs.cpp:218
-#: src/ecmascript/spidermonkey.cpp:115
+#: src/ecmascript/mujs.cpp:259 src/ecmascript/quickjs.cpp:288
+#: src/ecmascript/spidermonkey.cpp:113
 msgid "A script embedded in the current document raised the following:\n"
 msgstr ""
 
-#: src/ecmascript/mujs.cpp:207 src/ecmascript/quickjs.cpp:221
-#: src/ecmascript/spidermonkey.cpp:119
+#: src/ecmascript/mujs.cpp:262 src/ecmascript/quickjs.cpp:291
+#: src/ecmascript/spidermonkey.cpp:117
 msgid "JavaScript Error"
 msgstr ""
 
 #. name:
-#: src/ecmascript/mujs.cpp:390
+#: src/ecmascript/mujs.cpp:445
 msgid "mujs"
 msgstr ""
 
-#: src/ecmascript/mujs/window.cpp:180 src/ecmascript/quickjs/window.cpp:411
-#: src/ecmascript/spidermonkey/window.cpp:195
+#: src/ecmascript/mujs/window.c:272 src/ecmascript/quickjs/window.c:553
+#: src/ecmascript/spidermonkey/window.cpp:426
 msgid "JavaScript Alert"
 msgstr ""
 
 #. name:
-#: src/ecmascript/quickjs.cpp:339
+#: src/ecmascript/quickjs.cpp:416
 msgid "QuickJS"
 msgstr ""
 
 #. name:
-#: src/ecmascript/spidermonkey.cpp:517
+#: src/ecmascript/spidermonkey.cpp:501
 msgid "SpiderMonkey"
 msgstr ""
 
@@ -6441,12 +6515,12 @@ msgid ""
 "disables the dialog, already saved login forms are unaffected."
 msgstr ""
 
-#: src/formhist/formhist.c:426
+#: src/formhist/formhist.c:428
 #, fuzzy
 msgid "Form history"
 msgstr "História formulárov"
 
-#: src/formhist/formhist.c:427
+#: src/formhist/formhist.c:429
 msgid ""
 "Should this login be remembered?\n"
 "\n"
@@ -6457,12 +6531,12 @@ msgid ""
 msgstr ""
 
 #. accelerator_context(memorize_form)
-#: src/formhist/formhist.c:434
+#: src/formhist/formhist.c:436
 msgid "Ne~ver for this site"
 msgstr ""
 
 #. name:
-#: src/formhist/formhist.c:453
+#: src/formhist/formhist.c:455
 #, fuzzy
 msgid "Form History"
 msgstr "História formulárov"
@@ -6560,7 +6634,7 @@ msgid ""
 msgstr ""
 
 #. name:
-#: src/globhist/globhist.c:449
+#: src/globhist/globhist.c:451
 msgid "Global History"
 msgstr "Globálna história"
 
@@ -6701,7 +6775,7 @@ msgstr "turečtina"
 msgid "Ukrainian"
 msgstr "ukrajinčina"
 
-#: src/main/interlink.c:330 src/main/select.c:585
+#: src/main/interlink.c:332 src/main/select.c:1271
 #, c-format
 msgid "The call to %s failed: %d (%s)"
 msgstr ""
@@ -6738,7 +6812,7 @@ msgid "Unable to attach_terminal()."
 msgstr ""
 
 #. Infinite loop prevention.
-#: src/main/select.c:588
+#: src/main/select.c:1274
 #, c-format
 msgid "%d select() failures."
 msgstr ""
@@ -7127,7 +7201,7 @@ msgid "DGI mime"
 msgstr ""
 
 #. name:
-#: src/mime/backend/mailcap.c:89 src/mime/backend/mailcap.c:775
+#: src/mime/backend/mailcap.c:89 src/mime/backend/mailcap.c:785
 #: src/protocol/file/mailcap.c:43
 msgid "Mailcap"
 msgstr ""
@@ -7174,7 +7248,7 @@ msgid ""
 "the handler."
 msgstr ""
 
-#: src/mime/backend/mailcap.c:357
+#: src/mime/backend/mailcap.c:367
 #, c-format
 msgid "Badly formatted mailcap entry for type %s in \"%s\" line %d"
 msgstr ""
@@ -7242,54 +7316,54 @@ msgid ""
 "properly from known information about the document)."
 msgstr ""
 
-#: src/network/ssl/ssl.c:176 src/network/ssl/ssl.c:316
+#: src/network/ssl/ssl.c:185 src/network/ssl/ssl.c:325
 msgid "Verify certificates"
 msgstr ""
 
-#: src/network/ssl/ssl.c:178
+#: src/network/ssl/ssl.c:187
 msgid ""
 "Verify the peer's SSL certificate. Note that this needs extensive "
 "configuration of OpenSSL by the user."
 msgstr ""
 
-#: src/network/ssl/ssl.c:181 src/network/ssl/ssl.c:321
+#: src/network/ssl/ssl.c:190 src/network/ssl/ssl.c:330
 msgid "Verify certificates for gemini protocol"
 msgstr ""
 
-#: src/network/ssl/ssl.c:183
+#: src/network/ssl/ssl.c:192
 msgid ""
 "Verify the peer's SSL certificate for gemini protocol. Note that this needs "
 "extensive configuration of OpenSSL by the user."
 msgstr ""
 
-#: src/network/ssl/ssl.c:186 src/network/ssl/ssl.c:326
+#: src/network/ssl/ssl.c:195 src/network/ssl/ssl.c:335
 msgid "Use HTTPS by default"
 msgstr ""
 
-#: src/network/ssl/ssl.c:188 src/network/ssl/ssl.c:328
+#: src/network/ssl/ssl.c:197 src/network/ssl/ssl.c:337
 msgid "Use HTTPS when a URL scheme is not provided."
 msgstr ""
 
-#: src/network/ssl/ssl.c:190 src/network/ssl/ssl.c:353
+#: src/network/ssl/ssl.c:199 src/network/ssl/ssl.c:362
 msgid "Client Certificates"
 msgstr ""
 
-#: src/network/ssl/ssl.c:192 src/network/ssl/ssl.c:355
+#: src/network/ssl/ssl.c:201 src/network/ssl/ssl.c:364
 msgid "X509 client certificate options."
 msgstr "Nastavenia klientskeho X509 certifikátu."
 
-#: src/network/ssl/ssl.c:196 src/network/ssl/ssl.c:359
+#: src/network/ssl/ssl.c:205 src/network/ssl/ssl.c:368
 msgid ""
 "Enable or not the sending of X509 client certificates to servers which "
 "request them."
 msgstr ""
 
-#: src/network/ssl/ssl.c:200
+#: src/network/ssl/ssl.c:209
 #, fuzzy
 msgid "Certificate nickname"
 msgstr "Súbor s certifikátom"
 
-#: src/network/ssl/ssl.c:202
+#: src/network/ssl/ssl.c:211
 msgid ""
 "The nickname of the client certificate stored in NSS database. If this value "
 "is unset, the nickname from the X509_CLIENT_CERT variable is used instead. "
@@ -7302,24 +7376,24 @@ msgid ""
 "The database can be also shared with Mozilla browsers."
 msgstr ""
 
-#: src/network/ssl/ssl.c:214 src/network/ssl/ssl.c:362
+#: src/network/ssl/ssl.c:223 src/network/ssl/ssl.c:371
 msgid "Certificate File"
 msgstr "Súbor s certifikátom"
 
-#: src/network/ssl/ssl.c:216 src/network/ssl/ssl.c:364
+#: src/network/ssl/ssl.c:225 src/network/ssl/ssl.c:373
 msgid ""
 "The location of a file containing the client certificate and unencrypted "
 "private key in PEM format. If unset, the file pointed to by the "
 "X509_CLIENT_CERT variable is used instead."
 msgstr ""
 
-#: src/network/ssl/ssl.c:318
+#: src/network/ssl/ssl.c:327
 msgid ""
 "Verify the peer's SSL certificate.  If you enable this, set also \"Trusted "
 "CA file\"."
 msgstr ""
 
-#: src/network/ssl/ssl.c:323
+#: src/network/ssl/ssl.c:332
 msgid ""
 "Verify the peer's SSL certificate for gemini protocol.  If you enable this, "
 "set also \"Trusted CA file\"."
@@ -7332,13 +7406,13 @@ msgstr ""
 #. * change the file name via the option manager.  Distributors
 #. * of binary packages should of course change the default to
 #. * suit their systems.
-#. * TODO: If the file name is relative, look in elinks_home?
-#: src/network/ssl/ssl.c:338
+#. * TODO: If the file name is relative, look in xdg_config_home?
+#: src/network/ssl/ssl.c:347
 #, fuzzy
 msgid "Trusted CA file"
 msgstr "Prenášam"
 
-#: src/network/ssl/ssl.c:345
+#: src/network/ssl/ssl.c:354
 msgid ""
 "The location of a file containing certificates of trusted certification "
 "authorities in PEM format. ELinks then trusts certificates issued by these "
@@ -7349,134 +7423,134 @@ msgid ""
 msgstr ""
 
 #. name:
-#: src/network/ssl/ssl.c:385 src/network/ssl/ssl.c:402
+#: src/network/ssl/ssl.c:394 src/network/ssl/ssl.c:411
 msgid "SSL"
 msgstr "SSL"
 
-#: src/network/ssl/ssl.c:387
+#: src/network/ssl/ssl.c:396
 msgid "SSL options."
 msgstr "Nastavenie SSL."
 
-#: src/network/state.c:27
+#: src/network/state.c:31
 msgid "Waiting in queue"
 msgstr "Čaká vo fronte"
 
-#: src/network/state.c:28
+#: src/network/state.c:32
 msgid "Looking up host"
 msgstr "Hľadám server"
 
-#: src/network/state.c:29
+#: src/network/state.c:33
 msgid "Making connection"
 msgstr "Nadväzujem spojenie"
 
-#: src/network/state.c:30
+#: src/network/state.c:34
 msgid "SSL negotiation"
 msgstr "SSL vyjednávanie"
 
-#: src/network/state.c:31
+#: src/network/state.c:35
 msgid "Request sent"
 msgstr "Posielam žiadosť"
 
-#: src/network/state.c:32
+#: src/network/state.c:36
 msgid "Logging in"
 msgstr "Prihlasujem sa"
 
-#: src/network/state.c:33
+#: src/network/state.c:37
 msgid "Getting headers"
 msgstr "Sťahujem hlavičku"
 
-#: src/network/state.c:34
+#: src/network/state.c:38
 msgid "Server is processing request"
 msgstr "Server spracováva žiadosť"
 
-#: src/network/state.c:35
+#: src/network/state.c:39
 msgid "Transferring"
 msgstr "Prenášam"
 
-#: src/network/state.c:37
+#: src/network/state.c:41
 msgid "Resuming"
 msgstr ""
 
-#: src/network/state.c:38
+#: src/network/state.c:42
 #, fuzzy
 msgid "Connecting to peers"
 msgstr "Opakovanie spojenia"
 
-#: src/network/state.c:39
+#: src/network/state.c:43
 #, fuzzy
 msgid "Connecting to tracker"
 msgstr "Opakovanie spojenia"
 
-#: src/network/state.c:42
+#: src/network/state.c:46
 msgid "Waiting for redirect confirmation"
 msgstr "Čakám na potvrdenie presmerovania"
 
-#: src/network/state.c:43
+#: src/network/state.c:47
 msgid "OK"
 msgstr "OK"
 
-#: src/network/state.c:44
+#: src/network/state.c:48
 msgid "Interrupted"
 msgstr "Prerušené"
 
-#: src/network/state.c:45
+#: src/network/state.c:49
 msgid "Socket exception"
 msgstr "Chyba v sockete"
 
-#: src/network/state.c:46 src/scripting/python/dialogs.c:64
+#: src/network/state.c:50 src/scripting/python/dialogs.c:64
 #: src/scripting/python/dialogs.c:199 src/scripting/python/keybinding.c:105
 #: src/scripting/python/load.c:114 src/scripting/python/menu.c:97
 #: src/scripting/python/open.c:65
 msgid "Internal error"
 msgstr "Vnútorná chyba"
 
-#: src/network/state.c:49
+#: src/network/state.c:53
 msgid "Error writing to socket"
 msgstr "Chyba pri zapisovaní do socketu"
 
-#: src/network/state.c:50
+#: src/network/state.c:54
 msgid "Error reading from socket"
 msgstr "Chyba pri čítaní zo socketu"
 
-#: src/network/state.c:51
+#: src/network/state.c:55
 msgid "Data modified"
 msgstr "Data zmenené"
 
-#: src/network/state.c:52 src/scripting/python/load.c:120
+#: src/network/state.c:56 src/scripting/python/load.c:120
 #: src/scripting/python/open.c:71
 msgid "Bad URL syntax"
 msgstr "Zlá syntax URL"
 
-#: src/network/state.c:54
+#: src/network/state.c:58
 msgid "Request must be restarted"
 msgstr "Žiadosť sa musí poslať znovu"
 
-#: src/network/state.c:55
+#: src/network/state.c:59
 msgid "Can't get socket state"
 msgstr "Nemôžem zistiť stav socketu"
 
-#: src/network/state.c:56
+#: src/network/state.c:60
 msgid "Only local connections are permitted"
 msgstr ""
 
-#: src/network/state.c:57
+#: src/network/state.c:61
 msgid "No host in the specified IP family was found"
 msgstr ""
 
-#: src/network/state.c:59
+#: src/network/state.c:63
 msgid ""
 "Error while decoding file. This might be caused\n"
 "by the encoded file being corrupt."
 msgstr ""
 
-#: src/network/state.c:62
+#: src/network/state.c:66
 msgid ""
 "This URL contains a protocol not yet known by ELinks.\n"
 "You can configure an external handler for it through\n"
 "the options system."
 msgstr ""
 
-#: src/network/state.c:66
+#: src/network/state.c:70
 msgid ""
 "This URL contains a protocol that is not natively known\n"
 "by ELinks which means that ELinks relies on external\n"
@@ -7484,114 +7558,114 @@ msgid ""
 "programs is not supported."
 msgstr ""
 
-#: src/network/state.c:71
+#: src/network/state.c:75
 msgid "Bad HTTP response"
 msgstr "Zlá HTTP odpoveď (asi bugovitý server)"
 
-#: src/network/state.c:72
+#: src/network/state.c:76
 msgid "No content"
 msgstr "Žiadny obsah"
 
-#: src/network/state.c:73
+#: src/network/state.c:77
 msgid "File was resized during upload"
 msgstr ""
 
-#: src/network/state.c:75
+#: src/network/state.c:79
 msgid "Unknown file type"
 msgstr "Neznámy typ súboru"
 
-#: src/network/state.c:76
+#: src/network/state.c:80
 msgid "Error opening file"
 msgstr "Chyba pri čítaní súboru"
 
-#: src/network/state.c:77
+#: src/network/state.c:81
 msgid "CGI script not in CGI path"
 msgstr ""
 
-#: src/network/state.c:78
+#: src/network/state.c:82
 msgid "Local file access is not allowed in anonymous mode"
 msgstr ""
 
-#: src/network/state.c:81
+#: src/network/state.c:85
 msgid "Bad FTP response"
 msgstr "Zlá odpoveď na FTP"
 
-#: src/network/state.c:82
+#: src/network/state.c:86
 msgid "FTP service unavailable"
 msgstr "FTP nie je prístupné"
 
-#: src/network/state.c:83
+#: src/network/state.c:87
 msgid "Bad FTP login"
 msgstr "Zle si sa prihlásil na FTP"
 
-#: src/network/state.c:84
+#: src/network/state.c:88
 msgid "FTP PORT command failed"
 msgstr "Zlyhal FTP PORT príkaz (nie si za firewallom?)"
 
-#: src/network/state.c:85
+#: src/network/state.c:89
 msgid "File not found"
 msgstr "Súbor nenájdený"
 
-#: src/network/state.c:86
+#: src/network/state.c:90
 msgid "FTP file error"
 msgstr "Chyba FTP súboru"
 
-#: src/network/state.c:90
+#: src/network/state.c:94
 msgid "SSL error"
 msgstr "Chyba SSL"
 
-#: src/network/state.c:92
+#: src/network/state.c:96
 msgid "This version of ELinks does not contain SSL/TLS support"
 msgstr "Táto verzia ELinks-u neobsahuje podporu SSL/TLS"
 
-#: src/network/state.c:95
+#: src/network/state.c:99
 msgid "JavaScript support is not enabled"
 msgstr ""
 
-#: src/network/state.c:98
+#: src/network/state.c:102
 #, fuzzy
 msgid "Bad NNTP response"
 msgstr "Zlá odpoveď na FTP"
 
-#: src/network/state.c:99
+#: src/network/state.c:103
 msgid ""
 "Unable to handle news: URI because no news server has been\n"
 "been configured. Either set the option protocol.nntp.server\n"
 "or set the NNTPSERVER environment variable."
 msgstr ""
 
-#: src/network/state.c:102
+#: src/network/state.c:106
 msgid "Server hung up for some reason"
 msgstr ""
 
-#: src/network/state.c:103
+#: src/network/state.c:107
 msgid "No such newsgroup"
 msgstr ""
 
-#: src/network/state.c:104
+#: src/network/state.c:108
 #, fuzzy
 msgid "No such article"
 msgstr "Žiadny titulok"
 
-#: src/network/state.c:105
+#: src/network/state.c:109
 #, fuzzy
 msgid "Transfer failed"
 msgstr "Prenášam"
 
-#: src/network/state.c:106
+#: src/network/state.c:110
 #, fuzzy
 msgid "Authorization required"
 msgstr "Pre %s na %s je potrebná autentizácia"
 
-#: src/network/state.c:107
+#: src/network/state.c:111
 msgid "Access to server denied"
 msgstr ""
 
-#: src/network/state.c:111
+#: src/network/state.c:115
 msgid "The CSO phone-book protocol is not supported."
 msgstr ""
 
-#: src/network/state.c:114
+#: src/network/state.c:118
 msgid ""
 "Configuration of the proxy server failed.\n"
 "This might be caused by an incorrect proxy\n"
@@ -7603,24 +7677,24 @@ msgid ""
 "and a port number. Example: 'localhost:8080'."
 msgstr ""
 
-#: src/network/state.c:124
+#: src/network/state.c:128
 #, fuzzy
 msgid "BitTorrent error"
 msgstr "Vnútorná chyba"
 
-#: src/network/state.c:125
+#: src/network/state.c:129
 msgid "The BitTorrent metainfo file contained errors"
 msgstr ""
 
-#: src/network/state.c:126
+#: src/network/state.c:130
 msgid "The tracker requesting failed"
 msgstr ""
 
-#: src/network/state.c:127
+#: src/network/state.c:131
 msgid "The BitTorrent URL does not point to a valid URL"
 msgstr ""
 
-#: src/network/state.c:128
+#: src/network/state.c:132
 msgid "The bittorrent-peer URL scheme is for internal use only"
 msgstr ""
 
@@ -7629,12 +7703,12 @@ msgstr ""
 #. * so this error does not mean the server itself does not work.
 #. * More likely, there was some problem in asking a DNS server
 #. * about the address of the FSP server.
-#: src/network/state.c:136
+#: src/network/state.c:140
 #, fuzzy
 msgid "FSP server not found"
 msgstr "Súbor nenájdený"
 
-#: src/network/state.c:159
+#: src/network/state.c:163
 msgid "Unknown error"
 msgstr "Neznáma chyba"
 
@@ -7691,7 +7765,7 @@ msgstr "Pre %s na %s je potrebná autentizácia"
 msgid "Login"
 msgstr "Užívateľské meno"
 
-#: src/protocol/auth/dialogs.c:157 src/protocol/http/http.c:121
+#: src/protocol/auth/dialogs.c:157 src/protocol/http/http.c:122
 msgid "Password"
 msgstr "Heslo"
 
@@ -8071,7 +8145,7 @@ msgid ""
 "from random to rarest first."
 msgstr ""
 
-#: src/protocol/bittorrent/bittorrent.c:216 src/protocol/http/http.c:88
+#: src/protocol/bittorrent/bittorrent.c:216 src/protocol/http/http.c:89
 msgid "Allow blacklisting"
 msgstr "Povoliť čiernu listinu"
 
@@ -8113,7 +8187,7 @@ msgstr "~Súbor"
 msgid "Comment"
 msgstr "Komentáre"
 
-#: src/protocol/bittorrent/dialogs.c:235 src/session/download.c:561
+#: src/protocol/bittorrent/dialogs.c:235 src/session/download.c:624
 #, c-format
 msgid ""
 "Download complete:\n"
@@ -8284,7 +8358,7 @@ msgid_plural "%u unavailable"
 msgstr[0] "FTP nie je prístupné"
 msgstr[1] "FTP nie je prístupné"
 
-#: src/protocol/bittorrent/dialogs.c:590 src/session/session.cpp:314
+#: src/protocol/bittorrent/dialogs.c:590 src/session/session.c:314
 #, fuzzy, c-format
 msgid "Unable to retrieve %s"
 msgstr ""
@@ -8301,7 +8375,7 @@ msgstr "Nenašiel som odkaz obsahujúci text: '%s'."
 msgid "Information about the torrent"
 msgstr "Zobraziť informácie o aktuálnej stránke"
 
-#: src/protocol/bittorrent/dialogs.c:788 src/session/download.c:1674
+#: src/protocol/bittorrent/dialogs.c:788 src/session/download.c:1762
 msgid "What to do?"
 msgstr "Čo mám teda robiť?"
 
@@ -8312,16 +8386,38 @@ msgid "Down~load"
 msgstr "Sťahovanie"
 
 #. accelerator_context(src/protocol/bittorrent/dialogs.c:bittorrent_query_callback, src/session/download.c:do_type_query)
-#: src/protocol/bittorrent/dialogs.c:816 src/session/download.c:1779
+#: src/protocol/bittorrent/dialogs.c:816 src/session/download.c:1867
 #, fuzzy
 msgid "~Display"
 msgstr "Zobraziť"
 
 #. accelerator_context(src/protocol/bittorrent/dialogs.c:bittorrent_query_callback, src/session/download.c:do_type_query)
-#: src/protocol/bittorrent/dialogs.c:820 src/session/download.c:1783
+#: src/protocol/bittorrent/dialogs.c:820 src/session/download.c:1871
 #, fuzzy
 msgid "Show ~header"
 msgstr "Zobrazovať šablóny"
+
+#. name:
+#: src/protocol/curl/ftp.c:68
+msgid "FTPES"
+msgstr ""
+
+#. name:
+#: src/protocol/curl/ftp.c:78
+msgid "SFTP"
+msgstr ""
+
+#: src/protocol/curl/ftp.c:196 src/protocol/ftp/ftp.c:1267 src/util/file.h:256
+msgid "%b %e  %Y"
+msgstr ""
+
+#: src/protocol/curl/ftp.c:198 src/protocol/ftp/ftp.c:1269 src/util/file.h:258
+msgid "%b %e %H:%M"
+msgstr ""
+
+#: src/protocol/curl/ftp.c:205 src/protocol/ftp/ftp.c:1276 src/util/file.h:265
+msgid "             "
+msgstr ""
 
 #: src/protocol/file/cgi.c:44
 msgid "Local CGI"
@@ -8406,35 +8502,35 @@ msgid "Finger"
 msgstr ""
 
 #. name:
-#: src/protocol/fsp/fsp.c:56
+#: src/protocol/fsp/fsp2.c:96 src/protocol/fsp/fsp.c:56
 #, fuzzy
 msgid "FSP"
 msgstr "FTP"
 
 #. name:
-#: src/protocol/ftp/ftp.c:56 src/protocol/ftp/ftp.c:89
+#: src/protocol/ftp/ftp.c:61 src/protocol/ftp/ftp.c:100
 msgid "FTP"
 msgstr "FTP"
 
-#: src/protocol/ftp/ftp.c:58
+#: src/protocol/ftp/ftp.c:63
 msgid "FTP specific options."
 msgstr "Nastavenie FTP."
 
-#: src/protocol/ftp/ftp.c:60 src/protocol/http/http.c:107
-#: src/protocol/http/http.c:225
+#: src/protocol/ftp/ftp.c:65 src/protocol/http/http.c:108
+#: src/protocol/http/http.c:230
 msgid "Proxy configuration"
 msgstr "Nastavenie proxy"
 
-#: src/protocol/ftp/ftp.c:62
+#: src/protocol/ftp/ftp.c:67
 msgid "FTP proxy configuration."
 msgstr "Nastavenie FTP proxy."
 
-#: src/protocol/ftp/ftp.c:64 src/protocol/http/http.c:111
-#: src/protocol/http/http.c:229
+#: src/protocol/ftp/ftp.c:69 src/protocol/http/http.c:112
+#: src/protocol/http/http.c:234
 msgid "Host and port-number"
 msgstr "Adresa a číslo portu"
 
-#: src/protocol/ftp/ftp.c:66
+#: src/protocol/ftp/ftp.c:71
 #, fuzzy
 msgid ""
 "Host and port-number (host:port) of the FTP proxy, or blank. If it's blank, "
@@ -8444,43 +8540,39 @@ msgstr ""
 "nepoužívate. Ak je voľba nevyplnená, ELinks sa ešte pokúsi použiť\n"
 "hodnotu uloženú v premennej prostredia FTP_PROXY."
 
-#: src/protocol/ftp/ftp.c:70
+#: src/protocol/ftp/ftp.c:75
 msgid "Anonymous password"
 msgstr "Anonymné heslo"
 
-#: src/protocol/ftp/ftp.c:72
+#: src/protocol/ftp/ftp.c:77
 msgid "FTP anonymous password to be sent."
 msgstr "Heslo pre anonymné FTP."
 
-#: src/protocol/ftp/ftp.c:74
+#: src/protocol/ftp/ftp.c:80 src/protocol/http/http.c:201
+msgid "Use libcurl"
+msgstr ""
+
+#: src/protocol/ftp/ftp.c:82
+msgid "Use libcurl implementation of ftp."
+msgstr ""
+
+#: src/protocol/ftp/ftp.c:85
 msgid "Use passive mode (IPv4)"
 msgstr "Používať pasívny režim (IPv4)"
 
-#: src/protocol/ftp/ftp.c:76
+#: src/protocol/ftp/ftp.c:87
 msgid "Use PASV instead of PORT (passive vs active mode, IPv4 only)."
 msgstr ""
 "Použiť príkaz PASV namiesto PORT (pasívny vs. aktívny režim, iba IPv4)."
 
-#: src/protocol/ftp/ftp.c:79
+#: src/protocol/ftp/ftp.c:90
 msgid "Use passive mode (IPv6)"
 msgstr "Používať pasívny režim (IPv6)"
 
-#: src/protocol/ftp/ftp.c:81
+#: src/protocol/ftp/ftp.c:92
 msgid "Use EPSV instead of EPRT (passive vs active mode, IPv6 only)."
 msgstr ""
 "Použiť príkaz EPSV namiesto EPRT (pasívny vs. aktívny režim, iba IPv6)."
-
-#: src/protocol/ftp/ftp.c:1250 src/util/file.h:256
-msgid "%b %e  %Y"
-msgstr ""
-
-#: src/protocol/ftp/ftp.c:1252 src/util/file.h:258
-msgid "%b %e %H:%M"
-msgstr ""
-
-#: src/protocol/ftp/ftp.c:1259 src/util/file.h:265
-msgid "             "
-msgstr ""
 
 #: src/protocol/gemini/codes.c:83
 #, c-format
@@ -8522,27 +8614,27 @@ msgid ""
 msgstr ""
 
 #. name:
-#: src/protocol/http/http.c:74 src/protocol/http/http.c:240
+#: src/protocol/http/http.c:75 src/protocol/http/http.c:245
 msgid "HTTP"
 msgstr "HTTP"
 
-#: src/protocol/http/http.c:76
+#: src/protocol/http/http.c:77
 msgid "HTTP-specific options."
 msgstr "Nastavenie HTTP."
 
-#: src/protocol/http/http.c:79
+#: src/protocol/http/http.c:80
 msgid "Server bug workarounds"
 msgstr "Obchádzanie chýb v serveroch"
 
-#: src/protocol/http/http.c:81
+#: src/protocol/http/http.c:82
 msgid "Server-side HTTP bugs workarounds."
 msgstr "Obchádzanie chýb v HTTP serveroch"
 
-#: src/protocol/http/http.c:83
+#: src/protocol/http/http.c:84
 msgid "Do not send Accept-Charset"
 msgstr "Neposielať Accept-Charset"
 
-#: src/protocol/http/http.c:85
+#: src/protocol/http/http.c:86
 #, fuzzy
 msgid ""
 "The Accept-Charset header is quite long and sending it can trigger bugs in "
@@ -8551,15 +8643,15 @@ msgstr ""
 "Hlavička Accept-Charset býva veľmi dlhá a jej posielanie môže vyvolať\n"
 "chyby v niektorých zriedkavo sa vyskytujúcich serveroch."
 
-#: src/protocol/http/http.c:90
+#: src/protocol/http/http.c:91
 msgid "Allow blacklisting of buggy servers."
 msgstr "Povoliť čiernu listinu chybných serverov."
 
-#: src/protocol/http/http.c:92
+#: src/protocol/http/http.c:93
 msgid "Broken 302 redirects"
 msgstr "Chybné presmerovania HTTP kódom 302"
 
-#: src/protocol/http/http.c:94
+#: src/protocol/http/http.c:95
 #, fuzzy
 msgid ""
 "Broken 302 redirect (violates RFC but compatible with Netscape). This is a "
@@ -8571,27 +8663,27 @@ msgstr ""
 "veľa webových diskusných boardov a podobných. Ak vám spôsobujú podivné\n"
 "problémy, skúste sa pohrať s týmto nastavením."
 
-#: src/protocol/http/http.c:99
+#: src/protocol/http/http.c:100
 msgid "No keepalive after POST requests"
 msgstr "Nepoužívať keepalive spojenie po požiadavku POST"
 
-#: src/protocol/http/http.c:101
+#: src/protocol/http/http.c:102
 msgid "Disable keepalive connection after POST request."
 msgstr "Nepoužívať keepalive spojenie po požiadavku POST."
 
-#: src/protocol/http/http.c:103
+#: src/protocol/http/http.c:104
 msgid "Use HTTP/1.0"
 msgstr "Používať HTTP/1,0"
 
-#: src/protocol/http/http.c:105
+#: src/protocol/http/http.c:106
 msgid "Use HTTP/1.0 protocol instead of HTTP/1.1."
 msgstr "Používať protokol HTTP/1,0 namiesto HTTP/1.1."
 
-#: src/protocol/http/http.c:109
+#: src/protocol/http/http.c:110
 msgid "HTTP proxy configuration."
 msgstr "Nastavenie HTTP proxy."
 
-#: src/protocol/http/http.c:113
+#: src/protocol/http/http.c:114
 #, fuzzy
 msgid ""
 "Host and port-number (host:port) of the HTTP proxy, or blank. If it's blank, "
@@ -8601,23 +8693,23 @@ msgstr ""
 "nepoužívate. Ak je voľba nevyplnená, ELinks sa ešte pokúsi použiť\n"
 "hodnotu uloženú v premennej prostredia HTTP_PROXY."
 
-#: src/protocol/http/http.c:117
+#: src/protocol/http/http.c:118
 msgid "Username"
 msgstr "Užívateľské meno"
 
-#: src/protocol/http/http.c:119
+#: src/protocol/http/http.c:120
 msgid "Proxy authentication username."
 msgstr "Užívateľské meno na prihlasovanie cez proxy"
 
-#: src/protocol/http/http.c:123
+#: src/protocol/http/http.c:124
 msgid "Proxy authentication password."
 msgstr "Heslo na prihlasovanie cez proxy"
 
-#: src/protocol/http/http.c:126
+#: src/protocol/http/http.c:127
 msgid "Referer sending"
 msgstr "Posielať referer"
 
-#: src/protocol/http/http.c:128
+#: src/protocol/http/http.c:129
 #, fuzzy
 msgid ""
 "HTTP referer sending options. HTTP referer is a special header sent in the "
@@ -8634,11 +8726,11 @@ msgstr ""
 "narušiť súkromie užívateľa a v prípade niektorých zle zabezpečených\n"
 "webových aplikácií spôsobiť ohrozenie bezpečnosti."
 
-#: src/protocol/http/http.c:136
+#: src/protocol/http/http.c:137
 msgid "Policy"
 msgstr "Politika"
 
-#: src/protocol/http/http.c:139
+#: src/protocol/http/http.c:140
 #, fuzzy
 msgid ""
 "Mode of sending HTTP referer:\n"
@@ -8653,36 +8745,36 @@ msgstr ""
 "2 = posielať stály falošný referer\n"
 "3 = posielať predchádzajúce URL ako referer (správne, ale nebezpečné)\n"
 
-#: src/protocol/http/http.c:145
+#: src/protocol/http/http.c:146
 msgid "Fake referer URL"
 msgstr "Falošné referer URL"
 
-#: src/protocol/http/http.c:147
+#: src/protocol/http/http.c:148
 msgid "Fake referer to be sent when policy is 2."
 msgstr "Falošný referer, ktorý sa posiela ak je politika nastavená na 2."
 
-#: src/protocol/http/http.c:149
+#: src/protocol/http/http.c:150
 #, fuzzy
 msgid "Accept header"
 msgstr "Posielať hlavičku Accept-Language (Akceptuj-Jazyk)"
 
-#: src/protocol/http/http.c:151
+#: src/protocol/http/http.c:152
 msgid "Value of the Accept header field."
 msgstr ""
 
-#: src/protocol/http/http.c:153
+#: src/protocol/http/http.c:154
 msgid "Send Accept-Language header"
 msgstr "Posielať hlavičku Accept-Language (Akceptuj-Jazyk)"
 
-#: src/protocol/http/http.c:155
+#: src/protocol/http/http.c:156
 msgid "Send Accept-Language header."
 msgstr "Posielať hlavičku Accept-Language (Akceptuj-Jazyk)."
 
-#: src/protocol/http/http.c:157
+#: src/protocol/http/http.c:158
 msgid "Use UI language as Accept-Language"
 msgstr "Použiť jazyk užívateľského rozhrania ako Accept-Language"
 
-#: src/protocol/http/http.c:159
+#: src/protocol/http/http.c:160
 #, fuzzy
 msgid ""
 "Request localised versions of documents from web-servers (using the Accept-"
@@ -8706,11 +8798,11 @@ msgstr ""
 #. * ELinks should instead report the decompression error (bug 1017)
 #. * or perhaps even blacklist the server for compression and retry.
 #. * Until that has been implemented, disable compression by default.
-#: src/protocol/http/http.c:176
+#: src/protocol/http/http.c:177
 msgid "Enable on-the-fly compression"
 msgstr ""
 
-#: src/protocol/http/http.c:178
+#: src/protocol/http/http.c:179
 msgid ""
 "If enabled, the capability to receive compressed content (gzip and/or bzip2) "
 "is announced to the server, which usually sends the reply compressed, thus "
@@ -8724,11 +8816,11 @@ msgid ""
 "effect. To check the supported features, see Help -> About."
 msgstr ""
 
-#: src/protocol/http/http.c:191
+#: src/protocol/http/http.c:192
 msgid "Activate HTTP TRACE debugging"
 msgstr "Aktivovať ladenie pomocou HTTP TRACE"
 
-#: src/protocol/http/http.c:193
+#: src/protocol/http/http.c:194
 #, fuzzy
 msgid ""
 "If active, all HTTP requests are sent with TRACE as their method rather than "
@@ -8742,12 +8834,16 @@ msgstr ""
 "server-side skriptov. Server iba vráti klientovi jeho žiadosť tak, ako ju\n"
 "dostal. Tento typ nemusí byť povolený na všetkých serveroch."
 
+#: src/protocol/http/http.c:203
+msgid "Use libcurl implementation of http(s)."
+msgstr ""
+
 #. OSNews.com is supposed to be relying on the textmode token, at least.
-#: src/protocol/http/http.c:201
+#: src/protocol/http/http.c:206
 msgid "User-agent identification"
 msgstr "Identifikácia prehliadača"
 
-#: src/protocol/http/http.c:203
+#: src/protocol/http/http.c:208
 #, fuzzy
 msgid ""
 "Change the User Agent ID. That means identification string, which is sent to "
@@ -8772,19 +8868,19 @@ msgstr ""
 "%t bude nahradené veľkosťou terminálu\n"
 "Použitím \" \" sa neodošle žiadna User-Agent hlavička."
 
-#: src/protocol/http/http.c:221
+#: src/protocol/http/http.c:226
 msgid "HTTPS"
 msgstr "HTTPS"
 
-#: src/protocol/http/http.c:223
+#: src/protocol/http/http.c:228
 msgid "HTTPS-specific options."
 msgstr "Nastavenie HTTPS."
 
-#: src/protocol/http/http.c:227
+#: src/protocol/http/http.c:232
 msgid "HTTPS proxy configuration."
 msgstr "Nastavenie HTTPS proxy."
 
-#: src/protocol/http/http.c:231
+#: src/protocol/http/http.c:236
 #, fuzzy
 msgid ""
 "Host and port-number (host:port) of the HTTPS CONNECT proxy, or blank. If "
@@ -8826,33 +8922,33 @@ msgid ""
 "dialog."
 msgstr ""
 
-#: src/protocol/protocol.cpp:248
+#: src/protocol/protocol.c:257
 #, fuzzy, c-format
 msgid "This version of ELinks does not contain %s protocol support"
 msgstr "Táto verzia ELinks-u neobsahuje podporu SSL/TLS"
 
-#: src/protocol/protocol.cpp:279
+#: src/protocol/protocol.c:288
 msgid "Protocols"
 msgstr "Protokoly"
 
-#: src/protocol/protocol.cpp:281
+#: src/protocol/protocol.c:290
 msgid "Protocol specific options."
 msgstr "Nastavenie jednotlivých protokolov."
 
-#: src/protocol/protocol.cpp:283
+#: src/protocol/protocol.c:292
 #, fuzzy
 msgid "Default protocol prefix"
 msgstr "Štandardné nastavenie farieb"
 
-#: src/protocol/protocol.cpp:285
+#: src/protocol/protocol.c:294
 msgid "Default protocol prefix when none protocol was entered."
 msgstr ""
 
-#: src/protocol/protocol.cpp:287
+#: src/protocol/protocol.c:296
 msgid "No-proxy domains"
 msgstr "Domény použiteľné bez proxy"
 
-#: src/protocol/protocol.cpp:289
+#: src/protocol/protocol.c:298
 #, fuzzy
 msgid ""
 "Comma separated list of domains for which the proxy (HTTP/FTP) should be "
@@ -8864,7 +8960,7 @@ msgstr ""
 "Ak je voľba prázdna, ešte sa zoberie do úvahy premenná NO_PROXY."
 
 #. name:
-#: src/protocol/protocol.cpp:338
+#: src/protocol/protocol.c:353
 #, fuzzy
 msgid "Protocol"
 msgstr "Protokoly"
@@ -9026,24 +9122,24 @@ msgstr "Nie je zadaný žiadny program pre protokol %s."
 msgid "Guile"
 msgstr "~Súbor"
 
-#: src/scripting/lua/core.c:346 src/scripting/python/keybinding.c:158
+#: src/scripting/lua/core.c:350 src/scripting/python/keybinding.c:158
 #, fuzzy
 msgid "Error registering event hook"
 msgstr "Chyba pri zapisovaní do socketu"
 
-#: src/scripting/lua/core.c:498 src/scripting/python/dialogs.c:176
+#: src/scripting/lua/core.c:502 src/scripting/python/dialogs.c:176
 msgid "User dialog"
 msgstr "Užívateľský dialóg"
 
-#: src/scripting/lua/core.c:801
+#: src/scripting/lua/core.c:814
 msgid "Lua Error"
 msgstr "Chyba Lua"
 
-#: src/scripting/lua/core.c:951
+#: src/scripting/lua/core.c:964
 msgid "Lua Console"
 msgstr "Lua konzola"
 
-#: src/scripting/lua/core.c:951
+#: src/scripting/lua/core.c:964
 msgid "Enter expression"
 msgstr "Zadaj výraz"
 
@@ -9105,12 +9201,12 @@ msgstr ""
 msgid "Spidermonkey ECMAScript"
 msgstr ""
 
-#: src/session/download.c:260 src/session/download.c:505
-#: src/session/download.c:869 src/session/download.c:974
+#: src/session/download.c:317 src/session/download.c:560
+#: src/session/download.c:929 src/session/download.c:1034
 msgid "Download error"
 msgstr "Chyba pri downloade"
 
-#: src/session/download.c:261 src/session/download.c:975
+#: src/session/download.c:318 src/session/download.c:1035
 #, c-format
 msgid ""
 "Could not create file '%s':\n"
@@ -9119,7 +9215,7 @@ msgstr ""
 "Nemôžem vytvoriť súbor '%s':\n"
 "%s"
 
-#: src/session/download.c:506
+#: src/session/download.c:561
 #, c-format
 msgid ""
 "Error downloading %s:\n"
@@ -9130,16 +9226,16 @@ msgstr ""
 "\n"
 "%s"
 
-#: src/session/download.c:870
+#: src/session/download.c:930
 #, c-format
 msgid "'%s' is a directory."
 msgstr ""
 
-#: src/session/download.c:899
+#: src/session/download.c:959
 msgid "File exists"
 msgstr "Súbor existuje"
 
-#: src/session/download.c:900
+#: src/session/download.c:960
 #, c-format
 msgid ""
 "This file already exists:\n"
@@ -9150,58 +9246,58 @@ msgid ""
 msgstr ""
 
 #. accelerator_context(src/session/download.c:lookup_unique_name)
-#: src/session/download.c:907
+#: src/session/download.c:967
 msgid "Sa~ve under the alternative name"
 msgstr ""
 
 #. accelerator_context(src/session/download.c:lookup_unique_name)
-#: src/session/download.c:908
+#: src/session/download.c:968
 #, fuzzy
 msgid "~Overwrite the original file"
 msgstr "Nastaviť pôvodný čas"
 
 #. accelerator_context(src/session/download.c:lookup_unique_name)
-#: src/session/download.c:910
+#: src/session/download.c:970
 #, fuzzy
 msgid "~Resume download of the original file"
 msgstr "Pokúsiť sa obnoviť sťahovanie aktuálneho odkazu"
 
-#: src/session/download.c:1677
+#: src/session/download.c:1765
 msgid "Unknown type"
 msgstr "Neznámy typ"
 
-#: src/session/download.c:1702
+#: src/session/download.c:1790
 #, c-format
 msgid "What would you like to do with the file '%s' (type: %s%s%s)?"
 msgstr ""
 
-#: src/session/download.c:1705
+#: src/session/download.c:1793
 #, fuzzy, c-format
 msgid "What would you like to do with the file (type: %s%s%s)?"
 msgstr "Nenašiel som odkaz obsahujúci text: '%s'."
 
-#: src/session/download.c:1734
+#: src/session/download.c:1822
 #, c-format
 msgid "Program ('%f' will be replaced by the filename, '%u' by the uri)"
 msgstr ""
 
-#: src/session/download.c:1739
+#: src/session/download.c:1827
 #, fuzzy
 msgid "Block the terminal"
 msgstr "Zablokovať terminál"
 
-#: src/session/download.c:1745
+#: src/session/download.c:1833
 #, c-format
 msgid "The file will be opened with the program '%s'."
 msgstr ""
 
 #. accelerator_context(src/session/download.c:do_type_query)
-#: src/session/download.c:1766
+#: src/session/download.c:1854
 #, fuzzy
 msgid "~Open"
 msgstr "Otvoriť"
 
-#: src/session/session.cpp:332
+#: src/session/session.c:332
 #, fuzzy
 msgid "Retry without verification?"
 msgstr "Skončiť bez reptania"
@@ -9210,12 +9306,12 @@ msgstr "Skončiť bez reptania"
 #. * and formatting it with "%u" is safe,
 #. * because fc_maxlength is smaller than
 #. * file.length, which is an int.
-#: src/session/session.cpp:919 src/session/session.cpp:938
-#: src/session/task.c:292 src/viewer/text/textarea.c:685
+#: src/session/session.c:923 src/session/session.c:942 src/session/task.c:292
+#: src/viewer/text/textarea.c:685
 msgid "Warning"
 msgstr "Upozornenie"
 
-#: src/session/session.cpp:920
+#: src/session/session.c:924
 msgid ""
 "You have an empty string in protocol.http.user_agent - this was a default "
 "value in the past, substituted by default ELinks User-Agent string. However, "
@@ -9226,7 +9322,7 @@ msgid ""
 "will be used. Apologies for any inconvience caused."
 msgstr ""
 
-#: src/session/session.cpp:939
+#: src/session/session.c:943
 msgid ""
 "You have option config.saving_style set to a de facto obsolete value. The "
 "configuration saving algorithms of ELinks were changed from the last time "
@@ -9239,21 +9335,22 @@ msgid ""
 "caused."
 msgstr ""
 
-#: src/session/session.cpp:964
+#: src/session/session.c:968
 msgid "Welcome"
 msgstr "Vitaj"
 
-#: src/session/session.cpp:965
+#. accelerator_context(setup_first_session)
+#: src/session/session.c:969
 msgid ""
 "Welcome to ELinks!\n"
 "\n"
-"Press ESC for menu. Documentation is available in Help menu."
+"Press ESC for menu. Documentation is available in Help menu.\n"
+"ATTENTION. Since 0.17.GIT configuration is read from and written to "
+"$XDG_CONFIG_HOME/elinks or ~/.config/elinks.\n"
+"So if you did not copy it yet from ~/.elinks, do it now and start again."
 msgstr ""
-"Vitaj v Elinks-e!\n"
-"\n"
-"Stlač ESC pre menu. Dokumentáciu nájdeš v menu Pomoc->Manuál."
 
-#: src/session/session.cpp:1168
+#: src/session/session.c:1184
 msgid "Incorrect search uri"
 msgstr ""
 
@@ -9294,27 +9391,27 @@ msgstr "Chceš znovu poslať dáta z formulára na adresu %s?"
 msgid "Bad terminal size: %d, %d"
 msgstr "Chybná veľkosť terminálu: %d, %d"
 
-#: src/terminal/event.c:177
+#: src/terminal/event.c:181
 #, c-format
 msgid "Warning: terminal name contains illicit chars."
 msgstr "Varovanie: meno terminálu obsahuje nedovolené znaky."
 
-#: src/terminal/event.c:263
+#: src/terminal/event.c:269
 #, c-format
 msgid "Failed to create session."
 msgstr ""
 
-#: src/terminal/event.c:451
+#: src/terminal/event.c:459
 #, c-format
 msgid "Bad event %d"
 msgstr "Zlá udalosť %d"
 
-#: src/terminal/event.c:494
+#: src/terminal/event.c:502
 #, c-format
 msgid "Could not read event: %d (%s)"
 msgstr "Nemôžem čítať udalosť: %d (%s)"
 
-#: src/terminal/kbd.c:1296
+#: src/terminal/kbd.c:1255
 #, c-format
 msgid "Too many bytes read from the itrm!"
 msgstr "Načítal som z itrm príliš vela bajtov!"
@@ -9370,237 +9467,237 @@ msgstr "Nemôžem zapisovať do súboru"
 msgid "Secure file saving error"
 msgstr "Bezpečné otváranie súboru zlyhalo"
 
-#: src/viewer/dump/dump.c:583
+#: src/viewer/dump/dump.c:585
 #, c-format
 msgid "Can't write to stdout: %s"
 msgstr "Nemôžem zapisovať na standardný výstup: %s"
 
-#: src/viewer/dump/dump.c:586
+#: src/viewer/dump/dump.c:588
 #, c-format
 msgid "Can't write to stdout."
 msgstr "Nemôžem zapisovať na standardný výstup."
 
-#: src/viewer/dump/dump.c:724
+#: src/viewer/dump/dump.c:726
 #, c-format
 msgid "URL protocol not supported (%s)."
 msgstr ""
 
-#: src/viewer/text/draw.c:79
+#: src/viewer/text/draw.c:83
 #, fuzzy
 msgid "Missing fragment"
 msgstr "Rámček menu"
 
-#: src/viewer/text/draw.c:80
+#: src/viewer/text/draw.c:84
 #, c-format
 msgid "The requested fragment \"%s\" doesn't exist."
 msgstr ""
 
-#: src/viewer/text/form.cpp:1127
+#: src/viewer/text/form.c:1131
 msgid "Error while posting form"
 msgstr "Chyba pri vypisovaní formulára"
 
-#: src/viewer/text/form.cpp:1128
+#: src/viewer/text/form.c:1132
 #, fuzzy, c-format
 msgid "Could not load file %s: %s"
 msgstr "Nemôžem získať súbor %s: %s"
 
-#: src/viewer/text/form.cpp:1921
+#: src/viewer/text/form.c:1925
 msgid "Reset form"
 msgstr "Resetnúť formulár"
 
-#: src/viewer/text/form.cpp:1923
+#: src/viewer/text/form.c:1927
 #, fuzzy
 msgid "Harmless button"
 msgstr "Vybraté tlačidlo."
 
-#: src/viewer/text/form.cpp:1931
+#: src/viewer/text/form.c:1935
 msgid "Submit form to"
 msgstr "Pošli formulár na"
 
-#: src/viewer/text/form.cpp:1932
+#: src/viewer/text/form.c:1936
 msgid "Post form to"
 msgstr "Pošli formulár na"
 
-#: src/viewer/text/form.cpp:1934
+#: src/viewer/text/form.c:1938
 msgid "Radio button"
 msgstr "Radio button"
 
-#: src/viewer/text/form.cpp:1938
+#: src/viewer/text/form.c:1942
 msgid "Select field"
 msgstr "Výberové políčko"
 
-#: src/viewer/text/form.cpp:1942
+#: src/viewer/text/form.c:1946
 msgid "Text area"
 msgstr "Textová plocha"
 
-#: src/viewer/text/form.cpp:1944
+#: src/viewer/text/form.c:1948
 msgid "File upload"
 msgstr "Upload súboru"
 
-#: src/viewer/text/form.cpp:1946
+#: src/viewer/text/form.c:1950
 msgid "Password field"
 msgstr "Políčko s heslom"
 
-#: src/viewer/text/form.cpp:1986
+#: src/viewer/text/form.c:1990
 msgid "name"
 msgstr "meno"
 
-#: src/viewer/text/form.cpp:1998
+#: src/viewer/text/form.c:2002
 msgid "value"
 msgstr "hodnota"
 
-#: src/viewer/text/form.cpp:2011
+#: src/viewer/text/form.c:2015
 msgid "read only"
 msgstr ""
 
-#: src/viewer/text/form.cpp:2022
+#: src/viewer/text/form.c:2026
 #, c-format
 msgid "press %s to navigate"
 msgstr ""
 
-#: src/viewer/text/form.cpp:2024
+#: src/viewer/text/form.c:2028
 #, c-format
 msgid "press %s to edit"
 msgstr ""
 
-#: src/viewer/text/form.cpp:2061
+#: src/viewer/text/form.c:2065
 #, fuzzy, c-format
 msgid "press %s to submit to %s"
 msgstr "bolo poslané na"
 
-#: src/viewer/text/form.cpp:2063
+#: src/viewer/text/form.c:2067
 #, fuzzy, c-format
 msgid "press %s to post to %s"
 msgstr "bolo poslané na"
 
-#: src/viewer/text/form.cpp:2166
+#: src/viewer/text/form.c:2170
 #, fuzzy
 msgid "Useless button"
 msgstr "Vybraté tlačidlo."
 
-#: src/viewer/text/form.cpp:2168
+#: src/viewer/text/form.c:2172
 #, fuzzy
 msgid "Submit button"
 msgstr "Pošli formulár na"
 
 #. accelerator_context(link_menu.map)
-#: src/viewer/text/link.cpp:1365
+#: src/viewer/text/link.c:1413
 msgid "Display ~usemap"
 msgstr "Zobraziť map~u"
 
 #. accelerator_context(link_menu.std)
-#: src/viewer/text/link.cpp:1370
+#: src/viewer/text/link.c:1418
 msgid "~Follow link"
 msgstr "~Otvoriť link"
 
 #. accelerator_context(link_menu.std)
-#: src/viewer/text/link.cpp:1372
+#: src/viewer/text/link.c:1420
 msgid "Follow link and r~eload"
 msgstr "Otvoriť link a obnoviť cieľovú stránku"
 
 #. accelerator_context(link_menu.std)
-#: src/viewer/text/link.cpp:1374
+#: src/viewer/text/link.c:1422
 #, fuzzy
 msgid "~Link info"
 msgstr "~Link"
 
 #. accelerator_context(link_menu.std)
-#: src/viewer/text/link.cpp:1378
+#: src/viewer/text/link.c:1426
 msgid "Open in new ~window"
 msgstr "Otvoriť v ~novom okne"
 
 #. accelerator_context(link_menu.std)
-#: src/viewer/text/link.cpp:1380
+#: src/viewer/text/link.c:1428
 msgid "Open in new ~tab"
 msgstr "Otvoriť v ~novom tabe"
 
 #. accelerator_context(link_menu.std)
-#: src/viewer/text/link.cpp:1382
+#: src/viewer/text/link.c:1430
 msgid "Open in new tab in ~background"
 msgstr "Otvoriť v novom tabe na pozadí"
 
 #. accelerator_context(link_menu.std)
-#: src/viewer/text/link.cpp:1387
+#: src/viewer/text/link.c:1435
 msgid "~Download link"
 msgstr "~Stiahnuť link"
 
 #. accelerator_context(link_menu.std)
-#: src/viewer/text/link.cpp:1390
+#: src/viewer/text/link.c:1438
 msgid "~Add link to bookmarks"
 msgstr "Prid~aj link do záložiek"
 
 #. accelerator_context(link_menu.std)
-#: src/viewer/text/link.cpp:1394
+#: src/viewer/text/link.c:1442
 msgid "Pass link URI to e~xternal command"
 msgstr ""
 
 #. accelerator_context(link_menu.form, link_menu.reset, link_menu.textarea)
-#: src/viewer/text/link.cpp:1405 src/viewer/text/link.cpp:1445
+#: src/viewer/text/link.c:1453 src/viewer/text/link.c:1493
 msgid "~Reset form"
 msgstr "~Vygumovať formulár"
 
 #. accelerator_context(link_menu.textarea)
-#: src/viewer/text/link.cpp:1420
+#: src/viewer/text/link.c:1468
 msgid "Open in ~external editor"
 msgstr ""
 
 #. accelerator_context(link_menu.form, link_menu.textarea)
-#: src/viewer/text/link.cpp:1428
+#: src/viewer/text/link.c:1476
 msgid "~Submit form"
 msgstr "Odoslať formulár"
 
 #. accelerator_context(link_menu.form, link_menu.textarea)
-#: src/viewer/text/link.cpp:1429
+#: src/viewer/text/link.c:1477
 msgid "Submit form and rel~oad"
 msgstr "Odoslať formulár a obnoviť výslednú stránku"
 
 #. accelerator_context(link_menu.form, link_menu.textarea)
-#: src/viewer/text/link.cpp:1433
+#: src/viewer/text/link.c:1481
 msgid "Submit form and open in new ~window"
 msgstr "Poslať formulár a otvoriť v ~novom okne"
 
 #. accelerator_context(link_menu.form, link_menu.textarea)
-#: src/viewer/text/link.cpp:1435
+#: src/viewer/text/link.c:1483
 #, fuzzy
 msgid "Submit form and open in new ~tab"
 msgstr "Poslať formulár a otvoriť v ~novom okne"
 
 #. accelerator_context(link_menu.form, link_menu.textarea)
-#: src/viewer/text/link.cpp:1438
+#: src/viewer/text/link.c:1486
 #, fuzzy
 msgid "Submit form and open in new tab in ~background"
 msgstr "Poslať formulár a otvoriť v ~novom okne"
 
 #. accelerator_context(link_menu.form, link_menu.textarea)
-#: src/viewer/text/link.cpp:1443
+#: src/viewer/text/link.c:1491
 msgid "Submit form and ~download"
 msgstr "Poslať formulár a ~stiahnuť"
 
 #. accelerator_context(link_menu.form, link_menu.reset, link_menu.textarea)
-#: src/viewer/text/link.cpp:1450
+#: src/viewer/text/link.c:1498
 #, fuzzy
 msgid "Form f~ields"
 msgstr "Pole"
 
 #. accelerator_context(link_menu.form, link_menu.map, link_menu.std)
-#: src/viewer/text/link.cpp:1457
+#: src/viewer/text/link.c:1505
 msgid "V~iew image"
 msgstr "Zobraz~iť obrázok"
 
 #. accelerator_context(link_menu.form, link_menu.map, link_menu.std)
-#: src/viewer/text/link.cpp:1459
+#: src/viewer/text/link.c:1507
 msgid "Download ima~ge"
 msgstr "Stiahnuť o~brázok"
 
-#: src/viewer/text/link.cpp:1468
+#: src/viewer/text/link.c:1516
 msgid "No link selected"
 msgstr "Žiadny link"
 
-#: src/viewer/text/link.cpp:1540
+#: src/viewer/text/link.c:1588
 msgid "Image"
 msgstr "Obrázok"
 
-#: src/viewer/text/link.cpp:1545
+#: src/viewer/text/link.c:1593
 msgid "Usemap"
 msgstr "Mapa obrázkov"
 
@@ -9693,19 +9790,19 @@ msgid ""
 "entered from this file: %s"
 msgstr ""
 
-#: src/viewer/text/view.cpp:1230 src/viewer/text/view.cpp:1283
+#: src/viewer/text/view.c:1233 src/viewer/text/view.c:1286
 msgid "Go to link"
 msgstr "Choď na link"
 
-#: src/viewer/text/view.cpp:1230 src/viewer/text/view.cpp:1283
+#: src/viewer/text/view.c:1233 src/viewer/text/view.c:1286
 msgid "Enter link number"
 msgstr "Zadaj číslo linku"
 
-#: src/viewer/text/view.cpp:1893
+#: src/viewer/text/view.c:1906
 msgid "Save error"
 msgstr "Chyba pri ukladaní"
 
-#: src/viewer/text/view.cpp:1894
+#: src/viewer/text/view.c:1907
 msgid "Error writing to file"
 msgstr "Chyba pri zápise do súboru"
 
@@ -9720,6 +9817,19 @@ msgstr "Titulok"
 #, fuzzy
 msgid "Viewer"
 msgstr "~Zobrazenie"
+
+#, fuzzy, c-format
+#~ msgid "(default: %lld)"
+#~ msgstr "(štandardne: %ld)"
+
+#~ msgid ""
+#~ "Welcome to ELinks!\n"
+#~ "\n"
+#~ "Press ESC for menu. Documentation is available in Help menu."
+#~ msgstr ""
+#~ "Vitaj v Elinks-e!\n"
+#~ "\n"
+#~ "Stlač ESC pre menu. Dokumentáciu nájdeš v menu Pomoc->Manuál."
 
 #, fuzzy
 #~ msgid "FSP specific options."

@@ -53,17 +53,70 @@
 #include "util/conv.h"
 #include "util/error.h"
 #include "util/file.h"
+#include "util/hash.h"
 #include "util/lists.h"
 #include "util/memlist.h"
 #include "util/memory.h"
 #include "util/string.h"
 #include "util/time.h"
 
-
 /* TODO: tp_*() should be in separate file, I guess? --pasky */
 
-
 INIT_LIST_OF(struct file_download, downloads);
+
+static struct hash *uri_tempfiles;
+
+void
+clear_uri_tempfiles(void)
+{
+	struct hash_item *item;
+	int i;
+
+	if (!uri_tempfiles) {
+		return;
+	}
+
+	foreach_hash_item (item, *uri_tempfiles, i) {
+		if (item->value) {
+			mem_free_set(&item->value, NULL);
+		}
+	}
+	free_hash(&uri_tempfiles);
+}
+
+static char *
+check_url_tempfiles(const char *url)
+{
+	struct hash_item *item;
+
+	if (!uri_tempfiles || !url) {
+		return NULL;
+	}
+	item = get_hash_item(uri_tempfiles, url, strlen(url));
+
+	if (!item || !item->value) {
+		return NULL;
+	}
+
+	return stracpy(item->value);
+}
+
+static void
+set_uri_tempfile(const char *url, const char *value)
+{
+	if (!uri_tempfiles) {
+		uri_tempfiles = init_hash8();
+	}
+
+	if (uri_tempfiles) {
+		size_t len = strlen(url);
+		char *copy = memacpy(url, len);
+
+		if (copy) {
+			add_hash_item(uri_tempfiles, copy, len, stracpy(value));
+		}
+	}
+}
 
 int
 download_is_progressing(struct download *download)
@@ -141,8 +194,12 @@ abort_download(struct file_download *file_download)
 	if (file_download->ses)
 		check_questions_queue(file_download->ses);
 
-	if (file_download->dlg_data)
+	if (file_download->dlg_data) {
+		if (file_download->dlg_data->dlg && file_download->dlg_data->dlg->refresh) {
+			kill_timer(&file_download->dlg_data->dlg->refresh->timer);
+		}
 		cancel_dialog(file_download->dlg_data, NULL);
+	}
 	cancel_download(&file_download->download, file_download->stop);
 	if (file_download->uri) done_uri(file_download->uri);
 
@@ -481,8 +538,6 @@ download_data_store(struct download *download, struct file_download *file_downlo
 	if_assert_failed term = file_download->term = NULL;
 
 	if (is_in_progress_state(download->state)) {
-		if (file_download->dlg_data)
-			redraw_dialog(file_download->dlg_data, 1);
 		return;
 	}
 
@@ -535,6 +590,14 @@ download_data_store(struct download *download, struct file_download *file_downlo
 			/* Temporary file is deleted by the dgi_protocol_handler */
 			file_download->delete_ = 0;
 		} else {
+			if (get_opt_bool("ui.sessions.postpone_unlink", NULL)) {
+				char *url = get_uri_string(file_download->uri, URI_PUBLIC);
+
+				if (url) {
+					set_uri_tempfile(url, file_download->file);
+					mem_free(url);
+				}
+			}
 			exec_on_terminal(term, file_download->external_handler,
 					 file_download->file,
 					 file_download->block ? TERM_EXEC_FG :
@@ -599,9 +662,6 @@ download_data(struct download *download, struct file_download *file_download)
 
 		file_download->uri = get_uri_reference(cached->redirect);
 		file_download->download.state = connection_state(S_WAIT_REDIR);
-
-		if (file_download->dlg_data)
-			redraw_dialog(file_download->dlg_data, 1);
 
 		load_uri(file_download->uri, cached->uri, &file_download->download,
 			 PRI_DOWNLOAD, CACHE_MODE_NORMAL,
@@ -1625,8 +1685,36 @@ tp_open(struct type_query *type_query)
 
 		done_type_query(type_query);
 		return;
-	}
+	} else { // Check in cache
+		char *url = get_uri_string(type_query->uri, URI_PUBLIC);
 
+		if (url) {
+			char *filename = check_url_tempfiles(url);
+
+			if (filename) {
+				if (file_can_read(filename)) {
+					char *handler = subst_file(type_query->external_handler, filename, filename);
+
+					if (handler) {
+						if (type_query->copiousoutput) {
+							exec_later(type_query->ses, handler, NULL);
+						} else {
+							exec_on_terminal(type_query->ses->tab->term,
+							handler, "", type_query->block ?
+							TERM_EXEC_FG : TERM_EXEC_BG);
+						}
+						mem_free(handler);
+					}
+					mem_free(filename);
+					done_type_query(type_query);
+					mem_free(url);
+					return;
+				}
+				mem_free(filename);
+			}
+			mem_free(url);
+		}
+	}
 	continue_download(type_query, (char *)(""));
 }
 

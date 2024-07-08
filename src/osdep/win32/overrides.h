@@ -1,8 +1,11 @@
-
 #ifndef EL__OSDEP_WIN32_OVERRIDES_H
 #define EL__OSDEP_WIN32_OVERRIDES_H
 
 #ifdef CONFIG_OS_WIN32
+
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif
 
 #ifdef HAVE_WINDOWS_H
 #include <windows.h>
@@ -28,7 +31,8 @@ int win32_ioctl(int fd, long option, int *flag);
 int win32_select(int num_fds, struct fd_set *rd, struct fd_set *wr,
 		 struct fd_set *ex, struct timeval *tv);
 char *win32_strerror(int err);
-
+int win32_send(int sockfd, const void *buf, unsigned len, int flags);
+int win32_recv(int sockfd, void *buf, unsigned len, int flags);
 
 #ifndef WIN32_OVERRIDES_SELF
 
@@ -47,6 +51,8 @@ char *win32_strerror(int err);
 #define ioctl(fd,opt,flag)		win32_ioctl(fd, opt, flag)
 #define select				win32_select
 #define strerror(err)			win32_strerror(err)
+#define send				win32_send
+#define recv				win32_recv
 
 #endif
 

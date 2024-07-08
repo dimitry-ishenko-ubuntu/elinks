@@ -5,6 +5,8 @@
 /* In the future you will get DOM, a complete ECMAScript interface and free
  * plasm displays for everyone. */
 
+#include <stdbool.h>
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -25,6 +27,7 @@
 
 #include "main/module.h"
 #include "main/timer.h"
+#include "util/string.h"
 #include "util/time.h"
 
 //#define ECMASCRIPT_DEBUG 1
@@ -37,6 +40,7 @@
 extern "C" {
 #endif
 
+struct document;
 struct document_view;
 struct form_state;
 struct form_view;
@@ -44,12 +48,6 @@ struct string;
 struct terminal;
 struct uri;
 struct view_state;
-
-struct ecmascript_string_list_item {
-	LIST_HEAD(struct ecmascript_string_list_item);
-	struct string string;
-	int element_offset;
-};
 
 struct ecmascript_interpreter {
 	struct view_state *vs;
@@ -67,7 +65,8 @@ struct ecmascript_interpreter {
 	struct string code;
 
 	/* document.write buffer */
-	struct string writecode;
+	LIST_OF(struct ecmascript_string_list_item) writecode;
+	struct ecmascript_string_list_item *current_writecode;
 
 	struct heartbeat *heartbeat;
 
@@ -90,9 +89,12 @@ struct ecmascript_interpreter {
 	 * is reloaded in another tab and then you just cause the current tab
 	 * to redraw. */
 	unsigned int onload_snippets_cache_id;
-	void *ac;
-	void *ac2;
+#ifdef CONFIG_ECMASCRIPT_SMJS
+	JSAutoRealm *ar;
+	JS::Heap<JSObject*> *ac;
+#endif
 #ifdef CONFIG_QUICKJS
+	JSRuntime *rt;
 	JSValue document_obj;
 	JSValue location_obj;
 #else
@@ -108,12 +110,13 @@ struct ecmascript_interpreter {
 #ifdef CONFIG_MUJS
 	const char *fun;
 #endif
-	bool changed;
 	int element_offset;
+	unsigned int changed:1;
+	unsigned int was_write:1;
 };
 
 struct ecmascript_timeout {
-	LIST_HEAD(struct ecmascript_timeout);
+	LIST_HEAD_EL(struct ecmascript_timeout);
 	struct string code;
 #ifdef CONFIG_QUICKJS
 	JSValueConst fun;
@@ -152,23 +155,11 @@ int ecmascript_check_url(char *url, char *frame);
 void ecmascript_free_urls(struct module *module);
 
 struct ecmascript_interpreter *ecmascript_get_interpreter(struct view_state*vs);
-void ecmascript_put_interpreter(struct ecmascript_interpreter *interpreter);
-int ecmascript_get_interpreter_count(void);
-
-void ecmascript_detach_form_view(struct form_view *fv);
-void ecmascript_detach_form_state(struct form_state *fs);
-void ecmascript_moved_form_state(struct form_state *fs);
 
 void ecmascript_reset_state(struct view_state *vs);
 
 void ecmascript_eval(struct ecmascript_interpreter *interpreter, struct string *code, struct string *ret, int element_offset);
 char *ecmascript_eval_stringback(struct ecmascript_interpreter *interpreter, struct string *code);
-/* Returns -1 if undefined. */
-int ecmascript_eval_boolback(struct ecmascript_interpreter *interpreter, struct string *code);
-
-/* Takes line with the syntax javascript:<ecmascript code>. Activated when user
- * follows a link with this synstax. */
-void ecmascript_protocol_handler(struct session *ses, struct uri *uri);
 
 void ecmascript_timeout_dialog(struct terminal *term, int max_exec_time);
 
@@ -194,22 +185,14 @@ void check_for_rerender(struct ecmascript_interpreter *interpreter, const char* 
 
 void toggle_ecmascript(struct session *ses);
 
-void *document_parse(struct document *document);
-void free_document(void *doc);
 void location_goto(struct document_view *doc_view, char *url);
 void location_goto_const(struct document_view *doc_view, const char *url);
-
-struct string *add_to_ecmascript_string_list(LIST_OF(struct ecmascript_string_list_item) *list, const char *string, int length, int element_offset);
-
-void free_ecmascript_string_list(LIST_OF(struct ecmascript_string_list_item) *list);
 
 extern char *console_error_filename;
 extern char *console_log_filename;
 
 extern char *local_storage_filename;
 extern int local_storage_ready;
-
-extern struct module ecmascript_module;
 
 #ifdef __cplusplus
 }

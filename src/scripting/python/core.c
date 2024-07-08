@@ -101,11 +101,12 @@ set_python_search_path(void)
 	struct string new_python_path;
 	char *old_python_path;
 	int result = -1;
+	char *xdg_config_home = get_xdg_config_home();
 
 	if (!init_string(&new_python_path)) return result;
 
-	if (elinks_home && !add_format_to_string(&new_python_path, "%s%c",
-						 elinks_home, DELIM))
+	if (xdg_config_home && !add_format_to_string(&new_python_path, "%s%c",
+						 xdg_config_home, DELIM))
 		goto end;
 
 	if (!add_to_string(&new_python_path, CONFDIR))
@@ -249,7 +250,7 @@ error -- Errors internal to ELinks.\n\
 \n\
 Other public objects:\n\
 \n\
-home -- A string containing the pathname of the ~/.elinks directory, or\n\
+home -- A string containing the pathname of the ~/.config/elinks directory, or\n\
         None if ELinks has no configuration directory.\n");
 
 static PyMethodDef python_methods[] = {
@@ -329,6 +330,7 @@ PyMODINIT_FUNC
 PyInit_elinks(void)
 {
 	PyObject *elinks_module, *module_dict, *module_name;
+	char *xdg_config_home = get_xdg_config_home();
 
 	if (replace_showwarning() != 0) {
 		goto python_error;
@@ -344,9 +346,9 @@ PyInit_elinks(void)
 		goto python_error;
 	}
 
-	/* If @elinks_home is NULL, Py_BuildValue() returns a None reference. */
+	/* If @xdg_config_home is NULL, Py_BuildValue() returns a None reference. */
 	if (PyModule_AddObject(elinks_module, "home",
-			       Py_BuildValue("s", elinks_home)) != 0) {
+			       Py_BuildValue("s", xdg_config_home)) != 0) {
 		goto python_error;
 	}
 
@@ -378,8 +380,6 @@ python_error:
 	return NULL;
 }
 
-static wchar_t *program_name;
-
 static char elpythonversion[32];
 
 void
@@ -388,19 +388,8 @@ init_python(struct module *module)
 	if (set_python_search_path() != 0) {
 		return;
 	}
-
-	program_name = Py_DecodeLocale(program.path, NULL);
-
-	if (program_name == NULL) {
-		fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
-		exit(1);
-	}
-	Py_SetProgramName(program_name);  /* optional but recommended */
-
 	PyImport_AppendInittab("elinks", PyInit_elinks);
-
 	Py_Initialize();
-
 	snprintf(elpythonversion, 31, "Python %s", PY_VERSION);
 	module->name = elpythonversion;
 
@@ -434,7 +423,6 @@ cleanup_python(struct module *module)
 		Py_XDECREF(temp);
 
 		Py_Finalize();
-		PyMem_RawFree(program_name);
 	}
 }
 

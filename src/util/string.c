@@ -545,7 +545,7 @@ add_format_to_string(struct string *string, const char *format, ...)
 }
 
 void
-string_replace(struct string *res, struct string *inp, struct string *what, struct string *repl)
+el_string_replace(struct string *res, struct string *inp, struct string *what, struct string *repl)
 {
 	struct string tmp;
 	struct string tmp2;
@@ -553,6 +553,7 @@ string_replace(struct string *res, struct string *inp, struct string *what, stru
 	char *found;
 	char *ins;
 	char *tmp_cnt;
+	int i;
 
 	if (!init_string(&tmp)) {
 		return;
@@ -579,7 +580,7 @@ string_replace(struct string *res, struct string *inp, struct string *what, stru
 		ins = tmp_cnt + what->length;
 	}
 
-	for (int i=0;i<count;i++) {
+	for (i = 0; i < count; i++) {
 		// find occurence of string
 		found=strstr(head,what->source);
 		// count chars before and after occurence
@@ -653,4 +654,54 @@ free_string_list(LIST_OF(struct string_list_item) *list)
 		done_string(&item->string);
 		mem_free(item);
 	}
+}
+
+struct string *
+add_to_ecmascript_string_list(LIST_OF(struct ecmascript_string_list_item) *list,
+		   const char *source, int length, int element_offset)
+{
+	struct ecmascript_string_list_item *item;
+	struct string *string;
+
+	assertm(list && source, "[add_to_string_list]");
+	if_assert_failed return NULL;
+
+	item = (struct ecmascript_string_list_item *)mem_alloc(sizeof(*item));
+	if (!item) return NULL;
+
+	string = &item->string;
+	if (length < 0) length = strlen(source);
+
+	if (!init_string(string)
+	    || !add_bytes_to_string(string, source, length)) {
+		done_string(string);
+		mem_free(item);
+		return NULL;
+	}
+
+	item->element_offset = element_offset;
+
+	add_to_list_end(*list, item);
+	return string;
+}
+
+void
+free_ecmascript_string_list(LIST_OF(struct ecmascript_string_list_item) *list)
+{
+	assertm(list != NULL, "[free_string_list]");
+	if_assert_failed return;
+
+	while (!list_empty(*list)) {
+		struct ecmascript_string_list_item *item = (struct ecmascript_string_list_item *)list->next;
+
+		del_from_list(item);
+		done_string(&item->string);
+		mem_free(item);
+	}
+}
+
+int
+elinks_isspace(int c)
+{
+	return c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' || c == ' ';
 }

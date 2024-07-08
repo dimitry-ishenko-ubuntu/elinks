@@ -41,7 +41,6 @@
 /* Unsafe macros */
 #include "document/html/internal.h"
 
-
 void
 html_section(struct html_context *html_context, char *a,
           char *xxx3, char *xxx4, char **xxx5)
@@ -69,11 +68,19 @@ html_italic(struct html_context *html_context, char *a,
 }
 
 void
+html_strike(struct html_context *html_context, char *a,
+               char *xxx3, char *xxx4, char **xxx5)
+{
+	elformat.style.attr |= AT_STRIKE;
+}
+
+void
 html_underline(struct html_context *html_context, char *a,
                char *xxx3, char *xxx4, char **xxx5)
 {
 	elformat.style.attr |= AT_UNDERLINE;
 }
+
 
 void
 html_fixed(struct html_context *html_context, char *a,
@@ -175,7 +182,9 @@ html_body(struct html_context *html_context, char *a,
 	get_color(html_context, a, "text", &elformat.style.color.foreground);
 	get_color(html_context, a, "link", &elformat.color.clink);
 	get_color(html_context, a, "vlink", &elformat.color.vlink);
-
+#ifdef CONFIG_ECMASCRIPT
+	mem_free_set(&html_context->document->body_onkeypress, get_attr_val(a, "onkeypress", html_context->doc_cp));
+#endif
 	if (get_bgcolor(html_context, a, &elformat.style.color.background) != -1)
 		html_context->was_body_background = 1;
 
@@ -187,11 +196,16 @@ void
 html_apply_canvas_bgcolor(struct html_context *html_context)
 {
 #ifdef CONFIG_CSS
+#ifdef CONFIG_LIBCSS
+	if (!html_context->options->libcss_enable)
+#endif
 	/* If there are any CSS twaks regarding bgcolor, make sure we will get
 	 * it _and_ prefer it over bgcolor attribute. */
+	do {
 	if (html_context->options->css_enable)
 		css_apply(html_context, html_top, &html_context->css_styles,
 		          &html_context->stack);
+	} while (0);
 #endif
 
 	if (par_elformat.color.background != elformat.style.color.background) {
@@ -317,7 +331,7 @@ not_processed:
 		/* Create URL reference onload snippet. */
 		insert_in_string(&import_url, 0, "^", 1);
 		add_to_ecmascript_string_list(&html_context->part->document->onload_snippets,
-		                   import_url, -1, html_top->name - html_context->part->document->text);
+		                   import_url, -1, html_top->name - html_context->part->document->text.source);
 
 imported:
 		/* Retreat. Do not permit nested scripts, tho'. */
@@ -397,7 +411,7 @@ imported:
 
 	if (html_context->part->document && *html != '^') {
 		add_to_ecmascript_string_list(&html_context->part->document->onload_snippets,
-		                   html, *end - html, html_top->name - html_context->part->document->text);
+		                   html, *end - html, html_top->name - html_context->part->document->text.source);
 	}
 #endif
 }
@@ -656,7 +670,7 @@ html_hr(struct html_context *html_context, char *a,
         char *html, char *eof, char **end)
 {
 	int i/* = par_elformat.width - 10*/;
-	char r = BORDER_DHLINE;
+	unsigned char r = BORDER_DHLINE;
 	int q = get_num(a, "size", html_context->doc_cp);
 
 	if (q >= 0 && q < 2) r = BORDER_SHLINE;
@@ -673,7 +687,7 @@ html_hr(struct html_context *html_context, char *a,
 	elformat.style.attr = AT_GRAPHICS;
 	html_context->special_f(html_context, SP_NOWRAP, 1);
 	while (i-- > 0) {
-		put_chrs(html_context, &r, 1);
+		put_chrs(html_context, (const char *)&r, 1);
 	}
 	html_context->special_f(html_context, SP_NOWRAP, 0);
 	ln_break(html_context, 2);

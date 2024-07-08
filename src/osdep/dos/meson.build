@@ -1,1 +1,5 @@
-srcs += files('dos.cpp')
+configure_file(input : 'elinks.lsm.in',
+               output : 'elinks.lsm',
+               configuration : conf_data)
+
+srcs += files('dos.c')
