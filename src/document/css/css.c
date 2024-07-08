@@ -35,7 +35,11 @@ union option_info css_options_info[] = {
 	INIT_OPT_BOOL("document.css", N_("Enable CSS"),
 		"enable", OPT_ZERO, 1,
 		N_("Enable adding of CSS style info to documents.")),
-
+#ifdef CONFIG_LIBCSS
+	INIT_OPT_BOOL("document.css", N_("Prefer libcss"),
+		"libcss", OPT_ZERO, 0,
+		N_("Enable experimental code using the libcss library instead of builtin implementation.")),
+#endif
 	INIT_OPT_BOOL("document.css", N_("Ignore \"display: none\""),
 		"ignore_display_none", OPT_ZERO, 1,
 		N_("When enabled, elements are rendered, even when their "
@@ -155,6 +159,7 @@ static void
 import_css_file(struct css_stylesheet *css, struct uri *base_uri,
 		const char *url, int urllen)
 {
+	char *xdg_config_home = get_xdg_config_home();
 	struct string string, filename;
 
 	if (!*url
@@ -162,8 +167,8 @@ import_css_file(struct css_stylesheet *css, struct uri *base_uri,
 	    || !init_string(&filename))
 		return;
 
-	if (*url != '/' && elinks_home) {
-		add_to_string(&filename, elinks_home);
+	if (*url != '/' && xdg_config_home) {
+		add_to_string(&filename, xdg_config_home);
 	}
 
 	add_bytes_to_string(&filename, url, urllen);

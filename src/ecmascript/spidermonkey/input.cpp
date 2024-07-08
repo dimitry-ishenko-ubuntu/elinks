@@ -49,8 +49,6 @@
 #include "viewer/text/link.h"
 #include "viewer/text/vs.h"
 
-#include <libxml++/libxml++.h>
-
 /* Accordingly to the JS specs, each input type should own object. That'd be a
  * huge PITA though, however DOM comes to the rescue and defines just a single
  * HTMLInputElement. The difference could be spotted only by some clever tricky
@@ -1826,13 +1824,7 @@ get_input_object(JSContext *ctx, struct form_state *fs)
 #ifdef ECMASCRIPT_DEBUG
 	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
 #endif
-
-	JSObject *jsinput = (JSObject *)fs->ecmascript_obj;
-
-	if (jsinput) {
-		return jsinput;
-	}
-
+	JSObject *jsinput;
 	/* jsform ('form') is input's parent */
 	/* FIXME: That is NOT correct since the real containing element
 	 * should be its parent, but gimme DOM first. --pasky */
@@ -1857,19 +1849,13 @@ input_finalize(JS::GCContext *op, JSObject *jsinput)
 #ifdef ECMASCRIPT_DEBUG
 	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
 #endif
+#if 0
 	struct form_state *fs = JS::GetMaybePtrFromReservedSlot<struct form_state>(jsinput, 0);
 
 	if (fs) {
-		/* If this assertion fails, leave fs->ecmascript_obj
-		 * unchanged, because it may point to a different
-		 * JSObject whose private pointer will later have to
-		 * be updated to avoid crashes.  */
-		assert(fs->ecmascript_obj == jsinput);
-		if_assert_failed return;
-
 		fs->ecmascript_obj = NULL;
 		/* No need to JS::SetPrivate, because jsinput is being
 		 * destroyed.  */
 	}
+#endif
 }
-

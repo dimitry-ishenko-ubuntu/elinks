@@ -49,8 +49,6 @@
 #include "viewer/text/link.h"
 #include "viewer/text/vs.h"
 
-#include <libxml++/libxml++.h>
-
 //static JSClass form_class;	     /* defined below */
 
 static bool form_get_property_action(JSContext *ctx, unsigned int argc, JS::Value *vp);
@@ -209,6 +207,8 @@ elements_finalize(JS::GCContext *op, JSObject *obj)
 #ifdef ECMASCRIPT_DEBUG
 	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
 #endif
+
+#if 0
 	struct form_view *fv = JS::GetMaybePtrFromReservedSlot<struct form_view>(obj, 0);
 
 	if (fv) {
@@ -223,6 +223,7 @@ elements_finalize(JS::GCContext *op, JSObject *obj)
 		/* No need to JS::SetPrivate, because the object is
 		 * being destroyed.  */
 	}
+#endif
 }
 
 static bool
@@ -1367,22 +1368,14 @@ form_submit(JSContext *ctx, unsigned int argc, JS::Value *rval)
 }
 
 JSObject *
-get_form_object(JSContext *ctx, JSObject *jsdoc, struct form *form)
+get_form_object(JSContext *ctx, struct form *form)
 {
 #ifdef ECMASCRIPT_DEBUG
 	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
 #endif
 
-	JSObject *jsform = (JSObject *)form->ecmascript_obj;
+	JSObject *jsform = JS_NewObject(ctx, &form_class);
 
-	if (jsform) {
-		return jsform;
-	}
-
-	/* jsdoc ('document') is fv's parent */
-	/* FIXME: That is NOT correct since the real containing element
-	 * should be its parent, but gimme DOM first. --pasky */
-	jsform = JS_NewObject(ctx, &form_class);
 	if (jsform == NULL)
 		return NULL;
 	JS::RootedObject r_jsform(ctx, jsform);
@@ -1401,20 +1394,16 @@ form_finalize(JS::GCContext *op, JSObject *jsform)
 #ifdef ECMASCRIPT_DEBUG
 	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
 #endif
+
+#if 0
 	struct form *form = JS::GetMaybePtrFromReservedSlot<struct form>(jsform, 0);
 
 	if (form) {
-		/* If this assertion fails, leave fv->ecmascript_obj
-		 * unchanged, because it may point to a different
-		 * JSObject whose private pointer will later have to
-		 * be updated to avoid crashes.  */
-		assert(form->ecmascript_obj == jsform);
-		if_assert_failed return;
-
 		form->ecmascript_obj = NULL;
 		/* No need to JS::SetPrivate, because the object is
 		 * being destroyed.  */
 	}
+#endif
 }
 
 void

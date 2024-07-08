@@ -17,6 +17,7 @@
 #include "scripting/smjs/elinks_object.h"
 #include "scripting/smjs/global_object.h"
 #include "scripting/smjs/session_object.h"
+#include "scripting/smjs/smjs.h"
 #include "scripting/smjs/view_state_object.h"
 #include "session/history.h"
 #include "session/location.h"
@@ -30,8 +31,8 @@
 
 static JSObject *smjs_session_object;
 
-static bool session_get_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS::MutableHandleValue hvp);
-static bool session_set_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS::MutableHandleValue hvp);
+//static bool session_get_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS::MutableHandleValue hvp);
+//static bool session_set_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS::MutableHandleValue hvp);
 static void session_finalize(JS::GCContext *op, JSObject *obj);
 static bool session_construct(JSContext *ctx, unsigned int argc, JS::Value *rval);
 
@@ -54,7 +55,7 @@ static const JSClass session_class = {
 	&session_ops
 };
 
-static bool smjs_location_array_get_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS::MutableHandleValue hvp);
+//static bool smjs_location_array_get_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS::MutableHandleValue hvp);
 static void smjs_location_array_finalize(JS::GCContext *op, JSObject *obj);
 
 static const JSClassOps location_array_ops = {
@@ -76,6 +77,7 @@ static const JSClass location_array_class = {
 	&location_array_ops
 };
 
+#if 0
 /* location_array_class is the class for array object, the elements of which
  * correspond to the elements of session.history.
  *
@@ -130,6 +132,7 @@ smjs_location_array_get_property(JSContext *ctx, JS::HandleObject hobj, JS::Hand
 
 	return false;
 }
+#endif
 
 /** Pointed to by location_array_class.finalize.  SpiderMonkey automatically
  * finalizes all objects before it frees the JSRuntime, so
@@ -554,6 +557,7 @@ session_get_property_last_search_word(JSContext *ctx, unsigned int argc, JS::Val
 	return true;
 }
 
+#if 0
 /* @session_class.getProperty */
 static bool
 session_get_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS::MutableHandleValue hvp)
@@ -579,6 +583,7 @@ session_get_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS
 
 	return false;
 }
+#endif
 
 static bool
 session_set_property_visited(JSContext *ctx, unsigned int argc, JS::Value *vp)
@@ -844,7 +849,7 @@ session_set_property_last_search_word(JSContext *ctx, unsigned int argc, JS::Val
 }
 
 
-
+#if 0
 static bool
 session_set_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS::MutableHandleValue hvp)
 {
@@ -866,6 +871,7 @@ session_set_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId hid, JS
 
 	return false;
 }
+#endif
 
 /** Pointed to by session_class.construct.  Create a new session (tab)
  * and return the JSObject wrapper.  */
@@ -974,7 +980,7 @@ smjs_detach_session_object(struct session *ses)
 	}
 }
 
-
+#if 0
 /** Ensure that no JSObject contains the pointer @a ses.  This is
  * called when the reference count of the session object *@a ses is
  * already 0 and it is about to be freed.  If a JSObject was
@@ -1012,6 +1018,7 @@ session_array_get_property(JSContext *ctx, JS::HandleObject hobj, JS::HandleId h
 
 	return true;
 }
+#endif
 
 static const JSClassOps session_array_ops = {
 	nullptr,  // addProperty
@@ -1074,7 +1081,6 @@ smjs_session_goto_url(JSContext *ctx, unsigned int argc, JS::Value *rval)
 
 	struct delayed_open *deo;
 	struct uri *uri;
-	JSString *jsstr;
 	char *url;
 	struct session *ses;
 
@@ -1121,8 +1127,11 @@ smjs_init_session_interface(void)
 	assert(smjs_ctx);
 	assert(smjs_global_object);
 
+	JS::RootedObject obj(smjs_ctx, smjs_global_object->get());
+	JSAutoRealm ar(smjs_ctx, obj);
+
 	smjs_session_object =
-	 spidermonkey_InitClass(smjs_ctx, smjs_global_object, NULL,
+	 spidermonkey_InitClass(smjs_ctx, obj, NULL,
 	                        (JSClass *) &session_class, session_construct,
 	                        0, (JSPropertySpec *) session_props,
 	                        session_funcs, NULL, NULL);

@@ -16,6 +16,9 @@
 #include "document/css/apply.h"
 #include "document/css/css.h"
 #include "document/css/parser.h"
+#ifdef CONFIG_LIBCSS
+#include "document/libdom/css.h"
+#endif
 #include "document/html/parser/forms.h"
 #include "document/html/parser/general.h"
 #include "document/html/parser/link.h"
@@ -470,7 +473,7 @@ static struct element_info elements[] = {
  {"DFN",         html_bold,        NULL,                 0, ET_NESTABLE    },
  {"DIR",         html_ul,          NULL,                 2, ET_NESTABLE    },
  {"DIV",         html_linebrk,     NULL,                 1, ET_NESTABLE    },
- {"DL",          html_dl,          NULL,                 2, ET_NESTABLE    },
+ {"DL",          html_dl,          NULL,                 1, ET_NESTABLE    },
  {"DT",          html_dt,          NULL,                 1, ET_NON_PAIRABLE},
  {"EM",          html_italic,      NULL,                 0, ET_NESTABLE    },
  {"EMBED",       html_embed,       NULL,                 0, ET_NON_PAIRABLE},
@@ -500,18 +503,18 @@ static struct element_info elements[] = {
  {"NOFRAMES",    html_noframes,    NULL,                 0, ET_NESTABLE    },
  {"NOSCRIPT",    html_noscript,    NULL,                 0, ET_NESTABLE    },
  {"OBJECT",      html_object,      NULL,                 1, ET_NON_PAIRABLE},
- {"OL",          html_ol,          NULL,                 2, ET_NESTABLE    },
+ {"OL",          html_ol,          NULL,                 1, ET_NESTABLE    },
  {"OPTION",      html_option,      NULL,                 1, ET_NON_PAIRABLE},
  {"P",           html_p,           NULL,                 2, ET_NON_NESTABLE},
  {"PRE",         html_pre,         NULL,                 2, ET_NESTABLE    },
  {"Q",           html_quote,       html_quote_close,     0, ET_NESTABLE    },
- {"S",           html_underline,   NULL,                 0, ET_NESTABLE    },
+ {"S",           html_strike,      NULL,                 0, ET_NESTABLE    },
  {"SCRIPT",      html_script,      NULL,                 0, ET_NESTABLE    },
  {"SECTION",     html_section,     NULL,                 0, ET_NESTABLE    },
  {"SELECT",      html_select,      NULL,                 0, ET_NESTABLE    },
  {"SOURCE",      html_source,      NULL,                 1, ET_NON_PAIRABLE},
  {"SPAN",        html_span,        NULL,                 0, ET_NESTABLE    },
- {"STRIKE",      html_underline,   NULL,                 0, ET_NESTABLE    },
+ {"STRIKE",      html_strike,      NULL,                 0, ET_NESTABLE    },
  {"STRONG",      html_bold,        NULL,                 0, ET_NESTABLE    },
  {"STYLE",       html_style,       html_style_close,     0, ET_NESTABLE    },
  {"SUB",         html_subscript,   html_subscript_close, 0, ET_NESTABLE    },
@@ -524,7 +527,7 @@ static struct element_info elements[] = {
  {"TR",          html_tr,          NULL,                 1, ET_NESTABLE    },
  {"TT",          html_tt,          NULL,                 0, ET_NON_NESTABLE},
  {"U",           html_underline,   NULL,                 0, ET_NESTABLE    },
- {"UL",          html_ul,          NULL,                 2, ET_NESTABLE    },
+ {"UL",          html_ul,          NULL,                 1, ET_NESTABLE    },
  {"VIDEO",       html_video,       NULL,                 1, ET_NON_PAIRABLE},
  {"XMP",         html_xmp,         html_xmp_close,       2, ET_NESTABLE    },
  {NULL,          NULL,             NULL,                 0, ET_NESTABLE    },
@@ -896,17 +899,31 @@ start_element(struct element_info *ei,
 
 	/* If this is a style tag, parse it. */
 #ifdef CONFIG_CSS
-	if (ei->open == html_style && html_context->options->css_enable) {
-		char *media
-			= get_attr_val(attr, "media", html_context->doc_cp);
-		int support = supports_html_media_attr(media);
-		mem_free_if(media);
+#ifdef CONFIG_LIBCSS
+	if (html_context->options->libcss_enable) {
+		if (ei->open == html_style && html_context->options->css_enable) {
+			char *media = get_attr_val(attr, "media", html_context->doc_cp);
+			int support = supports_html_media_attr(media);
+			mem_free_if(media);
 
-		if (support)
-			css_parse_stylesheet(&html_context->css_styles,
-					     html_context->base_href,
-					     html, eof);
-	}
+			if (support) {
+				parse_css(html_context, name);
+			}
+		}
+	} else
+#endif
+	do {
+		if (ei->open == html_style && html_context->options->css_enable) {
+			char *media = get_attr_val(attr, "media", html_context->doc_cp);
+			int support = supports_html_media_attr(media);
+			mem_free_if(media);
+
+			if (support)
+				css_parse_stylesheet(&html_context->css_styles,
+					html_context->base_href,
+					html, eof);
+		}
+	} while (0);
 #endif
 
 	/* If this element is inline, non-nestable, and not <li>, and the next
@@ -977,31 +994,40 @@ start_element(struct element_info *ei,
 
 	/* Apply CSS styles. */
 #ifdef CONFIG_CSS
-	if (html_top->options && html_context->options->css_enable) {
-		/* XXX: We should apply CSS otherwise as well, but that'll need
-		 * some deeper changes in order to have options filled etc.
-		 * Probably just applying CSS from more places, since we
-		 * usually have type != ET_NESTABLE when we either (1)
-		 * rescan on your own from somewhere else (2) html_stack_dup()
-		 * in our own way.  --pasky */
-		mem_free_set(&html_top->attr.id,
-			     get_attr_val(attr, "id", html_context->doc_cp));
-		mem_free_set(&html_top->attr.class_,
-			     get_attr_val(attr, "class", html_context->doc_cp));
-		/* Call it now to gain some of the stuff which might affect
-		 * formatting of some elements. */
-		/* FIXME: The caching of the CSS selector is broken, since t can
-		 * lead to wrong styles being applied to following elements, so
-		 * disabled for now. */
-		selector = get_css_selector_for_element(html_context, html_top,
+#ifdef CONFIG_LIBCSS
+	if (html_context->options->libcss_enable) {
+		if (html_context->options->css_enable) {
+			select_css(html_context, html_top);
+		}
+	} else
+#endif
+	do {
+		if (html_top->options && html_context->options->css_enable) {
+			/* XXX: We should apply CSS otherwise as well, but that'll need
+			 * some deeper changes in order to have options filled etc.
+			 * Probably just applying CSS from more places, since we
+			 * usually have type != ET_NESTABLE when we either (1)
+			 * rescan on your own from somewhere else (2) html_stack_dup()
+			 * in our own way.  --pasky */
+			mem_free_set(&html_top->attr.id,
+				get_attr_val(attr, "id", html_context->doc_cp));
+			mem_free_set(&html_top->attr.class_,
+				get_attr_val(attr, "class", html_context->doc_cp));
+			/* Call it now to gain some of the stuff which might affect
+			 * formatting of some elements. */
+			/* FIXME: The caching of the CSS selector is broken, since t can
+			 * lead to wrong styles being applied to following elements, so
+			 * disabled for now. */
+			selector = get_css_selector_for_element(html_context, html_top,
 							&html_context->css_styles,
 							&html_context->stack);
 
-		if (selector) {
-			apply_css_selector_style(html_context, html_top, selector);
-			done_css_selector(selector);
+			if (selector) {
+				apply_css_selector_style(html_context, html_top, selector);
+				done_css_selector(selector);
+			}
 		}
-	}
+	} while (0);
 #endif
 
 	/* 1. Put any linebreaks that the element calls for, and 2. register
@@ -1019,17 +1045,23 @@ start_element(struct element_info *ei,
 
 	/* Apply CSS styles again. */
 #ifdef CONFIG_CSS
-	if (selector && html_top->options) {
-		/* Call it now to override default colors of the elements. */
-		selector = get_css_selector_for_element(html_context, html_top,
+#ifdef CONFIG_LIBCSS
+	if (html_context->options->libcss_enable) {
+	} else
+#endif
+	do {
+		if (selector && html_top->options) {
+			/* Call it now to override default colors of the elements. */
+			selector = get_css_selector_for_element(html_context, html_top,
 							&html_context->css_styles,
 							&html_context->stack);
 
-		if (selector) {
-			apply_css_selector_style(html_context, html_top, selector);
-			done_css_selector(selector);
+			if (selector) {
+				apply_css_selector_style(html_context, html_top, selector);
+				done_css_selector(selector);
+			}
 		}
-	}
+	} while (0);
 #endif
 
 	/* If this element was not <br>, clear the was_br flag. */
@@ -1209,6 +1241,16 @@ sp:
 	}
 	if (s >= eof) return;
 	if (s + 2 <= eof && (s[1] == '!' || s[1] == '?')) {
+		if (!strncmp(s, "<?xml ", 6)) {
+			he = get_attr_val(s + 6, "encoding", cp);
+
+			if (he) {
+				add_to_string(head, "Charset: ");
+				add_to_string(head, he);
+				add_crlf_to_string(head);
+				mem_free(he);
+			}
+		}
 		s = skip_comment(s, eof);
 		goto se;
 	}
@@ -1249,6 +1291,7 @@ xsp:
 	if (he) {
 		add_to_string(head, "Charset: ");
 		add_to_string(head, he);
+		add_crlf_to_string(head);
 		mem_free(he);
 	}
 
@@ -1258,6 +1301,7 @@ xsp:
 	if (!he) goto se;
 
 	add_to_string(head, he);
+	add_crlf_to_string(head);
 	mem_free(he);
 
 	/* FIXME (bug 784): cp is the terminal charset;
@@ -1266,10 +1310,10 @@ xsp:
 	if (c) {
 		add_to_string(head, ": ");
 		add_to_string(head, c);
-	        mem_free(c);
+		add_crlf_to_string(head);
+		mem_free(c);
 	}
 
-	add_crlf_to_string(head);
 	goto se;
 }
 

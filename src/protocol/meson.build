@@ -1,10 +1,13 @@
 if conf_data.get('CONFIG_BITTORRENT')
 	subdir('bittorrent')
 endif
+if conf_data.get('CONFIG_LIBCURL')
+	subdir('curl')
+endif
 if conf_data.get('CONFIG_FINGER')
 	subdir('finger')
 endif
-if conf_data.get('CONFIG_FSP')
+if conf_data.get('CONFIG_FSP') or conf_data.get('CONFIG_FSP2')
 	subdir('fsp')
 endif
 if conf_data.get('CONFIG_FTP')
@@ -32,7 +35,7 @@ subdir('http')
 if conf_data.get('CONFIG_DATA')
 	srcs += files('data.c')
 endif
-srcs += files('about.c', 'common.c', 'date.c', 'header.c', 'protocol.cpp', 'proxy.c', 'uri.c', 'user.c')
+srcs += files('about.c', 'common.c', 'date.c', 'header.c', 'protocol.c', 'proxy.c', 'uri.c', 'user.c')
 
 if get_option('test')
     subdir('test')

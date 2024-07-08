@@ -79,7 +79,11 @@ lua_State *lua_state;
 
 static struct session *lua_ses;
 static struct terminal *errterm;
+#ifdef CONFIG_OS_WIN32
+static jmp_buf errjmp;
+#else
 static sigjmp_buf errjmp;
+#endif
 
 #define L	lua_state
 #define LS	lua_State *S
@@ -720,6 +724,8 @@ static char elluaversion[32];
 void
 init_lua(struct module *module)
 {
+	char *xdg_config_home = get_xdg_config_home();
+
 	L = luaL_newstate();
 
 	luaL_openlibs(L);
@@ -741,12 +747,12 @@ init_lua(struct module *module)
 	lua_register(L, "reload", l_reload);
 	lua_register(L, "goto_url", l_goto_url);
 
-	lua_pushstring(L, elinks_home ? elinks_home
+	lua_pushstring(L, xdg_config_home ? xdg_config_home
 				      : (char *) CONFDIR);
 	lua_setglobal(L, "elinks_home");
 
 	do_hooks_file(L, CONFDIR, LUA_HOOKS_FILENAME);
-	if (elinks_home) do_hooks_file(L, elinks_home, LUA_HOOKS_FILENAME);
+	if (xdg_config_home) do_hooks_file(L, xdg_config_home, LUA_HOOKS_FILENAME);
 	strncpy(elluaversion, LUA_RELEASE, 31);
 
 	module->name = elluaversion;
@@ -769,7 +775,11 @@ static void
 handle_sigint(void *data)
 {
 	finish_lua();
+#ifdef CONFIG_OS_WIN32
+	longjmp(errjmp, -1);
+#else
 	siglongjmp(errjmp, -1);
+#endif
 }
 
 int
@@ -779,8 +789,11 @@ prepare_lua(struct session *ses)
 	errterm = lua_ses ? lua_ses->tab->term : NULL;
 	/* XXX this uses the wrong term, I think */
 	install_signal_handler(SIGINT, (void (*)(void *)) handle_sigint, NULL, 1);
-
+#ifdef CONFIG_OS_WIN32
+	return setjmp(errjmp);
+#else
 	return sigsetjmp(errjmp, 1);
+#endif
 }
 
 void

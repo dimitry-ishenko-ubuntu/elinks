@@ -9,8 +9,8 @@
 #ifdef HAVE_ICONV
 #include <iconv.h>
 #endif
-#ifdef HAVE_IDNA_H
-#include <idna.h>
+#ifdef HAVE_IDN2_H
+#include <idn2.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -535,10 +535,10 @@ add_uri_to_string(struct string *string, const struct uri *uri,
 		 * --pasky */
 		if (uri->ipv6 && wants(URI_PORT)) add_char_to_string(string, '[');
 #endif
-#ifdef CONFIG_IDN
+#ifdef CONFIG_IDN2
 		/* Support for the GNU International Domain Name library.
 		 *
-		 * http://www.gnu.org/software/libidn/manual/html_node/IDNA-Functions.html
+		 * http://www.gnu.org/software/libidn/libidn2/manual/libidn2.html
 		 */
 		if (wants(URI_IDN)) {
 			char *host = NULL;
@@ -556,10 +556,10 @@ add_uri_to_string(struct string *string, const struct uri *uri,
 
 			if (host) {
 				char *idname;
-				int code = idna_to_ascii_8z(host, &idname, 0);
+				int code = idn2_to_ascii_8z(host, &idname, 0);
 
 				/* FIXME: Return NULL if it coughed? --jonas */
-				if (code == IDNA_SUCCESS) {
+				if (code == IDN2_OK) {
 					add_to_string(string, idname);
 					free(idname);
 					add_host = 0;
@@ -1345,8 +1345,8 @@ get_translated_uri(char *uristring, char *cwd)
 }
 
 #define ADD_EXTENSION_FROM_TYPE(string, type, ext)			\
-	if (!memcmp(uri->data, type ";", sizeof(type ";") - 1)	||	\
-	    !memcmp(uri->data, type ",", sizeof(type ",") - 1))		\
+	if (!memcmp(string, type ";", sizeof(type ";") - 1)	||	\
+	    !memcmp(string, type ",", sizeof(type ",") - 1))		\
 		return stracpy("." ext);
 
 char *
@@ -1362,8 +1362,12 @@ get_extension_from_uri(struct uri *uri)
 		ADD_EXTENSION_FROM_TYPE(uri->data, "image/gif",  "gif")
 		ADD_EXTENSION_FROM_TYPE(uri->data, "image/jpeg", "jpg")
 		ADD_EXTENSION_FROM_TYPE(uri->data, "image/png",  "png")
+		ADD_EXTENSION_FROM_TYPE(uri->data, "image/webp",  "webp")
+		ADD_EXTENSION_FROM_TYPE(uri->data, "image/avif",  "avif")
 		ADD_EXTENSION_FROM_TYPE(uri->data, "text/plain", "txt")
 		ADD_EXTENSION_FROM_TYPE(uri->data, "text/html",  "html")
+		ADD_EXTENSION_FROM_TYPE(uri->data, "image/svg+xml", "svg")
+		ADD_EXTENSION_FROM_TYPE(uri->data, "image/jxl", "jxl")
 		return stracpy("");
 	}
 
@@ -1578,7 +1582,7 @@ struct uri_cache_entry {
 
 struct uri_cache {
 	struct hash *map;
-	struct object object;
+	struct elinks_object object;
 };
 
 static struct uri_cache uri_cache;

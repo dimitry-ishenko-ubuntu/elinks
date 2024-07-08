@@ -13,7 +13,7 @@ struct document;
 struct view_state;
 
 struct document_view {
-	LIST_HEAD(struct document_view);
+	LIST_HEAD_EL(struct document_view);
 
 	char *name;
 	char **search_word;
@@ -21,6 +21,8 @@ struct document_view {
 	struct session *session;
 	struct document *document;
 	struct view_state *vs;
+
+	struct document_view *parent_doc_view;
 
 	struct el_box box;	/**< pos and size of window */
 	int last_x, last_y; /**< last pos of window */
@@ -31,12 +33,14 @@ struct document_view {
 
 #define get_old_current_link(doc_view) \
 	(((doc_view) \
+	  && (doc_view)->vs \
 	  && (doc_view)->vs->old_current_link >= 0 \
 	  && (doc_view)->vs->old_current_link < (doc_view)->document->nlinks) \
 	? &(doc_view)->document->links[(doc_view)->vs->old_current_link] : NULL)
 
 #define get_current_link(doc_view) \
 	(((doc_view) \
+	  && (doc_view)->vs \
 	  && (doc_view)->vs->current_link >= 0 \
 	  && (doc_view)->vs->current_link < (doc_view)->document->nlinks) \
 	? &(doc_view)->document->links[(doc_view)->vs->current_link] : NULL)

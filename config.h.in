@@ -120,8 +120,8 @@
 /* Define if you want: HTML highlighting support */
 #undef CONFIG_HTML_HIGHLIGHT
 
-/* Define if you want: idn support */
-#undef CONFIG_IDN
+/* Define if you want: idn2 support */
+#undef CONFIG_IDN2
 
 /* Define if you want: interlinking support */
 #undef CONFIG_INTERLINK
@@ -132,11 +132,23 @@
 /* Define if you want: LEDs support */
 #undef CONFIG_LEDS
 
+/* Define if you want: libcss support */
+#undef CONFIG_LIBCSS
+
+/* Define if you want: libcurl support */
+#undef CONFIG_LIBCURL
+
+/* Define if you want: libdom support */
+#undef CONFIG_LIBDOM
+
 /* Define if you want: libev support */
 #undef CONFIG_LIBEV
 
 /* Define if you want: libevent support */
 #undef CONFIG_LIBEVENT
+
+/* Define if you want: libsixel support */
+#undef CONFIG_LIBSIXEL
 
 /* Define if you want: lzma support */
 #undef CONFIG_LZMA
@@ -264,9 +276,6 @@
 
 /* Define if you want: XBEL bookmarks support */
 #undef CONFIG_XBEL_BOOKMARKS
-
-/* Define if you want: libxml++5.0 support */
-#undef CONFIG_XML
 
 /* Define if you want: XmlTo support */
 #undef CONFIG_XMLTO
@@ -456,8 +465,8 @@
 /* Define if you have the iconv() function. */
 #undef HAVE_ICONV
 
-/* Define to 1 if you have the <idna.h> header file. */
-#undef HAVE_IDNA_H
+/* Define to 1 if you have the <idn2.h> header file. */
+#undef HAVE_IDN2_H
 
 /* Define to 1 if you have the <ifaddrs.h> header file. */
 #undef HAVE_IFADDRS_H

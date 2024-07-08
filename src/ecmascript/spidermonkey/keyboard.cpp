@@ -116,8 +116,6 @@ keyboardEvent_constructor(JSContext* ctx, unsigned argc, JS::Value* vp)
 #endif
 		return false;
 	}
-	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
-
 	if (!newObj) {
 		return false;
 	}
@@ -155,7 +153,6 @@ keyboardEvent_get_property_key(JSContext *ctx, unsigned int argc, JS::Value *vp)
 #endif
 		return false;
 	}
-	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
 	struct keyboard *keyb = JS::GetMaybePtrFromReservedSlot<struct keyboard>(hobj, 0);
 
 	if (!keyb) {
@@ -185,7 +182,6 @@ keyboardEvent_get_property_keyCode(JSContext *ctx, unsigned int argc, JS::Value 
 #endif
 		return false;
 	}
-	struct ecmascript_interpreter *interpreter = (struct ecmascript_interpreter *)JS::GetRealmPrivate(comp);
 	struct keyboard *keyb = JS::GetMaybePtrFromReservedSlot<struct keyboard>(hobj, 0);
 
 	if (!keyb) {
@@ -214,7 +210,12 @@ get_keyboardEvent(JSContext *ctx, struct term_event *ev)
 	if (!keyb) {
 		return NULL;
 	}
-	keyCode = keyb->keyCode = get_kbd_key(ev);
+	keyCode = get_kbd_key(ev);
+
+	if (keyCode == KBD_ENTER) {
+		keyCode = 13;
+	}
+	keyb->keyCode = keyCode;
 	JS::SetReservedSlot(k, 0, JS::PrivateValue(keyb));
 
 	return k;

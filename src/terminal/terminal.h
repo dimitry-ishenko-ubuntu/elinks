@@ -66,7 +66,7 @@ enum term_redrawing_state {
  *
  * @todo TODO: Regroup the following into logical chunks. --pasky */
 struct terminal {
-	LIST_HEAD(struct terminal); /*!< ::terminals is the sentinel.  */
+	LIST_HEAD_EL(struct terminal); /*!< ::terminals is the sentinel.  */
 
 #ifdef CONFIG_SCRIPTING_SPIDERMONKEY
 	struct JSObject *jsobject; /* Instance of terminal_class */
@@ -151,6 +151,9 @@ struct terminal {
 	unsigned int utf8_io:1;
 #endif /* CONFIG_UTF8 */
 
+#ifdef CONFIG_LIBSIXEL
+	unsigned int sixel:1;
+#endif
 	/** The current tab number. */
 	int current_tab;
 
@@ -172,6 +175,12 @@ struct terminal {
 	void *textarea_data;
 
 	struct term_event_mouse prev_mouse_event;
+
+#ifdef CONFIG_LIBSIXEL
+	LIST_OF(struct image) images;
+	int cell_width;
+	int cell_height;
+#endif
 };
 
 #define do_not_ignore_next_mouse_event(term) \
@@ -198,6 +207,8 @@ void redraw_all_terminals(void);
 void destroy_all_terminals(void);
 void exec_thread(char *, int);
 void close_handle(void *);
+void clean_temporary_files(void);
+long get_number_of_temporary_files(void);
 
 #ifdef CONFIG_FASTMEM
 #define assert_terminal_ptr_not_dangling(suspect) ((void) 0)

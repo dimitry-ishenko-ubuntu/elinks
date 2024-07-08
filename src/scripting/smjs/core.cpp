@@ -78,7 +78,7 @@ smjs_do_file(char *path)
 	opts.setNoScriptRval(true);
 	JS::RootedValue rval(smjs_ctx);
 
-	JS::Realm *prev = JS::EnterRealm(smjs_ctx, smjs_elinks_object);
+	JSAutoRealm ar(smjs_ctx, smjs_elinks_object);
 
 	if (add_file_to_string(&script, path)) {
 		JS::SourceText<mozilla::Utf8Unit> srcBuf;
@@ -98,7 +98,6 @@ smjs_do_file(char *path)
 		ret = 0;
 	}
 
-	JS::LeaveRealm(smjs_ctx, prev);
 	done_string(&script);
 
 	return ret;
@@ -121,11 +120,12 @@ static void
 smjs_load_hooks(void)
 {
 	char *path;
+	char *xdg_config_home = get_xdg_config_home();
 
 	assert(smjs_ctx);
 
-	if (elinks_home) {
-		path = straconcat(elinks_home, SMJS_HOOKS_FILENAME,
+	if (xdg_config_home) {
+		path = straconcat(xdg_config_home, SMJS_HOOKS_FILENAME,
 				  (char *) NULL);
 	} else {
 		path = stracpy(CONFDIR STRING_DIR_SEP SMJS_HOOKS_FILENAME);
@@ -153,7 +153,8 @@ init_smjs(struct module *module)
 
 	smjs_init_elinks_object();
 
-	JS::RootedObject r_smjs_global_object(smjs_ctx, smjs_global_object);
+	JS::RootedObject r_smjs_global_object(smjs_ctx, smjs_global_object->get());
+	JSAutoRealm ar(smjs_ctx, r_smjs_global_object);
 
 	JS_DefineFunction(smjs_ctx, r_smjs_global_object, "do_file",
 	                  &smjs_do_file_wrapper, 1, 0);
@@ -176,6 +177,7 @@ cleanup_smjs(struct module *module)
 	 * have to call smjs_detach_cache_entry_object on each cache
 	 * entry before it releases the runtime here.  */
 	//JS_DestroyContext(smjs_ctx);
+	delete smjs_global_object;
 	spidermonkey_runtime_release();
 }
 
@@ -238,10 +240,7 @@ add_jschars_to_utf8_string(struct string *utf8,
 			}
 		}
 
-		if (unicode == 0) {
-			if (!add_char_to_string(utf8, '\0'))
-				return NULL;
-		} else {
+		if (unicode) {
 			if (!add_to_string(utf8, encode_utf8(unicode)))
 				return NULL;
 		}

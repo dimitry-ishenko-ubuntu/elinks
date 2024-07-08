@@ -21,23 +21,34 @@ struct ecmascript_timeout;
 struct el_form_control;
 struct frame_desc;
 struct frameset_desc;
+struct image;
 struct module;
 struct screen_char;
+struct string;
 
 /** Nodes are used for marking areas of text on the document canvas as
  * searchable. */
 struct node {
-	LIST_HEAD(struct node);
+	LIST_HEAD_EL(struct node);
 
 	struct el_box box;
 };
 
+struct sixel {
+	char *pixels;
+	unsigned int width;
+	unsigned int height;
+};
 
 /** The document line consisting of the chars ready to be copied to
  * the terminal screen. */
 struct line {
-	struct screen_char *chars;
-	int length;
+	union {
+		struct screen_char *chars;
+		struct sixel *sixel;
+	} ch;
+	unsigned int length:30;
+	unsigned int kind:1;
 };
 
 /** Codepage status */
@@ -63,7 +74,7 @@ struct point {
 /* Tags are used for ``id''s or anchors in the document referenced by the
  * fragment part of the URI. */
 struct tag {
-	LIST_HEAD(struct tag);
+	LIST_HEAD_EL(struct tag);
 
 	int x, y;
 	char name[1]; /* must be last of struct. --Zas */
@@ -88,14 +99,16 @@ enum script_event_hook_type {
 	SEVHOOK_ONMOUSEOUT,
 	SEVHOOK_ONBLUR,
 	SEVHOOK_ONKEYDOWN,
-	SEVHOOK_ONKEYUP
+	SEVHOOK_ONKEYUP,
+	SEVHOOK_ONKEYPRESS,
+	SEVHOOK_ONKEYPRESS_BODY,
 };
 
 /* keep in sync with above */
 extern const char *script_event_hook_name[];
 
 struct script_event_hook {
-	LIST_HEAD(struct script_event_hook);
+	LIST_HEAD_EL(struct script_event_hook);
 
 	enum script_event_hook_type type;
 	char *src;
@@ -220,11 +233,16 @@ struct document {
 	/** used by setTimeout */
 	LIST_OF(struct ecmascript_timeout) timeouts;
 	int ecmascript_counter;
+	char *body_onkeypress;
+#endif
+#ifdef CONFIG_LIBDOM
 	void *dom;
 	void *element_map;
-	char *text;
+	void *element_map_rev;
+	struct string text;
 	void *forms_nodeset;
 #endif
+
 #ifdef CONFIG_CSS
 	/** @todo FIXME: We should externally maybe using cache_entry store the
 	 * dependencies between the various entries so nothing gets removed
@@ -293,6 +311,9 @@ struct document {
 
 	struct el_box clipboard_box;
 	enum clipboard_status clipboard_status;
+#ifdef CONFIG_LIBSIXEL
+	LIST_OF(struct image) images;
+#endif
 };
 
 #define document_has_frames(document_) ((document_) && (document_)->frame_desc)
@@ -331,6 +352,10 @@ int get_format_cache_used_count(void);
 int get_format_cache_refresh_count(void);
 
 void shrink_format_cache(int);
+
+#ifdef CONFIG_ECMASCRIPT
+int get_link_number_by_offset(struct document *document, int offset);
+#endif
 
 extern struct module document_module;
 

@@ -24,7 +24,7 @@ int get_system_env(void);
 int get_e(const char *env);
 int is_xterm(void);
 int is_twterm(void);
-void get_terminal_size(int, int *, int *);
+void get_terminal_size(int, int *, int *, int *, int *);
 void handle_terminal_resize(int, void (*)(void));
 void unhandle_terminal_resize(int);
 void set_bin(int);
@@ -53,9 +53,7 @@ int resize_window(int, int, int, int);
 int can_resize_window(int);
 int can_open_os_shell(int);
 void set_highpri(void);
-#ifndef WIN32
 char *tempname(const char *dir, const char *pfx, char *suff);
-#endif
 
 #ifdef USE_OPEN_PREALLOC
 int open_prealloc(char *, int, int, off_t);

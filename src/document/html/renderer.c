@@ -82,7 +82,7 @@ struct table_cache_entry_key {
 };
 
 struct table_cache_entry {
-	LIST_HEAD(struct table_cache_entry);
+	LIST_HEAD_EL(struct table_cache_entry);
 
 	struct table_cache_entry_key key;
 	struct part part;
@@ -135,20 +135,20 @@ realloc_line(struct html_context *html_context, struct document *document,
 	if (length < orig_length)
 		return orig_length;
 
-	if (!ALIGN_LINE(&line->chars, line->length, length + 1))
+	if (!ALIGN_LINE(&line->ch.chars, line->length, length + 1))
 		return -1;
 
 	/* We cannot rely on the aligned allocation to clear the members for us
 	 * since for line splitting we simply trim the length. Question is if
 	 * it is better to to clear the line after the splitting or here. */
-	end = &line->chars[length];
+	end = &line->ch.chars[length];
 	end->data = ' ';
 	end->attr = 0;
 	set_screen_char_color(end, par_elformat.color.background, 0x0,
 			      COLOR_ENSURE_CONTRAST, /* for bug 461 */
 			      document->options.color_mode);
 
-	for (pos = &line->chars[line->length]; pos < end; pos++) {
+	for (pos = &line->ch.chars[line->length]; pos < end; pos++) {
 		copy_screen_chars(pos, end, 1);
 	}
 
@@ -177,7 +177,7 @@ realloc_spaces(struct part *part, int length)
 
 
 #define LINE(y_)	part->document->data[Y(y_)]
-#define POS(x_, y_)	LINE(y_).chars[X(x_)]
+#define POS(x_, y_)	LINE(y_).ch.chars[X(x_)]
 #define LEN(y_)		int_max(LINE(y_).length - part->box.x, 0)
 
 
@@ -470,7 +470,7 @@ put_combined(struct part *part, int x)
 
 			if (prev != UCS_NO_CHAR)
 				document->data[document->comb_y]
-					.chars[document->comb_x].data = prev;
+					.ch.chars[document->comb_x].data = prev;
 		}
 		document->combi_length = 0;
 	}
@@ -1453,7 +1453,11 @@ init_link_event_hooks(struct html_context *html_context, struct link *link)
 	add_evhook(link->event_hooks, SEVHOOK_ONBLUR, elformat.onblur);
 	add_evhook(link->event_hooks, SEVHOOK_ONKEYDOWN, elformat.onkeydown);
 	add_evhook(link->event_hooks, SEVHOOK_ONKEYUP, elformat.onkeyup);
+	add_evhook(link->event_hooks, SEVHOOK_ONKEYPRESS, elformat.onkeypress);
 
+#ifdef CONFIG_ECMASCRIPT
+	add_evhook(link->event_hooks, SEVHOOK_ONKEYPRESS_BODY, html_context->document->body_onkeypress);
+#endif
 #undef add_evhook
 }
 
@@ -1555,7 +1559,7 @@ new_link(struct html_context *html_context, const char *name, int namelen)
 				: elformat.color.clink;
 
 #ifdef CONFIG_ECMASCRIPT
-	link->element_offset = elformat.top_name ? elformat.top_name - document->text : 0;
+	link->element_offset = (elformat.top_name && document->text.source) ? elformat.top_name - document->text.source : 0;
 #endif
 
 	init_link_event_hooks(html_context, link);
@@ -2182,7 +2186,7 @@ assert_forms_list_ok(LIST_OF(struct form) *forms)
 			assert(followers == 1);
 	}
 
-	assert(saw_form_num_0 == 1);
+//	assert(saw_form_num_0 == 1);
 }
 #else  /* !CONFIG_DEBUG */
 # define assert_forms_list_ok(forms) ((void) 0)
@@ -2250,7 +2254,7 @@ color_link_lines(struct html_context *html_context)
 		int x;
 
 		for (x = 0; x < document->data[y].length; x++) {
-			struct screen_char *schar = &document->data[y].chars[x];
+			struct screen_char *schar = &document->data[y].ch.chars[x];
 
 			set_term_color(schar, &colors, color_flags, color_mode);
 
@@ -2402,7 +2406,7 @@ html_special(struct html_context *html_context, html_special_type_T c, ...)
 				int width = va_arg(l, int);
 				int height = va_arg(l, int);
 
-				add_iframeset_entry(&document->iframe_desc, url, name, y, width, height);
+				add_iframeset_entry(&document->iframe_desc, url, name, y, width, height, document->nlinks);
 			}
 			break;
 		}
@@ -2588,7 +2592,7 @@ render_html_document(struct cache_entry *cached, struct document *document,
 	char *end;
 	struct string title;
 	struct string head;
-	int xml2;
+	int libdom;
 
 	assert(cached && document);
 	if_assert_failed return;
@@ -2600,24 +2604,25 @@ render_html_document(struct cache_entry *cached, struct document *document,
 	start = buffer->source;
 	end = buffer->source + buffer->length;
 
-	html_context = init_html_parser(cached->uri, &document->options,
+	html_context = init_html_parser(cached->uri, document,
 	                                start, end, &head, &title,
 	                                put_chars_conv, line_break,
 	                                html_special);
 	if (!html_context) return;
-#ifdef CONFIG_ECMASCRIPT
-	xml2 = !!document->dom;
+
+#ifdef CONFIG_LIBDOM
+	libdom = !!document->dom;
 #else
-	xml2 = 0;
+	libdom = 0;
 #endif
 	renderer_context.g_ctrl_num = 0;
 	renderer_context.cached = cached;
 	renderer_context.convert_table = get_convert_table(head.source,
 							   document->options.cp,
-							   xml2 ? get_cp_index("utf-8") : document->options.assume_cp,
+							   libdom ? get_cp_index("utf-8") : document->options.assume_cp,
 							   &document->cp,
 							   &document->cp_status,
-							   xml2 ? 1 : document->options.hard_assume);
+							   libdom ? 1 : document->options.hard_assume);
 #ifdef CONFIG_UTF8
 	html_context->options->utf8 = is_cp_utf8(document->options.cp);
 #endif /* CONFIG_UTF8 */
@@ -2626,10 +2631,10 @@ render_html_document(struct cache_entry *cached, struct document *document,
 	if (title.length) {
 		/* CSM_DEFAULT because init_html_parser() did not
 		 * decode entities in the title.  */
-		document->title = convert_string(renderer_context.convert_table,
+		mem_free_set(&document->title, convert_string(renderer_context.convert_table,
 						 title.source, title.length,
 						 document->options.cp,
-						 CSM_DEFAULT, NULL, NULL, NULL);
+						 CSM_DEFAULT, NULL, NULL, NULL));
 	}
 	done_string(&title);
 
@@ -2641,7 +2646,7 @@ render_html_document(struct cache_entry *cached, struct document *document,
 	/* Drop empty allocated lines at end of document if any
 	 * and adjust document height. */
 	while (document->height && !document->data[document->height - 1].length)
-		mem_free_if(document->data[--document->height].chars);
+		mem_free_if(document->data[--document->height].ch.chars);
 
 	/* Calculate document width. */
 	{

@@ -330,6 +330,14 @@ static union option_info config_options_info[] = {
 		N_("Highlight links to directories in FTP and local directory "
 		"listing.")),
 
+	INIT_OPT_INT("document.browse.links", N_("Handling of hierbox's \"Go to\" button"),
+		"hierbox_goto", OPT_ZERO, 0, 3, 0,
+		N_("Define how to handle hierbox's \"Go to\" button (for example in bookmarks manager):\n"
+		"0 means open link in current tab\n"
+		"1 means open link in new tab in foreground\n"
+		"2 means open link in new tab in background\n"
+		"3 means open link in new window")),
+
 	INIT_OPT_BOOL("document.browse.links", N_("Number links"),
 		"numbering", OPT_ZERO, 0,
 		N_("Display numbers next to the links.")),
@@ -633,7 +641,7 @@ static union option_info config_options_info[] = {
 
 
 	INIT_OPT_COLOR("document.colors", N_("Text color"),
-		"text", OPT_ZERO, "#ffffff",
+		"text", OPT_ZERO, "#bfbfbf",
 		N_("Default text color.")),
 
 	INIT_OPT_COLOR("document.colors", N_("Background color"),
@@ -868,6 +876,12 @@ static union option_info config_options_info[] = {
 		N_("Change ascii border characters to frame borders. Usage example: "
 		"mysql --pager=elinks")),
 
+#ifdef CONFIG_LIBSIXEL
+	INIT_OPT_BOOL("document.plain", N_("Sixel"),
+		"sixel", OPT_ZERO, 0,
+		N_("Whether to display sixel images in plain text documents.")),
+#endif
+
 	INIT_OPT_TREE("document", N_("URI passing"),
 		"uri_passing", OPT_SORT | OPT_AUTOCREATE,
 		N_("Rules for passing URIs to external commands. When one "
@@ -885,7 +899,7 @@ static union option_info config_options_info[] = {
 		"active, and they do not receive standard input. "
 		"The \"foreground\" suboption reverses this behaviour: "
 		"the command receives standard input "
-		"and elinks is blocked.\n")),
+		"and elinks is blocked.")),
 
 	INIT_OPT_TREE("document.uri_passing", NULL,
 		"_template_", OPT_ZERO,
@@ -909,12 +923,12 @@ static union option_info config_options_info[] = {
 
 	INIT_OPT_TREE("", N_("Information files"),
 		"infofiles", OPT_SORT,
-		N_("Options for information files in ~/.elinks.")),
+		N_("Options for information files in ~/.config/elinks.")),
 
 	INIT_OPT_INT("infofiles", N_("Save interval"),
 		"save_interval", OPT_ZERO, 0, INT_MAX, 300,
 		N_("Interval at which to trigger information files in "
-		"~/.elinks to be saved to disk if they have changed "
+		"~/.config/elinks to be saved to disk if they have changed "
 		"(seconds; 0 to disable)")),
 
 	INIT_OPT_BOOL("infofiles", N_("Use secure file saving"),
@@ -1116,11 +1130,19 @@ static union option_info config_options_info[] = {
 		"italic", OPT_ZERO, 0,
 		N_("If we should use italics.")),
 
+#ifdef CONFIG_LIBSIXEL
+	INIT_OPT_BOOL("terminal._template_", N_("Sixel"),
+		"sixel", OPT_ZERO, 0,
+		N_("Whether terminal supports sixel graphics.")),
+#endif
+	INIT_OPT_BOOL("terminal._template_", N_("Strikethrough"),
+		"strike", OPT_ZERO, 0,
+		N_("If we should use strikethrough.")),
+
 	INIT_OPT_BOOL("terminal._template_", N_("Underline"),
 		"underline", OPT_ZERO, 0,
 		N_("If we should use underline or enhance the color "
 		"instead.")),
-
 	INIT_OPT_CODEPAGE("terminal._template_", N_("Codepage"),
 		"charset", OPT_ZERO, "System",
 		N_("Codepage of charset used for displaying content on "
@@ -1550,6 +1572,11 @@ static union option_info config_options_info[] = {
 		"keep_session_active", OPT_ZERO, 0,
 		N_("Keep the session active even if the last terminal "
 		"exits.")),
+
+	INIT_OPT_BOOL("ui.sessions", N_("Postpone unlink temporary files"),
+		"postpone_unlink", OPT_ZERO, 0,
+		N_("Clean temporary files (created for example while viewing images) at exit "
+		"of ELinks not immediately after preview.")),
 
 	INIT_OPT_STRING("ui", N_("Clipboard filename"),
 		"clipboard_file", OPT_ZERO, "",

@@ -49,8 +49,6 @@
 #include "viewer/text/link.h"
 #include "viewer/text/vs.h"
 
-#include <libxml++/libxml++.h>
-
 static bool forms_set_items(JSContext *ctx, JS::HandleObject hobj, void *node);
 static bool forms_get_property_length(JSContext *ctx, unsigned int argc, JS::Value *vp);
 
@@ -114,7 +112,7 @@ find_form_by_name(JSContext *ctx,
 
 	foreach (form, doc_view->document->forms) {
 		if (form->name && !c_strcasecmp(string, form->name)) {
-			hvp.setObject(*get_form_object(ctx, nullptr, form));
+			hvp.setObject(*get_form_object(ctx, form));
 			break;
 		}
 	}
@@ -158,7 +156,11 @@ forms_set_items(JSContext *ctx, JS::HandleObject hobj, void *node)
 
 	foreach (fv, vs->forms) {
 		struct form *form = find_form_by_form_view(document, fv);
-		JS::RootedObject v(ctx, get_form_object(ctx, nullptr, form));
+
+		if (!form) {
+			continue;
+		}
+		JS::RootedObject v(ctx, get_form_object(ctx, form));
 		JS::RootedValue ro(ctx, JS::ObjectOrNullValue(v));
 		JS_SetElement(ctx, hobj, counter, ro);
 
@@ -280,7 +282,7 @@ forms_item2(JSContext *ctx, JS::HandleObject hobj, int index, JS::MutableHandleV
 		counter++;
 		if (counter == index) {
 			struct form *form = find_form_by_form_view(document, fv);
-			hvp.setObject(*get_form_object(ctx, nullptr, form));
+			hvp.setObject(*get_form_object(ctx, form));
 			break;
 		}
 	}

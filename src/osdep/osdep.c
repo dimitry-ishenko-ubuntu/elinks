@@ -216,16 +216,26 @@ unhandle_terminal_resize(int fd)
 }
 
 void
-get_terminal_size(int fd, int *x, int *y)
+get_terminal_size(int fd, int *x, int *y, int *cw, int *ch)
 {
 	struct winsize ws;
 
-	if (ioctl(1, TIOCGWINSZ, &ws) != -1) {
+	if (ioctl(fd, TIOCGWINSZ, &ws) != -1) {
 		*x = ws.ws_col;
 		*y = ws.ws_row;
+
+		if (ws.ws_col && ws.ws_row && ws.ws_xpixel && ws.ws_ypixel) {
+			*cw = ws.ws_xpixel / ws.ws_col;
+			*ch = ws.ws_ypixel / ws.ws_row;
+		} else {
+			*cw = 8;
+			*ch = 16;
+		}
 	} else {
 		*x = 0;
 		*y = 0;
+		*cw = 8;
+		*ch = 16;
 	}
 
 	if (!*x) {
@@ -303,61 +313,26 @@ is_gnuscreen(void)
 
 #if defined(CONFIG_OS_UNIX) || defined(CONFIG_OS_WIN32)
 
-static int
-check_more_envs(void)
-{
-	const char *envs[] = { "WINDOWID",
-		"KONSOLE_DCOP_SESSION",
-		"GNOME_TERMINAL_SERVICE",
-		NULL
-	};
-	const char **v;
-
-	for (v = envs; *v; ++v)
-	{
-		char *value = getenv(*v);
-
-		if (value && *value) {
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
 int
 is_xterm(void)
 {
 	static int xt = -1;
 
 	if (xt == -1) {
-		/* Paraphrased from debian bug 228977:
-		 *
-		 * It is not enough to simply check the DISPLAY env variable,
-		 * as it is pretty legal to have a DISPLAY set. While these
-		 * days this practice is pretty uncommon, it still makes sense
-		 * sometimes, especially for people who prefer the text mode
-		 * for some reason. Only relying on DISPLAY will results in bad
-		 * codes being written to the terminal.
-		 *
-		 * Any real xterm derivative sets WINDOWID as well.
-		 * Unfortunately, konsole is an exception, and it needs to be
-		 * checked for separately.
-		 *
-		 * FIXME: The code below still fails to detect some terminals
-		 * that do support a title (like the popular PuTTY ssh client).
-		 * In general, proper xterm detection is a nightmarish task...
-		 *
-		 * -- Adam Borowski <kilobyte@mimuw.edu.pl> */
-
 		char *term = getenv("TERM");
 
 		if (term && !strncmp("xterm", term, 5)) {
 			xt = 1;
 		} else {
-			char *display = getenv("DISPLAY");
+			char *wayland = getenv("WAYLAND_DISPLAY");
 
-			xt = (display && *display && check_more_envs());
+			if (wayland && *wayland) {
+				xt = 1;
+			} else {
+				char *display = getenv("DISPLAY");
+
+				xt = display && *display;
+			}
 		}
 	}
 
@@ -382,27 +357,28 @@ exe(char *path)
 
 int
 exe_no_stdin(char *path) {
-	int ret;
+	int ret = 0;
 #ifndef WIN32
 
-  #if defined(F_GETFD) && defined(FD_CLOEXEC)
-  	int flags;
-  
-  	flags = fcntl(STDIN_FILENO, F_GETFD);
-  	fcntl(STDIN_FILENO, F_SETFD, flags | FD_CLOEXEC);
-  	ret = exe(path);
-  	fcntl(STDIN_FILENO, F_SETFD, flags);
-  #else
-  	pid_t pid;
-  
-  	pid = fork();
-  	if (pid == 0) {
-  		close(STDIN_FILENO);
-  		exit(exe(path));
-  	}
-  	else if (pid > 0)
-  		waitpid(pid, &ret, 0);
-  #endif
+#if defined(F_GETFD) && defined(FD_CLOEXEC)
+	int flags;
+
+	flags = fcntl(STDIN_FILENO, F_GETFD);
+	fcntl(STDIN_FILENO, F_SETFD, flags | FD_CLOEXEC);
+	ret = exe(path);
+	fcntl(STDIN_FILENO, F_SETFD, flags);
+#else
+	pid_t pid;
+
+	pid = fork();
+	if (pid == 0) {
+		close(STDIN_FILENO);
+		exit(exe(path));
+	}
+	else if (pid > 0)
+		waitpid(pid, &ret, 0);
+#endif
+
 #endif
 	return ret;
 }

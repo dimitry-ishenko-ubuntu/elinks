@@ -14,6 +14,7 @@
 extern "C" {
 #endif
 
+struct document;
 struct document_options;
 struct el_form_control;
 struct frameset_desc;
@@ -76,6 +77,7 @@ struct text_attrib {
 	char *onblur;
 	char *onkeydown;
 	char *onkeyup;
+	char *onkeypress;
 
 	char *top_name;
 };
@@ -143,7 +145,7 @@ enum html_element_pseudo_class {
 typedef unsigned char html_element_pseudo_class_T;
 
 struct html_element {
-	LIST_HEAD(struct html_element);
+	LIST_HEAD_EL(struct html_element);
 
 	enum html_element_mortality_type type;
 
@@ -178,7 +180,7 @@ struct html_element {
 /* Interface for the renderer */
 
 struct html_context *
-init_html_parser(struct uri *uri, struct document_options *options,
+init_html_parser(struct uri *uri, struct document *document,
 		 char *start, char *end,
 		 struct string *head, struct string *title,
 		 void (*put_chars)(struct html_context *, const char *, int),

@@ -2,6 +2,7 @@ top_builddir=../..
 include $(top_builddir)/Makefile.config
 
 OBJS-$(CONFIG_MOUSE) += mouse.o
+OBJS-$(CONFIG_LIBSIXEL) += sixel.o
 OBJS-$(CONFIG_TERMINFO) += terminfo.o
 
 OBJS = \
@@ -12,7 +13,7 @@ OBJS = \
  kbd.o \
  screen.o \
  tab.o \
- terminal.obj \
+ terminal.o \
  window.o
 
 include $(top_srcdir)/Makefile.lib

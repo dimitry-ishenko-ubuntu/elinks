@@ -17,8 +17,8 @@
 #include "dialogs/menu.h"
 #include "dialogs/status.h"
 #include "document/html/frames.h"
-#include "document/xml/renderer.h"
-#include "document/xml/renderer2.h"
+#include "document/libdom/renderer.h"
+#include "document/libdom/renderer2.h"
 #include "document/document.h"
 #include "document/forms.h"
 #include "document/renderer.h"
@@ -32,6 +32,7 @@
 #include "ecmascript/quickjs/history.h"
 #include "ecmascript/quickjs/localstorage.h"
 #include "ecmascript/quickjs/location.h"
+#include "ecmascript/quickjs/mapa.h"
 #include "ecmascript/quickjs/navigator.h"
 #include "ecmascript/quickjs/screen.h"
 #include "ecmascript/quickjs/unibar.h"
@@ -50,6 +51,7 @@
 #include "terminal/tab.h"
 #include "terminal/terminal.h"
 #include "util/conv.h"
+#include "util/memcount.h"
 #include "util/string.h"
 #include "viewer/text/draw.h"
 #include "viewer/text/form.h"
@@ -57,20 +59,79 @@
 #include "viewer/text/view.h"
 #include "viewer/text/vs.h"
 
-#include <libxml++/libxml++.h>
-
 /*** Global methods */
-
 
 static void
 quickjs_init(struct module *xxx)
 {
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
+#endif
+	map_attrs = attr_create_new_attrs_map();
+	map_attributes = attr_create_new_attributes_map();
+	map_rev_attributes = attr_create_new_attributes_map_rev();
+	map_collections = attr_create_new_collections_map();
+	map_rev_collections = attr_create_new_collections_map_rev();
+	map_doctypes = attr_create_new_doctypes_map();
+	map_elements = attr_create_new_elements_map();
+	map_privates = attr_create_new_privates_map_void();
+	map_form = attr_create_new_form_map();
+	map_form_rev = attr_create_new_form_map_rev();
+	map_forms = attr_create_new_forms_map();
+	map_rev_forms = attr_create_new_forms_map_rev();
+	map_inputs = attr_create_new_input_map();
+	map_nodelist = attr_create_new_nodelist_map();
+	map_rev_nodelist = attr_create_new_nodelist_map_rev();
+
+	map_form_elements = attr_create_new_form_elements_map();
+	map_form_elements_rev = attr_create_new_form_elements_map_rev();
 	//js_module_init_ok = spidermonkey_runtime_addref();
 }
 
 static void
 quickjs_done(struct module *xxx)
 {
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
+#endif
+	attr_clear_map(map_attrs);
+	attr_clear_map(map_attributes);
+	attr_clear_map_rev(map_rev_attributes);
+	attr_clear_map(map_collections);
+	attr_clear_map_rev(map_rev_collections);
+	attr_clear_map(map_doctypes);
+	attr_clear_map(map_elements);
+	attr_clear_map_void(map_privates);
+	attr_clear_map(map_form);
+	attr_clear_map_rev(map_form_rev);
+	attr_clear_map(map_forms);
+	attr_clear_map_rev(map_rev_forms);
+	attr_clear_map(map_inputs);
+	attr_clear_map(map_nodelist);
+	attr_clear_map_rev(map_rev_nodelist);
+
+	attr_clear_map(map_form_elements);
+	attr_clear_map_rev(map_form_elements_rev);
+
+	attr_delete_map(map_attrs);
+	attr_delete_map(map_attributes);
+	attr_delete_map_rev(map_rev_attributes);
+	attr_delete_map(map_collections);
+	attr_delete_map_rev(map_rev_collections);
+	attr_delete_map(map_doctypes);
+	attr_delete_map(map_elements);
+	attr_delete_map_void(map_privates);
+	attr_delete_map(map_form);
+	attr_delete_map_rev(map_form_rev);
+	attr_delete_map(map_forms);
+	attr_delete_map_rev(map_rev_forms);
+	attr_delete_map(map_inputs);
+	attr_delete_map(map_nodelist);
+	attr_delete_map_rev(map_rev_nodelist);
+
+	attr_delete_map(map_form_elements);
+	attr_delete_map_rev(map_form_elements_rev);
+
 //	if (js_module_init_ok)
 //		spidermonkey_runtime_release();
 }
@@ -78,6 +139,9 @@ quickjs_done(struct module *xxx)
 void *
 quickjs_get_interpreter(struct ecmascript_interpreter *interpreter)
 {
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
+#endif
 	JSContext *ctx;
 //	JSObject *console_obj, *document_obj, /* *forms_obj,*/ *history_obj, *location_obj,
 //	         *statusbar_obj, *menubar_obj, *navigator_obj, *localstorage_obj, *screen_obj;
@@ -85,18 +149,22 @@ quickjs_get_interpreter(struct ecmascript_interpreter *interpreter)
 	assert(interpreter);
 //	if (!js_module_init_ok) return NULL;
 
-	JSRuntime *rt = JS_NewRuntime();
-	if (!rt) {
+#ifdef CONFIG_DEBUG
+	interpreter->rt = JS_NewRuntime2(&el_quickjs_mf, NULL);
+#else
+	interpreter->rt = JS_NewRuntime();
+#endif
+	if (!interpreter->rt) {
 		return nullptr;
 	}
 
-	JS_SetMemoryLimit(rt, 64 * 1024 * 1024);
-	JS_SetGCThreshold(rt, 16 * 1024 * 1024);
+	JS_SetMemoryLimit(interpreter->rt, 64 * 1024 * 1024);
+	JS_SetGCThreshold(interpreter->rt, 16 * 1024 * 1024);
 
-	ctx = JS_NewContext(rt);
+	ctx = JS_NewContext(interpreter->rt);
 
 	if (!ctx) {
-		JS_FreeRuntime(rt);
+		JS_FreeRuntime(interpreter->rt);
 		return nullptr;
 	}
 
@@ -105,7 +173,7 @@ quickjs_get_interpreter(struct ecmascript_interpreter *interpreter)
 
 //	JS::SetWarningReporter(ctx, error_reporter);
 
-	JS_SetInterruptHandler(rt, js_heartbeat_callback, interpreter);
+	JS_SetInterruptHandler(interpreter->rt, js_heartbeat_callback, interpreter);
 //	JS::RealmOptions options;
 
 //	JS::RootedObject window_obj(ctx, JS_NewGlobalObject(ctx, &window_class, NULL, JS::FireOnNewGlobalHook, options));
@@ -121,7 +189,6 @@ quickjs_get_interpreter(struct ecmascript_interpreter *interpreter)
 	js_xhr_init(ctx);
 
 	interpreter->document_obj = js_document_init(ctx);
-	interpreter->location_obj = js_location_init(ctx);
 
 	return ctx;
 }
@@ -129,15 +196,18 @@ quickjs_get_interpreter(struct ecmascript_interpreter *interpreter)
 void
 quickjs_put_interpreter(struct ecmascript_interpreter *interpreter)
 {
+#ifdef ECMASCRIPT_DEBUG
+	fprintf(stderr, "%s:%s\n", __FILE__, __FUNCTION__);
+#endif
 	JSContext *ctx;
 
 	assert(interpreter);
 
 	ctx = (JSContext *)interpreter->backend_data;
+
 	JS_FreeContext(ctx);
+	JS_FreeRuntime(interpreter->rt);
 	interpreter->backend_data = nullptr;
-	interpreter->ac = nullptr;
-	interpreter->ac2 = nullptr;
 }
 
 static void
@@ -258,7 +328,13 @@ quickjs_call_function(struct ecmascript_interpreter *interpreter,
 
 	interpreter->heartbeat = add_heartbeat(interpreter);
 	interpreter->ret = ret;
-	JSValue r = JS_Call(ctx, fun, JS_GetGlobalObject(ctx), 0, nullptr);
+
+	JSValue global_object = JS_GetGlobalObject(ctx);
+	REF_JS(global_object);
+
+	JSValue r = JS_Call(ctx, fun, global_object, 0, nullptr);
+	JS_FreeValue(ctx, global_object);
+
 	done_heartbeat(interpreter->heartbeat);
 
 	if (JS_IsException(r)) {
@@ -331,6 +407,7 @@ quickjs_eval_boolback(struct ecmascript_interpreter *interpreter,
 	int ret = -1;
 
 	JS_ToInt32(ctx, &ret, r);
+
 
 	return ret;
 }

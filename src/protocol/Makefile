@@ -2,6 +2,7 @@ top_builddir=../..
 include $(top_builddir)/Makefile.config
 
 SUBDIRS-$(CONFIG_BITTORRENT)	+= bittorrent
+SUBDIRS-$(CONFIG_LIBCURL)	+= curl
 SUBDIRS-$(CONFIG_FINGER)	+= finger
 SUBDIRS-$(CONFIG_FSP)		+= fsp
 SUBDIRS-$(CONFIG_FTP)		+= ftp
@@ -15,6 +16,6 @@ SUBDIRS = auth file http test
 
 OBJS-$(CONFIG_DATA)		+= data.o
 
-OBJS = about.o common.o date.o header.o protocol.obj proxy.o uri.o user.o
+OBJS = about.o common.o date.o header.o protocol.o proxy.o uri.o user.o
 
 include $(top_srcdir)/Makefile.lib

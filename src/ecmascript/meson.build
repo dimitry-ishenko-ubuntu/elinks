@@ -1,7 +1,7 @@
 #INCLUDES += $(SPIDERMONKEY_CFLAGS)
 if conf_data.get('CONFIG_ECMASCRIPT_SMJS')
+	srcs += files('ecmascript.cpp', 'ecmascript-c.cpp', 'localstorage-db.cpp', 'spidermonkey.cpp', 'timer.cpp')
 	subdir('spidermonkey')
-	srcs += files('css2xpath.cpp', 'ecmascript.cpp', 'localstorage-db.cpp', 'spidermonkey.cpp')
 endif
 
 if conf_data.get('CONFIG_ECMASCRIPT_SMJS')
@@ -17,11 +17,15 @@ if CONFIG_ANY_SPIDERMONKEY
 endif
 
 if conf_data.get('CONFIG_MUJS')
+	srcs += files('ecmascript.cpp', 'ecmascript-c.cpp', 'localstorage-db.cpp', 'mujs.cpp', 'timer.cpp')
 	subdir('mujs')
-	srcs += files('css2xpath.cpp', 'ecmascript.cpp', 'localstorage-db.cpp', 'mujs.cpp')
 endif
 
 if conf_data.get('CONFIG_QUICKJS')
+	srcs += files('ecmascript.cpp', 'ecmascript-c.cpp', 'localstorage-db.cpp', 'quickjs.cpp', 'timer.cpp')
 	subdir('quickjs')
-	srcs += files('css2xpath.cpp', 'ecmascript.cpp', 'localstorage-db.cpp', 'quickjs.cpp')
+endif
+
+if conf_data.get('CONFIG_LIBDOM')
+	subdir('libdom')
 endif

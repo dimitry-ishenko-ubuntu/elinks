@@ -49,6 +49,11 @@
 /* Unsafe macros */
 #include "document/html/internal.h"
 
+#ifdef CONFIG_LIBCSS
+#include <libcss/libcss.h>
+#include "document/libdom/css.h"
+#endif
+
 /* TODO: This needs rewrite. Yes, no kidding. */
 
 static int
@@ -201,6 +206,48 @@ add_fragment_identifier(struct html_context *html_context,
 }
 
 #ifdef CONFIG_CSS
+
+#ifdef CONFIG_LIBCSS
+void
+import_css2_stylesheet(struct html_context *html_context, struct uri *base_uri, const char *unterminated_url, int len)
+{
+	char *url;
+	char *import_url;
+	struct uri *uri;
+
+	assert(html_context);
+	assert(base_uri);
+
+	if (!html_context->options->css_enable
+	    || !html_context->options->css_import)
+		return;
+
+	/* unterminated_url might not end with '\0', but join_urls
+	 * requires that, so make a copy.  */
+	url = memacpy(unterminated_url, len);
+	if (!url) return;
+
+	/* HTML <head> urls should already be fine but we can.t detect them. */
+	import_url = join_urls(base_uri, url);
+	mem_free(url);
+
+	if (!import_url) return;
+
+	uri = get_uri(import_url, URI_BASE);
+	mem_free(import_url);
+
+	if (!uri) return;
+
+	/* Request the imported stylesheet as part of the document ... */
+	html_context->special_f(html_context, SP_STYLESHEET, uri);
+
+	/* ... and then attempt to import from the cache. */
+	import_css2(html_context, uri);
+
+	done_uri(uri);
+}
+#endif
+
 void
 import_css_stylesheet(struct css_stylesheet *css, struct uri *base_uri,
 		      const char *unterminated_url, int len)
@@ -285,6 +332,7 @@ html_focusable(struct html_context *html_context, char *a)
 	mem_free_set(&elformat.onblur, get_attr_val(a, "onblur", cp));
 	mem_free_set(&elformat.onkeydown, get_attr_val(a, "onkeydown", cp));
 	mem_free_set(&elformat.onkeyup, get_attr_val(a, "onkeyup", cp));
+	mem_free_set(&elformat.onkeypress, get_attr_val(a, "onkeypress", cp));
 }
 
 void
@@ -758,7 +806,7 @@ done_html_parser_state(struct html_context *html_context,
  *   The title of the document.  This is in the document charset,
  *   and entities have not been decoded.  */
 struct html_context *
-init_html_parser(struct uri *uri, struct document_options *options,
+init_html_parser(struct uri *uri, struct document *document,
 		 char *start, char *end,
 		 struct string *head, struct string *title,
 		 void (*put_chars)(struct html_context *, const char *, int),
@@ -767,6 +815,7 @@ init_html_parser(struct uri *uri, struct document_options *options,
 {
 	struct html_context *html_context;
 	struct html_element *e;
+	struct document_options *options = &document->options;
 
 	assert(uri && options);
 	if_assert_failed return NULL;
@@ -774,6 +823,7 @@ init_html_parser(struct uri *uri, struct document_options *options,
 	html_context = (struct html_context *)mem_calloc(1, sizeof(*html_context));
 	if (!html_context) return NULL;
 
+	html_context->document = document;
 #ifdef CONFIG_CSS
 	html_context->css_styles.import = import_css_stylesheet;
 	init_css_selector_set(&html_context->css_styles.selectors);
@@ -805,7 +855,7 @@ init_html_parser(struct uri *uri, struct document_options *options,
 	elformat.link = elformat.target = elformat.image = NULL;
 	elformat.onclick = elformat.ondblclick = elformat.onmouseover = elformat.onhover
 		= elformat.onfocus = elformat.onmouseout = elformat.onblur
-		= elformat.onkeydown = elformat.onkeyup = NULL;
+		= elformat.onkeydown = elformat.onkeyup = elformat.onkeypress = NULL;
 	elformat.select = NULL;
 	elformat.form = NULL;
 	elformat.title = NULL;
@@ -832,7 +882,7 @@ init_html_parser(struct uri *uri, struct document_options *options,
 
 	html_top->invisible = 0;
 	html_top->name = NULL;
-   	html_top->namelen = 0;
+	html_top->namelen = 0;
 	html_top->options = NULL;
 	html_top->linebreak = 1;
 	html_top->type = ELEMENT_DONT_KILL;
@@ -841,11 +891,27 @@ init_html_parser(struct uri *uri, struct document_options *options,
 	html_context->table_level = 0;
 
 #ifdef CONFIG_CSS
-	html_context->css_styles.import_data = html_context;
+#ifdef CONFIG_LIBCSS
+	if (options->libcss_enable) {
+		if (options->css_enable) {
+			css_error code;
 
-	if (options->css_enable)
-		mirror_css_stylesheet(&default_stylesheet,
-				      &html_context->css_styles);
+			init_list(html_context->sheets);
+			/* prepare a selection context containing the stylesheet */
+			code = css_select_ctx_create(&html_context->select_ctx);
+			if (code != CSS_OK) {
+				//fprintf(stderr, "css_select_ctx_create code=%d\n", code);
+			}
+		}
+	} else 
+#endif
+	do {
+		html_context->css_styles.import_data = html_context;
+
+		if (options->css_enable)
+			mirror_css_stylesheet(&default_stylesheet,
+				&html_context->css_styles);
+	} while (0);
 #endif
 
 	return html_context;
@@ -855,10 +921,24 @@ void
 done_html_parser(struct html_context *html_context)
 {
 #ifdef CONFIG_CSS
-	if (html_context->options->css_enable)
-		done_css_stylesheet(&html_context->css_styles);
-#endif
+#ifdef CONFIG_LIBCSS
+	if (html_context->options->libcss_enable) {
+		if (html_context->options->css_enable) {
+			struct el_sheet *el;
 
+			(void)css_select_ctx_destroy(html_context->select_ctx);
+			foreach (el, html_context->sheets) {
+				(void)css_stylesheet_destroy(el->sheet);
+			}
+			free_list(html_context->sheets);
+		}
+	} else
+#endif
+	do {
+		if (html_context->options->css_enable)
+			done_css_stylesheet(&html_context->css_styles);
+	} while (0);
+#endif
 	mem_free(html_context->base_target);
 	done_uri(html_context->base_href);
 

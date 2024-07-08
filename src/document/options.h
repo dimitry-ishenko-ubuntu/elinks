@@ -62,7 +62,10 @@ struct document_options {
 	int meta_link_display;
 	int default_form_input_size;
 	int document_width;
-
+#ifdef CONFIG_LIBSIXEL
+	int cell_width;
+	int cell_height;
+#endif
 	/** @name The default (fallback) colors.
 	 * @{ */
 	struct text_style default_style;
@@ -76,6 +79,9 @@ struct document_options {
 
 	/* XXX: Keep boolean options grouped to save padding */
 #ifdef CONFIG_CSS
+#ifdef CONFIG_LIBCSS
+	unsigned int libcss_enable:1;
+#endif
 	/** @name CSS stuff
 	 * @{ */
 	unsigned int css_enable:1;
@@ -117,8 +123,6 @@ struct document_options {
 
 	unsigned int links_show_goto:1;
 
-	unsigned int was_xml_parsed:1;
-
 	/* XXX: Everything past this comment is specialy handled by compare_opt() */
 	char *framename;
 
@@ -150,11 +154,16 @@ struct document_options {
 	/** Internal flag for rerendering */
 	unsigned int no_cache:1;
 	unsigned int gradual_rerendering:1;
+	unsigned int was_xml_parsed:1;
 
 #ifdef CONFIG_UTF8
 	unsigned int utf8:1;
 #endif /* CONFIG_UTF8 */
 	unsigned int dump:1;
+
+#ifdef CONFIG_LIBSIXEL
+	unsigned int sixel:1;
+#endif
 	/** Active link coloring.
 	 * This is mostly here to make use of this option cache so
 	 * link drawing is faster. --jonas */

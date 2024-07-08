@@ -16,7 +16,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([config/m4])
 
 PACKAGE=elinks
-VERSION=0.16.1.1
+VERSION=0.17.0
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Package version])
@@ -556,8 +556,8 @@ EL_LOG_CONFIG([CONFIG_BROTLI], [[brotli]], [[$enable_brotli]])
 EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_LZMA, lzma, lzma.h, lzma, lzma_code,
 	[  --with-lzma             enable lzma encoding support])
 
-EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_IDN, idn, idna.h, idn, stringprep_check_version,
-	[  --without-idn           disable international domain names support])
+EL_CONFIG_OPTIONAL_LIBRARY(CONFIG_IDN2, idn2, idn2.h, idn2, idn2_lookup_ul,
+	[  --without-idn2          disable international domain names support])
 
 # ===================================================================
 # Check for GSSAPI, optional even if installed.
@@ -647,6 +647,7 @@ AC_ARG_WITH([mujs],
 		[enable MuJS engine])])
 
 CONFIG_MUJS=
+CONFIG_LIBCURL=
 
 case "$with_mujs" in
 	"" | no)
@@ -665,16 +666,17 @@ if test "x$CONFIG_MUJS" = x; then
 	AC_MSG_CHECKING([for MuJS in pkg-config])
 	if $PKG_CONFIG $pkg_config_static --cflags --libs mujs > /dev/null 2>&AS_MESSAGE_LOG_FD; then
 		DB_LOCALSTORAGE_LIBS="$($PKG_CONFIG $pkg_config_static --libs sqlite3)"
-		XMLPLUSPLUS_LIBS="$($PKG_CONFIG $pkg_config_static --libs libxml++-5.0)"
-		MUJS_LIBS="$($PKG_CONFIG $pkg_config_static --libs mujs) $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS"
+		CURL_LIBS="$($PKG_CONFIG $pkg_config_static --libs libcurl)"
+		MUJS_LIBS="$($PKG_CONFIG $pkg_config_static --libs mujs) $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS $CURL_LIBS"
 		DB_LOCALSTORAGE_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags sqlite3)"
-		XMLPLUSPLUS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libxml++-5.0)"
-		MUJS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags mujs) $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS"
+		CURL_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libcurl)"
+		MUJS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags mujs) $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS $CURL_CFLAGS"
 
-		LIBS="$LIBS $MUJS_LIBS $LIBS_X"
+		LIBS="$LIBS $MUJS_LIBS"
 		CPPFLAGS="$CPPFLAGS_X $MUJS_CFLAGS"
 		CFLAGS="$CFLAGS $MUJS_CFLAGS"
 		CONFIG_MUJS=yes
+		CONFIG_LIBCURL=yes
 		AC_MSG_RESULT([yes])
 	else
 		AC_MSG_RESULT([no])
@@ -718,24 +720,21 @@ if test "x$CONFIG_QUICKJS" = x; then
 
 	if test "x$CONFIG_QUICKJS" = xyes; then
 		DB_LOCALSTORAGE_LIBS="$($PKG_CONFIG $pkg_config_static --libs sqlite3)"
-		XMLPLUSPLUS_LIBS="$($PKG_CONFIG $pkg_config_static --libs libxml++-5.0)"
+		CURL_LIBS="$($PKG_CONFIG $pkg_config_static --libs libcurl)"
 		DB_LOCALSTORAGE_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags sqlite3)"
-		XMLPLUSPLUS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libxml++-5.0)"
+		CURL_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libcurl)"
 
-		CFLAGS="$CFLAGS $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS"
+		CFLAGS="$CFLAGS $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS $CURL_CFLAGS"
 		QUICKJS_LIB="/usr/local/lib/quickjs/libquickjs.a"
 
-		TMPIFS="$IFS"
-		IFS=:
-		for p in "$LIBRARY_PATH"; do
-			if test -f "$p/quickjs/libquickjs.a"; then
+		for p in $(tr ':' '\n' <<< "$LIBRARY_PATH"); do
+			if test -f "$p/quickjs/libquickjs.a" ; then
 				QUICKJS_LIB="$p/quickjs/libquickjs.a"
 				break
 			fi
 		done
-		IFS="$TMPIFS"
-
-		LIBS="$LIBS $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS $QUICKJS_LIB"
+		LIBS="$LIBS $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS $QUICKJS_LIB $CURL_LIBS"
+		CONFIG_LIBCURL=yes
 	else
 		AC_MSG_RESULT([no])
 	fi
@@ -755,7 +754,7 @@ AC_ARG_WITH([spidermonkey],
 # when we know for sure whether we're going to use SpiderMonkey or not.
 # (features.conf is not supposed to define it.)
 CONFIG_SPIDERMONKEY=
-CONFIG_XML=
+CONFIG_LIBDOM=
 CONFIG_SCRIPTING_SPIDERMONKEY=
 EL_SAVE_FLAGS
 
@@ -792,15 +791,16 @@ if test "x$CONFIG_SPIDERMONKEY" = xyes ||
 	AC_MSG_CHECKING([for SpiderMonkey (mozjs-102) in pkg-config $package])
 	if $PKG_CONFIG $pkg_config_static --cflags --libs $package > /dev/null 2>&AS_MESSAGE_LOG_FD; then
 		DB_LOCALSTORAGE_LIBS="$($PKG_CONFIG $pkg_config_static --libs sqlite3)"
-		XMLPLUSPLUS_LIBS="$($PKG_CONFIG $pkg_config_static --libs libxml++-5.0)"
-		SPIDERMONKEY_LIBS="$($PKG_CONFIG $pkg_config_static --libs $package) $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS"
+		CURL_LIBS="$($PKG_CONFIG $pkg_config_static --libs libcurl)"
+		SPIDERMONKEY_LIBS="$($PKG_CONFIG $pkg_config_static --libs $package) $DB_LOCALSTORAGE_LIBS $XMLPLUSPLUS_LIBS $CURL_LIBS"
 		DB_LOCALSTORAGE_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags sqlite3)"
-		XMLPLUSPLUS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libxml++-5.0)"
-		SPIDERMONKEY_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags $package) $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS"
+		CURL_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libcurl)"
+		SPIDERMONKEY_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags $package) $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS $CURL_CFLAGS"
 
 		LIBS="$SPIDERMONKEY_LIBS $LIBS_X"
 		CPPFLAGS="$CPPFLAGS_X $SPIDERMONKEY_CFLAGS"
 		SPIDERMONKEY_FOUND=yes
+		CONFIG_LIBCURL=yes
 		AC_MSG_RESULT([yes])
 	else
 		AC_MSG_RESULT([no])
@@ -816,7 +816,7 @@ fi
 EL_RESTORE_FLAGS
 
 if test "x$CONFIG_SPIDERMONKEY" = xyes; then
-	CONFIG_XML=yes
+	CONFIG_LIBDOM=yes
 	EL_CONFIG(CONFIG_ECMASCRIPT_SMJS, [SpiderMonkey document scripting])
 else
 	CONFIG_ECMASCRIPT_SMJS=no
@@ -840,33 +840,134 @@ else
 	CONFIG_SCRIPTING_SPIDERMONKEY=no
 fi
 
-CXXFLAGS="$CXXFLAGS -fpermissive -Wno-sign-compare -std=gnu++17"
+CXXFLAGS="$CXXFLAGS -fpermissive -Wno-sign-compare"
 
 if test "x$CONFIG_ECMASCRIPT_SMJS" = xyes ||
    test "x$CONFIG_SCRIPTING_SPIDERMONKEY" = xyes; then
 	LIBS="$LIBS $SPIDERMONKEY_LIBS"
+	EL_CONFIG(CONFIG_LIBCURL, [libcurl])
 	AC_SUBST(SPIDERMONKEY_LIBS)
 	AC_SUBST(SPIDERMONKEY_CFLAGS)
 	AC_SUBST(CONFIG_SPIDERMONKEY)
-	AC_SUBST(CONFIG_XML)
+	AC_SUBST(CONFIG_LIBCURL)
 	CXXFLAGS="$CXXFLAGS $SPIDERMONKEY_CFLAGS"
 fi
 
 if test "x$CONFIG_MUJS" = xyes; then
-	EL_CONFIG(CONFIG_XML, [libxml++5.0])
+	CONFIG_LIBDOM=yes
 	EL_CONFIG(CONFIG_MUJS, [mujs])
+	EL_CONFIG(CONFIG_LIBCURL, [libcurl])
 	AC_SUBST(MUJS_LIBS)
 	AC_SUBST(MUJS_CFLAGS)
 	AC_SUBST(CONFIG_MUJS)
-	AC_SUBST(CONFIG_XML)
+	AC_SUBST(CONFIG_LIBCURL)
 fi
 
 if test "x$CONFIG_QUICKJS" = xyes; then
-	EL_CONFIG(CONFIG_XML, [libxml++5.0])
+	CONFIG_LIBDOM=yes
 	EL_CONFIG(CONFIG_QUICKJS, [quickjs])
+	EL_CONFIG(CONFIG_LIBCURL, [libcurl])
 	AC_SUBST(CONFIG_QUICKJS)
-	AC_SUBST(CONFIG_XML)
+	AC_SUBST(CONFIG_LIBCURL)
 fi
+
+# ===================================================================
+# Check for libcurl
+# ===================================================================
+
+AC_ARG_WITH([libcurl],
+	[AS_HELP_STRING([--with-libcurl],
+		[enable curl])])
+
+if test "x$CONFIG_LIBCURL" = x; then
+	case "$with_libcurl" in
+		"" | no)
+			# The user specified --without-libcurl.
+			AC_MSG_CHECKING([for libcurl])
+			AC_MSG_RESULT([disabled])
+			CONFIG_LIBCURL="no"
+			;;
+		yes | *)
+			AC_MSG_CHECKING([for libcurl])
+			CURL_LIBS="$($PKG_CONFIG $pkg_config_static --libs libcurl)"
+			CURL_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libcurl)"
+			CONFIG_LIBCURL=yes
+			LIBS="$LIBS $CURL_LIBS"
+			CFLAGS="$CFLAGS $CURL_CFLAGS"
+			EL_CONFIG(CONFIG_LIBCURL, [libcurl])
+			AC_MSG_RESULT([yes])
+			;;
+	esac
+	AC_SUBST(CONFIG_LIBCURL)
+fi
+
+# ===================================================================
+# Check for libcss
+# ===================================================================
+
+CONFIG_LIBCSS=
+
+if test "x$CONFIG_LIBDOM" = xyes; then
+	LIBCSS_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libcss)"
+	LIBCSS_LIBS="$($PKG_CONFIG $pkg_config_static --libs libcss)"
+	LIBS="$LIBCSS_LIBS $LIBS"
+	CFLAGS="$CFLAGS $LIBCSS_CFLAGS"
+	CONFIG_LIBCSS=yes
+	EL_CONFIG(CONFIG_LIBCSS, [libcss])
+	AC_SUBST(LIBCSS_CFLAGS)
+	AC_SUBST(LIBCSS_LIBS)
+	AC_SUBST(CONFIG_LIBCSS)
+fi
+
+# ===================================================================
+# Check for libdom
+# ===================================================================
+
+if test "x$CONFIG_LIBDOM" = xyes; then
+	LIBDOM_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libdom)"
+	LIBDOM_LIBS="$($PKG_CONFIG $pkg_config_static --libs libdom)"
+	LIBS="$LIBDOM_LIBS $LIBS"
+	CFLAGS="$CFLAGS $LIBDOM_CFLAGS"
+	CONFIG_LIBDOM=yes
+	EL_CONFIG(CONFIG_LIBDOM, [libdom])
+	AC_SUBST(LIBDOM_CFLAGS)
+	AC_SUBST(LIBDOM_LIBS)
+	AC_SUBST(CONFIG_LIBDOM)
+fi
+
+# ===================================================================
+# Check for libsixel
+# ===================================================================
+
+AC_ARG_WITH([libsixel],
+	[AS_HELP_STRING([--with-libsixel],
+		[enable sixel graphics])])
+
+CONFIG_LIBSIXEL=
+
+case "$with_libsixel" in
+	"" | no)
+		# The user specified --without-libsixel.
+		AC_MSG_CHECKING([for libsixel])
+		AC_MSG_RESULT([disabled])
+		CONFIG_LIBSIXEL="no"
+		;;
+	yes)
+		;;
+	*)
+		;;
+esac
+
+if test "x$CONFIG_LIBSIXEL" = x; then
+	LIBSIXEL_CFLAGS="$($PKG_CONFIG $pkg_config_static --cflags libsixel)"
+	LIBSIXEL_LIBS="$($PKG_CONFIG $pkg_config_static --libs libsixel)"
+	LIBS="$LIBSIXEL_LIBS $LIBS"
+	CFLAGS="$CFLAGS $LIBSIXEL_CFLAGS"
+	CONFIG_LIBSIXEL=yes
+	EL_CONFIG(CONFIG_LIBSIXEL, [libsixel])
+	AC_SUBST(CONFIG_LIBSIXEL)
+fi
+
 # ===================================================================
 # Check for Guile, optional even if installed.
 # ===================================================================

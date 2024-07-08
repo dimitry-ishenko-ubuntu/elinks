@@ -4,6 +4,10 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,8 +20,8 @@
 #include <netdb.h>
 #endif
 
-#ifdef HAVE_IDNA_H
-#include <idna.h>
+#ifdef HAVE_IDN2_H
+#include <idn2.h>
 #endif
 
 /* We need to have it here. Stupid BSD. */
@@ -26,6 +30,10 @@
 #endif
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
+#endif
+
+#ifdef HAVE_WS2TCPIP_H
+#include <ws2tcpip.h> /* socklen_t for MinGW */
 #endif
 
 #include "elinks.h"
@@ -168,11 +176,11 @@ lookup_cmd(struct option *o, char ***argv, int *argc)
 
 	idname = *(*argv - 1);
 
-#ifdef CONFIG_IDN
+#ifdef CONFIG_IDN2
 	if (idname) {
-		int code = idna_to_ascii_lz(idname, &idname2, 0);
+		int code = idn2_to_ascii_lz(idname, &idname2, 0);
 
-		if (code == IDNA_SUCCESS) {
+		if (code == IDN2_OK) {
 			idname = idname2;
 			allocated = 1;
 		}
@@ -405,7 +413,11 @@ remote_cmd(struct option *o, char ***argv, int *argc)
 	case REMOTE_METHOD_ADDBOOKMARK:
 		if (remote_argc < 1)
 			break;
-		remote_url = stracpy(remote_argv[0]);
+		if (remote_argc == 2) {
+			remote_url = straconcat(remote_argv[0], POST_CHAR_S, remote_argv[1], NULL);
+		} else {
+			remote_url = stracpy(remote_argv[0]);
+		}
 		remote_session_flags = SES_REMOTE_ADD_BOOKMARK;
 		break;
 
@@ -546,11 +558,11 @@ print_full_help_inner(struct option *tree, const char *path,
 		switch (type) {
 			case OPT_BOOL:
 			case OPT_INT:
+				printf(gettext("(default: %ld)"), (long) option->value.number);
+				break;
+
 			case OPT_LONG:
-				printf(gettext("(default: %ld)"),
-					type == OPT_LONG
-					? option->value.big_number
-					: (long) option->value.number);
+				printf(gettext("(default: %" PRIdPTR ")"), option->value.big_number);
 				break;
 
 			case OPT_STRING:
@@ -825,7 +837,7 @@ union option_info cmdline_options_info[] = {
 	INIT_OPT_STRING("", N_("Name of directory with configuration file"),
 		"config-dir", OPT_ZERO, "",
 		N_("Path of the directory ELinks will read and write its "
-		"config and runtime state files to instead of ~/.elinks. "
+		"config and runtime state files to instead of ~/.config/elinks. "
 		"If the path does not begin with a '/' it is assumed to be "
 		"relative to your HOME directory.")),
 
@@ -920,10 +932,10 @@ union option_info cmdline_options_info[] = {
 		"files (bookmarks, history, etc.) are written to the disk "
 		"when this option is used. See also -touch-files.")),
 
-	INIT_OPT_BOOL("", N_("Disable use of files in ~/.elinks"),
+	INIT_OPT_BOOL("", N_("Disable use of files in ~/.config/elinks"),
 		"no-home", OPT_ZERO, 0,
 		N_("Disables creation and use of files in the user specific "
-		"home configuration directory (~/.elinks). It forces default "
+		"home configuration directory (~/.config/elinks). It forces default "
 		"configuration values to be used and disables saving of "
 		"runtime state files.")),
 
@@ -960,7 +972,7 @@ union option_info cmdline_options_info[] = {
 		"\topenURL(URL)              : open URL in current tab\n"
 		"\topenURL(URL, new-tab)     : open URL in new tab\n"
 		"\topenURL(URL, new-window)  : open URL in new window\n"
-		"\taddBookmark(URL)          : bookmark URL\n"
+		"\taddBookmark(URL, title)   : bookmark URL with title\n"
 		"\tinfoBox(text)             : show text in a message box\n"
 		"\treload()                  : reload the document in the current tab\n"
 		"\tsearch(string)            : search in the current tab\n"
@@ -997,7 +1009,7 @@ union option_info cmdline_options_info[] = {
 		N_("When enabled, terminfo ncurses functions will be used "
 		"instead of hardcoded sequences.")),
 
-	INIT_OPT_BOOL("", N_("Touch files in ~/.elinks when running with -no-connect/-session-ring"),
+	INIT_OPT_BOOL("", N_("Touch files in ~/.config/elinks when running with -no-connect/-session-ring"),
 		"touch-files", OPT_ZERO, 0,
 		N_("When enabled, runtime state files (bookmarks, history, "
 		"etc.) are written to disk, even when -no-connect or "

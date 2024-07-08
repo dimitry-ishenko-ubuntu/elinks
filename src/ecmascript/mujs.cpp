@@ -17,8 +17,8 @@
 #include "dialogs/menu.h"
 #include "dialogs/status.h"
 #include "document/html/frames.h"
-#include "document/xml/renderer.h"
-#include "document/xml/renderer2.h"
+#include "document/libdom/renderer.h"
+#include "document/libdom/renderer2.h"
 #include "document/document.h"
 #include "document/forms.h"
 #include "document/renderer.h"
@@ -31,6 +31,7 @@
 #include "ecmascript/mujs/history.h"
 #include "ecmascript/mujs/localstorage.h"
 #include "ecmascript/mujs/location.h"
+#include "ecmascript/mujs/mapa.h"
 #include "ecmascript/mujs/navigator.h"
 #include "ecmascript/mujs/screen.h"
 #include "ecmascript/mujs/unibar.h"
@@ -49,6 +50,7 @@
 #include "terminal/tab.h"
 #include "terminal/terminal.h"
 #include "util/conv.h"
+#include "util/memcount.h"
 #include "util/string.h"
 #include "viewer/text/draw.h"
 #include "viewer/text/form.h"
@@ -56,20 +58,71 @@
 #include "viewer/text/view.h"
 #include "viewer/text/vs.h"
 
-#include <libxml++/libxml++.h>
-
 /*** Global methods */
 
 
 static void
 mujs_init(struct module *xxx)
 {
+	map_attrs = attr_create_new_map();
+	map_attributes = attr_create_new_map();
+	map_rev_attributes = attr_create_new_map();
+	map_collections = attr_create_new_map();
+	map_rev_collections = attr_create_new_map();
+	map_doctypes = attr_create_new_map();
+	map_elements = attr_create_new_map();
+	map_privates = attr_create_new_map();
+	map_form_elements = attr_create_new_map();
+	map_elements_form = attr_create_new_map();
+	map_form = attr_create_new_map();
+	map_rev_form = attr_create_new_map();
+	map_forms = attr_create_new_map();
+	map_rev_forms = attr_create_new_map();
+	map_inputs = attr_create_new_map();
+	map_nodelist = attr_create_new_map();
+	map_rev_nodelist = attr_create_new_map();
 	//js_module_init_ok = spidermonkey_runtime_addref();
 }
 
 static void
 mujs_done(struct module *xxx)
 {
+	attr_clear_map(map_attrs);
+	attr_clear_map(map_attributes);
+	attr_clear_map(map_rev_attributes);
+	attr_clear_map(map_collections);
+	attr_clear_map(map_rev_collections);
+	attr_clear_map(map_doctypes);
+	attr_clear_map(map_elements);
+	attr_clear_map(map_privates);
+	attr_clear_map(map_form_elements);
+	attr_clear_map(map_elements_form);
+	attr_clear_map(map_form);
+	attr_clear_map(map_rev_form);
+	attr_clear_map(map_forms);
+	attr_clear_map(map_rev_forms);
+	attr_clear_map(map_inputs);
+	attr_clear_map(map_nodelist);
+	attr_clear_map(map_rev_nodelist);
+
+	attr_delete_map(map_attrs);
+	attr_delete_map(map_attributes);
+	attr_delete_map(map_rev_attributes);
+	attr_delete_map(map_collections);
+	attr_delete_map(map_rev_collections);
+	attr_delete_map(map_doctypes);
+	attr_delete_map(map_elements);
+	attr_delete_map(map_privates);
+	attr_delete_map(map_form_elements);
+	attr_delete_map(map_elements_form);
+	attr_delete_map(map_form);
+	attr_delete_map(map_rev_form);
+	attr_delete_map(map_forms);
+	attr_delete_map(map_rev_forms);
+	attr_delete_map(map_inputs);
+	attr_delete_map(map_nodelist);
+	attr_delete_map(map_rev_nodelist);
+
 //	if (js_module_init_ok)
 //		spidermonkey_runtime_release();
 }
@@ -79,8 +132,11 @@ mujs_get_interpreter(struct ecmascript_interpreter *interpreter)
 {
 	assert(interpreter);
 
-	js_State *J = js_newstate(NULL, NULL, JS_STRICT);
-
+#ifdef CONFIG_DEBUG
+	js_State *J = js_newstate(el_mujs_alloc, NULL, 0);
+#else
+	js_State *J = js_newstate(NULL, NULL, 0);
+#endif
 	if (!J) {
 		return NULL;
 	}
@@ -166,7 +222,6 @@ mujs_put_interpreter(struct ecmascript_interpreter *interpreter)
 	JS_FreeContext(ctx);
 	interpreter->backend_data = nullptr;
 	interpreter->ac = nullptr;
-	interpreter->ac2 = nullptr;
 #endif
 }
 

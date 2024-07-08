@@ -29,7 +29,9 @@
 #include <iconv.h>
 #endif
 
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif
 
 #ifdef HAVE_SYS_KD_H
 #include <sys/kd.h>
@@ -203,7 +205,7 @@ new_translation_table(struct conv_table *p)
 /* list of unicode codepoints supported by the current terminal, if this
  * information is available, otherwise size = -1 */
 
-struct {
+struct el_codepoints {
 	int size;
 	unicode_val_T *list;
 } codepoints;
@@ -299,16 +301,16 @@ static char utf_buffer[7];
 NONSTATIC_INLINE char *
 encode_utf8(unicode_val_T u)
 {
-	int s;
-
-	memset(utf_buffer, 0, 7);
-
 #ifdef CONFIG_CODEPOINT
 	if (!is_codepoint_supported(u)) {
+		int s;
+
 		BIN_SEARCH(unicode_7b, x, N_UNICODE_7B, u, s);
 		if (s != -1) return (char *)unicode_7b[s].s;
 	}
 #endif
+	memset(utf_buffer, 0, 7);
+
 	if (u < 0x80)
 		utf_buffer[0] = u;
 	else if (u < 0x800)

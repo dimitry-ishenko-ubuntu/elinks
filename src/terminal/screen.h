@@ -5,8 +5,10 @@
 extern "C" {
 #endif
 
+struct bitfield;
 struct module;
 struct screen_char;
+struct string;
 struct terminal;
 
 /** The terminal's screen manages */
@@ -21,18 +23,14 @@ struct terminal_screen {
 	int cx, cy;
 	int lcx, lcy;
 
-	/** The range of line numbers that are out of sync with the physical
-	 * screen. #dirty_from > #dirty_to means not dirty. */
-	int dirty_from, dirty_to;
+	/** Whether to redraw screen */
+	unsigned int was_dirty:1;
+
+	struct bitfield *dirty;
 };
 
 /** Mark the screen ready for redrawing. */
-static inline void
-set_screen_dirty(struct terminal_screen *screen, int from, int to)
-{
-	int_upper_bound(&screen->dirty_from, from);
-	int_lower_bound(&screen->dirty_to, to);
-}
+void set_screen_dirty(struct terminal_screen *screen, int from, int to);
 
 /** Initializes a screen. Returns NULL upon allocation failure. */
 struct terminal_screen *init_screen(void);
@@ -52,6 +50,8 @@ void erase_screen(struct terminal *term);
 
 /** Meeep! */
 void beep_terminal(struct terminal *term);
+
+struct string *add_cursor_move_to_string(struct string *screen, int y, int x);
 
 extern struct module terminal_screen_module;
 

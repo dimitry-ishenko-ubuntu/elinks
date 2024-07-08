@@ -2,6 +2,7 @@
 #define EL__CONFIG_OPTIONS_H
 
 #include "main/object.h"
+#include "terminal/color.h"
 #include "util/color.h"
 #include "util/lists.h"
 #include "util/memory.h"
@@ -219,7 +220,7 @@ struct option {
  * with ::INIT_OPT_INT or a similar macro.
  * @relates option */
 #define INIT_OPTION(name, flags, type, min, max, value, desc, capt) \
-	{ NULL_LIST_HEAD, INIT_OBJECT("option"), {name}, flags, type, min, max, { (LIST_OF(struct option) *) (value) }, desc, capt }
+	{ NULL_LIST_HEAD_EL, INIT_OBJECT("option"), {name}, flags, type, min, max, { (LIST_OF(struct option) *) (value) }, desc, capt }
 
 extern struct option *config_options;
 extern struct option *cmdline_options;
@@ -568,6 +569,8 @@ enum verbose_level {
 int get_https_by_default(void);
 
 const char *get_default_protocol(void);
+
+color_mode_T get_color_mode(struct option *term_spec);
 
 #ifdef __cplusplus
 }

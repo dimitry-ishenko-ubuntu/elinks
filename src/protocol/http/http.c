@@ -30,6 +30,7 @@
 #include "osdep/sysname.h"
 #include "protocol/auth/auth.h"
 #include "protocol/auth/digest.h"
+#include "protocol/curl/http.h"
 #include "protocol/date.h"
 #include "protocol/header.h"
 #include "protocol/http/blacklist.h"
@@ -196,7 +197,11 @@ static union option_info http_options[] = {
 		"--- the server only returns the client's request back to "
 		"the client verbatim. Note that this type of request may "
 		"not be enabled on all servers.")),
-
+#if defined(CONFIG_LIBCURL)
+	INIT_OPT_BOOL("protocol.http", N_("Use libcurl"),
+		"use_curl", OPT_ZERO, 0,
+		N_("Use libcurl implementation of http(s).")),
+#endif
 	/* OSNews.com is supposed to be relying on the textmode token, at least. */
 	INIT_OPT_STRING("protocol.http", N_("User-agent identification"),
 		"user_agent", OPT_ZERO, "ELinks/%v (textmode; %s; %t-%b)",
@@ -341,7 +346,7 @@ subst_user_agent(char *fmt, const char *version,
 	return agent.source;
 }
 
-static void
+void
 add_url_to_http_string(struct string *header, struct uri *uri, uri_component_T components)
 {
 	/* This block substitues spaces in URL by %20s. This is
@@ -528,6 +533,12 @@ static void http_send_header(struct socket *);
 void
 http_protocol_handler(struct connection *conn)
 {
+#if defined(CONFIG_LIBCURL)
+	if (get_opt_bool("protocol.http.use_curl", NULL)) {
+		http_curl_protocol_handler(conn);
+		return;
+	}
+#endif
 	/* setcstate(conn, S_CONN); */
 
 	if (!has_keepalive_connection(conn)) {
@@ -1681,7 +1692,7 @@ again:
 			 * method. */
 			/* So POST must not be redirected to GET, but some
 			 * BUGGY message boards rely on it :-( */
-	    		if (h == 302
+			if (h == 302
 			    && get_opt_bool("protocol.http.bugs.broken_302_redirect", NULL))
 				use_get_method = 1;
 
