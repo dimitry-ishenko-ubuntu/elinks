@@ -128,7 +128,7 @@ License: Unicode
 Files: debian/*
 Copyright: 1999-2007, Peter Gervai <grin@tolna.net>
            2007-2009, Y Giridhar Appaji Nag <giridhar@appaji.net> and
-           2018 أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>
+           2018 -2020,2023-2024أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>
 License: GPL-2+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
