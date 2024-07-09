@@ -1,0 +1,14 @@
+Description: Fix path for protocol test
+Origin: https://github.com/rkd77/elinks/commit/17e905b95d287be1a4c26395354e4cf55cded622
+Index: elinks/src/protocol/test/meson.build
+===================================================================
+--- elinks.orig/src/protocol/test/meson.build	2024-07-08 18:51:20.483805396 +0200
++++ elinks/src/protocol/test/meson.build	2024-07-09 17:58:55.141991435 +0200
+@@ -1,6 +1,6 @@
+ idna_dep = dependency('libidn2')
+ 
+-uri_test_files = files('uri-test.c', 'stub.c', meson.current_source_dir()+'/../protocol.cpp', meson.current_source_dir()+'/../uri.c')
++uri_test_files = files('uri-test.c', 'stub.c', meson.current_source_dir()+'/../protocol.c', meson.current_source_dir()+'/../uri.c')
+ 
+ exe = executable('uri-test', uri_test_files,
+ testdeps, dependencies: [iconvdeps, idna_dep, mozjsdeps, wattdeps],
