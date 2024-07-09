@@ -1,3 +1,4 @@
 # Those are HTML files !
+elinks source: source-is-missing [test/data.html]
 elinks source: source-is-missing [test/garbage.html]
 elinks source: source-is-missing [test/longtitle.html]
