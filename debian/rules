@@ -39,6 +39,7 @@ CONF_OPTS= -Dtest=true \
 	  -Dbrotli=true \
 	  -Dgopher=true \
 	  -Dgemini=true \
+	  -Dlibcss=false \
 	  -Dsource-date-epoch=$(SOURCE_DATE_EPOCH)
 
 ifeq (,$(findstring ~,$(DEB_VERSION_UPSTREM)))
