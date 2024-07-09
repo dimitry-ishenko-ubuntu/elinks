@@ -6,7 +6,7 @@ Build-Depends: debhelper-compat (= 13), libtre-dev, libgnutls28-dev, libgcrypt20
 	libfsplib-dev, libgpm-dev [linux-any],
 	liblua5.3-dev, libbz2-dev, libexpat1-dev,
 	libperl-dev, libkrb5-dev, gettext,
-	xmlto, docbook-utils, pkg-config,
+	xmlto, docbook-utils, pkgconf,
   liblzma-dev,
   libncurses-dev
   ,libev-libevent-dev
