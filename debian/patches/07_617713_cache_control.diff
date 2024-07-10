@@ -3,9 +3,9 @@ of HTTP (see http://bugs.debian.org/617713).
 
 Index: elinks/src/config/options.inc
 ===================================================================
---- elinks.orig/src/config/options.inc	2023-04-14 03:42:08.474737936 +0200
-+++ elinks/src/config/options.inc	2023-04-14 03:43:22.361770613 +0200
-@@ -562,7 +562,7 @@
+--- elinks.orig/src/config/options.inc	2024-07-10 06:43:36.091518540 +0200
++++ elinks/src/config/options.inc	2024-07-10 06:43:36.091518540 +0200
+@@ -570,7 +570,7 @@
  		"cache instead of asking the server.")),
  
  	INIT_OPT_BOOL("document.cache", N_("Ignore cache-control info from server"),
