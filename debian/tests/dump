@@ -28,5 +28,5 @@ References
    2. file:///
 EOF
 
-elinks -dump -dump-width 80  test.html | diff -q - ref-dump
+elinks -no-home -dump -dump-width 80  test.html | diff -q - ref-dump
 echo "dump: OK"
