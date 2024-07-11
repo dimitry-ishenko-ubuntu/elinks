@@ -1,6 +1,4 @@
-elinks (0.17.0-1~5.gbp43e7e4) UNRELEASED; urgency=medium
-
-  ** SNAPSHOT build @43e7e48f62b05b10ea108d42df5a8ad181d549a4 **
+elinks (0.17.0-1) unstable; urgency=medium
 
   * New upstream version 0.17.0
   * Dropped patches applied upstream: fix-mailcap-test.diff & perl_5.38.patch
@@ -19,7 +17,7 @@ elinks (0.17.0-1~5.gbp43e7e4) UNRELEASED; urgency=medium
   * d/source.lintian-overrides: add an override for test/data.html
   * d/t/dump: add -no-home when invoking ELinks
 
- -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Thu, 11 Jul 2024 04:17:10 +0200
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Thu, 11 Jul 2024 18:01:47 +0200
 
 elinks (0.16.1.1-4.1) unstable; urgency=medium
 
