@@ -8,6 +8,7 @@ elinks (0.17.0-1) unstable; urgency=medium
   * d/rules:
     + remove sysconfdir setting (Closes: #1040656)
     + disable libcss support
+    + fix typo
   * Update copyright years
   * d/control:
     + update build deps libidn-dev -> libidn2-dev

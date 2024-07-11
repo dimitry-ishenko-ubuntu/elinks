@@ -42,7 +42,7 @@ CONF_OPTS= -Dtest=true \
 	  -Dlibcss=false \
 	  -Dsource-date-epoch=$(SOURCE_DATE_EPOCH)
 
-ifeq (,$(findstring ~,$(DEB_VERSION_UPSTREM)))
+ifeq (,$(findstring ~,$(DEB_VERSION_UPSTREAM)))
 	CONF_OPTS += -Dfastmem=true
 endif
 
