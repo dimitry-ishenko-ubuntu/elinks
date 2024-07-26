@@ -1,3 +1,10 @@
+elinks (0.17.0-2) unstable; urgency=medium
+
+  * Add fix_nonascii_inpfield.patch to fix a bug with input fields not
+    accepting non-ASCII input.
+
+ -- أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>  Fri, 26 Jul 2024 04:29:19 +0200
+
 elinks (0.17.0-1) unstable; urgency=medium
 
   * New upstream version 0.17.0
