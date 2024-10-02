@@ -24,7 +24,7 @@ CONF_OPTS= -Dtest=true \
 	  -Dsmb=false \
 	  -Dperl=true \
 	  -Dguile=false \
-	  -Dpython=false \
+	  -Dpython=true \
 	  -Druby=false \
 	  -Dluapkg=lua5.3 \
 	  -Dgssapi=true \
