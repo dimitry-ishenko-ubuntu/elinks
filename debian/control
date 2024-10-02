@@ -2,20 +2,31 @@ Source: elinks
 Section: web
 Priority: optional
 Maintainer: أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>
-Build-Depends: debhelper-compat (= 13), libtre-dev, libgnutls28-dev, libgcrypt20-dev, libidn2-dev,
-	libfsplib-dev, libgpm-dev [linux-any],
-	liblua5.3-dev, libbz2-dev, libexpat1-dev,
-	libperl-dev, libkrb5-dev, gettext,
-	xmlto, docbook-utils, pkgconf,
-  liblzma-dev,
-  libncurses-dev
-  ,libev-libevent-dev
-  ,python3
-  ,dblatex
-  ,zlib1g-dev
-  ,libbrotli-dev
-  ,meson
-  ,libcurl4-gnutls-dev
+Build-Depends: debhelper-compat (= 13),
+ dblatex,
+ docbook-utils,
+ gettext,
+ libbrotli-dev,
+ libbz2-dev,
+ libcurl4-gnutls-dev,
+ libev-libevent-dev,
+ libexpat1-dev,
+ libfsplib-dev,
+ libgcrypt20-dev,
+ libgnutls28-dev,
+ libgpm-dev [linux-any],
+ libidn2-dev,
+ libkrb5-dev,
+ liblua5.3-dev,
+ liblzma-dev,
+ libncurses-dev,
+ libperl-dev,
+ libtre-dev,
+ meson,
+ pkgconf,
+ python3,
+ xmlto,
+ zlib1g-dev,
 Build-Conflicts: libgc-dev
 Standards-Version: 4.6.2
 Rules-Requires-Root: no
