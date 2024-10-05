@@ -16,7 +16,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([config/m4])
 
 PACKAGE=elinks
-VERSION=0.17.0
+VERSION=0.17.1.1
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Package version])
@@ -336,7 +336,6 @@ AC_CHECK_FUNCS(mkstemps)
 # These aren't probably needed now, as they are commented in links.h.
 # I've no idea about their historical background, but I keep them here
 # just in the case they will help later. --pasky
-AC_CHECK_FUNCS(getpid, HAVE_GETPID=yes)
 AC_CHECK_FUNCS(setpgid getpgid setpgrp getpgrp)
 AC_CHECK_FUNCS(raise, HAVE_RAISE=yes)
 AC_CHECK_FUNCS(kill, HAVE_KILL=yes)
@@ -346,7 +345,7 @@ AC_CHECK_FUNCS(fpathconf, HAVE_FPATHCONF=yes)
 AC_CHECK_FUNCS(poll, HAVE_POLL=yes)
 
 if test x"$HAVE_RAISE" = x; then
-	if test x"$HAVE_KILL" = x || test x"$HAVE_GETPID" = x; then
+	if test x"$HAVE_KILL" = x; then
 		AC_MSG_ERROR([Unable to emulate raise()])
 	fi
 fi
@@ -727,7 +726,7 @@ if test "x$CONFIG_QUICKJS" = x; then
 		CFLAGS="$CFLAGS $DB_LOCALSTORAGE_CFLAGS $XMLPLUSPLUS_CFLAGS $CURL_CFLAGS"
 		QUICKJS_LIB="/usr/local/lib/quickjs/libquickjs.a"
 
-		for p in $(tr ':' '\n' <<< "$LIBRARY_PATH"); do
+		for p in $(echo "$LIBRARY_PATH" | tr ':' '\n'); do
 			if test -f "$p/quickjs/libquickjs.a" ; then
 				QUICKJS_LIB="$p/quickjs/libquickjs.a"
 				break
@@ -1499,8 +1498,8 @@ AC_ARG_WITH(libevent, [  --with-libevent         compile with libevent. Note tha
 CONFIG_LIBEVENT=no
 cf_have_libevent=no
 if test "$enable_libevent" = yes -a "$cf_have_libev" = no; then
-	AC_CHECK_HEADERS(event.h ev-event.h)
-	if test "$ac_cv_header_event_h" = yes; then
+	AC_CHECK_HEADERS(event2/event.h ev-event.h)
+	if test "$ac_cv_header_event2_event_h" = yes; then
 		AC_CHECK_LIB(event, event_loop)
 		if test "$ac_cv_lib_event_event_loop" = yes; then
 			cf_have_libevent=yes

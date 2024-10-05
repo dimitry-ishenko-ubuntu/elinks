@@ -60,6 +60,8 @@
 
 struct program program;
 
+pid_t master_pid = 0;
+
 static int ac;
 static char **av;
 static int init_b = 0;
@@ -193,6 +195,7 @@ init(void)
 	    || get_cmd_opt_bool("source")
 	    || (fd = init_interlink()) == -1) {
 
+		master_pid = getpid();
 		parse_options_again();
 		init_b = 1;
 		init_modules(builtin_modules);

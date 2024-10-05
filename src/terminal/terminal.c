@@ -187,6 +187,7 @@ init_term(int fdin, int fdout)
 	term->fdin = fdin;
 	term->fdout = fdout;
 	term->master = (term->fdout == get_output_handle());
+
 	term->blocked = -1;
 
 	get_terminal_name(name + 9);

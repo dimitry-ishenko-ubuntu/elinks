@@ -1,4 +1,4 @@
-project('elinks', ['c','cpp'], version:'0.17.0', license:'GPLv2', default_options:['cpp_std=gnu++17'])
+project('elinks', ['c','cpp'], version:'0.17.1.1', license:'GPLv2', default_options:['cpp_std=gnu++17'])
 srcs=[]
 
 srcdir = meson.source_root()
@@ -327,6 +327,10 @@ if compiler.has_header('idn2.h')
     conf_data.set('HAVE_IDN2_H', 1)
 endif
 
+if compiler.has_header('event2/event.h')
+    conf_data.set('HAVE_EVENT2_EVENT_H', 1)
+endif
+
 if compiler.has_header('event.h')
     conf_data.set('HAVE_EVENT_H', 1)
 endif
@@ -382,8 +386,8 @@ if conf_data.get('CONFIG_LIBEV')
     deps += eventdeps
     conf_data.set('CONFIG_LIBEVENT', false)
 elif conf_data.get('CONFIG_LIBEVENT')
-    eh = '#include <event.h>'
-    eventdeps = dependency('libevent', static: st)
+    eh = '#include <event2/event.h>'
+    eventdeps = dependency('libevent', static: st, version: '>=2.0.0')
     deps += eventdeps
     conf_data.set('HAVE_LIBEVENT', true)
 else
@@ -492,7 +496,7 @@ conf_data.set('CONFIG_LIBCSS', false)
 cssdeps = false
 
 if conf_data.get('CONFIG_ECMASCRIPT_SMJS') or conf_data.get('CONFIG_QUICKJS') or conf_data.get('CONFIG_MUJS')
-    cssdeps = dependency('libcss', static: st, version: '>=0.9.1')
+    cssdeps = dependency('libcss', static: st, version: '>=0.9.2')
     deps += cssdeps
     conf_data.set('CONFIG_LIBCSS', true)
 endif
@@ -501,17 +505,17 @@ conf_data.set('CONFIG_LIBDOM', false)
 libdomdeps = false
 
 if conf_data.get('CONFIG_ECMASCRIPT_SMJS') or conf_data.get('CONFIG_QUICKJS') or conf_data.get('CONFIG_MUJS')
-    libdomdeps = dependency('libdom', static: st, version: '>=0.4.1')
+    libdomdeps = dependency('libdom', static: st, version: '>=0.4.2')
     deps += libdomdeps
     conf_data.set('CONFIG_LIBDOM', true)
 endif
 
 if not conf_data.get('CONFIG_LIBCSS') and get_option('libcss')
-    cssdeps = dependency('libcss', static: st, version: '>=0.9.1')
+    cssdeps = dependency('libcss', static: st, version: '>=0.9.2')
     deps += cssdeps
     conf_data.set('CONFIG_LIBCSS', true)
     if not conf_data.get('CONFIG_LIBDOM')
-        libdomdeps = dependency('libdom', static: st, version: '>=0.4.1')
+        libdomdeps = dependency('libdom', static: st, version: '>=0.4.2')
         deps += libdomdeps
         conf_data.set('CONFIG_LIBDOM', true)
     endif
@@ -856,10 +860,6 @@ endif
 
 if not conf_data.get('CONFIG_OS_DOS') and compiler.has_function('fork', prefix : '#include <unistd.h>')
     conf_data.set('HAVE_FORK', 1)
-endif
-
-if compiler.has_function('getpid', prefix : '#include <unistd.h>')
-    conf_data.set('HAVE_GETPID', 1)
 endif
 
 if compiler.has_function('setpgid', prefix : '#include <unistd.h>')

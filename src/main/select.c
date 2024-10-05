@@ -37,9 +37,9 @@
 #define USE_LIBEVENT
 #endif
 
-#if (defined(HAVE_EVENT_H) || defined(HAVE_EV_EVENT_H) || defined(HAVE_LIBEV_EVENT_H)) && defined(HAVE_LIBEVENT) && !defined(OPENVMS) && !defined(DOS)
-#if defined(HAVE_EVENT_H)
-#include <event.h>
+#if (defined(HAVE_EVENT2_EVENT_H) || defined(HAVE_EV_EVENT_H) || defined(HAVE_LIBEV_EVENT_H)) && defined(HAVE_LIBEVENT) && !defined(OPENVMS) && !defined(DOS)
+#if defined(HAVE_EVENT2_EVENT_H)
+#include <event2/event.h>
 #elif defined(HAVE_EV_EVENT_H)
 #include <ev-event.h>
 #endif
@@ -59,7 +59,6 @@ do {							\
 
 #ifdef CONFIG_LIBCURL
 #include <curl/curl.h>
-#include <sys/cdefs.h>
 #endif
 
 #include "elinks.h"

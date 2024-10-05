@@ -458,6 +458,7 @@ static struct element_info elements[] = {
  {"ABBR",        html_italic,      NULL,                 0, ET_NESTABLE    },
  {"ADDRESS",     html_address,     NULL,                 2, ET_NESTABLE    },
  {"APPLET",      html_applet,      NULL,                 1, ET_NON_PAIRABLE},
+ {"ARTICLE",     html_article,     NULL,                 0, ET_NESTABLE    },
  {"AUDIO",       html_audio,       NULL,                 1, ET_NON_PAIRABLE},
  {"B",           html_bold,        NULL,                 0, ET_NESTABLE    },
  {"BASE",        html_base,        NULL,                 0, ET_NON_PAIRABLE},
@@ -498,8 +499,10 @@ static struct element_info elements[] = {
  {"LI",          html_li,          NULL,                 1, ET_LI          },
  {"LINK",        html_link,        NULL,                 1, ET_NON_PAIRABLE},
  {"LISTING",     html_pre,         NULL,                 2, ET_NESTABLE    },
+ {"MAIN",        html_main,        NULL,                 0, ET_NON_NESTABLE},
  {"MENU",        html_ul,          NULL,                 2, ET_NESTABLE    },
  {"META",        html_meta,        NULL,                 0, ET_NON_PAIRABLE},
+ {"NAV",         html_linebrk,     NULL,                 1, ET_NESTABLE    },
  {"NOFRAMES",    html_noframes,    NULL,                 0, ET_NESTABLE    },
  {"NOSCRIPT",    html_noscript,    NULL,                 0, ET_NESTABLE    },
  {"OBJECT",      html_object,      NULL,                 1, ET_NON_PAIRABLE},
@@ -1291,7 +1294,6 @@ xsp:
 	if (he) {
 		add_to_string(head, "Charset: ");
 		add_to_string(head, he);
-		add_crlf_to_string(head);
 		mem_free(he);
 	}
 
@@ -1301,7 +1303,6 @@ xsp:
 	if (!he) goto se;
 
 	add_to_string(head, he);
-	add_crlf_to_string(head);
 	mem_free(he);
 
 	/* FIXME (bug 784): cp is the terminal charset;
@@ -1310,10 +1311,10 @@ xsp:
 	if (c) {
 		add_to_string(head, ": ");
 		add_to_string(head, c);
-		add_crlf_to_string(head);
-		mem_free(c);
+	        mem_free(c);
 	}
 
+	add_crlf_to_string(head);
 	goto se;
 }
 

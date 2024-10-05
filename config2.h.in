@@ -376,6 +376,9 @@
 /* Define to 1 if you have the <event.h> header file. */
 #mesondefine HAVE_EVENT_H
 
+/* Define to 1 if you have the <event2/event.h> header file. */
+#mesondefine HAVE_EVENT2_EVENT_H
+
 /* Define to 1 if you have the `event_reinit' function. */
 #mesondefine HAVE_EVENT_REINIT
 
@@ -444,9 +447,6 @@
 
 /* Define to 1 if you have the `getpgrp' function. */
 #mesondefine HAVE_GETPGRP
-
-/* Define to 1 if you have the `getpid' function. */
-#mesondefine HAVE_GETPID
 
 /* Define to 1 if you have the `getpwnam' function. */
 #mesondefine HAVE_GETPWNAM
