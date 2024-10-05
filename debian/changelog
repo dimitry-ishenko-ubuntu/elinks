@@ -1,3 +1,10 @@
+elinks (1:0.17.1.1-1) unstable; urgency=medium
+
+  * Remove upstreamed patches
+  * New upstream version 0.17.1.1
+
+ -- Dimitry Ishenko <dimitry.ishenko@gmail.com>  Sat, 05 Oct 2024 19:23:16 -0400
+
 elinks (0.17.0-2.1) unstable; urgency=medium
 
   * Enable python hooks
